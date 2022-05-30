@@ -4,6 +4,8 @@ use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{parenthesized, parse2, parse_quote, Ident, Path, Result, Token, Type};
 
+use crate::crate_module;
+
 /// Parsed arguments for `interface` macro
 pub struct InterfaceArgs {
     /// Module name wrapping generated messages, by default no additional module is created
@@ -129,16 +131,18 @@ impl MsgType {
     pub fn emit_result_type(self, msg_type: &Option<Type>, err_type: &Type) -> TokenStream {
         use MsgType::*;
 
+        let sylvia = crate_module();
+
         match (self, msg_type) {
             (Exec, Some(msg_type)) | (Instantiate, Some(msg_type)) => quote! {
-                std::result::Result<cosmwasm_std::Response<#msg_type>, #err_type>
+                std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
             },
             (Exec, None) | (Instantiate, None) => quote! {
-                std::result::Result<cosmwasm_std::Response, #err_type>
+                std::result::Result<#sylvia ::cw_std::Response, #err_type>
             },
 
             (Query, _) => quote! {
-                std::result::Result<cosmwasm_std::Binary, #err_type>
+                std::result::Result<#sylvia ::cw_std::Binary, #err_type>
             },
         }
     }

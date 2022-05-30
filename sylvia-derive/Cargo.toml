@@ -19,6 +19,7 @@ quote = "1"
 proc-macro2 = "1"
 convert_case = "0.5"
 proc-macro-error = "1"
+proc-macro-crate = "1.1"
 
 [dev-dependencies]
 serde-cw-value = { version = "0.7.0", git = "https://github.com/CosmWasm/serde-cw-value.git" }
