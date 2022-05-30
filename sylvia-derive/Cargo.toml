@@ -1,0 +1,29 @@
+[package]
+name = "sylvia-derive"
+version = "0.1.1"
+authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
+edition = "2021"
+description = "Framework for generating trait based CosmWasm smart contracts - derives"
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+keywords = ["cosmwasm", "blockchain", "confio"]
+categories = ["api-bindings", "wasm"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1", features = ["parsing", "derive", "fold", "visit"] }
+quote = "1"
+proc-macro2 = "1"
+convert_case = "0.5"
+proc-macro-error = "1"
+
+[dev-dependencies]
+serde-cw-value = { version = "0.7.0", git = "https://github.com/CosmWasm/serde-cw-value.git" }
+serde = { version = "1", features = ["derive"] }
+cosmwasm-std = "1"
+cw-storage-plus = "0.13.2"
+schemars = "0.8"
+anyhow = "1"
