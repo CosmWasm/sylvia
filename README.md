@@ -26,7 +26,7 @@ it can generate many helpers - utilities for multitests or even queriers.
 
 ## The state
 
-Right now, Sylvia is ready to implement simple, smart contracts. You can implement Instantiation,
+Right now, Sylvia is ready to implement simple smart contracts. You can implement Instantiation,
 Execution, and Query messages quickly. Migrate, sudo, and reply messages are missing right now.
 Still, all of those can be covered by simply implementing their entry points and dispatching manually,
 so for basic functionality, Sylvia also can always be used. Sylvia already supports overriding the
