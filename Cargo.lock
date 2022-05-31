@@ -481,15 +481,8 @@ dependencies = [
 [[package]]
 name = "serde-cw-value"
 version = "0.7.0"
-source = "git+https://github.com/CosmWasm/serde-cw-value.git#9a141c181a7b661556857dea0f736dd3272c775d"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "serde-cw-value"
-version = "0.7.0"
-source = "git+https://github.com/hashedone/serde-cw-value.git#9a141c181a7b661556857dea0f736dd3272c775d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a75d32da6b8ed758b7d850b6c3c08f1d7df51a4df3cb201296e63e34a78e99d4"
 dependencies = [
  "serde",
 ]
@@ -588,7 +581,7 @@ dependencies = [
  "cosmwasm-std",
  "schemars",
  "serde",
- "serde-cw-value 0.7.0 (git+https://github.com/hashedone/serde-cw-value.git)",
+ "serde-cw-value",
  "sylvia-derive",
 ]
 
@@ -606,7 +599,7 @@ dependencies = [
  "quote",
  "schemars",
  "serde",
- "serde-cw-value 0.7.0 (git+https://github.com/CosmWasm/serde-cw-value.git)",
+ "sylvia",
  "syn",
 ]
 
