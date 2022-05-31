@@ -1,4 +1,5 @@
 use crate::check_generics::CheckGenerics;
+use crate::crate_module;
 use crate::parser::{ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
 use crate::strip_generics::StripGenerics;
 use convert_case::{Case, Casing};
@@ -144,6 +145,8 @@ impl<'a> StructMessage<'a> {
     }
 
     pub fn emit_struct(&self, name: &Ident) -> TokenStream {
+        let sylvia = crate_module();
+
         let Self {
             contract_type,
             fields,
@@ -185,7 +188,7 @@ impl<'a> StructMessage<'a> {
         };
 
         quote! {
-            #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub struct #name #generics #where_clause {
                 #(pub #fields,)*
@@ -270,6 +273,8 @@ impl<'a> EnumMessage<'a> {
     }
 
     pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+
         let Self {
             name,
             trait_name,
@@ -311,7 +316,7 @@ impl<'a> EnumMessage<'a> {
         };
 
         quote! {
-            #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub enum #name #generics #where_clause {
                 #(#variants,)*
@@ -511,6 +516,8 @@ impl<'a> GlueMessage<'a> {
     }
 
     pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+
         let Self {
             interfaces,
             name,
@@ -568,7 +575,7 @@ impl<'a> GlueMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&None, error);
 
         quote! {
-            #[derive(serde::Serialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
+            #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub enum #name {
                 #(#variants,)*
@@ -592,7 +599,7 @@ impl<'a> GlueMessage<'a> {
                     where D: serde::Deserializer<'de>,
                 {
                     use serde::de::Error;
-                    let val = serde_cw_value::Value::deserialize(deserializer)?;
+                    let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
 
                     #(#deserialization_attempts)*
 

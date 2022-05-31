@@ -2,15 +2,29 @@
 use anyhow::Error;
 use cosmwasm_std::{Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError};
 use cw_storage_plus::{Item, Map};
-use sylvia_derive::{contract, interface};
+use sylvia::{contract, interface};
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
+#[derive(
+    sylvia::serde::Serialize,
+    sylvia::serde::Deserialize,
+    Clone,
+    Debug,
+    PartialEq,
+    sylvia::schemars::JsonSchema,
+)]
 pub struct Member {
     addr: String,
     weight: u64,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
+#[derive(
+    sylvia::serde::Serialize,
+    sylvia::serde::Deserialize,
+    Clone,
+    Debug,
+    PartialEq,
+    sylvia::schemars::JsonSchema,
+)]
 pub struct MemberResp {
     weight: u64,
 }

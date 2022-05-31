@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::fold::Fold;
-use syn::{parse_macro_input, ItemImpl, ItemTrait};
+use syn::{parse_macro_input, parse_quote, Ident, ItemImpl, ItemTrait, Path};
 
 pub(crate) mod check_generics;
 mod input;
@@ -13,6 +13,18 @@ mod strip_generics;
 mod strip_input;
 
 use strip_input::StripInput;
+
+pub(crate) fn crate_module() -> Path {
+    use proc_macro_crate::{crate_name, FoundCrate};
+
+    match crate_name("sylvia").expect("silvia is not found in Cargo.toml") {
+        FoundCrate::Itself => parse_quote!(sylvia),
+        FoundCrate::Name(name) => {
+            let ident = Ident::new(&name, proc_macro2::Span::mixed_site());
+            parse_quote!(#ident)
+        }
+    }
+}
 
 /// Macro generating messages from contract trait.
 ///
@@ -32,7 +44,7 @@ use strip_input::StripInput;
 /// # #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
 /// # struct MemberQueryResponse;
 ///
-/// #[cw_derive::interface(module=msg, query=Query)]
+/// #[sylvia::interface(module=msg)]
 /// trait Cw4 {
 ///     type Error: From<StdError>;
 ///
@@ -172,10 +184,6 @@ pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// supposed to handle:
 /// * `instantiate` - this is instantiation message handler. There should be always exactly one
 /// handler for this kind of message.
-///
-/// Additionally `#[msg(...)]` attribute handles additional arguments for contracts:
-/// * `name = "MessageName"` - overwrites generated message name. Valid for `instantiate` messages
-/// ("Instantiate" is default).
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
