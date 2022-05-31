@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use sylvia_derive::interface;
+use sylvia::interface;
 
 #[interface]
 pub trait Interface {

@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError};
 
-use sylvia_derive::interface;
+use sylvia::interface;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema)]
 pub struct QueryResult;
