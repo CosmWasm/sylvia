@@ -12,7 +12,7 @@ categories = ["api-bindings", "wasm"]
 
 
 [dependencies]
-sylvia-derive = { path = "../sylvia-derive" }
+sylvia-derive = {version = "0.1", path = "../sylvia-derive" }
 cosmwasm-std = { version = "1", features = ["staking"] }
 schemars = "0.8.10"
 serde = { version = "1", default-features = false, features = ["derive"] }

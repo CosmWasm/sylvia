@@ -27,4 +27,4 @@ cosmwasm-std = "1"
 cw-storage-plus = "0.13.2"
 schemars = "0.8"
 anyhow = "1"
-sylvia = { version = "0.1.1", path = "../sylvia" }
+sylvia = { version = "0.1", path = "../sylvia" }
