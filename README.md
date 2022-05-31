@@ -7,7 +7,7 @@ Sylvia is the Roman goddess of the forest.
 Sylvia is also a framework created to give you the abstraction-focused and scalable solution for
 building your CosmWasm Smart Contracts. Find your way into the forest of Cosmos ecosystem. We
 provide you toolset, so instead of focusing on the raw structure of your contract, you can create
-them in proper and idiomatic Rust and then just let cargo make sure that there are sound.
+them in proper and idiomatic Rust and then just let cargo make sure that they are sound.
 
 ## The approach
 
