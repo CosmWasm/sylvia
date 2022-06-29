@@ -1,0 +1,35 @@
+[package]
+name = "cw1-whitelist"
+version = "0.13.4"
+authors = ["Bartłomiej Kuras <hashedone@users.noreply.github.com>"]
+edition = "2021"
+description = "Implementation of an proxy contract using a whitelist"
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cw-utils = "0.13.4" 
+cw1 = "0.13.4" 
+cw2 = "0.13.4" 
+cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+cw-storage-plus = "0.13.4" 
+schemars = "0.8.1"
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.23" }
+sylvia = { version = "0.1.2", path = "../../sylvia" }
+
+[dev-dependencies]
+anyhow = "1"
+assert_matches = "1"
+cosmwasm-schema = { version = "1.0.0" }
+cw-multi-test = "0.13.4"
+derivative = "2"
+
+[build-dependencies]
+sylvia-build = { version = "0.1.2", path = "../../sylvia-build" }
