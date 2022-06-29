@@ -1,0 +1,17 @@
+[package]
+name = "sylvia-build"
+version = "0.1.2"
+authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
+edition = "2021"
+description = "Framework for generating trait based CosmWasm smart contracts - build utilities"
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+keywords = ["cosmwasm", "blockchain", "confio"]
+categories = ["api-bindings", "wasm"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cargo_toml = "0.11"
+syn = { version = "1", features = ["full", "fold"] }

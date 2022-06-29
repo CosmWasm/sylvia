@@ -201,3 +201,9 @@ pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
+
+#[proc_macro_error]
+#[proc_macro]
+pub fn sylvia(_: TokenStream) -> TokenStream {
+    TokenStream::new()
+}
