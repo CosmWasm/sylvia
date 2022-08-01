@@ -1,6 +1,6 @@
 //include!(concat!(env!("OUT_DIR"), "/sylvia_gen.rs"));
 
-sylvia::sylvia!();
+//sylvia::sylvia!();
 
 pub fn foo() {}
 

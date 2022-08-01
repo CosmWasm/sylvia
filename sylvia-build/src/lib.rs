@@ -5,6 +5,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use syn::fold::Fold;
 use syn::parse::{Nothing, ParseStream, Parser};
+use syn::token::Brace;
 use syn::{Item, ItemMod, LitStr, Token};
 
 pub struct Build;
@@ -15,13 +16,27 @@ impl Build {
         let manifest_path = Path::new(&manifest_dir).join("Cargo.toml");
         let manifest = Manifest::from_path(&manifest_path).unwrap();
 
-        let lib = manifest.lib.expect("Missing library entry in crate manifest. Smart contract has to be either rlib or cdylib");
+        let lib = manifest
+            .lib
+            .expect("Missing library entry in crate manifest. Smart contract has to be cdylib");
         let lib_path = lib
             .path
             .map(PathBuf::from)
             .unwrap_or_else(|| Path::new(&manifest_dir).join("src/lib.rs"));
+        let src_path = lib_path.parent().expect("Source directory doesn't exist");
+        let lib_file = std::fs::read_to_string(&lib_path).expect("Cannot load root library file");
 
-        let _items = ModFolder::fold_from_path(&lib_path).expect("Error building library AST");
+        let mut folder = ModFolder { path: &src_path };
+
+        let items: Vec<_> = syn::parse_file(&lib_file)
+            .expect("Cannot parse AST")
+            .items
+            .into_iter()
+            .map(|item| folder.fold_item(item))
+            .collect();
+
+        dbg!(items);
+        panic!();
 
         let _out_dir = env::var_os("OUT_DIR").unwrap();
     }
@@ -32,7 +47,7 @@ struct ModFolder<'p> {
 }
 
 impl<'p> Fold for ModFolder<'p> {
-    fn fold_item_mod(&mut self, mod i: ItemMod) -> ItemMod {
+    fn fold_item_mod(&mut self, i: ItemMod) -> ItemMod {
         if i.semi.is_some() {
             let path = i
                 .attrs
@@ -62,10 +77,20 @@ impl<'p> Fold for ModFolder<'p> {
                 None => return i,
             };
 
-            // Load mod from path
-            todo!()
+            // Module cannot be build for some reason - for now ignoring the module silently
+            let content = match Self::fold_from_path(&path) {
+                Ok(items) => items,
+                Err(_) => return i,
+            };
+            let brace = Brace::default();
+
+            ItemMod {
+                content: Some((brace, content)),
+                semi: None,
+                ..i
+            }
         } else {
-            self.fold_item_mod(i)
+            syn::fold::fold_item_mod(self, i)
         }
     }
 }
@@ -80,7 +105,8 @@ impl<'p> ModFolder<'p> {
     }
 
     fn fold_from_path(path: &Path) -> Result<Vec<Item>, syn::parse::Error> {
-        let file = syn::parse_file(path.to_str().unwrap())?;
+        let file = std::fs::read_to_string(path).unwrap();
+        let file = syn::parse_file(&file)?;
         let stem = path.file_stem().unwrap();
         let path = path.parent().unwrap().join(stem);
 
