@@ -26,7 +26,7 @@ impl Build {
         let src_path = lib_path.parent().expect("Source directory doesn't exist");
         let lib_file = std::fs::read_to_string(&lib_path).expect("Cannot load root library file");
 
-        let mut folder = ModFolder { path: &src_path };
+        let mut folder = ModFolder { path: src_path };
 
         let items: Vec<_> = syn::parse_file(&lib_file)
             .expect("Cannot parse AST")
