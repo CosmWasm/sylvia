@@ -19,6 +19,6 @@ quote = "1"
 proc-macro2 = "1"
 convert_case = "0.5"
 proc-macro-error = "1"
-proc-macro-crate = "1.1"
+proc-macro-crate = "1.2"
 
 
