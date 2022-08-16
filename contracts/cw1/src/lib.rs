@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError};
 
-use sylvia_derive::interface;
+use sylvia::interface;
 
 #[interface(module=msg)]
 pub trait Cw1 {

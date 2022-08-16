@@ -246,25 +246,12 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus 0.14.0",
  "cw-utils",
- "cw1 0.14.0",
- "cw2",
  "derivative",
  "schemars",
  "serde",
  "sylvia",
  "sylvia-derive",
  "thiserror",
-]
-
-[[package]]
-name = "cw1"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c69ee5119e5cea350b266b43c64a76ac96fc2047d93f44701ecd44907f70a3a3"
-dependencies = [
- "cosmwasm-std",
- "schemars",
- "serde",
 ]
 
 [[package]]
