@@ -20,7 +20,7 @@ pub trait Cw1 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_binary, to_binary};
+    use cosmwasm_std::{from_binary, from_slice, to_binary};
 
     use super::*;
 
@@ -46,5 +46,29 @@ mod tests {
         let serialized_msg: msg::QueryMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn execute_from_slice() {
+        let deserialized: msg::ExecMsg =
+            from_slice(br#"{"add_member": {"member": "some_member"}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            msg::ExecMsg::AddMember {
+                member: "some_member".to_owned()
+            }
+        );
+    }
+
+    #[test]
+    fn query_from_slice() {
+        let deserialized: msg::QueryMsg =
+            from_slice(br#"{"find_member": {"member": "some_member"}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            msg::QueryMsg::FindMember {
+                member: "some_member".to_owned()
+            }
+        );
     }
 }
