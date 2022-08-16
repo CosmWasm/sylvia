@@ -250,7 +250,6 @@ dependencies = [
  "schemars",
  "serde",
  "sylvia",
- "sylvia-derive",
  "thiserror",
 ]
 
