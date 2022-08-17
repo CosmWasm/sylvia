@@ -1,0 +1,15 @@
+[package]
+name = "cw1"
+version = "0.1.2"
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
+edition = "2021"
+description = "Coverage of cw1 sylvia message generation."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+[dependencies]
+cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+schemars = "0.8.1"
+serde = { version = "1", default-features = false, features = ["derive"] }
+sylvia = { version = "0.1.2", path = "../../sylvia" }
