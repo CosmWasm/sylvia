@@ -19,14 +19,17 @@ impl Cw1 for Cw1WhitelistContract {
     type Error = Error;
     fn add_member(
         &self,
-        _ctx: (
+        (deps, _env, _info): (
             cosmwasm_std::DepsMut,
             cosmwasm_std::Env,
             cosmwasm_std::MessageInfo,
         ),
-        _member: String,
+        member: String,
     ) -> Result<Response, Self::Error> {
-        todo!()
+        self.members
+            .save(deps.storage, deps.api.addr_validate(&member)?, &Empty {})?;
+
+        Ok(Response::new())
     }
 
     fn find_member(
@@ -36,7 +39,7 @@ impl Cw1 for Cw1WhitelistContract {
     ) -> Result<FindMemberResponse, Self::Error> {
         let is_present = self
             .members
-            .has(deps.storage, deps.api.addr_validate(member.as_str())?);
+            .has(deps.storage, deps.api.addr_validate(&member)?);
 
         Ok(FindMemberResponse { is_present })
     }
@@ -119,7 +122,6 @@ mod tests {
         assert!(!resp.is_present);
     }
 
-    #[ignore]
     #[test]
     fn add_member() {
         let contract = Cw1WhitelistContract::new();
