@@ -1,21 +1,21 @@
 use anyhow::Error;
-use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError};
+use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+use cw1::Cw1;
 use cw1::*;
-use cw1::{msg::ExecMsg, msg::QueryMsg, Cw1};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Map;
 use sylvia::contract;
 
-pub struct Cw1Whitelist {
-    members: Map<'static, Addr, u64>,
+pub struct Cw1WhitelistContract {
+    members: Map<'static, Addr, Empty>,
 }
 
-impl Default for Cw1Whitelist {
+impl Default for Cw1WhitelistContract {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Cw1 for Cw1Whitelist {
+impl Cw1 for Cw1WhitelistContract {
     type Error = Error;
     fn add_member(
         &self,
@@ -30,16 +30,20 @@ impl Cw1 for Cw1Whitelist {
     }
     fn find_member(
         &self,
-        _ctx: (cosmwasm_std::Deps, cosmwasm_std::Env),
-        _member: String,
-    ) -> Result<Response, Self::Error> {
-        todo!()
+        (deps, _env): (cosmwasm_std::Deps, cosmwasm_std::Env),
+        member: String,
+    ) -> Result<FindMemberResponse, Self::Error> {
+        let is_present = self
+            .members
+            .has(deps.storage, deps.api.addr_validate(member.as_str())?);
+
+        Ok(FindMemberResponse { is_present })
     }
 }
 
 #[contract(module=contract, error=Error)]
 #[messages(msg as Cw1)]
-impl Cw1Whitelist {
+impl Cw1WhitelistContract {
     pub fn new() -> Self {
         Self {
             members: Map::new("members"),
@@ -50,13 +54,38 @@ impl Cw1Whitelist {
     pub fn instantiate(
         &self,
         (deps, _env, _msg): (DepsMut, Env, MessageInfo),
-        members: Option<String>,
+        members: Vec<String>,
     ) -> Result<Response, Error> {
-        // if let Some(admin) = admin {
-        //     let admin = deps.api.addr_validate(&admin)?;
-        //     self.admin.save(deps.storage, &admin)?;
-        // }
+        for addr in members.into_iter() {
+            self.members
+                .save(deps.storage, deps.api.addr_validate(&addr)?, &Empty {})?;
+        }
 
         Ok(Response::new())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+
+    use super::*;
+
+    #[test]
+    fn instantiate() {
+        let contract = Cw1WhitelistContract::new();
+        let mut deps = mock_dependencies();
+        let members = vec!["alice".to_owned(), "brian".to_owned(), "carol".to_owned()];
+        let info = mock_info("anyone", &[]);
+
+        contract
+            .instantiate((deps.as_mut(), mock_env(), info), members)
+            .unwrap();
+
+        let resp = contract
+            .find_member((deps.as_ref(), mock_env()), "brian".to_owned())
+            .unwrap();
+
+        assert!(resp.is_present);
     }
 }
