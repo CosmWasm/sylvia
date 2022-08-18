@@ -28,6 +28,7 @@ impl Cw1 for Cw1WhitelistContract {
     ) -> Result<Response, Self::Error> {
         todo!()
     }
+
     fn find_member(
         &self,
         (deps, _env): (cosmwasm_std::Deps, cosmwasm_std::Env),
@@ -72,6 +73,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn instantiate_empty() {
+        let contract = Cw1WhitelistContract::new();
+        let mut deps = mock_dependencies();
+        let info = mock_info("anyone", &[]);
+
+        contract
+            .instantiate((deps.as_mut(), mock_env(), info), vec![])
+            .unwrap();
+    }
+
+    #[test]
     fn instantiate() {
         let contract = Cw1WhitelistContract::new();
         let mut deps = mock_dependencies();
@@ -105,5 +117,28 @@ mod tests {
             .unwrap();
 
         assert!(!resp.is_present);
+    }
+
+    #[ignore]
+    #[test]
+    fn add_member() {
+        let contract = Cw1WhitelistContract::new();
+        let mut deps = mock_dependencies();
+        let members = vec!["alice".to_owned(), "brian".to_owned(), "carol".to_owned()];
+        let info = mock_info("anyone", &[]);
+
+        contract
+            .instantiate((deps.as_mut(), mock_env(), info.clone()), members)
+            .unwrap();
+
+        contract
+            .add_member((deps.as_mut(), mock_env(), info), "denis".to_owned())
+            .unwrap();
+
+        let resp = contract
+            .find_member((deps.as_ref(), mock_env()), "denis".to_owned())
+            .unwrap();
+
+        assert!(resp.is_present);
     }
 }
