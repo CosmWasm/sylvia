@@ -87,5 +87,23 @@ mod tests {
             .unwrap();
 
         assert!(resp.is_present);
+
+        let resp = contract
+            .find_member((deps.as_ref(), mock_env()), "alice".to_owned())
+            .unwrap();
+
+        assert!(resp.is_present);
+
+        let resp = contract
+            .find_member((deps.as_ref(), mock_env()), "carol".to_owned())
+            .unwrap();
+
+        assert!(resp.is_present);
+
+        let resp = contract
+            .find_member((deps.as_ref(), mock_env()), "someone".to_owned())
+            .unwrap();
+
+        assert!(!resp.is_present);
     }
 }
