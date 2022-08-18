@@ -48,7 +48,7 @@ impl Cw1 for Cw1WhitelistContract {
 #[contract(module=contract, error=Error)]
 #[messages(msg as Cw1)]
 impl Cw1WhitelistContract {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             members: Map::new("members"),
         }
