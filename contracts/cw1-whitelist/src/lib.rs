@@ -3,9 +3,9 @@ mod multitest;
 
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
-    use anyhow::Error;
+    use anyhow::{bail, Error, Result as AnyResult};
     use cosmwasm_std::{
-        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+        entry_point, from_slice, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     };
 
     use crate::contract::{
@@ -38,5 +38,20 @@ pub mod entry_points {
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, Error> {
         CONTRACT.entry_query(deps, env, &msg)
+    }
+
+    #[entry_point]
+    pub fn sudo(_deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response> {
+        bail!("sudo not implemented for contract")
+    }
+
+    #[entry_point]
+    pub fn reply(_deps: DepsMut, _env: Env, _msg: Reply) -> AnyResult<Response> {
+        bail!("reply not implemented for contract")
+    }
+
+    #[entry_point]
+    pub fn migrate(_deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response> {
+        bail!("migrate not implemented for contract")
     }
 }
