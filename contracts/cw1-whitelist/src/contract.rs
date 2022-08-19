@@ -1,12 +1,10 @@
 use crate::error::ContractError;
-use cosmwasm_std::{from_slice, Addr, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response};
-use cw1::msg::{ExecMsg, QueryMsg};
+use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+
 use cw1::Cw1;
 use cw1::*;
 use cw_storage_plus::Map;
 use sylvia::contract;
-
-use self::contract::InstantiateMsg;
 
 pub struct Cw1WhitelistContract {
     members: Map<'static, Addr, Empty>,
@@ -69,10 +67,12 @@ impl Cw1WhitelistContract {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{
-        from_binary,
+        from_binary, from_slice,
         testing::{mock_dependencies, mock_env, mock_info},
         to_binary,
     };
+
+    use crate::contract::contract::InstantiateMsg;
 
     use super::*;
 

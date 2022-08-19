@@ -5,7 +5,7 @@ mod multitest;
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
     use cosmwasm_std::{
-        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     };
 
     use crate::{
