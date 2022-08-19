@@ -4,9 +4,17 @@ mod multitest;
 
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
-    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
+    use cosmwasm_std::{
+        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    };
 
-    use crate::{contract::Cw1WhitelistContract, error::ContractError};
+    use crate::{
+        contract::{
+            contract::{ExecMsg, InstantiateMsg, QueryMsg},
+            Cw1WhitelistContract,
+        },
+        error::ContractError,
+    };
 
     const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
 
@@ -17,7 +25,7 @@ pub mod entry_points {
         info: MessageInfo,
         msg: Binary,
     ) -> Result<Response, ContractError> {
-        CONTRACT.entry_instantiate(deps, env, info, &msg)
+        from_slice::<InstantiateMsg>(&msg)?.dispatch(&CONTRACT, (deps, env, info))
     }
 
     #[entry_point]
@@ -27,11 +35,11 @@ pub mod entry_points {
         info: MessageInfo,
         msg: Binary,
     ) -> Result<Response, ContractError> {
-        CONTRACT.entry_execute(deps, env, info, &msg)
+        from_slice::<ExecMsg>(&msg)?.dispatch(&CONTRACT, (deps, env, info))
     }
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, ContractError> {
-        CONTRACT.entry_query(deps, env, &msg)
+        from_slice::<QueryMsg>(&msg)?.dispatch(&CONTRACT, (deps, env))
     }
 }

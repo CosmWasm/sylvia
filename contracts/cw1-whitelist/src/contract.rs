@@ -64,38 +64,6 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
-
-    pub(crate) fn entry_instantiate(
-        &self,
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        msg: &[u8],
-    ) -> Result<Response, ContractError> {
-        let msg: InstantiateMsg = from_slice(msg)?;
-        msg.dispatch(self, (deps, env, info))
-    }
-
-    pub(crate) fn entry_execute(
-        &self,
-        deps: DepsMut,
-        env: Env,
-        info: MessageInfo,
-        msg: &[u8],
-    ) -> Result<Response, ContractError> {
-        let msg: ExecMsg = from_slice(msg)?;
-        msg.dispatch(self, (deps, env, info))
-    }
-
-    pub(crate) fn entry_query(
-        &self,
-        deps: Deps,
-        env: Env,
-        msg: &[u8],
-    ) -> Result<Binary, ContractError> {
-        let msg: QueryMsg = from_slice(msg)?;
-        msg.dispatch(self, (deps, env))
-    }
 }
 
 #[cfg(test)]

@@ -2,7 +2,9 @@
 mod test {
     use crate::contract::{contract::InstantiateMsg, Cw1WhitelistContract};
     use anyhow::{bail, Result as AnyResult};
-    use cosmwasm_std::{Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response};
+    use cosmwasm_std::{
+        from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
+    };
     use cw1::{
         msg::{ExecMsg, QueryMsg},
         FindMemberResponse,
@@ -17,7 +19,8 @@ mod test {
             info: MessageInfo,
             msg: Vec<u8>,
         ) -> AnyResult<Response<Empty>> {
-            self.entry_instantiate(deps, env, info, &msg)
+            from_slice::<InstantiateMsg>(&msg)?
+                .dispatch(self, (deps, env, info))
                 .map_err(Into::into)
         }
 
@@ -28,12 +31,15 @@ mod test {
             info: MessageInfo,
             msg: Vec<u8>,
         ) -> AnyResult<Response<Empty>> {
-            self.entry_execute(deps, env, info, &msg)
+            from_slice::<ExecMsg>(&msg)?
+                .dispatch(self, (deps, env, info))
                 .map_err(Into::into)
         }
 
         fn query(&self, deps: cosmwasm_std::Deps, env: Env, msg: Vec<u8>) -> AnyResult<Binary> {
-            self.entry_query(deps, env, &msg).map_err(Into::into)
+            from_slice::<QueryMsg>(&msg)?
+                .dispatch(self, (deps, env))
+                .map_err(Into::into)
         }
 
         fn sudo(&self, _deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response<Empty>> {
