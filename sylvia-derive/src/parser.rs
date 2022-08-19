@@ -99,7 +99,7 @@ impl Parse for Mapping {
 }
 
 /// Type of message to be generated
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum MsgType {
     Exec,
     Query,

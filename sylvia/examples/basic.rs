@@ -9,7 +9,7 @@ use sylvia::{contract, interface};
     sylvia::serde::Deserialize,
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
     sylvia::schemars::JsonSchema,
 )]
 pub struct Member {
@@ -22,7 +22,7 @@ pub struct Member {
     sylvia::serde::Deserialize,
     Clone,
     Debug,
-    PartialEq,
+    PartialEq, Eq,
     sylvia::schemars::JsonSchema,
 )]
 pub struct MemberResp {
