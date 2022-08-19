@@ -1,0 +1,23 @@
+[package]
+name = "cw1-whitelist"
+version = "0.1.2"
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
+edition = "2021"
+description = "Coverage of cw1-whitelist sylvia message generation."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+[dependencies]
+cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+schemars = "0.8.1"
+serde = { version = "1", default-features = false, features = ["derive"] }
+sylvia = { version = "0.1.2", path = "../../sylvia" }
+cw1 = { version = "0.1.2", path = "../cw1" }
+cw-storage-plus = "0.13.2"
+thiserror = { version = "1.0.23" }
+
+
+[dev-dependencies]
+anyhow = "1"
+cw-multi-test = "0.14.0"

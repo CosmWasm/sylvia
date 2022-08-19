@@ -1,7 +1,14 @@
 #![allow(dead_code)]
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError};
 
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use sylvia::interface;
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+pub struct FindMemberResponse {
+    pub is_present: bool,
+}
 
 #[interface(module=msg)]
 pub trait Cw1 {
@@ -15,7 +22,11 @@ pub trait Cw1 {
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn find_member(&self, ctx: (Deps, Env), member: String) -> Result<Response, Self::Error>;
+    fn find_member(
+        &self,
+        ctx: (Deps, Env),
+        member: String,
+    ) -> Result<FindMemberResponse, Self::Error>;
 }
 
 #[cfg(test)]
