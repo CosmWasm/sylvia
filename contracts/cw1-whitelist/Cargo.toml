@@ -16,5 +16,8 @@ sylvia = { version = "0.1.2", path = "../../sylvia" }
 cw1 = { version = "0.1.2", path = "../cw1" }
 cw-storage-plus = "0.13.2"
 thiserror = { version = "1.0.23" }
+
+
+[dev-dependencies]
 anyhow = "1"
 cw-multi-test = "0.14.0"
