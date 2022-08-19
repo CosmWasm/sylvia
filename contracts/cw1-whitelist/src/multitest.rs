@@ -45,3 +45,57 @@ impl Contract<Empty> for Cw1WhitelistContract {
         bail!("migrate not implemented for contract")
     }
 }
+
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::Addr;
+    use cw_multi_test::{AppBuilder, AppResponse, Executor};
+
+    use crate::contract::{contract::InstantiateMsg, Cw1WhitelistContract};
+    use cw1::{
+        msg::{ExecMsg, QueryMsg},
+        FindMemberResponse,
+    };
+
+    #[test]
+    fn entry_points() {
+        let mut app = AppBuilder::new().build(|_, _, _| ());
+        let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
+
+        let contract = app
+            .instantiate_contract(
+                contract_id,
+                Addr::unchecked("Owner"),
+                &InstantiateMsg {
+                    members: vec!["member".to_owned()],
+                },
+                &[],
+                "contract",
+                None,
+            )
+            .unwrap();
+
+        let resp: AppResponse = app
+            .execute_contract(
+                Addr::unchecked("owner"),
+                contract.clone(),
+                &ExecMsg::AddMember {
+                    member: "other_member".to_owned(),
+                },
+                &[],
+            )
+            .unwrap();
+
+        let resp: FindMemberResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract,
+                &QueryMsg::FindMember {
+                    member: "other_member".to_owned(),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(resp, FindMemberResponse { is_present: true });
+    }
+}

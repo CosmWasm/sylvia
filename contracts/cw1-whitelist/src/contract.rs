@@ -13,12 +13,6 @@ pub struct Cw1WhitelistContract {
     members: Map<'static, Addr, Empty>,
 }
 
-impl Default for Cw1WhitelistContract {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Cw1 for Cw1WhitelistContract {
     type Error = Error;
     fn add_member(
