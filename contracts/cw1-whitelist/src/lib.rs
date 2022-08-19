@@ -1,12 +1,12 @@
 mod contract;
+mod error;
 mod multitest;
 
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
-    use anyhow::{bail, Error, Result as AnyResult};
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
 
-    use crate::contract::Cw1WhitelistContract;
+    use crate::{contract::Cw1WhitelistContract, error::ContractError};
 
     const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
 
@@ -16,7 +16,7 @@ pub mod entry_points {
         env: Env,
         info: MessageInfo,
         msg: Binary,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response, ContractError> {
         CONTRACT.entry_instantiate(deps, env, info, &msg)
     }
 
@@ -26,27 +26,12 @@ pub mod entry_points {
         env: Env,
         info: MessageInfo,
         msg: Binary,
-    ) -> anyhow::Result<Response, anyhow::Error> {
+    ) -> Result<Response, ContractError> {
         CONTRACT.entry_execute(deps, env, info, &msg)
     }
 
     #[entry_point]
-    pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, Error> {
+    pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, ContractError> {
         CONTRACT.entry_query(deps, env, &msg)
-    }
-
-    #[entry_point]
-    pub fn sudo(_deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response> {
-        bail!("sudo not implemented for contract")
-    }
-
-    #[entry_point]
-    pub fn reply(_deps: DepsMut, _env: Env, _msg: Reply) -> AnyResult<Response> {
-        bail!("reply not implemented for contract")
-    }
-
-    #[entry_point]
-    pub fn migrate(_deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response> {
-        bail!("migrate not implemented for contract")
     }
 }

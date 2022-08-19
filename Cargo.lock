@@ -241,6 +241,7 @@ dependencies = [
  "schemars",
  "serde",
  "sylvia",
+ "thiserror",
 ]
 
 [[package]]

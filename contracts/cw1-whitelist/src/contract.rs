@@ -1,4 +1,4 @@
-use anyhow::Error;
+use crate::error::ContractError;
 use cosmwasm_std::{from_slice, Addr, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 use cw1::msg::{ExecMsg, QueryMsg};
 use cw1::Cw1;
@@ -13,7 +13,7 @@ pub struct Cw1WhitelistContract {
 }
 
 impl Cw1 for Cw1WhitelistContract {
-    type Error = Error;
+    type Error = ContractError;
     fn add_member(
         &self,
         (deps, _env, _info): (
@@ -42,7 +42,7 @@ impl Cw1 for Cw1WhitelistContract {
     }
 }
 
-#[contract(module=contract, error=Error)]
+#[contract(module=contract, error=ContractError)]
 #[messages(msg as Cw1)]
 impl Cw1WhitelistContract {
     pub const fn new() -> Self {
@@ -56,7 +56,7 @@ impl Cw1WhitelistContract {
         &self,
         (deps, _env, _msg): (DepsMut, Env, MessageInfo),
         members: Vec<String>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response, ContractError> {
         for addr in members.into_iter() {
             self.members
                 .save(deps.storage, deps.api.addr_validate(&addr)?, &Empty {})?;
@@ -71,7 +71,7 @@ impl Cw1WhitelistContract {
         env: Env,
         info: MessageInfo,
         msg: &[u8],
-    ) -> Result<Response, Error> {
+    ) -> Result<Response, ContractError> {
         let msg: InstantiateMsg = from_slice(msg)?;
         msg.dispatch(self, (deps, env, info))
     }
@@ -82,12 +82,17 @@ impl Cw1WhitelistContract {
         env: Env,
         info: MessageInfo,
         msg: &[u8],
-    ) -> Result<Response, Error> {
+    ) -> Result<Response, ContractError> {
         let msg: ExecMsg = from_slice(msg)?;
         msg.dispatch(self, (deps, env, info))
     }
 
-    pub(crate) fn entry_query(&self, deps: Deps, env: Env, msg: &[u8]) -> Result<Binary, Error> {
+    pub(crate) fn entry_query(
+        &self,
+        deps: Deps,
+        env: Env,
+        msg: &[u8],
+    ) -> Result<Binary, ContractError> {
         let msg: QueryMsg = from_slice(msg)?;
         msg.dispatch(self, (deps, env))
     }
