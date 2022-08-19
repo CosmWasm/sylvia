@@ -96,9 +96,37 @@ impl Cw1WhitelistContract {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{
+        from_binary,
+        testing::{mock_dependencies, mock_env, mock_info},
+        to_binary,
+    };
 
     use super::*;
+
+    #[test]
+    fn binary_serialize_instantiate() {
+        let original_msg = InstantiateMsg {
+            members: vec!["member1".to_owned(), "member2".to_owned()],
+        };
+
+        let serialized_msg = to_binary(&original_msg).unwrap();
+        let serialized_msg: InstantiateMsg = from_binary(&serialized_msg).unwrap();
+
+        assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn slice_deserialize_instantiate() {
+        let deserialized: InstantiateMsg =
+            from_slice(br#"{"members": ["member", "some_member"]}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            InstantiateMsg {
+                members: vec!["member".to_owned(), "some_member".to_owned()]
+            }
+        );
+    }
 
     #[test]
     fn instantiate_empty() {
