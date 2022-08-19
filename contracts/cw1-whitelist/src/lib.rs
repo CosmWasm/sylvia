@@ -1,4 +1,5 @@
 mod contract;
+mod multitest;
 
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
@@ -21,8 +22,7 @@ pub mod entry_points {
         info: MessageInfo,
         msg: Binary,
     ) -> Result<Response, Error> {
-        let msg: InstantiateMsg = from_slice(&msg)?;
-        msg.dispatch(&CONTRACT, (deps, env, info))
+        CONTRACT.entry_instantiate(deps, env, info, &msg)
     }
 
     #[entry_point]
@@ -31,14 +31,12 @@ pub mod entry_points {
         env: Env,
         info: MessageInfo,
         msg: Binary,
-    ) -> Result<Response, Error> {
-        let msg: ExecMsg = from_slice(&msg)?;
-        msg.dispatch(&CONTRACT, (deps, env, info))
+    ) -> anyhow::Result<Response, anyhow::Error> {
+        CONTRACT.entry_execute(deps, env, info, &msg)
     }
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, Error> {
-        let msg: QueryMsg = from_slice(&msg)?;
-        msg.dispatch(&CONTRACT, (deps, env))
+        CONTRACT.entry_query(deps, env, &msg)
     }
 }

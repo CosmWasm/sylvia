@@ -1,9 +1,13 @@
 use anyhow::Error;
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{from_slice, Addr, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response};
+use cw1::msg::{ExecMsg, QueryMsg};
 use cw1::Cw1;
 use cw1::*;
+use cw_multi_test::Contract;
 use cw_storage_plus::Map;
 use sylvia::contract;
+
+use self::contract::InstantiateMsg;
 
 pub struct Cw1WhitelistContract {
     members: Map<'static, Addr, Empty>,
@@ -66,6 +70,33 @@ impl Cw1WhitelistContract {
         }
 
         Ok(Response::new())
+    }
+
+    pub(crate) fn entry_instantiate(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: &[u8],
+    ) -> Result<Response, Error> {
+        let msg: InstantiateMsg = from_slice(msg)?;
+        msg.dispatch(self, (deps, env, info))
+    }
+
+    pub(crate) fn entry_execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: &[u8],
+    ) -> Result<Response, Error> {
+        let msg: ExecMsg = from_slice(&msg)?;
+        msg.dispatch(self, (deps, env, info))
+    }
+
+    pub(crate) fn entry_query(&self, deps: Deps, env: Env, msg: &[u8]) -> Result<Binary, Error> {
+        let msg: QueryMsg = from_slice(&msg)?;
+        msg.dispatch(self, (deps, env))
     }
 }
 
