@@ -4,14 +4,9 @@ mod multitest;
 #[cfg(not(feature = "library"))]
 pub mod entry_points {
     use anyhow::{bail, Error, Result as AnyResult};
-    use cosmwasm_std::{
-        entry_point, from_slice, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response,
-    };
+    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response};
 
-    use crate::contract::{
-        contract::{ExecMsg, InstantiateMsg, QueryMsg},
-        Cw1WhitelistContract,
-    };
+    use crate::contract::Cw1WhitelistContract;
 
     const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
 

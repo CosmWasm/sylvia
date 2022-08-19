@@ -3,7 +3,6 @@ use cosmwasm_std::{from_slice, Addr, Binary, Deps, DepsMut, Empty, Env, MessageI
 use cw1::msg::{ExecMsg, QueryMsg};
 use cw1::Cw1;
 use cw1::*;
-use cw_multi_test::Contract;
 use cw_storage_plus::Map;
 use sylvia::contract;
 
@@ -84,12 +83,12 @@ impl Cw1WhitelistContract {
         info: MessageInfo,
         msg: &[u8],
     ) -> Result<Response, Error> {
-        let msg: ExecMsg = from_slice(&msg)?;
+        let msg: ExecMsg = from_slice(msg)?;
         msg.dispatch(self, (deps, env, info))
     }
 
     pub(crate) fn entry_query(&self, deps: Deps, env: Env, msg: &[u8]) -> Result<Binary, Error> {
-        let msg: QueryMsg = from_slice(&msg)?;
+        let msg: QueryMsg = from_slice(msg)?;
         msg.dispatch(self, (deps, env))
     }
 }

@@ -1,8 +1,6 @@
 use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response};
 use cw_multi_test::Contract;
-use schemars::JsonSchema;
-use serde::de::DeserializeOwned;
 
 use crate::contract::Cw1WhitelistContract;
 
@@ -49,7 +47,7 @@ impl Contract<Empty> for Cw1WhitelistContract {
 #[cfg(test)]
 mod test {
     use cosmwasm_std::Addr;
-    use cw_multi_test::{AppBuilder, AppResponse, Executor};
+    use cw_multi_test::{AppBuilder, Executor};
 
     use crate::contract::{contract::InstantiateMsg, Cw1WhitelistContract};
     use cw1::{
@@ -75,16 +73,15 @@ mod test {
             )
             .unwrap();
 
-        let resp: AppResponse = app
-            .execute_contract(
-                Addr::unchecked("owner"),
-                contract.clone(),
-                &ExecMsg::AddMember {
-                    member: "other_member".to_owned(),
-                },
-                &[],
-            )
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("owner"),
+            contract.clone(),
+            &ExecMsg::AddMember {
+                member: "other_member".to_owned(),
+            },
+            &[],
+        )
+        .unwrap();
 
         let resp: FindMemberResponse = app
             .wrap()
