@@ -10,7 +10,7 @@ pub struct FindMemberResponse {
     pub is_present: bool,
 }
 
-#[interface(module=msg)]
+#[interface]
 pub trait Cw1 {
     type Error: From<StdError>;
 
@@ -37,35 +37,35 @@ mod tests {
 
     #[test]
     fn execute() {
-        let original_msg = msg::ExecMsg::AddMember {
+        let original_msg = ExecMsg::AddMember {
             member: "member_name".to_owned(),
         };
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: msg::ExecMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: ExecMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn query() {
-        let original_msg = msg::QueryMsg::FindMember {
+        let original_msg = QueryMsg::FindMember {
             member: "member_name".to_owned(),
         };
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: msg::QueryMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn execute_from_slice() {
-        let deserialized: msg::ExecMsg =
+        let deserialized: ExecMsg =
             from_slice(br#"{"add_member": {"member": "some_member"}}"#).unwrap();
         assert_eq!(
             deserialized,
-            msg::ExecMsg::AddMember {
+            ExecMsg::AddMember {
                 member: "some_member".to_owned()
             }
         );
@@ -73,11 +73,11 @@ mod tests {
 
     #[test]
     fn query_from_slice() {
-        let deserialized: msg::QueryMsg =
+        let deserialized: QueryMsg =
             from_slice(br#"{"find_member": {"member": "some_member"}}"#).unwrap();
         assert_eq!(
             deserialized,
-            msg::QueryMsg::FindMember {
+            QueryMsg::FindMember {
                 member: "some_member".to_owned()
             }
         );

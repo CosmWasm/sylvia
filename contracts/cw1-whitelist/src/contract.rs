@@ -41,7 +41,7 @@ impl Cw1 for Cw1WhitelistContract {
 }
 
 #[contract(module=contract, error=ContractError)]
-#[messages(msg as Cw1)]
+#[messages(cw1 as Cw1)]
 impl Cw1WhitelistContract {
     pub const fn new() -> Self {
         Self {
