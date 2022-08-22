@@ -40,8 +40,8 @@ impl Cw1 for Cw1WhitelistContract {
     }
 }
 
-#[contract(module=contract, error=ContractError)]
-#[messages(msg as Cw1)]
+#[contract(error=ContractError)]
+#[messages(cw1 as Cw1)]
 impl Cw1WhitelistContract {
     pub const fn new() -> Self {
         Self {
@@ -72,7 +72,7 @@ mod tests {
         to_binary,
     };
 
-    use crate::contract::contract::InstantiateMsg;
+    use crate::contract::InstantiateMsg;
 
     use super::*;
 

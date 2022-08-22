@@ -1,14 +1,11 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::{contract::InstantiateMsg, Cw1WhitelistContract};
+    use crate::contract::{InstantiateMsg, Cw1WhitelistContract};
     use anyhow::{bail, Result as AnyResult};
     use cosmwasm_std::{
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     };
-    use cw1::{
-        msg::{ExecMsg, QueryMsg},
-        FindMemberResponse,
-    };
+    use cw1::{ExecMsg, FindMemberResponse, QueryMsg};
     use cw_multi_test::{AppBuilder, Contract, Executor};
 
     impl Contract<Empty> for Cw1WhitelistContract {
