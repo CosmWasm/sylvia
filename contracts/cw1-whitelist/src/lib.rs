@@ -9,10 +9,7 @@ pub mod entry_points {
     };
 
     use crate::{
-        contract::{
-            contract::{ExecMsg, InstantiateMsg, QueryMsg},
-            Cw1WhitelistContract,
-        },
+        contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg},
         error::ContractError,
     };
 
