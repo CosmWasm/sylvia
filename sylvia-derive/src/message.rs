@@ -291,7 +291,10 @@ impl<'a> EnumMessage<'a> {
         let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
+        let msgs: Vec<String> = variants.iter().map(|var| var.name.to_string()).collect();
+        let msgs_cnt = msgs.len();
         let variants = variants.iter().map(MsgVariant::emit);
+
         let where_clause = if !wheres.is_empty() {
             quote! {
                 where #(#wheres,)*
@@ -331,6 +334,9 @@ impl<'a> EnumMessage<'a> {
                     match self {
                         #(#match_arms,)*
                     }
+                }
+                const fn messages() -> [&'static str; #msgs_cnt] {
+                    [#(#msgs,)*]
                 }
             }
         }
@@ -591,7 +597,6 @@ impl<'a> GlueMessage<'a> {
                         #(#dispatch_arms,)*
                     }
                 }
-
             }
 
             impl<'de> serde::Deserialize<'de> for #name {
