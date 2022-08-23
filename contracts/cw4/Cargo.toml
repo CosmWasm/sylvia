@@ -1,9 +1,9 @@
 [package]
-name = "cw1"
+name = "cw4"
 version = "0.1.2"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
-description = "Coverage of cw1 sylvia message generation."
+description = "Coverage of cw4 sylvia message generation."
 license = "Apache-2.0"
 repository = "https://github.com/CosmWasm/sylvia"
 homepage = "https://cosmwasm.com"
