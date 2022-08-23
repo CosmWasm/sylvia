@@ -257,6 +257,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw4"
+version = "0.1.2"
+dependencies = [
+ "cosmwasm-std",
+ "schemars",
+ "serde",
+ "sylvia",
+]
+
+[[package]]
 name = "der"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

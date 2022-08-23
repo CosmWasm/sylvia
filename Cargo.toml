@@ -1,2 +1,2 @@
 [workspace]
-members = ["sylvia", "sylvia-derive", "contracts/cw1", "contracts/cw1-whitelist"]
+members = ["sylvia", "sylvia-derive", "contracts/cw1", "contracts/cw1-whitelist", "contracts/cw4"]
