@@ -21,6 +21,13 @@ pub trait Cw1 {
         member: String,
     ) -> Result<Response, Self::Error>;
 
+    #[msg(exec)]
+    fn remove_member(
+        &self,
+        ctx: (DepsMut, Env, MessageInfo),
+        member: String,
+    ) -> Result<Response, Self::Error>;
+
     #[msg(query)]
     fn find_member(
         &self,
@@ -90,6 +97,6 @@ mod tests {
 
     #[test]
     fn exec_msgs() {
-        assert_eq!(ExecMsg::messages(), ["AddMember"]);
+        assert_eq!(ExecMsg::messages(), ["AddMember", "RemoveMember"]);
     }
 }
