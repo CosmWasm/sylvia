@@ -82,4 +82,14 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn query_msgs() {
+        assert_eq!(QueryMsg::messages(), ["FindMember"]);
+    }
+
+    #[test]
+    fn exec_msgs() {
+        assert_eq!(ExecMsg::messages(), ["AddMember"]);
+    }
 }

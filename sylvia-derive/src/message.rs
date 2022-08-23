@@ -335,7 +335,7 @@ impl<'a> EnumMessage<'a> {
                         #(#match_arms,)*
                     }
                 }
-                const fn messages() -> [&'static str; #msgs_cnt] {
+                pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
             }
