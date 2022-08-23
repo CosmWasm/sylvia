@@ -27,21 +27,6 @@ impl Cw1 for Cw1WhitelistContract {
         Ok(Response::new())
     }
 
-    fn remove_member(
-        &self,
-        (deps, _env, _info): (
-            cosmwasm_std::DepsMut,
-            cosmwasm_std::Env,
-            cosmwasm_std::MessageInfo,
-        ),
-        member: String,
-    ) -> Result<Response, Self::Error> {
-        self.members
-            .remove(deps.storage, deps.api.addr_validate(&member)?);
-
-        Ok(Response::new())
-    }
-
     fn find_member(
         &self,
         (deps, _env): (cosmwasm_std::Deps, cosmwasm_std::Env),
@@ -182,27 +167,5 @@ mod tests {
             .unwrap();
 
         assert!(resp.is_present);
-    }
-
-    #[test]
-    fn remove_member() {
-        let contract = Cw1WhitelistContract::new();
-        let mut deps = mock_dependencies();
-        let members = vec!["alice".to_owned(), "brian".to_owned(), "carol".to_owned()];
-        let info = mock_info("anyone", &[]);
-
-        contract
-            .instantiate((deps.as_mut(), mock_env(), info.clone()), members)
-            .unwrap();
-
-        contract
-            .remove_member((deps.as_mut(), mock_env(), info), "alice".to_owned())
-            .unwrap();
-
-        let resp = contract
-            .find_member((deps.as_ref(), mock_env()), "alice".to_owned())
-            .unwrap();
-
-        assert!(!resp.is_present);
     }
 }
