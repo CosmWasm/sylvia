@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::{InstantiateMsg, Cw1WhitelistContract};
+    use crate::contract::{Cw1WhitelistContract, InstantiateMsg};
     use anyhow::{bail, Result as AnyResult};
     use cosmwasm_std::{
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
