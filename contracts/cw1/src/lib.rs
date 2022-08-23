@@ -85,11 +85,11 @@ mod tests {
 
     #[test]
     fn query_msgs() {
-        assert_eq!(QueryMsg::messages(), ["FindMember"]);
+        assert_eq!(QueryMsg::messages(), ["find_member"]);
     }
 
     #[test]
     fn exec_msgs() {
-        assert_eq!(ExecMsg::messages(), ["AddMember"]);
+        assert_eq!(ExecMsg::messages(), ["add_member"]);
     }
 }
