@@ -405,7 +405,7 @@ impl<'a> ImplEnumMessage<'a> {
             name,
             variants,
             msg_ty,
-            args,
+            args: _,
             contract,
             error,
         } = self;
@@ -433,7 +433,6 @@ impl<'a> ImplEnumMessage<'a> {
 
             impl #name {
                 pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
-                    // todo!()
                     use #name::*;
 
                     match self {
@@ -729,11 +728,22 @@ impl<'a> GlueMessage<'a> {
             quote! { #variant(#module :: #name<#(#generics,)*>) }
         });
 
+        let impl_msg_name = match msg_ty {
+            MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
+            MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
+            MsgType::Instantiate => todo!(),
+        };
+        let impl_msg_name = quote! {#impl_msg_name};
+
+        let impl_variant = quote! { # };
+
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
 
             quote! { #name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
+        let impl_dispatch_arm =
+            quote! {#contract :: ImplExecMsg(msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -764,6 +774,7 @@ impl<'a> GlueMessage<'a> {
             #[serde(rename_all="snake_case")]
             pub enum #name {
                 #(#variants,)*
+                #impl_msg_name
             }
 
             impl #name {
@@ -774,6 +785,7 @@ impl<'a> GlueMessage<'a> {
                 ) -> #ret_type {
                     match self {
                         #(#dispatch_arms,)*
+                        // #(#impl_dispatch_arm,)*
                     }
                 }
             }
