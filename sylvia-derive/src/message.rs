@@ -11,8 +11,8 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
-    ReturnType, Signature, TraitItem, TraitItemMethod, Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericParam, Ident, ImplItem, ImplItemMethod, ItemImpl, ItemTrait, Pat,
+    PatType, ReturnType, Signature, TraitItem, TraitItemMethod, Type, WhereClause, WherePredicate,
 };
 
 fn filter_wheres<'a>(
@@ -340,6 +340,218 @@ impl<'a> EnumMessage<'a> {
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
+            }
+        }
+    }
+}
+
+/// Representation of single enum message
+pub struct ImplEnumMessage<'a> {
+    name: &'a Ident,
+    // trait_name: &'a Ident,
+    variants: Vec<ImplMsgVariant<'a>>,
+    generics: Vec<&'a GenericParam>,
+    unused_generics: Vec<&'a GenericParam>,
+    all_generics: &'a [&'a GenericParam],
+    wheres: Vec<&'a WherePredicate>,
+    full_where: Option<&'a WhereClause>,
+    msg_ty: MsgType,
+    args: &'a InterfaceArgs,
+}
+
+impl<'a> ImplEnumMessage<'a> {
+    pub fn new(
+        name: &'a Ident,
+        source: &'a ItemImpl,
+        ty: MsgType,
+        generics: &'a [&'a GenericParam],
+        args: &'a InterfaceArgs,
+    ) -> Self {
+        let mut generics_checker = CheckGenerics::new(generics);
+        let variants: Vec<_> = source
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                ImplItem::Method(method) => {
+                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                        Ok(attr) => attr,
+                        Err(err) => {
+                            emit_error!(method.span(), err);
+                            return None;
+                        }
+                    };
+
+                    if attr == ty {
+                        Some(ImplMsgVariant::new(method, &mut generics_checker))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+
+        let (used_generics, unused_generics) = generics_checker.used_unused();
+        let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
+
+        Self {
+            name,
+            // trait_name,
+            variants,
+            generics: used_generics,
+            unused_generics,
+            all_generics: generics,
+            wheres,
+            full_where: source.generics.where_clause.as_ref(),
+            msg_ty: ty,
+            args,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+
+        let Self {
+            name,
+            // trait_name,
+            variants,
+            generics,
+            unused_generics,
+            all_generics,
+            wheres,
+            full_where,
+            msg_ty,
+            args,
+        } = self;
+
+        let match_arms = variants
+            .iter()
+            .map(|variant| variant.emit_dispatch_leg(*msg_ty));
+        let msgs: Vec<String> = variants
+            .iter()
+            .map(|var| var.name.to_string().to_case(Case::Snake))
+            .collect();
+        let msgs_cnt = msgs.len();
+        let variants = variants.iter().map(ImplMsgVariant::emit);
+        let where_clause = if !wheres.is_empty() {
+            quote! {
+                where #(#wheres,)*
+            }
+        } else {
+            quote! {}
+        };
+
+        let ctx_type = msg_ty.emit_ctx_type();
+        let dispatch_type = msg_ty.emit_result_type(&args.msg_type, &parse_quote!(C::Error));
+
+        let all_generics = if all_generics.is_empty() {
+            quote! {}
+        } else {
+            quote! { <#(#all_generics,)*> }
+        };
+
+        let generics = if generics.is_empty() {
+            quote! {}
+        } else {
+            quote! { <#(#generics,)*> }
+        };
+
+        let impl_name = "tiriririi";
+        quote! {
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #[serde(rename_all="snake_case")]
+            pub enum #name #generics #where_clause {
+                #(#variants,)*
+            }
+
+            impl #generics #name #generics #where_clause {
+                pub fn dispatch<C: #impl_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
+                    -> #dispatch_type #full_where
+                {
+                    use #name::*;
+
+                    match self {
+                        #(#match_arms,)*
+                    }
+                }
+                pub const fn messages() -> [&'static str; #msgs_cnt] {
+                    [#(#msgs,)*]
+                }
+            }
+        }
+    }
+}
+
+/// Representation of whole message variant
+pub struct ImplMsgVariant<'a> {
+    name: Ident,
+    function_name: &'a Ident,
+    // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
+    // `MsgField<'a>`
+    fields: Vec<MsgField<'a>>,
+}
+
+impl<'a> ImplMsgVariant<'a> {
+    /// Creates new message variant from trait method
+    pub fn new(
+        method: &'a ImplItemMethod,
+        generics_checker: &mut CheckGenerics,
+    ) -> ImplMsgVariant<'a> {
+        let function_name = &method.sig.ident;
+        let name = Ident::new(
+            &function_name.to_string().to_case(Case::UpperCamel),
+            function_name.span(),
+        );
+        let fields = process_fields(&method.sig, generics_checker);
+
+        Self {
+            name,
+            function_name,
+            fields,
+        }
+    }
+
+    /// Emits message variant
+    pub fn emit(&self) -> TokenStream {
+        let Self { name, fields, .. } = self;
+        let fields = fields.iter().map(MsgField::emit);
+
+        quote! {
+            #name {
+                #(#fields,)*
+            }
+        }
+    }
+
+    /// Emits match leg dispatching against this variant. Assumes enum variants are imported into the
+    /// scope. Dispatching is performed by calling the function this variant is build from on the
+    /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
+    pub fn emit_dispatch_leg(&self, msg_attr: MsgType) -> TokenStream {
+        use MsgType::*;
+
+        let Self {
+            name,
+            fields,
+            function_name,
+        } = self;
+        let args = fields.iter().map(|field| field.name);
+        let fields = fields.iter().map(|field| field.name);
+
+        match msg_attr {
+            Exec => quote! {
+                #name {
+                    #(#fields,)*
+                } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)
+            },
+            Query => quote! {
+                #name {
+                    #(#fields,)*
+                } => cosmwasm_std::to_binary(&contract.#function_name(ctx.into(), #(#args),*)?).map_err(Into::into)
+            },
+            Instantiate => {
+                emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
+                quote! {}
             }
         }
     }
