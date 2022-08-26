@@ -141,15 +141,7 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ImplEnumMessage::new(
-            name,
-            self.item,
-            msg_ty,
-            &self.generics,
-            self.attributes,
-            &self.attributes.error,
-        )
-        .emit()
+        ImplEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {

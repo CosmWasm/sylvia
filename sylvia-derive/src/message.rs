@@ -362,7 +362,6 @@ impl<'a> ImplEnumMessage<'a> {
         ty: MsgType,
         generics: &'a [&'a GenericParam],
         args: &'a ContractArgs,
-        error: &'a Type,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
         let variants: Vec<_> = source
@@ -395,7 +394,7 @@ impl<'a> ImplEnumMessage<'a> {
             msg_ty: ty,
             args,
             contract: &source.self_ty,
-            error,
+            error: &args.error,
         }
     }
 
