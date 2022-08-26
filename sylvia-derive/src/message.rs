@@ -733,17 +733,14 @@ impl<'a> GlueMessage<'a> {
             MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
             MsgType::Instantiate => todo!(),
         };
-        let impl_msg_name = quote! {#impl_msg_name};
-
-        let impl_variant = quote! { # };
+        let impl_msg_name = quote! {#contract ( #impl_msg_name)};
 
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
 
             quote! { #name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
-        let impl_dispatch_arm =
-            quote! {#contract :: ImplExecMsg(msg) =>msg.dispatch(contract, ctx)};
+        let impl_dispatch_arm = quote! {#name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -785,7 +782,7 @@ impl<'a> GlueMessage<'a> {
                 ) -> #ret_type {
                     match self {
                         #(#dispatch_arms,)*
-                        // #(#impl_dispatch_arm,)*
+                        #impl_dispatch_arm
                     }
                 }
             }
