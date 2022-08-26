@@ -410,7 +410,7 @@ impl<'a> ImplEnumMessage<'a> {
             error,
         } = self;
 
-        let _match_arms = variants
+        let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
         let msgs: Vec<String> = variants
@@ -422,6 +422,7 @@ impl<'a> ImplEnumMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type();
         let contract = StripGenerics.fold_type((*contract).clone());
+        let ret_type = msg_ty.emit_result_type(&None, error);
 
         quote! {
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
@@ -431,13 +432,13 @@ impl<'a> ImplEnumMessage<'a> {
             }
 
             impl #name {
-                pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #error {
-                    todo!()
-                    // use #name::*;
+                pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
+                    // todo!()
+                    use #name::*;
 
-                    // match self {
-                    //     #(#match_arms,)*
-                    // }
+                    match self {
+                        #(#match_arms,)*
+                    }
                 }
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
