@@ -118,6 +118,10 @@ impl<'a> ImplInput<'a> {
         quote! {
             #instantiate
 
+            // #exec_impl
+
+            // #query_impl
+
             #exec
 
             #query

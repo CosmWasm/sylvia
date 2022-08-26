@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response, Deps};
 
 use cw1::Cw1;
 use cw1::*;
@@ -61,6 +61,21 @@ impl Cw1WhitelistContract {
         }
 
         Ok(Response::new())
+    }
+    #[msg(exec)]
+    fn remove_member(
+        &self,
+        (deps, _env, _msg): (DepsMut, Env, MessageInfo),
+        other_name: String,
+    ) -> Result<Response, ContractError> {
+        self.members
+            .remove(deps.storage, deps.api.addr_validate(&other_name)?);
+
+        Ok(Response::new())
+    }
+    #[msg(query)]
+    fn some_query(&self, ctx: (Deps, Env), _: String) -> Result<FindMemberResponse, ContractError> {
+        todo!()
     }
 }
 
