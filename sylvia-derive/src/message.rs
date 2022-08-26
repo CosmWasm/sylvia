@@ -348,13 +348,7 @@ impl<'a> EnumMessage<'a> {
 /// Representation of single enum message
 pub struct ImplEnumMessage<'a> {
     name: &'a Ident,
-    // trait_name: &'a Ident,
     variants: Vec<ImplMsgVariant<'a>>,
-    generics: Vec<&'a GenericParam>,
-    unused_generics: Vec<&'a GenericParam>,
-    all_generics: &'a [&'a GenericParam],
-    wheres: Vec<&'a WherePredicate>,
-    full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
     args: &'a ContractArgs,
     contract: &'a Type,
@@ -395,18 +389,9 @@ impl<'a> ImplEnumMessage<'a> {
             })
             .collect();
 
-        let (used_generics, unused_generics) = generics_checker.used_unused();
-        let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
-
         Self {
             name,
-            // trait_name,
             variants,
-            generics: used_generics,
-            unused_generics,
-            all_generics: generics,
-            wheres,
-            full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
             args,
             contract: &source.self_ty,
@@ -419,20 +404,14 @@ impl<'a> ImplEnumMessage<'a> {
 
         let Self {
             name,
-            // trait_name,
             variants,
-            generics,
-            unused_generics,
-            all_generics,
-            wheres,
-            full_where,
             msg_ty,
             args,
             contract,
             error,
         } = self;
 
-        let match_arms = variants
+        let _match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
         let msgs: Vec<String> = variants
@@ -441,27 +420,8 @@ impl<'a> ImplEnumMessage<'a> {
             .collect();
         let msgs_cnt = msgs.len();
         let variants = variants.iter().map(ImplMsgVariant::emit);
-        // let where_clause = if !wheres.is_empty() {
-        //     quote! {
-        //         where #(#wheres,)*
-        //     }
-        // } else {
-        //     quote! {}
-        // };
 
         let ctx_type = msg_ty.emit_ctx_type();
-
-        // let all_generics = if all_generics.is_empty() {
-        //     quote! {}
-        // } else {
-        //     quote! { <#(#all_generics,)*> }
-        // };
-
-        // let generics = if generics.is_empty() {
-        //     quote! {}
-        // } else {
-        //     quote! { <#(#generics,)*> }
-        // };
         let contract = StripGenerics.fold_type((*contract).clone());
 
         quote! {
@@ -480,10 +440,6 @@ impl<'a> ImplEnumMessage<'a> {
                     //     #(#match_arms,)*
                     // }
                 }
-                // pub fn dispatch<C: #name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
-                //     -> #dispatch_type #full_where
-                // {
-                // }
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }

@@ -62,6 +62,7 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
+    #[allow(dead_code)]
     #[msg(exec)]
     fn remove_member(
         &self,
@@ -73,10 +74,11 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
+    #[allow(dead_code)]
     #[msg(query)]
     fn some_query(
         &self,
-        ctx: (Deps, Env),
+        _ctx: (Deps, Env),
         _ms: String,
     ) -> Result<FindMemberResponse, ContractError> {
         todo!()
