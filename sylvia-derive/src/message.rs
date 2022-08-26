@@ -1,6 +1,6 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
-use crate::parser::{ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
+use crate::parser::{ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
 use crate::strip_generics::StripGenerics;
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
@@ -356,7 +356,9 @@ pub struct ImplEnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    args: &'a InterfaceArgs,
+    args: &'a ContractArgs,
+    contract: &'a Type,
+    error: &'a Type,
 }
 
 impl<'a> ImplEnumMessage<'a> {
@@ -365,7 +367,8 @@ impl<'a> ImplEnumMessage<'a> {
         source: &'a ItemImpl,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
-        args: &'a InterfaceArgs,
+        args: &'a ContractArgs,
+        error: &'a Type,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
         let variants: Vec<_> = source
@@ -406,6 +409,8 @@ impl<'a> ImplEnumMessage<'a> {
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
             args,
+            contract: &source.self_ty,
+            error,
         }
     }
 
@@ -423,6 +428,8 @@ impl<'a> ImplEnumMessage<'a> {
             full_where,
             msg_ty,
             args,
+            contract,
+            error,
         } = self;
 
         let match_arms = variants
@@ -434,47 +441,49 @@ impl<'a> ImplEnumMessage<'a> {
             .collect();
         let msgs_cnt = msgs.len();
         let variants = variants.iter().map(ImplMsgVariant::emit);
-        let where_clause = if !wheres.is_empty() {
-            quote! {
-                where #(#wheres,)*
-            }
-        } else {
-            quote! {}
-        };
+        // let where_clause = if !wheres.is_empty() {
+        //     quote! {
+        //         where #(#wheres,)*
+        //     }
+        // } else {
+        //     quote! {}
+        // };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let dispatch_type = msg_ty.emit_result_type(&args.msg_type, &parse_quote!(C::Error));
 
-        let all_generics = if all_generics.is_empty() {
-            quote! {}
-        } else {
-            quote! { <#(#all_generics,)*> }
-        };
+        // let all_generics = if all_generics.is_empty() {
+        //     quote! {}
+        // } else {
+        //     quote! { <#(#all_generics,)*> }
+        // };
 
-        let generics = if generics.is_empty() {
-            quote! {}
-        } else {
-            quote! { <#(#generics,)*> }
-        };
+        // let generics = if generics.is_empty() {
+        //     quote! {}
+        // } else {
+        //     quote! { <#(#generics,)*> }
+        // };
+        let contract = StripGenerics.fold_type((*contract).clone());
 
-        let impl_name = "tiriririi";
         quote! {
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
-            pub enum #name #generics #where_clause {
+            pub enum #name {
                 #(#variants,)*
             }
 
-            impl #generics #name #generics #where_clause {
-                pub fn dispatch<C: #impl_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
-                    -> #dispatch_type #full_where
-                {
-                    use #name::*;
+            impl #name {
+                pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #error {
+                    todo!()
+                    // use #name::*;
 
-                    match self {
-                        #(#match_arms,)*
-                    }
+                    // match self {
+                    //     #(#match_arms,)*
+                    // }
                 }
+                // pub fn dispatch<C: #name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
+                //     -> #dispatch_type #full_where
+                // {
+                // }
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }

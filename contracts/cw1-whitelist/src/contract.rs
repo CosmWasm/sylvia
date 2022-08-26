@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response, Deps};
+use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw1::Cw1;
 use cw1::*;
@@ -74,7 +74,11 @@ impl Cw1WhitelistContract {
         Ok(Response::new())
     }
     #[msg(query)]
-    fn some_query(&self, ctx: (Deps, Env), _: String) -> Result<FindMemberResponse, ContractError> {
+    fn some_query(
+        &self,
+        ctx: (Deps, Env),
+        _ms: String,
+    ) -> Result<FindMemberResponse, ContractError> {
         todo!()
     }
 }

@@ -22,6 +22,10 @@ pub struct ContractArgs {
     pub module: Option<Ident>,
     /// The type of a contract error for entry points - `ContractError` by default
     pub error: Type,
+    /// The type being a parameter of `CosmosMsg` for blockchain it is intendet to be used; can be
+    /// set to any of generic parameters to create interface being generic over blockchains; If not
+    /// provided, cosmos messages would be unparametrized (so default would be used)
+    pub msg_type: Option<Type>,
 }
 
 struct Mapping {
@@ -63,6 +67,7 @@ impl Parse for ContractArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut module = None;
         let mut error = parse_quote!(ContractError);
+        let mut msg_type = None;
 
         while !input.is_empty() {
             let attr: Ident = input.parse()?;
@@ -72,6 +77,8 @@ impl Parse for ContractArgs {
                 module = Some(input.parse()?);
             } else if attr == "error" {
                 error = input.parse()?;
+            } else if attr == "msg_type" {
+                msg_type = Some(input.parse()?);
             } else {
                 return Err(Error::new(attr.span(), "expected `module` or `error`"));
             }
@@ -85,7 +92,11 @@ impl Parse for ContractArgs {
 
         let _: Nothing = input.parse()?;
 
-        Ok(ContractArgs { module, error })
+        Ok(ContractArgs {
+            module,
+            error,
+            msg_type,
+        })
     }
 }
 
