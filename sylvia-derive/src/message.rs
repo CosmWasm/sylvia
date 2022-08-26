@@ -350,7 +350,6 @@ pub struct ImplEnumMessage<'a> {
     name: &'a Ident,
     variants: Vec<ImplMsgVariant<'a>>,
     msg_ty: MsgType,
-    args: &'a ContractArgs,
     contract: &'a Type,
     error: &'a Type,
 }
@@ -392,7 +391,6 @@ impl<'a> ImplEnumMessage<'a> {
             name,
             variants,
             msg_ty: ty,
-            args,
             contract: &source.self_ty,
             error: &args.error,
         }
@@ -405,7 +403,6 @@ impl<'a> ImplEnumMessage<'a> {
             name,
             variants,
             msg_ty,
-            args: _,
             contract,
             error,
         } = self;
