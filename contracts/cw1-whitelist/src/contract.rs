@@ -62,27 +62,6 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
-    #[allow(dead_code)]
-    #[msg(exec)]
-    fn remove_member(
-        &self,
-        (deps, _env, _msg): (DepsMut, Env, MessageInfo),
-        other_name: String,
-    ) -> Result<Response, ContractError> {
-        self.members
-            .remove(deps.storage, deps.api.addr_validate(&other_name)?);
-
-        Ok(Response::new())
-    }
-    #[allow(dead_code)]
-    #[msg(query)]
-    fn some_query(
-        &self,
-        _ctx: (Deps, Env),
-        _ms: String,
-    ) -> Result<FindMemberResponse, ContractError> {
-        todo!()
-    }
 }
 
 #[cfg(test)]

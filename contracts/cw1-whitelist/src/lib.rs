@@ -1,4 +1,5 @@
 mod contract;
+mod contract_msgs_tests;
 mod error;
 mod multitest;
 
