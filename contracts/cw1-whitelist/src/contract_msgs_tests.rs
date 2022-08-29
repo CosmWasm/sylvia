@@ -10,7 +10,7 @@ mod tests {
     use cw_storage_plus::Map;
     use sylvia::contract;
 
-    struct Cw1TestContract {
+    pub struct Cw1TestContract {
         members: Map<'static, Addr, Empty>,
     }
 
@@ -47,12 +47,14 @@ mod tests {
     #[contract(error=ContractError)]
     #[messages(cw1 as Cw1)]
     impl Cw1TestContract {
+        #[allow(dead_code)]
         pub const fn new() -> Self {
             Self {
                 members: Map::new("members"),
             }
         }
 
+        #[allow(dead_code)]
         #[msg(instantiate)]
         pub fn instantiate(
             &self,
@@ -79,6 +81,7 @@ mod tests {
             Ok(Response::new())
         }
         #[allow(dead_code)]
+        #[allow(unused_variables)]
         #[msg(query)]
         fn query(&self, _ctx: (Deps, Env), member: String) -> Result<Response, ContractError> {
             Ok(Response::new())

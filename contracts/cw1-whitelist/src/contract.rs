@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw1::Cw1;
 use cw1::*;
