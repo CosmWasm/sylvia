@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::{Cw1WhitelistContract, InstantiateMsg};
+    use crate::contract::{Cw1WhitelistContract, ImplExecMsg, InstantiateMsg};
     use anyhow::{bail, Result as AnyResult};
     use cosmwasm_std::{
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
@@ -91,5 +91,46 @@ mod test {
             .unwrap();
 
         assert_eq!(resp, FindMemberResponse { is_present: true });
+    }
+
+    #[test]
+    fn contract_exec() {
+        let mut app = AppBuilder::new().build(|_, _, _| ());
+        let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
+
+        let contract = app
+            .instantiate_contract(
+                contract_id,
+                Addr::unchecked("Owner"),
+                &InstantiateMsg {
+                    members: vec!["member".to_owned(), "other_member".to_owned()],
+                },
+                &[],
+                "contract",
+                None,
+            )
+            .unwrap();
+
+        app.execute_contract(
+            Addr::unchecked("owner"),
+            contract.clone(),
+            &ImplExecMsg::RemoveMember {
+                member: "other_member".to_owned(),
+            },
+            &[],
+        )
+        .unwrap();
+
+        let resp: FindMemberResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract,
+                &QueryMsg::FindMember {
+                    member: "other_member".to_owned(),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(resp, FindMemberResponse { is_present: false });
     }
 }

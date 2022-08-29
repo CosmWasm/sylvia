@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw1::Cw1;
 use cw1::*;
@@ -62,6 +62,26 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
+
+    #[allow(dead_code)]
+    #[msg(exec)]
+    fn remove_member(
+        &self,
+        (deps, _env, _msg): (DepsMut, Env, MessageInfo),
+        member: String,
+    ) -> Result<Response, ContractError> {
+        self.members
+            .remove(deps.storage, deps.api.addr_validate(&member)?);
+
+        Ok(Response::new())
+    }
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[msg(query)]
+    fn query(&self, _ctx: (Deps, Env), member: String) -> Result<Response, ContractError> {
+        Ok(Response::new())
+    }
 }
 
 #[cfg(test)]
@@ -96,6 +116,54 @@ mod tests {
             deserialized,
             InstantiateMsg {
                 members: vec!["member".to_owned(), "some_member".to_owned()]
+            }
+        );
+    }
+
+    #[test]
+    fn binary_serialize_exec() {
+        let original_msg = ImplExecMsg::RemoveMember {
+            member: "member".to_owned(),
+        };
+
+        let serialized_msg = to_binary(&original_msg).unwrap();
+        let serialized_msg: ImplExecMsg = from_binary(&serialized_msg).unwrap();
+
+        assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn slice_deserialize_exec() {
+        let deserialized: ImplExecMsg =
+            from_slice(br#"{"remove_member": {"member": "some_member"}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            ImplExecMsg::RemoveMember {
+                member: "some_member".to_owned()
+            }
+        );
+    }
+
+    #[test]
+    fn binary_serialize_query() {
+        let original_msg = ImplQueryMsg::Query {
+            member: "some_member".to_owned(),
+        };
+
+        let serialized_msg = to_binary(&original_msg).unwrap();
+        let serialized_msg: ImplQueryMsg = from_binary(&serialized_msg).unwrap();
+
+        assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn slice_deserialize_query() {
+        let deserialized: ImplQueryMsg =
+            from_slice(br#"{"query": {"member": "some_member"}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            ImplQueryMsg::Query {
+                member: "some_member".to_owned()
             }
         );
     }
