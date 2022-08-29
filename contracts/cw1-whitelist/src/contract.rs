@@ -1,8 +1,7 @@
 use crate::error::ContractError;
 use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
-use cw1::Cw1;
-use cw1::*;
+use cw1::{Cw1, FindMemberResponse};
 use cw_storage_plus::Map;
 use sylvia::contract;
 
@@ -122,49 +121,49 @@ mod tests {
 
     #[test]
     fn binary_serialize_exec() {
-        let original_msg = ImplExecMsg::RemoveMember {
-            member: "member".to_owned(),
-        };
+        let original_msg = ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
+            member: "some_member".to_owned(),
+        });
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: ImplExecMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: ExecMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn slice_deserialize_exec() {
-        let deserialized: ImplExecMsg =
+        let deserialized: ExecMsg =
             from_slice(br#"{"remove_member": {"member": "some_member"}}"#).unwrap();
         assert_eq!(
             deserialized,
-            ImplExecMsg::RemoveMember {
+            ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
                 member: "some_member".to_owned()
-            }
+            })
         );
     }
 
     #[test]
     fn binary_serialize_query() {
-        let original_msg = ImplQueryMsg::Query {
+        let original_msg = QueryMsg::Cw1WhitelistContract(ImplQueryMsg::Query {
             member: "some_member".to_owned(),
-        };
+        });
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: ImplQueryMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn slice_deserialize_query() {
-        let deserialized: ImplQueryMsg =
+        let deserialized: QueryMsg =
             from_slice(br#"{"query": {"member": "some_member"}}"#).unwrap();
         assert_eq!(
             deserialized,
-            ImplQueryMsg::Query {
+            QueryMsg::Cw1WhitelistContract(ImplQueryMsg::Query {
                 member: "some_member".to_owned()
-            }
+            })
         );
     }
 

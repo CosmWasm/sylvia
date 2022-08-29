@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::{Cw1WhitelistContract, ImplExecMsg, InstantiateMsg};
+    use crate::contract::{Cw1WhitelistContract, ExecMsg, ImplExecMsg, InstantiateMsg};
     use anyhow::{bail, Result as AnyResult};
     use cosmwasm_std::{
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     };
-    use cw1::{ExecMsg, FindMemberResponse, QueryMsg};
+    use cw1::{FindMemberResponse, QueryMsg};
     use cw_multi_test::{AppBuilder, Contract, Executor};
 
     impl Contract<Empty> for Cw1WhitelistContract {
@@ -73,9 +73,9 @@ mod test {
         app.execute_contract(
             Addr::unchecked("owner"),
             contract.clone(),
-            &ExecMsg::AddMember {
+            &ExecMsg::Cw1(cw1::ExecMsg::AddMember {
                 member: "other_member".to_owned(),
-            },
+            }),
             &[],
         )
         .unwrap();
@@ -114,9 +114,9 @@ mod test {
         app.execute_contract(
             Addr::unchecked("owner"),
             contract.clone(),
-            &ImplExecMsg::RemoveMember {
+            &ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
                 member: "other_member".to_owned(),
-            },
+            }),
             &[],
         )
         .unwrap();

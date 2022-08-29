@@ -751,12 +751,23 @@ impl<'a> GlueMessage<'a> {
             }
         });
 
+        let impl_var = Ident::new("contract", Span::mixed_site());
+        let impl_deserialization_attempt = quote! {
+            let #impl_var = match val.clone().deserialize_into() {
+                Ok(msg) => return Ok(Self:: #contract (msg)),
+                Err(err) => err,
+            };
+        };
+
         let deser_errors = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
             let var = Ident::new(&variant.to_string().to_case(Case::Snake), variant.span());
 
             quote! { format!("As {}: {}", stringify!(#variant), #var) }
         });
+
+        let impl_deser_errors =
+            quote! { format!("As {}: {}", stringify!(#impl_msg_name), #impl_var) };
 
         let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
@@ -765,7 +776,7 @@ impl<'a> GlueMessage<'a> {
 
         quote! {
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
+            #[serde(rename_all="snake_case", untagged)]
             pub enum #name {
                 #(#variants,)*
                 #impl_msg_name
@@ -792,11 +803,14 @@ impl<'a> GlueMessage<'a> {
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
 
                     #(#deserialization_attempts)*
+                    #impl_deserialization_attempt
 
                     Err(D::Error::custom(format!(
-                        "Expected any of {} messages, but cannot deserialize to neither of those\n{}",
+                        "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}{}",
                         stringify!(#(#messages_type),*),
-                        [#(#deser_errors,)*].join("\n")
+                        stringify!(#impl_msg_name),
+                        [#(#deser_errors,)*].join("\n"),
+                        [#impl_deser_errors].join("\n")
                     )))
                 }
             }
