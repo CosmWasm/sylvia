@@ -728,7 +728,13 @@ impl<'a> GlueMessage<'a> {
         let impl_msg_name = match msg_ty {
             MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
             MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
-            MsgType::Instantiate => todo!(),
+            MsgType::Instantiate => {
+                emit_error!(
+                    name.span(),
+                    "Do not emit InstantiateMsg using GlueMessage. Use StructMessage instead!"
+                );
+                Ident::new("", Span::call_site())
+            }
         };
         let impl_msg_name = quote! {#contract ( #impl_msg_name)};
 
@@ -806,11 +812,10 @@ impl<'a> GlueMessage<'a> {
                     #impl_deserialization_attempt
 
                     Err(D::Error::custom(format!(
-                        "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}{}",
+                        "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}",
                         stringify!(#(#messages_type),*),
                         stringify!(#impl_msg_name),
-                        [#(#deser_errors,)*].join("\n"),
-                        [#impl_deser_errors].join("\n")
+                        [#(#deser_errors,)* #impl_deser_errors].join("\n")
                     )))
                 }
             }

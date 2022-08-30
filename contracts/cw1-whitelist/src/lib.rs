@@ -8,12 +8,8 @@ pub mod entry_points {
         entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     };
 
-    use crate::{
-        contract::{
-            Cw1WhitelistContract, ExecMsg, ImplExecMsg, ImplQueryMsg, InstantiateMsg, QueryMsg,
-        },
-        error::ContractError,
-    };
+    use crate::contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg};
+    use crate::error::ContractError;
 
     const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
 
@@ -34,17 +30,11 @@ pub mod entry_points {
         info: MessageInfo,
         msg: Binary,
     ) -> Result<Response, ContractError> {
-        match from_slice::<ExecMsg>(&msg) {
-            Ok(msg) => msg.dispatch(&CONTRACT, (deps, env, info)),
-            Err(_) => from_slice::<ImplExecMsg>(&msg)?.dispatch(&CONTRACT, (deps, env, info)),
-        }
+        from_slice::<ExecMsg>(&msg)?.dispatch(&CONTRACT, (deps, env, info))
     }
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: Binary) -> Result<Binary, ContractError> {
-        match from_slice::<QueryMsg>(&msg) {
-            Ok(msg) => msg.dispatch(&CONTRACT, (deps, env)),
-            Err(_) => from_slice::<ImplQueryMsg>(&msg)?.dispatch(&CONTRACT, (deps, env)),
-        }
+        from_slice::<QueryMsg>(&msg)?.dispatch(&CONTRACT, (deps, env))
     }
 }

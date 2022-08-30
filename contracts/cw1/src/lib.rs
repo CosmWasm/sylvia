@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError};
 
 use schemars::JsonSchema;

@@ -1,9 +1,16 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Order, Response};
 
 use cw1::{Cw1, FindMemberResponse};
 use cw_storage_plus::Map;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use sylvia::contract;
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+pub struct MembersCntResponse {
+    pub cnt: usize,
+}
 
 pub struct Cw1WhitelistContract {
     members: Map<'static, Addr, Empty>,
@@ -62,24 +69,27 @@ impl Cw1WhitelistContract {
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
     #[msg(exec)]
     fn remove_member(
         &self,
-        (deps, _env, _msg): (DepsMut, Env, MessageInfo),
+        (deps, _env, msg): (DepsMut, Env, MessageInfo),
         member: String,
     ) -> Result<Response, ContractError> {
         self.members
             .remove(deps.storage, deps.api.addr_validate(&member)?);
 
-        Ok(Response::new())
+        Ok(Response::new()
+            .add_attribute("action", "remove_member")
+            .add_attribute("sender", msg.sender))
     }
 
-    #[allow(dead_code)]
-    #[allow(unused_variables)]
     #[msg(query)]
-    fn query(&self, _ctx: (Deps, Env), member: String) -> Result<Response, ContractError> {
-        Ok(Response::new())
+    fn members_cnt(&self, (deps, _env): (Deps, Env)) -> Result<MembersCntResponse, ContractError> {
+        let cnt = self
+            .members
+            .keys(deps.storage, None, None, Order::Ascending)
+            .count();
+        Ok(MembersCntResponse { cnt })
     }
 }
 
@@ -145,9 +155,7 @@ mod tests {
 
     #[test]
     fn binary_serialize_query() {
-        let original_msg = QueryMsg::Cw1WhitelistContract(ImplQueryMsg::Query {
-            member: "some_member".to_owned(),
-        });
+        let original_msg = QueryMsg::Cw1WhitelistContract(ImplQueryMsg::MembersCnt {});
 
         let serialized_msg = to_binary(&original_msg).unwrap();
         let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
@@ -157,13 +165,10 @@ mod tests {
 
     #[test]
     fn slice_deserialize_query() {
-        let deserialized: QueryMsg =
-            from_slice(br#"{"query": {"member": "some_member"}}"#).unwrap();
+        let deserialized: QueryMsg = from_slice(br#"{"members_cnt": {}}"#).unwrap();
         assert_eq!(
             deserialized,
-            QueryMsg::Cw1WhitelistContract(ImplQueryMsg::Query {
-                member: "some_member".to_owned()
-            })
+            QueryMsg::Cw1WhitelistContract(ImplQueryMsg::MembersCnt {})
         );
     }
 

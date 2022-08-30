@@ -6,7 +6,7 @@ mod test {
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     };
     use cw1::{FindMemberResponse, QueryMsg};
-    use cw_multi_test::{AppBuilder, Contract, Executor};
+    use cw_multi_test::{App, Contract, Executor};
 
     impl Contract<Empty> for Cw1WhitelistContract {
         fn instantiate(
@@ -54,7 +54,7 @@ mod test {
 
     #[test]
     fn entry_points() {
-        let mut app = AppBuilder::new().build(|_, _, _| ());
+        let mut app = App::default();
         let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
 
         let contract = app
@@ -73,9 +73,9 @@ mod test {
         app.execute_contract(
             Addr::unchecked("owner"),
             contract.clone(),
-            &ExecMsg::Cw1(cw1::ExecMsg::AddMember {
+            &cw1::ExecMsg::AddMember {
                 member: "other_member".to_owned(),
-            }),
+            },
             &[],
         )
         .unwrap();
@@ -95,7 +95,7 @@ mod test {
 
     #[test]
     fn contract_exec() {
-        let mut app = AppBuilder::new().build(|_, _, _| ());
+        let mut app = App::default();
         let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
 
         let contract = app
@@ -114,9 +114,9 @@ mod test {
         app.execute_contract(
             Addr::unchecked("owner"),
             contract.clone(),
-            &ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
+            &ImplExecMsg::RemoveMember {
                 member: "other_member".to_owned(),
-            }),
+            },
             &[],
         )
         .unwrap();
