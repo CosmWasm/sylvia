@@ -1,0 +1,48 @@
+name: Contract Development
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  test_project:
+    name: ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: macOS
+            os: macOS-latest
+          - build: Windows
+            os: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.63.0
+          target: wasm32-unknown-unknown
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+      - name: Build project
+        run: cargo build --release --target wasm32-unknown-unknown --locked
+      - name: Test project
+        run: cargo test --locked
+      - name: Clippy project
+        run: cargo clippy --all-targets -- -D warnings 
+      - name: Fmt check project
+        run: cargo fmt --check
