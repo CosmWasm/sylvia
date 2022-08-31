@@ -107,7 +107,7 @@ mod tests {
     fn exec_msgs() {
         assert_eq!(
             ExecMsg::messages(),
-            ["update_admin", "update_members", "add_hook", "remove_hook"]
+            ["add_hook", "remove_hook", "update_admin", "update_members"]
         );
     }
 
@@ -115,7 +115,7 @@ mod tests {
     fn query_msgs() {
         assert_eq!(
             QueryMsg::messages(),
-            ["member", "list_members", "total_weight", "admin", "hooks"]
+            ["admin", "hooks", "list_members", "member", "total_weight"]
         );
     }
 }
