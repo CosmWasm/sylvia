@@ -806,28 +806,19 @@ impl<'a> GlueMessage<'a> {
                     contract: &#contract,
                     ctx: #ctx_type,
                 ) -> #ret_type {
+                    use const_str::equal;
+
                     const _: () = {
                         let impl_msgs = #impl_msg ::messages();
                         let interface_msgs = #(#interface_names)* ::messages();
 
                         let mut ext_index = 0;
-                        let impl_msgs_len = impl_msgs.len();
-                        let interface_msgs_len = interface_msgs.len();
-                        while ext_index < impl_msgs_len {
+                        while ext_index < impl_msgs.len() {
                             let mut internal_index = 0;
-                            while internal_index < interface_msgs_len {
-                                let impl_val = impl_msgs[ext_index];
-                                let interface_val = interface_msgs[internal_index];
-                                if impl_val.len() == interface_val.len() {
-                                    // let mut string_index = 0;
-                                    // while string_index < impl_val.len(){
-                                    //     if impl_val[string_index] == interface_val[string_index]{}
-                                    //     string_index += 1;
-                                    // }
+                            while internal_index < interface_msgs.len() {
+                                if equal!(impl_msgs[ext_index], interface_msgs[internal_index]) {
+                                    panic!("Message overlaps between interface and contract impl!");
                                 }
-                                // if interface_val == impl_val {
-                        //             // panic!("Message {} overlaps between interface and contract impl!", impl_msgs[ext_index]);
-                                // }
                                 internal_index += 1;
                             }
                             ext_index += 1;
