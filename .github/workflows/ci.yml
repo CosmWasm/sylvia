@@ -46,3 +46,7 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project
         run: cargo fmt --check
+      - name: Install cw-check-contract
+        run: cargo install cw-check-contract
+      - name: Check contracts
+        run: find target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cw-check-contract {} \;
