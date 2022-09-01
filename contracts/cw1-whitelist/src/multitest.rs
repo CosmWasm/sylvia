@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::{Cw1WhitelistContract, InstantiateMsg};
+    use crate::contract::{Cw1WhitelistContract, ExecMsg, ImplExecMsg, InstantiateMsg};
     use anyhow::{bail, Result as AnyResult};
     use cosmwasm_std::{
         from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
     };
-    use cw1::{ExecMsg, FindMemberResponse, QueryMsg};
-    use cw_multi_test::{AppBuilder, Contract, Executor};
+    use cw1::{FindMemberResponse, QueryMsg};
+    use cw_multi_test::{App, Contract, Executor};
 
     impl Contract<Empty> for Cw1WhitelistContract {
         fn instantiate(
@@ -54,7 +54,7 @@ mod test {
 
     #[test]
     fn entry_points() {
-        let mut app = AppBuilder::new().build(|_, _, _| ());
+        let mut app = App::default();
         let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
 
         let contract = app
@@ -73,7 +73,7 @@ mod test {
         app.execute_contract(
             Addr::unchecked("owner"),
             contract.clone(),
-            &ExecMsg::AddMember {
+            &cw1::ExecMsg::AddMember {
                 member: "other_member".to_owned(),
             },
             &[],
@@ -91,5 +91,46 @@ mod test {
             .unwrap();
 
         assert_eq!(resp, FindMemberResponse { is_present: true });
+    }
+
+    #[test]
+    fn contract_exec() {
+        let mut app = App::default();
+        let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
+
+        let contract = app
+            .instantiate_contract(
+                contract_id,
+                Addr::unchecked("Owner"),
+                &InstantiateMsg {
+                    members: vec!["member".to_owned(), "other_member".to_owned()],
+                },
+                &[],
+                "contract",
+                None,
+            )
+            .unwrap();
+
+        app.execute_contract(
+            Addr::unchecked("owner"),
+            contract.clone(),
+            &ImplExecMsg::RemoveMember {
+                member: "other_member".to_owned(),
+            },
+            &[],
+        )
+        .unwrap();
+
+        let resp: FindMemberResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract,
+                &QueryMsg::FindMember {
+                    member: "other_member".to_owned(),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(resp, FindMemberResponse { is_present: false });
     }
 }

@@ -8,10 +8,8 @@ pub mod entry_points {
         entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     };
 
-    use crate::{
-        contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg},
-        error::ContractError,
-    };
+    use crate::contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg};
+    use crate::error::ContractError;
 
     const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
 

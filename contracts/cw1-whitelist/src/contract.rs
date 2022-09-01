@@ -1,10 +1,16 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Order, Response};
 
-use cw1::Cw1;
-use cw1::*;
+use cw1::{Cw1, FindMemberResponse};
 use cw_storage_plus::Map;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use sylvia::contract;
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+pub struct MembersCntResponse {
+    pub cnt: usize,
+}
 
 pub struct Cw1WhitelistContract {
     members: Map<'static, Addr, Empty>,
@@ -62,6 +68,29 @@ impl Cw1WhitelistContract {
 
         Ok(Response::new())
     }
+
+    #[msg(exec)]
+    fn remove_member(
+        &self,
+        (deps, _env, msg): (DepsMut, Env, MessageInfo),
+        member: String,
+    ) -> Result<Response, ContractError> {
+        self.members
+            .remove(deps.storage, deps.api.addr_validate(&member)?);
+
+        Ok(Response::new()
+            .add_attribute("action", "remove_member")
+            .add_attribute("sender", msg.sender))
+    }
+
+    #[msg(query)]
+    fn members_cnt(&self, (deps, _env): (Deps, Env)) -> Result<MembersCntResponse, ContractError> {
+        let cnt = self
+            .members
+            .keys(deps.storage, None, None, Order::Ascending)
+            .count();
+        Ok(MembersCntResponse { cnt })
+    }
 }
 
 #[cfg(test)]
@@ -97,6 +126,49 @@ mod tests {
             InstantiateMsg {
                 members: vec!["member".to_owned(), "some_member".to_owned()]
             }
+        );
+    }
+
+    #[test]
+    fn binary_serialize_exec() {
+        let original_msg = ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
+            member: "some_member".to_owned(),
+        });
+
+        let serialized_msg = to_binary(&original_msg).unwrap();
+        let serialized_msg: ExecMsg = from_binary(&serialized_msg).unwrap();
+
+        assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn slice_deserialize_exec() {
+        let deserialized: ExecMsg =
+            from_slice(br#"{"remove_member": {"member": "some_member"}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            ExecMsg::Cw1WhitelistContract(ImplExecMsg::RemoveMember {
+                member: "some_member".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn binary_serialize_query() {
+        let original_msg = QueryMsg::Cw1WhitelistContract(ImplQueryMsg::MembersCnt {});
+
+        let serialized_msg = to_binary(&original_msg).unwrap();
+        let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
+
+        assert_eq!(serialized_msg, original_msg);
+    }
+
+    #[test]
+    fn slice_deserialize_query() {
+        let deserialized: QueryMsg = from_slice(br#"{"members_cnt": {}}"#).unwrap();
+        assert_eq!(
+            deserialized,
+            QueryMsg::Cw1WhitelistContract(ImplQueryMsg::MembersCnt {})
         );
     }
 

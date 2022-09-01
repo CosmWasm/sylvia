@@ -1,6 +1,6 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
-use crate::parser::{ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
+use crate::parser::{ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
 use crate::strip_generics::StripGenerics;
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
@@ -11,8 +11,8 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
-    ReturnType, Signature, TraitItem, TraitItemMethod, Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericParam, Ident, ImplItem, ImplItemMethod, ItemImpl, ItemTrait, Pat,
+    PatType, ReturnType, Signature, TraitItem, TraitItemMethod, Type, WhereClause, WherePredicate,
 };
 
 fn filter_wheres<'a>(
@@ -345,6 +345,179 @@ impl<'a> EnumMessage<'a> {
     }
 }
 
+/// Representation of single enum message
+pub struct ImplEnumMessage<'a> {
+    name: &'a Ident,
+    variants: Vec<ImplMsgVariant<'a>>,
+    msg_ty: MsgType,
+    contract: &'a Type,
+    error: &'a Type,
+}
+
+impl<'a> ImplEnumMessage<'a> {
+    pub fn new(
+        name: &'a Ident,
+        source: &'a ItemImpl,
+        ty: MsgType,
+        generics: &'a [&'a GenericParam],
+        args: &'a ContractArgs,
+    ) -> Self {
+        let mut generics_checker = CheckGenerics::new(generics);
+        let variants: Vec<_> = source
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                ImplItem::Method(method) => {
+                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                        Ok(attr) => attr,
+                        Err(err) => {
+                            emit_error!(method.span(), err);
+                            return None;
+                        }
+                    };
+
+                    if attr == ty {
+                        Some(ImplMsgVariant::new(method, &mut generics_checker))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+
+        Self {
+            name,
+            variants,
+            msg_ty: ty,
+            contract: &source.self_ty,
+            error: &args.error,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+
+        let Self {
+            name,
+            variants,
+            msg_ty,
+            contract,
+            error,
+        } = self;
+
+        let match_arms = variants
+            .iter()
+            .map(|variant| variant.emit_dispatch_leg(*msg_ty));
+        let msgs: Vec<String> = variants
+            .iter()
+            .map(|var| var.name.to_string().to_case(Case::Snake))
+            .collect();
+        let msgs_cnt = msgs.len();
+        let variants = variants.iter().map(ImplMsgVariant::emit);
+
+        let ctx_type = msg_ty.emit_ctx_type();
+        let contract = StripGenerics.fold_type((*contract).clone());
+        let ret_type = msg_ty.emit_result_type(&None, error);
+
+        quote! {
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #[serde(rename_all="snake_case")]
+            pub enum #name {
+                #(#variants,)*
+            }
+
+            impl #name {
+                pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
+                    use #name::*;
+
+                    match self {
+                        #(#match_arms,)*
+                    }
+                }
+                pub const fn messages() -> [&'static str; #msgs_cnt] {
+                    [#(#msgs,)*]
+                }
+            }
+        }
+    }
+}
+
+/// Representation of whole message variant
+pub struct ImplMsgVariant<'a> {
+    name: Ident,
+    function_name: &'a Ident,
+    // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
+    // `MsgField<'a>`
+    fields: Vec<MsgField<'a>>,
+}
+
+impl<'a> ImplMsgVariant<'a> {
+    /// Creates new message variant from trait method
+    pub fn new(
+        method: &'a ImplItemMethod,
+        generics_checker: &mut CheckGenerics,
+    ) -> ImplMsgVariant<'a> {
+        let function_name = &method.sig.ident;
+        let name = Ident::new(
+            &function_name.to_string().to_case(Case::UpperCamel),
+            function_name.span(),
+        );
+        let fields = process_fields(&method.sig, generics_checker);
+
+        Self {
+            name,
+            function_name,
+            fields,
+        }
+    }
+
+    /// Emits message variant
+    pub fn emit(&self) -> TokenStream {
+        let Self { name, fields, .. } = self;
+        let fields = fields.iter().map(MsgField::emit);
+
+        quote! {
+            #name {
+                #(#fields,)*
+            }
+        }
+    }
+
+    /// Emits match leg dispatching against this variant. Assumes enum variants are imported into the
+    /// scope. Dispatching is performed by calling the function this variant is build from on the
+    /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
+    pub fn emit_dispatch_leg(&self, msg_attr: MsgType) -> TokenStream {
+        use MsgType::*;
+
+        let Self {
+            name,
+            fields,
+            function_name,
+        } = self;
+        let args = fields.iter().map(|field| field.name);
+        let fields = fields.iter().map(|field| field.name);
+
+        match msg_attr {
+            Exec => quote! {
+                #name {
+                    #(#fields,)*
+                } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)
+            },
+            Query => quote! {
+                #name {
+                    #(#fields,)*
+                } => cosmwasm_std::to_binary(&contract.#function_name(ctx.into(), #(#args),*)?).map_err(Into::into)
+            },
+            Instantiate => {
+                emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
+                quote! {}
+            }
+        }
+    }
+}
+
 /// Representation of whole message variant
 pub struct MsgVariant<'a> {
     name: Ident,
@@ -552,11 +725,25 @@ impl<'a> GlueMessage<'a> {
             quote! { #variant(#module :: #name<#(#generics,)*>) }
         });
 
+        let impl_msg_name = match msg_ty {
+            MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
+            MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
+            MsgType::Instantiate => {
+                emit_error!(
+                    name.span(),
+                    "Do not emit InstantiateMsg using GlueMessage. Use StructMessage instead!"
+                );
+                Ident::new("", Span::call_site())
+            }
+        };
+        let impl_msg_name = quote! {#contract ( #impl_msg_name)};
+
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
 
             quote! { #name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
+        let impl_dispatch_arm = quote! {#name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -570,12 +757,23 @@ impl<'a> GlueMessage<'a> {
             }
         });
 
+        let impl_var = Ident::new("contract", Span::mixed_site());
+        let impl_deserialization_attempt = quote! {
+            let #impl_var = match val.clone().deserialize_into() {
+                Ok(msg) => return Ok(Self:: #contract (msg)),
+                Err(err) => err,
+            };
+        };
+
         let deser_errors = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
             let var = Ident::new(&variant.to_string().to_case(Case::Snake), variant.span());
 
             quote! { format!("As {}: {}", stringify!(#variant), #var) }
         });
+
+        let impl_deser_errors =
+            quote! { format!("As {}: {}", stringify!(#impl_msg_name), #impl_var) };
 
         let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
@@ -584,9 +782,10 @@ impl<'a> GlueMessage<'a> {
 
         quote! {
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
+            #[serde(rename_all="snake_case", untagged)]
             pub enum #name {
                 #(#variants,)*
+                #impl_msg_name
             }
 
             impl #name {
@@ -597,6 +796,7 @@ impl<'a> GlueMessage<'a> {
                 ) -> #ret_type {
                     match self {
                         #(#dispatch_arms,)*
+                        #impl_dispatch_arm
                     }
                 }
             }
@@ -609,11 +809,13 @@ impl<'a> GlueMessage<'a> {
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
 
                     #(#deserialization_attempts)*
+                    #impl_deserialization_attempt
 
                     Err(D::Error::custom(format!(
-                        "Expected any of {} messages, but cannot deserialize to neither of those\n{}",
+                        "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}",
                         stringify!(#(#messages_type),*),
-                        [#(#deser_errors,)*].join("\n")
+                        stringify!(#impl_msg_name),
+                        [#(#deser_errors,)* #impl_deser_errors].join("\n")
                     )))
                 }
             }
