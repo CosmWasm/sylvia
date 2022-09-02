@@ -188,6 +188,7 @@ impl<'a> StructMessage<'a> {
         };
 
         quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub struct #name #generics #where_clause {
@@ -321,6 +322,7 @@ impl<'a> EnumMessage<'a> {
         };
 
         quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub enum #name #generics #where_clause {
@@ -422,6 +424,7 @@ impl<'a> ImplEnumMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&None, error);
 
         quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub enum #name {
@@ -781,6 +784,7 @@ impl<'a> GlueMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&None, error);
 
         quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case", untagged)]
             pub enum #name {
