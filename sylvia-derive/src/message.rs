@@ -824,20 +824,14 @@ impl<'a> GlueMessage<'a> {
 
                     const _: () = {
                         let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                        let mut indexes = [0 as usize; #interfaces_cnt];
                         let mut states = #name::init_states(&msgs);
 
-                        loop {
+                        while !#name::should_end(&states) {
                             // compare all elements at current index
-                            #name::verify_no_collissions(&msgs, &indexes, &states);
+                            #name::verify_no_collissions(&msgs, &states);
 
                             // increment index of alaphabeticaly first element
-                            #name::incr_alphabetically_first_element(&indexes);
-
-                            // check if end of array reached
-                            if #name::should_end(&states) {
-                                break;
-                            }
+                            #name::incr_alphabetically_first_element(&states);
                         }
                     };
                     match self {
@@ -858,22 +852,33 @@ impl<'a> GlueMessage<'a> {
                     states
                 }
 
-                const fn get_index_of_alphabetically_smallest(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt]) -> usize{
+                const fn get_index_of_alphabetically_smallest(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) -> usize{
                     let mut i = 1;
                     let mut output_index = 0;
                     while i < #interfaces_cnt {
-                        match konst::cmp_str(msgs[i-1][indexes[i-1]], msgs[i][indexes[i]]) {
-                            std::cmp::Ordering::Greater => output_index = i,
-                            _ => (),
+                        match states[i] {
+                            #state_name::Working ( outer_i ) => {
+                                match states[output_index] {
+                                    #state_name::Working ( inner_i ) => {
+                                        match konst::cmp_str(msgs[output_index][inner_i], msgs[i][outer_i]) {
+                                            std::cmp::Ordering::Greater => output_index = i,
+                                            _ => (),
+                                        }
+                                    },
+                                    _ => output_index = i,
+                                }
+                            },
+                            _ => continue,
                         }
+
                         i += 1;
                     }
                     output_index
                 }
 
-                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) {
+                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) {
                     let mut i = 0;
-                    let ai = #name::get_index_of_alphabetically_smallest(&msgs, &indexes);
+                    let ai = #name::get_index_of_alphabetically_smallest(&msgs, &states);
                     while i < #interfaces_cnt {
                         if i == ai {
                             i += 1;
@@ -896,7 +901,7 @@ impl<'a> GlueMessage<'a> {
                     }
                 }
 
-                const fn incr_alphabetically_first_element(indexes: &[usize; #interfaces_cnt]) {
+                const fn incr_alphabetically_first_element(states: &[#state_name; #interfaces_cnt]) {
 
                 }
 
