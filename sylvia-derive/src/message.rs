@@ -797,6 +797,8 @@ impl<'a> GlueMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
 
+        let state_name = Ident::new(&format!("{}State", name), name.span());
+
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
@@ -804,6 +806,13 @@ impl<'a> GlueMessage<'a> {
             pub enum #name {
                 #(#variants,)*
                 #impl_msg_name
+            }
+
+            #[derive(Debug, Copy, Clone)]
+            enum #state_name {
+                Working { index: usize },
+                Finished { index: usize },
+                Empty,
             }
 
             impl #name {
@@ -816,6 +825,7 @@ impl<'a> GlueMessage<'a> {
                     const _: () = {
                         let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
                         let mut indexes = [0 as usize; #interfaces_cnt];
+                        let mut states = #name::init_states(&msgs);
 
                         loop {
                             // compare all elements at current index
@@ -834,6 +844,20 @@ impl<'a> GlueMessage<'a> {
                         #(#dispatch_arms,)*
                         #impl_dispatch_arm
                     }
+                }
+
+                const fn init_states(msgs: &[&[&str]; #interfaces_cnt]) -> [#state_name; #interfaces_cnt] {
+                    let mut states = [
+                        #state_name::Working { index: 0 }; #interfaces_cnt
+                    ];
+                    let mut i = 0;
+                    while i < #interfaces_cnt {
+                        if msgs[i].is_empty() {
+                            states[i] = #state_name::Empty;
+                        }
+                        i += 1;
+                    }
+                    states
                 }
 
                 const fn get_index_of_alphabetically_smallest(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt]) -> usize{
