@@ -16,7 +16,7 @@ sylvia = { version = "0.1.2", path = "../../sylvia" }
 cw1 = { version = "0.1.2", path = "../cw1" }
 cw-storage-plus = "0.13.2"
 thiserror = { version = "1.0.23" }
-const-str = "0.4.3"
+konst = "0.2.15"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

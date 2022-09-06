@@ -60,12 +60,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4c78c047431fee22c1a7bb92e00ad095a02a983affe4d8a72e2a2c62c1b94f3"
 
 [[package]]
-name = "const-str"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f421161cb492475f1661ddc9815a745a1c894592070661180fdec3d4872e9c3"
-
-[[package]]
 name = "convert_case"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -240,11 +234,11 @@ name = "cw1-whitelist"
 version = "0.1.2"
 dependencies = [
  "anyhow",
- "const-str",
  "cosmwasm-std",
  "cw-multi-test",
  "cw-storage-plus 0.13.2",
  "cw1",
+ "konst",
  "schemars",
  "serde",
  "sylvia",
@@ -461,6 +455,28 @@ dependencies = [
  "sec1",
  "sha2",
 ]
+
+[[package]]
+name = "konst"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a0f20e801b88a84a6486eb13b44e446bdbfd0f104da5a83d07072fcd8b7bc8a"
+dependencies = [
+ "konst_macro_rules",
+ "konst_proc_macros",
+]
+
+[[package]]
+name = "konst_macro_rules"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "564383fd5aa756dd41128051e0bd54782f80a7e286dc17fcc7fe024b07f65015"
+
+[[package]]
+name = "konst_proc_macros"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "984e109462d46ad18314f10e392c286c3d47bce203088a09012de1015b45b737"
 
 [[package]]
 name = "libc"
@@ -748,9 +764,9 @@ name = "sylvia"
 version = "0.1.2"
 dependencies = [
  "anyhow",
- "const-str",
  "cosmwasm-std",
  "cw-storage-plus 0.13.2",
+ "konst",
  "schemars",
  "serde",
  "serde-cw-value",
@@ -761,8 +777,8 @@ dependencies = [
 name = "sylvia-derive"
 version = "0.1.2"
 dependencies = [
- "const-str",
  "convert_case",
+ "konst",
  "proc-macro-crate",
  "proc-macro-error",
  "proc-macro2",

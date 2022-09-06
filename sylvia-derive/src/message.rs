@@ -730,12 +730,6 @@ impl<'a> GlueMessage<'a> {
             quote! { #variant(#module :: #name<#(#generics,)*>) }
         });
 
-        let interface_names = interfaces.iter().map(|interface| {
-            let ContractMessageAttr { module, .. } = interface;
-
-            quote! { #module :: #name }
-        });
-
         let impl_msg = match msg_ty {
             MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
             MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
@@ -748,6 +742,18 @@ impl<'a> GlueMessage<'a> {
             }
         };
         let impl_msg_name = quote! {#contract ( #impl_msg)};
+
+        let mut interface_names: Vec<TokenStream> = interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, .. } = interface;
+
+                quote! { &#module :: #name :: messages()}
+            })
+            .collect();
+
+        interface_names.push(quote! {&#impl_msg :: messages()});
+        let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -806,28 +812,60 @@ impl<'a> GlueMessage<'a> {
                     contract: &#contract,
                     ctx: #ctx_type,
                 ) -> #ret_type {
-                    use const_str::equal;
 
                     const _: () = {
-                        let impl_msgs = #impl_msg ::messages();
-                        let interface_msgs = #(#interface_names)* ::messages();
+                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                        let mut indexes = [0 as usize; #interfaces_cnt];
 
-                        let mut ext_index = 0;
-                        while ext_index < impl_msgs.len() {
-                            let mut internal_index = 0;
-                            while internal_index < interface_msgs.len() {
-                                if equal!(impl_msgs[ext_index], interface_msgs[internal_index]) {
-                                    panic!("Message overlaps between interface and contract impl!");
-                                }
-                                internal_index += 1;
+                        loop {
+                            // compare all elements at current index
+                            #name::verify_no_collissions(&msgs, &indexes);
+
+                            // increment index of alaphabeticaly first element
+                            #name::incr_alphabetically_first_element(&indexes);
+
+                            // check if end of array reached
+                            if #name::should_end() {
+                                break;
                             }
-                            ext_index += 1;
                         }
                     };
                     match self {
                         #(#dispatch_arms,)*
                         #impl_dispatch_arm
                     }
+                }
+
+                const fn get_index_of_alphabetically_smallest(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt]) -> usize{
+                    let mut i = 1;
+                    let mut output_index = 0;
+                    while i < #interfaces_cnt {
+                        match konst::cmp_str(msgs[i-1][indexes[i-1]], msgs[i][indexes[i]]) {
+                            std::cmp::Ordering::Greater => output_index = i,
+                            _ => (),
+                        }
+                        i += 1;
+                    }
+                    output_index
+                }
+
+                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt]) {
+                    let mut i = 0;
+                    let ai = #name::get_index_of_alphabetically_smallest(&msgs, &indexes);
+                    while i < #interfaces_cnt {
+                        if i != ai && konst::eq_str(msgs[i][indexes[i]], msgs[ai][indexes[ai]]) {
+                            panic!("Message overlaps between interface and contract impl!");
+                        }
+                        i += 1;
+                    }
+                }
+
+                const fn incr_alphabetically_first_element(indexes: &[usize; #interfaces_cnt]) {
+
+                }
+
+                const fn should_end() -> bool {
+                    true
                 }
             }
 
