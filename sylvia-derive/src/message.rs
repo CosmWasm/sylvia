@@ -810,7 +810,7 @@ impl<'a> GlueMessage<'a> {
 
             #[derive(Debug, Copy, Clone)]
             enum #state_name {
-                Working (usize),
+                Ongoing (usize),
                 Finished (usize),
                 Empty,
             }
@@ -835,7 +835,13 @@ impl<'a> GlueMessage<'a> {
 
                             // increment index of alaphabeticaly first element
                             states[index] = match states[index] {
-                                #state_name::Working (index) => #state_name::Working(index + 1),
+                                #state_name::Ongoing(wi) => {
+                                    if msgs[index].len() == wi + 1 {
+                                        #state_name::Finished(wi)
+                                    } else {
+                                        #state_name::Ongoing(wi + 1)
+                                    }
+                                },
                                 _ => panic!("This should never be reached!"),
                             };
                         }
@@ -848,7 +854,7 @@ impl<'a> GlueMessage<'a> {
                 }
 
                 const fn init_states(msgs: &[&[&str]; #interfaces_cnt]) -> [#state_name; #interfaces_cnt] {
-                    let mut states = [#state_name::Working(0); #interfaces_cnt];
+                    let mut states = [#state_name::Ongoing(0); #interfaces_cnt];
                     let mut i = 0;
                     while i < #interfaces_cnt {
                         if msgs[i].is_empty() {
@@ -864,9 +870,9 @@ impl<'a> GlueMessage<'a> {
                     let mut output_index = 0;
                     while i < #interfaces_cnt {
                         match states[i] {
-                            #state_name::Working ( outer_i ) => {
+                            #state_name::Ongoing ( outer_i ) => {
                                 match states[output_index] {
-                                    #state_name::Working ( inner_i ) => {
+                                    #state_name::Ongoing ( inner_i ) => {
                                         match konst::cmp_str(msgs[output_index][inner_i], msgs[i][outer_i]) {
                                             std::cmp::Ordering::Greater => output_index = i,
                                             _ => (),
@@ -891,9 +897,9 @@ impl<'a> GlueMessage<'a> {
                             continue;
                         }
                         match states[i] {
-                            #state_name::Working ( outer_i ) | #state_name::Finished ( outer_i ) => {
+                            #state_name::Ongoing ( outer_i ) | #state_name::Finished ( outer_i ) => {
                                 match states[*index] {
-                                    #state_name::Working ( inner_i ) | #state_name::Finished ( inner_i ) => {
+                                    #state_name::Ongoing ( inner_i ) | #state_name::Finished ( inner_i ) => {
                                         if konst::eq_str(msgs[i][outer_i], msgs[*index][inner_i]) {
                                             panic!("Message overlaps between interface and contract impl!");
                                         }
@@ -911,9 +917,10 @@ impl<'a> GlueMessage<'a> {
                     let mut i = 0;
                     while i < #interfaces_cnt {
                         match states[i] {
-                            #state_name::Working(..) => return false,
+                            #state_name::Ongoing(..) => return false,
                             _ => (),
                         }
+                        i += 1;
                     }
                     true
                 }
