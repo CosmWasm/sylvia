@@ -810,8 +810,8 @@ impl<'a> GlueMessage<'a> {
 
             #[derive(Debug, Copy, Clone)]
             enum #state_name {
-                Working { index: usize },
-                Finished { index: usize },
+                Working (usize),
+                Finished (usize),
                 Empty,
             }
 
@@ -829,7 +829,7 @@ impl<'a> GlueMessage<'a> {
 
                         loop {
                             // compare all elements at current index
-                            #name::verify_no_collissions(&msgs, &indexes);
+                            #name::verify_no_collissions(&msgs, &indexes, &states);
 
                             // increment index of alaphabeticaly first element
                             #name::incr_alphabetically_first_element(&indexes);
@@ -847,9 +847,7 @@ impl<'a> GlueMessage<'a> {
                 }
 
                 const fn init_states(msgs: &[&[&str]; #interfaces_cnt]) -> [#state_name; #interfaces_cnt] {
-                    let mut states = [
-                        #state_name::Working { index: 0 }; #interfaces_cnt
-                    ];
+                    let mut states = [#state_name::Working(0); #interfaces_cnt];
                     let mut i = 0;
                     while i < #interfaces_cnt {
                         if msgs[i].is_empty() {
@@ -873,12 +871,26 @@ impl<'a> GlueMessage<'a> {
                     output_index
                 }
 
-                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt]) {
+                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], indexes: &[usize; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) {
                     let mut i = 0;
                     let ai = #name::get_index_of_alphabetically_smallest(&msgs, &indexes);
                     while i < #interfaces_cnt {
-                        if i != ai && konst::eq_str(msgs[i][indexes[i]], msgs[ai][indexes[ai]]) {
-                            panic!("Message overlaps between interface and contract impl!");
+                        if i == ai {
+                            i += 1;
+                            continue;
+                        }
+                        match states[i] {
+                            #state_name::Working ( outer_i ) | #state_name::Finished ( outer_i ) => {
+                                match states[ai] {
+                                    #state_name::Working ( inner_i ) | #state_name::Finished ( inner_i ) => {
+                                        if konst::eq_str(msgs[i][outer_i], msgs[ai][inner_i]) {
+                                            panic!("Message overlaps between interface and contract impl!");
+                                        }
+                                    },
+                                    _ => (),
+                                }
+                            },
+                            _ => (),
                         }
                         i += 1;
                     }
