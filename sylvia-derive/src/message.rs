@@ -827,13 +827,20 @@ impl<'a> GlueMessage<'a> {
                         let mut states = #name::init_states(&msgs);
 
                         while !#name::should_end(&states) {
+                            // Pivot index
+                            let index = #name::get_index_of_alphabetically_smallest(&msgs, &states);
+
                             // compare all elements at current index
-                            #name::verify_no_collissions(&msgs, &states);
+                            #name::verify_no_collissions(&msgs, &states, &index);
 
                             // increment index of alaphabeticaly first element
-                            #name::incr_alphabetically_first_element(&states);
+                            states[index] = match states[index] {
+                                #state_name::Working (index) => #state_name::Working(index + 1),
+                                _ => panic!("This should never be reached!"),
+                            };
                         }
                     };
+
                     match self {
                         #(#dispatch_arms,)*
                         #impl_dispatch_arm
@@ -876,19 +883,18 @@ impl<'a> GlueMessage<'a> {
                     output_index
                 }
 
-                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) {
+                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt], index: &usize) {
                     let mut i = 0;
-                    let ai = #name::get_index_of_alphabetically_smallest(&msgs, &states);
                     while i < #interfaces_cnt {
-                        if i == ai {
+                        if i == *index {
                             i += 1;
                             continue;
                         }
                         match states[i] {
                             #state_name::Working ( outer_i ) | #state_name::Finished ( outer_i ) => {
-                                match states[ai] {
+                                match states[*index] {
                                     #state_name::Working ( inner_i ) | #state_name::Finished ( inner_i ) => {
-                                        if konst::eq_str(msgs[i][outer_i], msgs[ai][inner_i]) {
+                                        if konst::eq_str(msgs[i][outer_i], msgs[*index][inner_i]) {
                                             panic!("Message overlaps between interface and contract impl!");
                                         }
                                     },
@@ -899,10 +905,6 @@ impl<'a> GlueMessage<'a> {
                         }
                         i += 1;
                     }
-                }
-
-                const fn incr_alphabetically_first_element(states: &[#state_name; #interfaces_cnt]) {
-
                 }
 
                 const fn should_end(states: &[#state_name; #interfaces_cnt]) -> bool {
