@@ -835,7 +835,7 @@ impl<'a> GlueMessage<'a> {
                             #name::incr_alphabetically_first_element(&indexes);
 
                             // check if end of array reached
-                            if #name::should_end() {
+                            if #name::should_end(&states) {
                                 break;
                             }
                         }
@@ -900,7 +900,14 @@ impl<'a> GlueMessage<'a> {
 
                 }
 
-                const fn should_end() -> bool {
+                const fn should_end(states: &[#state_name; #interfaces_cnt]) -> bool {
+                    let mut i = 0;
+                    while i < #interfaces_cnt {
+                        match states[i] {
+                            #state_name::Working(..) => return false,
+                            _ => (),
+                        }
+                    }
                     true
                 }
             }
