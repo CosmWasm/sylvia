@@ -183,4 +183,31 @@ mod tests {
 
         super::verify_no_collissions(&msgs, &states, &3);
     }
+
+    #[test]
+    fn no_intersection() {
+        let msgs: [&[&str]; 5] = [
+            &["msg_b", "msg_c"],
+            &["msg_d", "msg_e", "msg_f"],
+            &["msg_a"],
+            &["msg_g", "msg_h", "msg_i", "msg_j"],
+            &[],
+        ];
+
+        assert_no_intersection(msgs);
+    }
+
+    #[test]
+    #[should_panic]
+    fn intersection() {
+        let msgs: [&[&str]; 5] = [
+            &["msg_b", "msg_c", "msg_i"],
+            &["msg_d", "msg_e", "msg_f"],
+            &["msg_a"],
+            &["msg_g", "msg_h", "msg_i", "msg_j"],
+            &[],
+        ];
+
+        assert_no_intersection(msgs);
+    }
 }
