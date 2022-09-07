@@ -48,8 +48,8 @@ const fn get_index_of_alphabetically_smallest<const N: usize>(
     let mut i = 1;
     let mut output_index = 0;
     while i < N {
-        match states[i] {
-            State::Ongoing(outer_i) => match states[output_index] {
+        if let State::Ongoing(outer_i) = states[i] {
+            match states[output_index] {
                 State::Ongoing(inner_i) => {
                     if let std::cmp::Ordering::Greater =
                         konst::cmp_str(msgs[output_index][inner_i], msgs[i][outer_i])
@@ -58,8 +58,7 @@ const fn get_index_of_alphabetically_smallest<const N: usize>(
                     }
                 }
                 _ => output_index = i,
-            },
-            _ => continue,
+            }
         }
 
         i += 1;
@@ -125,5 +124,26 @@ mod tests {
         let msgs: [&[&str]; 3] = [&["msg", "msg"], &[], &["msg"]];
         let states = [State::Ongoing(0), State::Empty, State::Ongoing(0)];
         assert_eq!(super::init_states(&msgs), states);
+    }
+
+    #[test]
+    fn aquire_index_when_two_states_ongoing() {
+        let msgs: [&[&str]; 3] = [&["msg_b", "msg_c"], &[], &["msg_a"]];
+        let states = [State::Ongoing(1), State::Empty, State::Ongoing(0)];
+        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 2);
+    }
+
+    #[test]
+    fn aquire_index_when_mixed_state() {
+        let msgs: [&[&str]; 3] = [&["msg_b", "msg_c"], &[], &["msg_a"]];
+        let states = [State::Ongoing(1), State::Empty, State::Finished(0)];
+        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 0);
+    }
+
+    #[test]
+    fn aquire_index_when_first_array_empty() {
+        let msgs: [&[&str]; 3] = [&[], &["msg_b", "msg_c"], &["msg_a"]];
+        let states = [State::Empty, State::Ongoing(1), State::Finished(0)];
+        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 1);
     }
 }
