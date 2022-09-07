@@ -20,5 +20,4 @@ proc-macro2 = "1"
 convert_case = "0.5"
 proc-macro-error = "1"
 proc-macro-crate = "1.1"
-konst = "0.2.15"
 utils = {version = "0.1", path = "../utils" }

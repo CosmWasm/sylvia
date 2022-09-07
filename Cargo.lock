@@ -238,7 +238,6 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus 0.13.2",
  "cw1",
- "konst",
  "schemars",
  "serde",
  "sylvia",
@@ -766,7 +765,6 @@ dependencies = [
  "anyhow",
  "cosmwasm-std",
  "cw-storage-plus 0.13.2",
- "konst",
  "schemars",
  "serde",
  "serde-cw-value",
@@ -779,7 +777,6 @@ name = "sylvia-derive"
 version = "0.1.2"
 dependencies = [
  "convert_case",
- "konst",
  "proc-macro-crate",
  "proc-macro-error",
  "proc-macro2",
