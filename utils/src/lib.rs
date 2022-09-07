@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum State {
     Ongoing(usize),
     Finished(usize),
@@ -106,6 +106,24 @@ const fn should_end<const N: usize>(states: &[State; N]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {}
+    fn should_not_end() {
+        let states = [State::Empty, State::Ongoing(3), State::Finished(5)];
+        assert!(!super::should_end(&states));
+    }
+
+    #[test]
+    fn should_end() {
+        let states = [State::Empty, State::Finished(3), State::Finished(5)];
+        assert!(super::should_end(&states));
+    }
+
+    #[test]
+    fn init_states() {
+        let msgs: [&[&str]; 3] = [&["msg", "msg"], &[], &["msg"]];
+        let states = [State::Ongoing(0), State::Empty, State::Ongoing(0)];
+        assert_eq!(super::init_states(&msgs), states);
+    }
 }
