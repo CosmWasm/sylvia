@@ -9,13 +9,13 @@ pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
     let mut states = init_states(&msgs);
 
     while !should_end(&states) {
-        // Pivot index
-        let index = get_index_of_alphabetically_smallest(&msgs, &states);
+        // Comparable index
+        let index = get_next_alphabetical_index(&msgs, &states);
 
-        // compare all elements at current index
+        // Compare all elements at current indexes
         verify_no_collissions(&msgs, &states, &index);
 
-        // increment index of alaphabeticaly first element
+        // Increment index of alaphabeticaly first element
         states[index] = match states[index] {
             State::Ongoing(wi) => {
                 if msgs[index].len() == wi + 1 {
@@ -41,7 +41,7 @@ const fn init_states<const N: usize>(msgs: &[&[&str]; N]) -> [State; N] {
     states
 }
 
-const fn get_index_of_alphabetically_smallest<const N: usize>(
+const fn get_next_alphabetical_index<const N: usize>(
     msgs: &[&[&str]; N],
     states: &[State; N],
 ) -> usize {
@@ -130,21 +130,21 @@ mod tests {
     fn aquire_index_when_two_states_ongoing() {
         let msgs: [&[&str]; 3] = [&["msg_b", "msg_c"], &[], &["msg_a"]];
         let states = [State::Ongoing(1), State::Empty, State::Ongoing(0)];
-        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 2);
+        assert_eq!(get_next_alphabetical_index(&msgs, &states), 2);
     }
 
     #[test]
     fn aquire_index_when_mixed_state() {
         let msgs: [&[&str]; 3] = [&["msg_b", "msg_c"], &[], &["msg_a"]];
         let states = [State::Ongoing(1), State::Empty, State::Finished(0)];
-        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 0);
+        assert_eq!(get_next_alphabetical_index(&msgs, &states), 0);
     }
 
     #[test]
     fn aquire_index_when_first_array_empty() {
         let msgs: [&[&str]; 3] = [&[], &["msg_b", "msg_c"], &["msg_a"]];
         let states = [State::Empty, State::Ongoing(1), State::Finished(0)];
-        assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 1);
+        assert_eq!(get_next_alphabetical_index(&msgs, &states), 1);
     }
 
     #[test]
