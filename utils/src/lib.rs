@@ -210,4 +210,11 @@ mod tests {
 
         assert_no_intersection(msgs);
     }
+
+    #[test]
+    fn single_interface_with_no_contract_msgs() {
+        let msgs: [&[&str]; 2] = [&["msg_a", "msg_b"], &[]];
+
+        assert_no_intersection(msgs);
+    }
 }
