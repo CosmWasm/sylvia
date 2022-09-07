@@ -1,9 +1,14 @@
 [package]
 name = "utils"
-version = "0.1.0"
+version = "0.1.2"
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Library providing mechanism to find intersections in multiple sorted arrays at compile time."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+keywords = ["cosmwasm", "blockchain", "confio"]
+categories = ["api-bindings", "wasm"]
 
 [dependencies]
 konst = "0.2.15"
