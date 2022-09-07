@@ -146,4 +146,41 @@ mod tests {
         let states = [State::Empty, State::Ongoing(1), State::Finished(0)];
         assert_eq!(get_index_of_alphabetically_smallest(&msgs, &states), 1);
     }
+
+    #[test]
+    fn verify_no_collissions() {
+        let msgs: [&[&str]; 4] = [&[], &["msg_b", "msg_c"], &["msg_a"], &["msg_d", "msg_a"]];
+        let states = [
+            State::Empty,
+            State::Ongoing(1),
+            State::Finished(0),
+            State::Ongoing(0),
+        ];
+
+        super::verify_no_collissions(&msgs, &states, &1);
+        super::verify_no_collissions(&msgs, &states, &3);
+
+        let states = [
+            State::Empty,
+            State::Ongoing(1),
+            State::Finished(0),
+            State::Ongoing(1),
+        ];
+
+        super::verify_no_collissions(&msgs, &states, &1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn verify_collissions() {
+        let msgs: [&[&str]; 4] = [&[], &["msg_b", "msg_c"], &["msg_a"], &["msg_d", "msg_a"]];
+        let states = [
+            State::Empty,
+            State::Ongoing(1),
+            State::Finished(0),
+            State::Ongoing(1),
+        ];
+
+        super::verify_no_collissions(&msgs, &states, &3);
+    }
 }
