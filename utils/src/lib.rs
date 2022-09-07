@@ -5,6 +5,17 @@ enum State {
     Empty,
 }
 
+/// # Examples
+///
+/// Compile time intersection assert.
+/// Will panic! in case duplicated messages were provided.
+/// Requires sorted arrays to work.
+/// ```
+///     const _: () = {
+///         let msgs: [&[&str]; 2] = [&["msg_a", "msg_b"], &["msg_c", "msg_d"]];
+///         utils::assert_no_intersection(msgs);
+///     };
+/// ```
 pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
     let mut states = init_states(&msgs);
 
