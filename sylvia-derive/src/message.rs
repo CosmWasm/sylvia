@@ -812,9 +812,10 @@ impl<'a> GlueMessage<'a> {
                     contract: &#contract,
                     ctx: #ctx_type,
                 ) -> #ret_type {
-
-                    let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                    #sylvia ::assert_no_intersection(msgs);
+                    const _: () = {
+                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                        #sylvia ::assert_no_intersection(msgs);
+                    };
 
                     match self {
                         #(#dispatch_arms,)*
