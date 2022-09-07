@@ -797,8 +797,6 @@ impl<'a> GlueMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
 
-        let state_name = Ident::new(&format!("{}State", name), name.span());
-
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
@@ -808,13 +806,6 @@ impl<'a> GlueMessage<'a> {
                 #impl_msg_name
             }
 
-            #[derive(Debug, Copy, Clone)]
-            enum #state_name {
-                Ongoing (usize),
-                Finished (usize),
-                Empty,
-            }
-
             impl #name {
                 pub fn dispatch(
                     self,
@@ -822,107 +813,13 @@ impl<'a> GlueMessage<'a> {
                     ctx: #ctx_type,
                 ) -> #ret_type {
 
-                    const _: () = {
-                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                        let mut states = #name::init_states(&msgs);
-
-                        while !#name::should_end(&states) {
-                            // Pivot index
-                            let index = #name::get_index_of_alphabetically_smallest(&msgs, &states);
-
-                            // compare all elements at current index
-                            #name::verify_no_collissions(&msgs, &states, &index);
-
-                            // increment index of alaphabeticaly first element
-                            states[index] = match states[index] {
-                                #state_name::Ongoing(wi) => {
-                                    if msgs[index].len() == wi + 1 {
-                                        #state_name::Finished(wi)
-                                    } else {
-                                        #state_name::Ongoing(wi + 1)
-                                    }
-                                },
-                                _ => panic!("This should never be reached!"),
-                            };
-                        }
-                    };
+                    let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                    #sylvia ::assert_no_intersection(msgs);
 
                     match self {
                         #(#dispatch_arms,)*
                         #impl_dispatch_arm
                     }
-                }
-
-                const fn init_states(msgs: &[&[&str]; #interfaces_cnt]) -> [#state_name; #interfaces_cnt] {
-                    let mut states = [#state_name::Ongoing(0); #interfaces_cnt];
-                    let mut i = 0;
-                    while i < #interfaces_cnt {
-                        if msgs[i].is_empty() {
-                            states[i] = #state_name::Empty;
-                        }
-                        i += 1;
-                    }
-                    states
-                }
-
-                const fn get_index_of_alphabetically_smallest(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt]) -> usize{
-                    let mut i = 1;
-                    let mut output_index = 0;
-                    while i < #interfaces_cnt {
-                        match states[i] {
-                            #state_name::Ongoing ( outer_i ) => {
-                                match states[output_index] {
-                                    #state_name::Ongoing ( inner_i ) => {
-                                        match konst::cmp_str(msgs[output_index][inner_i], msgs[i][outer_i]) {
-                                            std::cmp::Ordering::Greater => output_index = i,
-                                            _ => (),
-                                        }
-                                    },
-                                    _ => output_index = i,
-                                }
-                            },
-                            _ => continue,
-                        }
-
-                        i += 1;
-                    }
-                    output_index
-                }
-
-                const fn verify_no_collissions(msgs: &[&[&str]; #interfaces_cnt], states: &[#state_name; #interfaces_cnt], index: &usize) {
-                    let mut i = 0;
-                    while i < #interfaces_cnt {
-                        if i == *index {
-                            i += 1;
-                            continue;
-                        }
-                        match states[i] {
-                            #state_name::Ongoing ( outer_i ) | #state_name::Finished ( outer_i ) => {
-                                match states[*index] {
-                                    #state_name::Ongoing ( inner_i ) | #state_name::Finished ( inner_i ) => {
-                                        if konst::eq_str(msgs[i][outer_i], msgs[*index][inner_i]) {
-                                            panic!("Message overlaps between interface and contract impl!");
-                                        }
-                                    },
-                                    _ => (),
-                                }
-                            },
-                            _ => (),
-                        }
-                        i += 1;
-                    }
-                }
-
-                const fn should_end(states: &[#state_name; #interfaces_cnt]) -> bool {
-                    let mut i = 0;
-                    while i < #interfaces_cnt {
-                        match states[i] {
-                            #state_name::Ongoing(..) => return false,
-                            _ => (),
-                        }
-                        i += 1;
-                    }
-                    true
                 }
             }
 

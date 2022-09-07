@@ -7,3 +7,4 @@ pub use schemars;
 pub use serde;
 pub use serde_cw_value as serde_value;
 pub use sylvia_derive::{contract, interface};
+pub use utils::assert_no_intersection;
