@@ -1,9 +1,12 @@
-mod contract;
-mod error;
-mod multitest;
+pub mod contract;
+mod cw1;
+pub mod error;
+#[cfg(any(test, feature = "tests"))]
+pub mod multitest;
+pub mod responses;
 
 #[cfg(not(feature = "library"))]
-pub mod entry_points {
+mod entry_points {
     use cosmwasm_std::{
         entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     };
@@ -38,3 +41,6 @@ pub mod entry_points {
         from_slice::<QueryMsg>(&msg)?.dispatch(&CONTRACT, (deps, env))
     }
 }
+
+#[cfg(not(feature = "library"))]
+pub use crate::entry_points::*;
