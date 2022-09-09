@@ -1,7 +1,10 @@
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum State {
+    // Ongoing arrays can be compared to other arrays.
     Ongoing(usize),
+    // Finished arrays can only be used by other arrays to be compared to.
     Finished(usize),
+    // There can be empty arrays provided and we want to secure ourselves from "index out of bounds"
     Empty,
 }
 
@@ -20,7 +23,8 @@ pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
     let mut states = init_states(&msgs);
 
     while !should_end(&states) {
-        // Comparable index
+        // Get index of array with alphabetically smallest value.
+        // This will always be one which state is Ongoing.
         let index = get_next_alphabetical_index(&msgs, &states);
 
         // Compare all elements at current indexes
@@ -51,6 +55,8 @@ const fn init_states<const N: usize>(msgs: &[&[&str]; N]) -> [State; N] {
     states
 }
 
+// Finds index of array which is Ongoing and which current value
+// is alphabetically smallest
 const fn get_next_alphabetical_index<const N: usize>(
     msgs: &[&[&str]; N],
     states: &[State; N],
@@ -73,6 +79,12 @@ const fn get_next_alphabetical_index<const N: usize>(
     output_index
 }
 
+// Compare values at current indexes saved in states.
+// All comparisions are made with value at index which point to alphabetically smallest
+// and values in each other arrays at their current position.
+//
+// Because arrays are sorted we don't have to compare each value with each other
+// and can just compare values in alphabetical ordering.
 const fn verify_no_collissions<const N: usize>(
     msgs: &[&[&str]; N],
     states: &[State; N],
@@ -85,14 +97,13 @@ const fn verify_no_collissions<const N: usize>(
             continue;
         }
         match states[i] {
-            State::Ongoing(outer_i) | State::Finished(outer_i) => match states[*index] {
-                State::Ongoing(inner_i) | State::Finished(inner_i) => {
+            State::Ongoing(outer_i) | State::Finished(outer_i) => {
+                if let State::Ongoing(inner_i) = states[*index] {
                     if konst::eq_str(msgs[i][outer_i], msgs[*index][inner_i]) {
                         panic!("Message overlaps between interface and contract impl!");
                     }
                 }
-                _ => (),
-            },
+            }
             _ => (),
         }
         i += 1;
