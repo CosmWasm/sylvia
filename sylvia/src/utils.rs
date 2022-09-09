@@ -13,7 +13,7 @@ enum State {
 /// ```
 ///     const _: () = {
 ///         let msgs: [&[&str]; 2] = [&["msg_a", "msg_b"], &["msg_c", "msg_d"]];
-///         utils::assert_no_intersection(msgs);
+///         sylvia::utils::assert_no_intersection(msgs);
 ///     };
 /// ```
 pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {

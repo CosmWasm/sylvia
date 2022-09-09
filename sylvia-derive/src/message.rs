@@ -814,7 +814,7 @@ impl<'a> GlueMessage<'a> {
                 ) -> #ret_type {
                     const _: () = {
                         let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                        #sylvia ::assert_no_intersection(msgs);
+                        #sylvia ::utils::assert_no_intersection(msgs);
                     };
 
                     match self {
