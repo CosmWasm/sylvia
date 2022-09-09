@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use cosmwasm_std::{CosmosMsg, DepsMut, Env, MessageInfo, Response};
 
 use sylvia_derive::interface;

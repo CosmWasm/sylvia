@@ -292,10 +292,11 @@ impl<'a> EnumMessage<'a> {
         let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
-        let msgs: Vec<String> = variants
+        let mut msgs: Vec<String> = variants
             .iter()
             .map(|var| var.name.to_string().to_case(Case::Snake))
             .collect();
+        msgs.sort();
         let msgs_cnt = msgs.len();
         let variants = variants.iter().map(MsgVariant::emit);
         let where_clause = if !wheres.is_empty() {
@@ -412,10 +413,11 @@ impl<'a> ImplEnumMessage<'a> {
         let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
-        let msgs: Vec<String> = variants
+        let mut msgs: Vec<String> = variants
             .iter()
             .map(|var| var.name.to_string().to_case(Case::Snake))
             .collect();
+        msgs.sort();
         let msgs_cnt = msgs.len();
         let variants = variants.iter().map(ImplMsgVariant::emit);
 
@@ -728,7 +730,7 @@ impl<'a> GlueMessage<'a> {
             quote! { #variant(#module :: #name<#(#generics,)*>) }
         });
 
-        let impl_msg_name = match msg_ty {
+        let impl_msg = match msg_ty {
             MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
             MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
             MsgType::Instantiate => {
@@ -739,7 +741,19 @@ impl<'a> GlueMessage<'a> {
                 Ident::new("", Span::call_site())
             }
         };
-        let impl_msg_name = quote! {#contract ( #impl_msg_name)};
+        let impl_msg_name = quote! {#contract ( #impl_msg)};
+
+        let mut interface_names: Vec<TokenStream> = interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, .. } = interface;
+
+                quote! { &#module :: #name :: messages()}
+            })
+            .collect();
+
+        interface_names.push(quote! {&#impl_msg :: messages()});
+        let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -798,6 +812,11 @@ impl<'a> GlueMessage<'a> {
                     contract: &#contract,
                     ctx: #ctx_type,
                 ) -> #ret_type {
+                    const _: () = {
+                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                        #sylvia ::utils::assert_no_intersection(msgs);
+                    };
+
                     match self {
                         #(#dispatch_arms,)*
                         #impl_dispatch_arm

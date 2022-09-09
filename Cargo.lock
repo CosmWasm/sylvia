@@ -456,6 +456,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "konst"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a0f20e801b88a84a6486eb13b44e446bdbfd0f104da5a83d07072fcd8b7bc8a"
+dependencies = [
+ "konst_macro_rules",
+ "konst_proc_macros",
+]
+
+[[package]]
+name = "konst_macro_rules"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "564383fd5aa756dd41128051e0bd54782f80a7e286dc17fcc7fe024b07f65015"
+
+[[package]]
+name = "konst_proc_macros"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "984e109462d46ad18314f10e392c286c3d47bce203088a09012de1015b45b737"
+
+[[package]]
 name = "libc"
 version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -743,6 +765,7 @@ dependencies = [
  "anyhow",
  "cosmwasm-std",
  "cw-storage-plus 0.13.2",
+ "konst",
  "schemars",
  "serde",
  "serde-cw-value",

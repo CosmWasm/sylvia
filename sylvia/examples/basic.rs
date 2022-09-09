@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use anyhow::Error;
 use cosmwasm_std::{Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError};
 use cw_storage_plus::{Item, Map};
@@ -56,7 +55,7 @@ pub trait Group {
 
 pub struct GroupContract {
     admin: Item<'static, Addr>,
-    members: Map<'static, Addr, u64>,
+    _members: Map<'static, Addr, u64>,
 }
 
 impl Default for GroupContract {
@@ -96,7 +95,7 @@ impl GroupContract {
     pub fn new() -> Self {
         Self {
             admin: Item::new("admin"),
-            members: Map::new("members"),
+            _members: Map::new("members"),
         }
     }
 
