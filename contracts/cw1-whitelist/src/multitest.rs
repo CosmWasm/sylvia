@@ -1,136 +1,128 @@
+use anyhow::{bail, Result as AnyResult};
+use cosmwasm_std::{from_slice, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response};
+use cw_multi_test::Contract;
+
+use crate::contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg};
+
+impl Contract<Empty> for Cw1WhitelistContract<'_> {
+    fn instantiate(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: Vec<u8>,
+    ) -> AnyResult<Response> {
+        from_slice::<InstantiateMsg>(&msg)?
+            .dispatch(self, (deps, env, info))
+            .map_err(Into::into)
+    }
+
+    fn execute(
+        &self,
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        msg: Vec<u8>,
+    ) -> AnyResult<Response<Empty>> {
+        from_slice::<ExecMsg>(&msg)?
+            .dispatch(self, (deps, env, info))
+            .map_err(Into::into)
+    }
+
+    fn query(&self, deps: cosmwasm_std::Deps, env: Env, msg: Vec<u8>) -> AnyResult<Binary> {
+        from_slice::<QueryMsg>(&msg)?
+            .dispatch(self, (deps, env))
+            .map_err(Into::into)
+    }
+
+    fn sudo(&self, _deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response<Empty>> {
+        bail!("sudo not implemented for contract")
+    }
+
+    fn reply(&self, _deps: DepsMut, _env: Env, _msg: Reply) -> AnyResult<Response<Empty>> {
+        bail!("reply not implemented for contract")
+    }
+
+    fn migrate(&self, _deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response<Empty>> {
+        bail!("migrate not implemented for contract")
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::contract::{Cw1WhitelistContract, ExecMsg, ImplExecMsg, InstantiateMsg};
-    use anyhow::{bail, Result as AnyResult};
-    use cosmwasm_std::{
-        from_slice, Addr, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response,
-    };
-    use cw1::{FindMemberResponse, QueryMsg};
-    use cw_multi_test::{App, Contract, Executor};
+    use cosmwasm_std::{to_binary, Addr, WasmMsg};
+    use cw_multi_test::{App, Executor};
 
-    impl Contract<Empty> for Cw1WhitelistContract {
-        fn instantiate(
-            &self,
-            deps: DepsMut,
-            env: Env,
-            info: MessageInfo,
-            msg: Vec<u8>,
-        ) -> AnyResult<Response<Empty>> {
-            from_slice::<InstantiateMsg>(&msg)?
-                .dispatch(self, (deps, env, info))
-                .map_err(Into::into)
-        }
+    use crate::contract::{ImplExecMsg, ImplQueryMsg};
+    use crate::responses::AdminListResponse;
+    use assert_matches::assert_matches;
 
-        fn execute(
-            &self,
-            deps: DepsMut,
-            env: Env,
-            info: MessageInfo,
-            msg: Vec<u8>,
-        ) -> AnyResult<Response<Empty>> {
-            from_slice::<ExecMsg>(&msg)?
-                .dispatch(self, (deps, env, info))
-                .map_err(Into::into)
-        }
-
-        fn query(&self, deps: cosmwasm_std::Deps, env: Env, msg: Vec<u8>) -> AnyResult<Binary> {
-            from_slice::<QueryMsg>(&msg)?
-                .dispatch(self, (deps, env))
-                .map_err(Into::into)
-        }
-
-        fn sudo(&self, _deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response<Empty>> {
-            bail!("sudo not implemented for contract")
-        }
-
-        fn reply(&self, _deps: DepsMut, _env: Env, _msg: Reply) -> AnyResult<Response<Empty>> {
-            bail!("reply not implemented for contract")
-        }
-
-        fn migrate(&self, _deps: DepsMut, _env: Env, _msg: Vec<u8>) -> AnyResult<Response<Empty>> {
-            bail!("migrate not implemented for contract")
-        }
-    }
+    use super::*;
 
     #[test]
-    fn entry_points() {
+    fn proxy_freeze_message() {
         let mut app = App::default();
-        let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
 
-        let contract = app
+        let owner = Addr::unchecked("owner");
+
+        let code_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
+
+        let first_contract = app
             .instantiate_contract(
-                contract_id,
-                Addr::unchecked("Owner"),
+                code_id,
+                owner.clone(),
                 &InstantiateMsg {
-                    members: vec!["member".to_owned()],
+                    admins: vec![owner.to_string()],
+                    mutable: true,
                 },
                 &[],
-                "contract",
+                "First contract",
                 None,
             )
             .unwrap();
 
+        let second_contract = app
+            .instantiate_contract(
+                code_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    admins: vec![first_contract.to_string()],
+                    mutable: true,
+                },
+                &[],
+                "Second contract",
+                None,
+            )
+            .unwrap();
+        assert_ne!(second_contract, first_contract);
+
+        let freeze = ImplExecMsg::Freeze {};
+        let freeze = WasmMsg::Execute {
+            contract_addr: second_contract.to_string(),
+            msg: to_binary(&freeze).unwrap(),
+            funds: vec![],
+        };
         app.execute_contract(
-            Addr::unchecked("owner"),
-            contract.clone(),
-            &cw1::ExecMsg::AddMember {
-                member: "other_member".to_owned(),
+            owner,
+            first_contract,
+            &cw1::ExecMsg::Execute {
+                msgs: vec![freeze.into()],
             },
             &[],
         )
         .unwrap();
 
-        let resp: FindMemberResponse = app
+        let resp = app
             .wrap()
-            .query_wasm_smart(
-                contract,
-                &QueryMsg::FindMember {
-                    member: "other_member".to_owned(),
-                },
-            )
+            .query_wasm_smart(second_contract, &ImplQueryMsg::AdminList {})
             .unwrap();
 
-        assert_eq!(resp, FindMemberResponse { is_present: true });
-    }
-
-    #[test]
-    fn contract_exec() {
-        let mut app = App::default();
-        let contract_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
-
-        let contract = app
-            .instantiate_contract(
-                contract_id,
-                Addr::unchecked("Owner"),
-                &InstantiateMsg {
-                    members: vec!["member".to_owned(), "other_member".to_owned()],
-                },
-                &[],
-                "contract",
-                None,
-            )
-            .unwrap();
-
-        app.execute_contract(
-            Addr::unchecked("owner"),
-            contract.clone(),
-            &ImplExecMsg::RemoveMember {
-                member: "other_member".to_owned(),
-            },
-            &[],
-        )
-        .unwrap();
-
-        let resp: FindMemberResponse = app
-            .wrap()
-            .query_wasm_smart(
-                contract,
-                &QueryMsg::FindMember {
-                    member: "other_member".to_owned(),
-                },
-            )
-            .unwrap();
-
-        assert_eq!(resp, FindMemberResponse { is_present: false });
+        assert_matches!(
+            resp,
+            AdminListResponse {
+                mutable,
+                ..
+            } if !mutable
+        );
     }
 }

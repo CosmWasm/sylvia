@@ -1,94 +1,115 @@
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError};
-
+use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::interface;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
-pub struct FindMemberResponse {
-    pub is_present: bool,
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
+pub struct CanExecuteResp {
+    pub can_execute: bool,
 }
 
 #[interface]
 pub trait Cw1 {
     type Error: From<StdError>;
 
+    /// Execute requests the contract to re-dispatch all these messages with the
+    /// contract's address as sender. Every implementation has it's own logic to
+    /// determine in
     #[msg(exec)]
-    fn add_member(
+    fn execute(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
-        member: String,
+        msgs: Vec<CosmosMsg>,
     ) -> Result<Response, Self::Error>;
 
+    /// Checks permissions of the caller on this proxy.
+    /// If CanExecute returns true then a call to `Execute` with the same message,
+    /// from the given sender, before any further state changes, should also succeed.
     #[msg(query)]
-    fn find_member(
+    fn can_execute(
         &self,
         ctx: (Deps, Env),
-        member: String,
-    ) -> Result<FindMemberResponse, Self::Error>;
+        sender: String,
+        msg: CosmosMsg,
+    ) -> Result<CanExecuteResp, Self::Error>;
 }
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_binary, from_slice, to_binary};
+    use cosmwasm_std::{coins, from_binary, from_slice, to_binary, BankMsg};
 
     use super::*;
 
     #[test]
     fn execute() {
-        let original_msg = ExecMsg::AddMember {
-            member: "member_name".to_owned(),
+        let original = ExecMsg::Execute {
+            msgs: vec![BankMsg::Send {
+                to_address: "receiver".to_owned(),
+                amount: coins(10, "atom"),
+            }
+            .into()],
         };
 
-        let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: ExecMsg = from_binary(&serialized_msg).unwrap();
+        let serialized = to_binary(&original).unwrap();
+        let deserialized = from_binary(&serialized).unwrap();
 
-        assert_eq!(serialized_msg, original_msg);
-    }
-
-    #[test]
-    fn query() {
-        let original_msg = QueryMsg::FindMember {
-            member: "member_name".to_owned(),
-        };
-
-        let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
-
-        assert_eq!(serialized_msg, original_msg);
+        assert_eq!(original, deserialized);
     }
 
     #[test]
     fn execute_from_slice() {
-        let deserialized: ExecMsg =
-            from_slice(br#"{"add_member": {"member": "some_member"}}"#).unwrap();
-        assert_eq!(
-            deserialized,
-            ExecMsg::AddMember {
-                member: "some_member".to_owned()
+        let deserialized = from_slice(br#"{"execute": { "msgs": [] }}"#).unwrap();
+        assert_eq!(ExecMsg::Execute { msgs: vec![] }, deserialized);
+    }
+
+    #[test]
+    fn query() {
+        let original = QueryMsg::CanExecute {
+            sender: "sender".to_owned(),
+            msg: BankMsg::Send {
+                to_address: "receiver".to_owned(),
+                amount: coins(10, "atom"),
             }
-        );
+            .into(),
+        };
+
+        let serialized = to_binary(&original).unwrap();
+        let deserialized = from_binary(&serialized).unwrap();
+
+        assert_eq!(original, deserialized);
     }
 
     #[test]
     fn query_from_slice() {
-        let deserialized: QueryMsg =
-            from_slice(br#"{"find_member": {"member": "some_member"}}"#).unwrap();
+        let deserialized = from_slice(
+            br#"{"can_execute": {
+                "sender": "address",
+                "msg": {
+                    "bank": {
+                        "send": {
+                            "to_address": "receiver",
+                            "amount": [
+                                {
+                                    "amount": "10",
+                                    "denom": "atom"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }}"#,
+        )
+        .unwrap();
         assert_eq!(
-            deserialized,
-            QueryMsg::FindMember {
-                member: "some_member".to_owned()
-            }
+            QueryMsg::CanExecute {
+                sender: "address".to_owned(),
+                msg: BankMsg::Send {
+                    to_address: "receiver".to_owned(),
+                    amount: coins(10, "atom"),
+                }
+                .into()
+            },
+            deserialized
         );
-    }
-
-    #[test]
-    fn query_msgs() {
-        assert_eq!(QueryMsg::messages(), ["find_member"]);
-    }
-
-    #[test]
-    fn exec_msgs() {
-        assert_eq!(ExecMsg::messages(), ["add_member"]);
     }
 }
