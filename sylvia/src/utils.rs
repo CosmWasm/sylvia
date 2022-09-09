@@ -42,12 +42,11 @@ pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
 
 const fn init_states<const N: usize>(msgs: &[&[&str]; N]) -> [State; N] {
     let mut states = [State::Ongoing(0); N];
-    let mut i = 0;
-    while i < N {
+    konst::for_range! {i in 0..N =>
         if msgs[i].is_empty() {
             states[i] = State::Empty;
         }
-        i += 1;
+
     }
     states
 }
@@ -56,9 +55,8 @@ const fn get_next_alphabetical_index<const N: usize>(
     msgs: &[&[&str]; N],
     states: &[State; N],
 ) -> usize {
-    let mut i = 1;
     let mut output_index = 0;
-    while i < N {
+    konst::for_range! {i in 0..N =>
         if let State::Ongoing(outer_i) = states[i] {
             match states[output_index] {
                 State::Ongoing(inner_i) => {
@@ -71,8 +69,6 @@ const fn get_next_alphabetical_index<const N: usize>(
                 _ => output_index = i,
             }
         }
-
-        i += 1;
     }
     output_index
 }
@@ -104,12 +100,10 @@ const fn verify_no_collissions<const N: usize>(
 }
 
 const fn should_end<const N: usize>(states: &[State; N]) -> bool {
-    let mut i = 0;
-    while i < N {
+    konst::for_range! {i in 0..N =>
         if let State::Ongoing(..) = states[i] {
             return false;
         }
-        i += 1;
     }
     true
 }
