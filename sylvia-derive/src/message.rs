@@ -749,8 +749,8 @@ impl<'a> GlueMessage<'a> {
 
             quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
-        let impl_dispatch_arm =
-            quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
+
+        let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -764,9 +764,9 @@ impl<'a> GlueMessage<'a> {
             }
         });
 
-        let impl_var = Ident::new("contract", Span::mixed_site());
-        let impl_deserialization_attempt = quote! {
-            let #impl_var = match val.clone().deserialize_into() {
+        let contract_variant = Ident::new("contract", Span::mixed_site());
+        let contract_deserialization_attempt = quote! {
+            let #contract_variant = match val.clone().deserialize_into() {
                 Ok(msg) => return Ok(Self:: #contract (msg)),
                 Err(err) => err,
             };
@@ -779,7 +779,8 @@ impl<'a> GlueMessage<'a> {
             quote! { format!("As {}: {}", stringify!(#variant), #var) }
         });
 
-        let impl_deser_errors = quote! { format!("As {}: {}", stringify!(#msg_name), #impl_var) };
+        let contract_deser_errors =
+            quote! { format!("As {}: {}", stringify!(#msg_name), #contract_variant) };
 
         let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
@@ -808,7 +809,7 @@ impl<'a> GlueMessage<'a> {
 
                     match self {
                         #(#dispatch_arms,)*
-                        #impl_dispatch_arm
+                        #dispatch_arm
                     }
                 }
             }
@@ -821,13 +822,13 @@ impl<'a> GlueMessage<'a> {
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
 
                     #(#deserialization_attempts)*
-                    #impl_deserialization_attempt
+                    #contract_deserialization_attempt
 
                     Err(D::Error::custom(format!(
                         "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}",
                         stringify!(#(#messages_type),*),
                         stringify!(#msg_name),
-                        [#(#deser_errors,)* #impl_deser_errors].join("\n")
+                        [#(#deser_errors,)* #contract_deser_errors].join("\n")
                     )))
                 }
             }
