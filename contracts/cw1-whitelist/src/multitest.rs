@@ -2,7 +2,7 @@ use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{from_slice, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response};
 use cw_multi_test::Contract;
 
-use crate::contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg};
+use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw1WhitelistContract, InstantiateMsg};
 
 impl Contract<Empty> for Cw1WhitelistContract<'_> {
     fn instantiate(
@@ -24,13 +24,13 @@ impl Contract<Empty> for Cw1WhitelistContract<'_> {
         info: MessageInfo,
         msg: Vec<u8>,
     ) -> AnyResult<Response<Empty>> {
-        from_slice::<ExecMsg>(&msg)?
+        from_slice::<ContractExecMsg>(&msg)?
             .dispatch(self, (deps, env, info))
             .map_err(Into::into)
     }
 
     fn query(&self, deps: cosmwasm_std::Deps, env: Env, msg: Vec<u8>) -> AnyResult<Binary> {
-        from_slice::<QueryMsg>(&msg)?
+        from_slice::<ContractQueryMsg>(&msg)?
             .dispatch(self, (deps, env))
             .map_err(Into::into)
     }
@@ -53,7 +53,7 @@ mod test {
     use cosmwasm_std::{to_binary, Addr, WasmMsg};
     use cw_multi_test::{App, Executor};
 
-    use crate::contract::{ImplExecMsg, ImplQueryMsg};
+    use crate::contract::{ExecMsg, QueryMsg};
     use crate::responses::AdminListResponse;
     use assert_matches::assert_matches;
 
@@ -96,7 +96,7 @@ mod test {
             .unwrap();
         assert_ne!(second_contract, first_contract);
 
-        let freeze = ImplExecMsg::Freeze {};
+        let freeze = ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
             contract_addr: second_contract.to_string(),
             msg: to_binary(&freeze).unwrap(),
@@ -114,7 +114,7 @@ mod test {
 
         let resp = app
             .wrap()
-            .query_wasm_smart(second_contract, &ImplQueryMsg::AdminList {})
+            .query_wasm_smart(second_contract, &QueryMsg::AdminList {})
             .unwrap();
 
         assert_matches!(

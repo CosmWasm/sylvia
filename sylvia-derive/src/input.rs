@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::message::{EnumMessage, GlueMessage, ImplEnumMessage, StructMessage};
+use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -112,14 +112,10 @@ impl<'a> ImplInput<'a> {
 
     fn emit_messages(&self) -> TokenStream {
         let instantiate = self.emit_struct_msg(MsgType::Instantiate);
-        let exec_impl = self.emit_enum_msg(
-            &Ident::new("ImplExecMsg", Span::mixed_site()),
-            MsgType::Exec,
-        );
-        let query_impl = self.emit_enum_msg(
-            &Ident::new("ImplQueryMsg", Span::mixed_site()),
-            MsgType::Query,
-        );
+        let exec_impl =
+            self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
+        let query_impl =
+            self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
@@ -141,7 +137,7 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ImplEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
+        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
