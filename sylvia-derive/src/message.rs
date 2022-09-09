@@ -712,6 +712,7 @@ impl<'a> GlueMessage<'a> {
             error,
         } = self;
         let contract = StripGenerics.fold_type((*contract).clone());
+        let contract_name = Ident::new(&format!("Contract{}", name), name.span());
 
         let variants = interfaces.iter().map(|interface| {
             let ContractMessageAttr {
@@ -758,9 +759,10 @@ impl<'a> GlueMessage<'a> {
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
 
-            quote! { #name :: #variant(msg) => msg.dispatch(contract, ctx) }
+            quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
-        let impl_dispatch_arm = quote! {#name :: #contract (msg) =>msg.dispatch(contract, ctx)};
+        let impl_dispatch_arm =
+            quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
@@ -801,12 +803,12 @@ impl<'a> GlueMessage<'a> {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case", untagged)]
-            pub enum #name {
+            pub enum #contract_name {
                 #(#variants,)*
                 #impl_msg_name
             }
 
-            impl #name {
+            impl #contract_name {
                 pub fn dispatch(
                     self,
                     contract: &#contract,
@@ -824,7 +826,7 @@ impl<'a> GlueMessage<'a> {
                 }
             }
 
-            impl<'de> serde::Deserialize<'de> for #name {
+            impl<'de> serde::Deserialize<'de> for #contract_name {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                     where D: serde::Deserializer<'de>,
                 {

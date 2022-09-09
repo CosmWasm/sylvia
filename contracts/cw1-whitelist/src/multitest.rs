@@ -2,7 +2,7 @@ use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{from_slice, Binary, DepsMut, Empty, Env, MessageInfo, Reply, Response};
 use cw_multi_test::Contract;
 
-use crate::contract::{Cw1WhitelistContract, ExecMsg, InstantiateMsg, QueryMsg};
+use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw1WhitelistContract, InstantiateMsg};
 
 impl Contract<Empty> for Cw1WhitelistContract<'_> {
     fn instantiate(
@@ -24,13 +24,13 @@ impl Contract<Empty> for Cw1WhitelistContract<'_> {
         info: MessageInfo,
         msg: Vec<u8>,
     ) -> AnyResult<Response<Empty>> {
-        from_slice::<ExecMsg>(&msg)?
+        from_slice::<ContractExecMsg>(&msg)?
             .dispatch(self, (deps, env, info))
             .map_err(Into::into)
     }
 
     fn query(&self, deps: cosmwasm_std::Deps, env: Env, msg: Vec<u8>) -> AnyResult<Binary> {
-        from_slice::<QueryMsg>(&msg)?
+        from_slice::<ContractQueryMsg>(&msg)?
             .dispatch(self, (deps, env))
             .map_err(Into::into)
     }

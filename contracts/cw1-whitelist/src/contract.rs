@@ -354,7 +354,7 @@ mod tests {
     mod msgs {
         use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
 
-        use crate::contract::{ExecMsg, ImplExecMsg, ImplQueryMsg, QueryMsg};
+        use crate::contract::{ContractExecMsg, ContractQueryMsg, ImplExecMsg, ImplQueryMsg};
 
         #[test]
         fn freeze() {
@@ -362,7 +362,10 @@ mod tests {
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(ExecMsg::Cw1WhitelistContract(original), deserialized);
+            assert_eq!(
+                ContractExecMsg::Cw1WhitelistContract(original),
+                deserialized
+            );
 
             let json = br#"{
                 "freeze": {}
@@ -370,7 +373,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ExecMsg::Cw1WhitelistContract(ImplExecMsg::Freeze {}),
+                ContractExecMsg::Cw1WhitelistContract(ImplExecMsg::Freeze {}),
                 deserialized
             );
         }
@@ -383,7 +386,10 @@ mod tests {
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(ExecMsg::Cw1WhitelistContract(original), deserialized);
+            assert_eq!(
+                ContractExecMsg::Cw1WhitelistContract(original),
+                deserialized
+            );
 
             let json = br#"{
                 "update_admins": {
@@ -393,7 +399,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ExecMsg::Cw1WhitelistContract(ImplExecMsg::UpdateAdmins {
+                ContractExecMsg::Cw1WhitelistContract(ImplExecMsg::UpdateAdmins {
                     admins: vec!["admin1".to_owned(), "admin3".to_owned()]
                 }),
                 deserialized
@@ -406,7 +412,10 @@ mod tests {
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(QueryMsg::Cw1WhitelistContract(original), deserialized);
+            assert_eq!(
+                ContractQueryMsg::Cw1WhitelistContract(original),
+                deserialized
+            );
 
             let json = br#"{
                 "admin_list": {}
@@ -414,7 +423,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                QueryMsg::Cw1WhitelistContract(ImplQueryMsg::AdminList {}),
+                ContractQueryMsg::Cw1WhitelistContract(ImplQueryMsg::AdminList {}),
                 deserialized
             );
         }
@@ -430,7 +439,7 @@ mod tests {
             };
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
-            assert_eq!(ExecMsg::Cw1(original), deserialized);
+            assert_eq!(ContractExecMsg::Cw1(original), deserialized);
         }
 
         #[test]
@@ -445,7 +454,7 @@ mod tests {
             };
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
-            assert_eq!(QueryMsg::Cw1(original), deserialized);
+            assert_eq!(ContractQueryMsg::Cw1(original), deserialized);
         }
     }
 }
