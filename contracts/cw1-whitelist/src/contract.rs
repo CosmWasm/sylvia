@@ -253,7 +253,7 @@ mod tests {
             )
             .unwrap();
 
-        let freeze = ImplExecMsg::Freeze {};
+        let freeze = ExecMsg::Freeze {};
         let msgs = vec![
             BankMsg::Send {
                 to_address: bob.to_string(),
@@ -354,11 +354,11 @@ mod tests {
     mod msgs {
         use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
 
-        use crate::contract::{ContractExecMsg, ContractQueryMsg, ImplExecMsg, ImplQueryMsg};
+        use crate::contract::{ContractExecMsg, ContractQueryMsg, ExecMsg, QueryMsg};
 
         #[test]
         fn freeze() {
-            let original = ImplExecMsg::Freeze {};
+            let original = ExecMsg::Freeze {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -373,14 +373,14 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(ImplExecMsg::Freeze {}),
+                ContractExecMsg::Cw1WhitelistContract(ExecMsg::Freeze {}),
                 deserialized
             );
         }
 
         #[test]
         fn update_admins() {
-            let original = ImplExecMsg::UpdateAdmins {
+            let original = ExecMsg::UpdateAdmins {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
             let serialized = to_binary(&original).unwrap();
@@ -399,7 +399,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(ImplExecMsg::UpdateAdmins {
+                ContractExecMsg::Cw1WhitelistContract(ExecMsg::UpdateAdmins {
                     admins: vec!["admin1".to_owned(), "admin3".to_owned()]
                 }),
                 deserialized
@@ -408,7 +408,7 @@ mod tests {
 
         #[test]
         fn admin_list() {
-            let original = ImplQueryMsg::AdminList {};
+            let original = QueryMsg::AdminList {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -423,7 +423,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractQueryMsg::Cw1WhitelistContract(ImplQueryMsg::AdminList {}),
+                ContractQueryMsg::Cw1WhitelistContract(QueryMsg::AdminList {}),
                 deserialized
             );
         }

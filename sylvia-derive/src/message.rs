@@ -731,19 +731,7 @@ impl<'a> GlueMessage<'a> {
             quote! { #variant(#module :: #name<#(#generics,)*>) }
         });
 
-        let impl_msg = match msg_ty {
-            MsgType::Exec => Ident::new("ImplExecMsg", Span::call_site()),
-            MsgType::Query => Ident::new("ImplQueryMsg", Span::call_site()),
-            MsgType::Instantiate => {
-                emit_error!(
-                    name.span(),
-                    "Do not emit InstantiateMsg using GlueMessage. Use StructMessage instead!"
-                );
-                Ident::new("", Span::call_site())
-            }
-        };
-        let impl_msg_name = quote! {#contract ( #impl_msg)};
-
+        let msg_name = quote! {#contract ( #name)};
         let mut interface_names: Vec<TokenStream> = interfaces
             .iter()
             .map(|interface| {
@@ -753,7 +741,7 @@ impl<'a> GlueMessage<'a> {
             })
             .collect();
 
-        interface_names.push(quote! {&#impl_msg :: messages()});
+        interface_names.push(quote! {&#name :: messages()});
         let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
@@ -791,8 +779,7 @@ impl<'a> GlueMessage<'a> {
             quote! { format!("As {}: {}", stringify!(#variant), #var) }
         });
 
-        let impl_deser_errors =
-            quote! { format!("As {}: {}", stringify!(#impl_msg_name), #impl_var) };
+        let impl_deser_errors = quote! { format!("As {}: {}", stringify!(#msg_name), #impl_var) };
 
         let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
@@ -805,7 +792,7 @@ impl<'a> GlueMessage<'a> {
             #[serde(rename_all="snake_case", untagged)]
             pub enum #contract_name {
                 #(#variants,)*
-                #impl_msg_name
+                #msg_name
             }
 
             impl #contract_name {
@@ -839,7 +826,7 @@ impl<'a> GlueMessage<'a> {
                     Err(D::Error::custom(format!(
                         "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}",
                         stringify!(#(#messages_type),*),
-                        stringify!(#impl_msg_name),
+                        stringify!(#msg_name),
                         [#(#deser_errors,)* #impl_deser_errors].join("\n")
                     )))
                 }
