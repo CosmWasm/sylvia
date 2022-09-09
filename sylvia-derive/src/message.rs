@@ -349,7 +349,7 @@ impl<'a> EnumMessage<'a> {
 }
 
 /// Representation of single enum message
-pub struct ImplEnumMessage<'a> {
+pub struct ContractEnumMessage<'a> {
     name: &'a Ident,
     variants: Vec<MsgVariant<'a>>,
     msg_ty: MsgType,
@@ -357,7 +357,7 @@ pub struct ImplEnumMessage<'a> {
     error: &'a Type,
 }
 
-impl<'a> ImplEnumMessage<'a> {
+impl<'a> ContractEnumMessage<'a> {
     pub fn new(
         name: &'a Ident,
         source: &'a ItemImpl,

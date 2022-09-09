@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::message::{EnumMessage, GlueMessage, ImplEnumMessage, StructMessage};
+use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -137,7 +137,7 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ImplEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
+        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
