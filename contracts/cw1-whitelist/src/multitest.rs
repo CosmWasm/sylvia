@@ -53,8 +53,8 @@ mod test {
     use cosmwasm_std::{to_binary, Addr, WasmMsg};
     use cw_multi_test::{App, Executor};
 
-    use crate::contract::{ExecMsg, QueryMsg};
     use crate::responses::AdminListResponse;
+    use crate::whitelist;
     use assert_matches::assert_matches;
 
     use super::*;
@@ -96,7 +96,7 @@ mod test {
             .unwrap();
         assert_ne!(second_contract, first_contract);
 
-        let freeze = ExecMsg::Freeze {};
+        let freeze = whitelist::ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
             contract_addr: second_contract.to_string(),
             msg: to_binary(&freeze).unwrap(),
@@ -114,7 +114,7 @@ mod test {
 
         let resp = app
             .wrap()
-            .query_wasm_smart(second_contract, &QueryMsg::AdminList {})
+            .query_wasm_smart(second_contract, &whitelist::QueryMsg::AdminList {})
             .unwrap();
 
         assert_matches!(

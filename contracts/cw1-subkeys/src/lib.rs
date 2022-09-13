@@ -1,24 +1,18 @@
 pub mod contract;
 mod cw1;
 pub mod error;
-#[cfg(any(test, feature = "tests"))]
-pub mod multitest;
 pub mod responses;
-pub mod whitelist;
+pub mod state;
+mod whitelist;
 
 #[cfg(not(feature = "library"))]
 mod entry_points {
-    use contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
-    use cosmwasm_std::{
-        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    };
+    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 
-    use crate::contract::{
-        ContractExecMsg, ContractQueryMsg, Cw1WhitelistContract, InstantiateMsg,
-    };
+    use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw1SubkeysContract, InstantiateMsg};
     use crate::error::ContractError;
 
-    const CONTRACT: Cw1WhitelistContract = Cw1WhitelistContract::new();
+    const CONTRACT: Cw1SubkeysContract = Cw1SubkeysContract::new();
 
     #[entry_point]
     pub fn instantiate(

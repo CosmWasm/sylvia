@@ -1,0 +1,18 @@
+[package]
+name = "cw1-subkeys"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cosmwasm-std = "1.1.0"
+cw-storage-plus = "0.14.0"
+cw-utils = "0.14.0"
+cw1 = { version = "0.1.2", path = "../cw1" }
+cw1-whitelist = { version = "0.1.2", path = "../cw1-whitelist", features = ["library"] }
+cw2 = "0.14.0"
+schemars = "0.8.10"
+serde = { version = "1.0.144", features = ["derive"] }
+sylvia = { version = "0.1.2", path = "../../sylvia" }
+thiserror = "1.0.34"

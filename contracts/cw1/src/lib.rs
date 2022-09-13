@@ -1,4 +1,4 @@
-use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError};
+use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::interface;
@@ -31,7 +31,7 @@ pub trait Cw1 {
         ctx: (Deps, Env),
         sender: String,
         msg: CosmosMsg,
-    ) -> Result<CanExecuteResp, Self::Error>;
+    ) -> StdResult<CanExecuteResp>;
 }
 
 #[cfg(test)]
