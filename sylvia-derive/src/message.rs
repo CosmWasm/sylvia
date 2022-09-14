@@ -662,31 +662,19 @@ impl<'a> GlueMessage<'a> {
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
+        let recv_msg_name = Ident::new("recv_msg_name", Span::mixed_site());
+
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr {
                 module, variant, ..
             } = interface;
             quote! {
                 let msgs = &#module :: #name ::messages();
-                let map = match val.clone() {
-                    #sylvia ::serde_value::Value::Map(map) => map,
-                    _ => panic!("Unexpected msg format!")
-                };
-                if map.len() != 1 {
-                    panic!("Unexpected number of elements received to deserialize!")
-                }
-                let k = match map.into_iter().next() {
-                    Some(k) => k,
-                    None => panic!("Couldn't access the only element of map!")
-                };
-                if let #sylvia ::serde_value::Value::String(k) = k.0 {
-                    if msgs.into_iter().any(|msg| msg == &k) {
-                        match val.clone().deserialize_into() {
+                if let #sylvia ::serde_value::Value::String(#recv_msg_name) = &#recv_msg_name .0 {
+                    if msgs.into_iter().any(|msg| msg == &#recv_msg_name) {
+                        match val.deserialize_into() {
                             Ok(msg) => return Ok(Self:: #variant (msg)),
-                            Err(err) => return Err(D::Error::custom(format!(
-                                    "Deserialization failed for {}\n{}",
-                                    stringify!(k), stringify!(err)
-                                )))
+                            Err(err) => return Err(D::Error::custom(err)).map(Self:: #variant),
                         };
                     }
                 }
@@ -695,31 +683,15 @@ impl<'a> GlueMessage<'a> {
 
         let contract_deserialization_attempt = quote! {
             let msgs = &#name :: messages();
-            let map = match val.clone() {
-                #sylvia ::serde_value::Value::Map(map) => map,
-                _ => panic!("Unexpected msg format!")
-            };
-            if map.len() != 1 {
-                panic!("Unexpected number of elements received to deserialize!")
-            }
-            let k = match map.into_iter().next() {
-                Some(k) => k,
-                None => panic!("Couldn't access the only element of map!")
-            };
-            if let #sylvia ::serde_value::Value::String(k) = k.0 {
-                if msgs.into_iter().any(|msg| msg == &k) {
-                    match val.clone().deserialize_into() {
+            if let #sylvia ::serde_value::Value::String(#recv_msg_name) = &#recv_msg_name.0 {
+                if msgs.into_iter().any(|msg| msg == &#recv_msg_name) {
+                    match val.deserialize_into() {
                         Ok(msg) => return Ok(Self:: #contract (msg)),
-                        Err(err) => return Err(D::Error::custom(format!(
-                                "Deserialization failed for {}\n{}",
-                                stringify!(k), stringify!(err)
-                            )))
+                        Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract)
                     };
                 }
             }
         };
-
-        let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
@@ -758,14 +730,26 @@ impl<'a> GlueMessage<'a> {
                     use serde::de::Error;
 
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
+                    let map = match &val {
+                        #sylvia ::serde_value::Value::Map(map) => map,
+                        _ => panic!("Expected msg to be Value variant Map. Possibly an issue with msg format.")
+                    };
+                    if map.len() != 1 {
+                        panic!("Found more or zero msgs after deserialization. Expected one.")
+                    }
+                    // Due to earlier size check of map this unwrap is safe
+                    let #recv_msg_name = map.into_iter().next().unwrap();
 
                     #(#deserialization_attempts)*
                     #contract_deserialization_attempt
 
-                    Err(D::Error::custom(format!("Expected any of {} or {} messages, but neither of these was provided.",
-                        stringify!(#(#messages_type),*),
-                        stringify!(#msg_name),
-                    )))
+                    let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                    let mut err_msg = msgs.into_iter().flatten().fold(
+                        "Unsupported message received. Messages supported by this contract: ".to_owned(),
+                        |mut acc, message| acc + message + ", ",
+                    );
+                    err_msg.truncate(err_msg.len() - 2);
+                    Err(D::Error::custom(err_msg))
                 }
             }
         }
