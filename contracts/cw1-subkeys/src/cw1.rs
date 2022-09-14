@@ -14,7 +14,7 @@ impl Cw1 for Cw1SubkeysContract<'_> {
     ) -> Result<cosmwasm_std::Response, Self::Error> {
         let (deps, env, info) = ctx;
         let authorized: StdResult<_> = msgs.iter().fold(Ok(true), |acc, msg| {
-            Ok(acc? & self.is_authorized(deps.as_ref(), &env, &info.sender, &msg)?)
+            Ok(acc? & self.is_authorized(deps.as_ref(), &env, &info.sender, msg)?)
         });
 
         ensure!(authorized?, ContractError::Unauthorized {});

@@ -1,3 +1,4 @@
+use cosmwasm_std::Addr;
 use cw_utils::{Expiration, NativeBalance};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -24,7 +25,7 @@ impl AllAllowancesResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct AllowanceInfo {
-    pub spender: String,
+    pub spender: Addr,
     pub balance: NativeBalance,
     pub expires: Expiration,
 }
@@ -79,7 +80,7 @@ pub struct AllPermissionsResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 pub struct PermissionsInfo {
-    pub spender: String,
+    pub spender: Addr,
     pub permissions: Permissions,
 }
 
@@ -114,5 +115,9 @@ impl PermissionsInfo {
     /// ```
     pub fn cmp_by_spender(left: &Self, right: &Self) -> std::cmp::Ordering {
         left.spender.cmp(&right.spender)
+    }
+
+    pub fn spender(&self) -> &str {
+        self.spender.as_ref()
     }
 }

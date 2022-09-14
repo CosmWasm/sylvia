@@ -14,8 +14,8 @@ use crate::responses::{
 };
 use crate::state::{Allowance, Permissions};
 
-const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Default and max limits for pagination
 const MAX_LIMIT: u32 = 30;
@@ -230,7 +230,7 @@ impl Cw1SubkeysContract<'_> {
             .take(limit)
             .map(|item| {
                 item.map(|(addr, allow)| AllowanceInfo {
-                    spender: addr.into(),
+                    spender: addr,
                     balance: allow.balance,
                     expires: allow.expires,
                 })
@@ -260,7 +260,7 @@ impl Cw1SubkeysContract<'_> {
             .take(limit)
             .map(|item| {
                 item.map(|(addr, perm)| PermissionsInfo {
-                    spender: addr.into(),
+                    spender: addr,
                     permissions: perm,
                 })
             })
