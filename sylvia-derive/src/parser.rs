@@ -104,6 +104,8 @@ pub enum MsgType {
     Exec,
     Query,
     Instantiate,
+    Reply,
+    Migrate,
 }
 
 /// `#[msg(...)]` attribute for `interface` macro
@@ -111,6 +113,8 @@ pub enum MsgAttr {
     Exec,
     Query,
     Instantiate { name: Ident },
+    Reply,
+    Migrate,
 }
 
 impl MsgType {
@@ -120,6 +124,9 @@ impl MsgType {
         match self {
             Exec | Instantiate => quote! {
                 (cosmwasm_std::DepsMut, cosmwasm_std::Env, cosmwasm_std::MessageInfo)
+            },
+            Migrate | Reply => quote! {
+                (cosmwasm_std::DepsMut, cosmwasm_std::Env)
             },
             Query => quote! {
                 (cosmwasm_std::Deps, cosmwasm_std::Env)
@@ -134,10 +141,15 @@ impl MsgType {
         let sylvia = crate_module();
 
         match (self, msg_type) {
-            (Exec, Some(msg_type)) | (Instantiate, Some(msg_type)) => quote! {
-                std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
-            },
-            (Exec, None) | (Instantiate, None) => quote! {
+            (Exec, Some(msg_type))
+            | (Instantiate, Some(msg_type))
+            | (Migrate, Some(msg_type))
+            | (Reply, Some(msg_type)) => {
+                quote! {
+                    std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
+                }
+            }
+            (Exec, None) | (Instantiate, None) | (Migrate, None) | (Reply, None) => quote! {
                 std::result::Result<#sylvia ::cw_std::Response, #err_type>
             },
 
@@ -198,6 +210,8 @@ impl MsgAttr {
             Exec => MsgType::Exec,
             Query => MsgType::Query,
             Instantiate { .. } => MsgType::Instantiate,
+            Reply => MsgType::Reply,
+            Migrate => MsgType::Migrate,
         }
     }
 }
@@ -214,10 +228,14 @@ impl Parse for MsgAttr {
             Ok(Self::Query)
         } else if ty == "instantiate" {
             Self::parse_instantiate(content)
+        } else if ty == "reply" {
+            Ok(Self::Reply)
+        } else if ty == "migrate" {
+            Ok(Self::Migrate)
         } else {
             Err(Error::new(
                 ty.span(),
-                "Invalid message type, expected one of: `exec`, `query`, `instantiate`",
+                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `reply`, `migrate`",
             ))
         }
     }
