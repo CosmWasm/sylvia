@@ -106,6 +106,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmwasm-schema"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5d13e9ee950418b0ac90a2579b8769640e0b07e6d06d9d5f5b512ba64265e5a"
+dependencies = [
+ "cosmwasm-schema-derive",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "cosmwasm-schema-derive"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73d5e04d338db6af813d0633fe9ab6a5cd36ae83796ca769ae13d6910a5861df"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "cosmwasm-std"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +267,7 @@ dependencies = [
 name = "cw1"
 version = "0.1.2"
 dependencies = [
+ "cosmwasm-schema",
  "cosmwasm-std",
  "schemars",
  "serde",
@@ -300,6 +325,7 @@ dependencies = [
 name = "cw4"
 version = "0.1.2"
 dependencies = [
+ "cosmwasm-schema",
  "cosmwasm-std",
  "schemars",
  "serde",
@@ -843,6 +869,7 @@ name = "sylvia"
 version = "0.1.2"
 dependencies = [
  "anyhow",
+ "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus 0.13.4",
  "konst",

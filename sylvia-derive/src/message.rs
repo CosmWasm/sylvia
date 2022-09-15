@@ -322,13 +322,28 @@ impl<'a> EnumMessage<'a> {
             quote! { <#(#generics,)*> }
         };
 
-        quote! {
-            #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
-            pub enum #name #generics #where_clause {
-                #(#variants,)*
+        let enum_declaration = match name.to_string().as_str() {
+            "QueryMsg" => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                #[serde(rename_all="snake_case")]
+                pub enum #name #generics #where_clause {
+                    #(#variants,)*
+                }
+            },
+            _ => {
+                quote! {
+                    #[allow(clippy::derive_partial_eq_without_eq)]
+                    #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                    #[serde(rename_all="snake_case")]
+                    pub enum #name #generics #where_clause {
+                        #(#variants,)*
+                    }
+                }
             }
+        };
+        quote! {
+            #enum_declaration
 
             impl #generics #name #generics #where_clause {
                 pub fn dispatch<C: #trait_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
