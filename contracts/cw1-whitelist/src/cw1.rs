@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 
 use crate::contract::Cw1WhitelistContract;
@@ -29,7 +29,7 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         ctx: (Deps, Env),
         sender: String,
         _msg: CosmosMsg,
-    ) -> Result<cw1::CanExecuteResp, Self::Error> {
+    ) -> StdResult<cw1::CanExecuteResp> {
         let (deps, _) = ctx;
 
         let resp = CanExecuteResp {

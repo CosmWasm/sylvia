@@ -1,6 +1,6 @@
 use crate::error::ContractError;
-use crate::responses::AdminListResponse;
-use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Order, Response, StdResult};
+use crate::whitelist;
+use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
@@ -16,6 +16,7 @@ pub struct Cw1WhitelistContract<'a> {
 
 #[contract]
 #[messages(cw1 as Cw1)]
+#[messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {
     pub const fn new() -> Self {
         Self {
@@ -44,98 +45,6 @@ impl Cw1WhitelistContract<'_> {
         Ok(Response::new())
     }
 
-    #[msg(exec)]
-    pub fn freeze(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, ContractError> {
-        let (deps, _, info) = ctx;
-
-        if !self.is_admin(deps.as_ref(), &info.sender) {
-            return Err(ContractError::Unauthorized {});
-        }
-
-        self.mutable.save(deps.storage, &false)?;
-
-        let resp = Response::new().add_attribute("action", "freeze");
-        Ok(resp)
-    }
-
-    #[msg(exec)]
-    pub fn update_admins(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        mut admins: Vec<String>,
-    ) -> Result<Response, ContractError> {
-        let (deps, _, info) = ctx;
-
-        if !self.is_admin(deps.as_ref(), &info.sender) {
-            return Err(ContractError::Unauthorized {});
-        }
-
-        if !self.mutable.load(deps.storage)? {
-            return Err(ContractError::ContractFrozen {});
-        }
-
-        admins.sort_unstable();
-        let mut low_idx = 0;
-
-        let to_remove: Vec<_> = self
-            .admins
-            .keys(deps.storage, None, None, Order::Ascending)
-            .filter(|addr| {
-                // This is a bit of optimization basing on the fact that both `admins` and queried
-                // keys range are sorted. Binary search would always return the index which is at
-                // most as big as searched item, so for next item there is no point in looking at
-                // lower indices. On the other hand - if we reached and of the sequence, we want to
-                // remove all following keys.
-                addr.as_ref()
-                    .map(|addr| {
-                        if low_idx >= admins.len() {
-                            return true;
-                        }
-
-                        match admins[low_idx..].binary_search(&addr.into()) {
-                            Ok(idx) => {
-                                low_idx = idx;
-                                false
-                            }
-                            Err(idx) => {
-                                low_idx = idx;
-                                true
-                            }
-                        }
-                    })
-                    .unwrap_or(true)
-            })
-            .collect::<Result<_, _>>()?;
-
-        for addr in to_remove {
-            self.admins.remove(deps.storage, &addr);
-        }
-
-        for admin in admins {
-            let admin = deps.api.addr_validate(&admin)?;
-            self.admins.save(deps.storage, &admin, &Empty {})?;
-        }
-
-        let resp = Response::new().add_attribute("action", "update_admins");
-        Ok(resp)
-    }
-
-    #[msg(query)]
-    pub fn admin_list(&self, ctx: (Deps, Env)) -> StdResult<AdminListResponse> {
-        let (deps, _) = ctx;
-
-        let admins: Result<_, _> = self
-            .admins
-            .keys(deps.storage, None, None, Order::Ascending)
-            .map(|addr| addr.map(String::from))
-            .collect();
-
-        Ok(AdminListResponse {
-            admins: admins?,
-            mutable: self.mutable.load(deps.storage)?,
-        })
-    }
-
     pub fn is_admin(&self, deps: Deps, addr: &Addr) -> bool {
         self.admins.has(deps.storage, addr)
     }
@@ -144,6 +53,8 @@ impl Cw1WhitelistContract<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::responses::AdminListResponse;
+    use crate::whitelist::{self, Whitelist};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, to_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg};
     use cw1::Cw1;
@@ -253,7 +164,7 @@ mod tests {
             )
             .unwrap();
 
-        let freeze = ExecMsg::Freeze {};
+        let freeze = whitelist::ExecMsg::Freeze {};
         let msgs = vec![
             BankMsg::Send {
                 to_address: bob.to_string(),
@@ -352,20 +263,19 @@ mod tests {
     }
 
     mod msgs {
+        use super::*;
+
         use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
 
-        use crate::contract::{ContractExecMsg, ContractQueryMsg, ExecMsg, QueryMsg};
+        use crate::contract::{ContractExecMsg, ContractQueryMsg};
 
         #[test]
         fn freeze() {
-            let original = ExecMsg::Freeze {};
+            let original = whitelist::ExecMsg::Freeze {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(original),
-                deserialized
-            );
+            assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "freeze": {}
@@ -373,23 +283,20 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(ExecMsg::Freeze {}),
+                ContractExecMsg::Whitelist(whitelist::ExecMsg::Freeze {}),
                 deserialized
             );
         }
 
         #[test]
         fn update_admins() {
-            let original = ExecMsg::UpdateAdmins {
+            let original = whitelist::ExecMsg::UpdateAdmins {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(original),
-                deserialized
-            );
+            assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "update_admins": {
@@ -399,7 +306,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Cw1WhitelistContract(ExecMsg::UpdateAdmins {
+                ContractExecMsg::Whitelist(whitelist::ExecMsg::UpdateAdmins {
                     admins: vec!["admin1".to_owned(), "admin3".to_owned()]
                 }),
                 deserialized
@@ -408,14 +315,11 @@ mod tests {
 
         #[test]
         fn admin_list() {
-            let original = QueryMsg::AdminList {};
+            let original = whitelist::QueryMsg::AdminList {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
-            assert_eq!(
-                ContractQueryMsg::Cw1WhitelistContract(original),
-                deserialized
-            );
+            assert_eq!(ContractQueryMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "admin_list": {}
@@ -423,7 +327,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractQueryMsg::Cw1WhitelistContract(QueryMsg::AdminList {}),
+                ContractQueryMsg::Whitelist(whitelist::QueryMsg::AdminList {}),
                 deserialized
             );
         }
