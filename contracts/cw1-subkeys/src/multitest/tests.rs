@@ -1,7 +1,8 @@
 use cosmwasm_std::{coin, coins, Addr};
 use cw2::{query_contract_info, ContractVersion};
-use cw_multi_test::{next_block, App};
+use cw_multi_test::{next_block, App, Executor};
 use cw_utils::{Expiration, NativeBalance};
+use serde::{Deserialize, Serialize};
 
 use crate::contract::{CONTRACT_NAME, CONTRACT_VERSION};
 
@@ -27,6 +28,27 @@ macro_rules! assert_sorted_eq {
 
         assert_eq!(left, right);
     };
+}
+
+#[test]
+fn sending_invalid_message() {
+    #[derive(Serialize, Deserialize, Debug, PartialEq)]
+    enum FakeMsg {
+        Invalid {},
+    }
+
+    let mut app = App::default();
+
+    let owner = Addr::unchecked("owner");
+
+    let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+
+    let contract = code_id
+        .instantiate(&mut app, &owner, &[], true, "Sublist contract")
+        .unwrap();
+
+    app.execute_contract(owner, contract.addr().clone(), &FakeMsg::Invalid {}, &[])
+        .unwrap();
 }
 
 #[test]
