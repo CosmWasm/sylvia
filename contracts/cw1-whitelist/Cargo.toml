@@ -17,6 +17,7 @@ tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+cosmwasm-schema = "1.1.1"
 schemars = "0.8.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 sylvia = { path = "../../sylvia" }

@@ -298,6 +298,7 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "assert_matches",
+ "cosmwasm-schema",
  "cosmwasm-std",
  "cw-multi-test",
  "cw-storage-plus 0.14.0",
