@@ -662,34 +662,28 @@ impl<'a> GlueMessage<'a> {
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
-        let recv_msg_name = Ident::new("recv_msg_name", Span::mixed_site());
-
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr {
                 module, variant, ..
             } = interface;
             quote! {
                 let msgs = &#module :: #name ::messages();
-                if let #sylvia ::serde_value::Value::String(#recv_msg_name) = &#recv_msg_name .0 {
-                    if msgs.into_iter().any(|msg| msg == &#recv_msg_name) {
-                        match val.deserialize_into() {
-                            Ok(msg) => return Ok(Self:: #variant (msg)),
-                            Err(err) => return Err(D::Error::custom(err)).map(Self:: #variant),
-                        };
-                    }
+                if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
+                    match val.deserialize_into() {
+                        Ok(msg) => return Ok(Self:: #variant (msg)),
+                        Err(err) => return Err(D::Error::custom(err)).map(Self:: #variant),
+                    };
                 }
             }
         });
 
         let contract_deserialization_attempt = quote! {
             let msgs = &#name :: messages();
-            if let #sylvia ::serde_value::Value::String(#recv_msg_name) = &#recv_msg_name.0 {
-                if msgs.into_iter().any(|msg| msg == &#recv_msg_name) {
-                    match val.deserialize_into() {
-                        Ok(msg) => return Ok(Self:: #contract (msg)),
-                        Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract)
-                    };
-                }
+            if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
+                match val.deserialize_into() {
+                    Ok(msg) => return Ok(Self:: #contract (msg)),
+                    Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract)
+                };
             }
         };
 
@@ -738,10 +732,12 @@ impl<'a> GlueMessage<'a> {
                         panic!("Found more or zero msgs after deserialization. Expected one.")
                     }
                     // Due to earlier size check of map this unwrap is safe
-                    let #recv_msg_name = map.into_iter().next().unwrap();
+                    let recv_msg_name = map.into_iter().next().unwrap();
 
-                    #(#deserialization_attempts)*
-                    #contract_deserialization_attempt
+                    if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
+                        #(#deserialization_attempts)*
+                        #contract_deserialization_attempt
+                    }
 
                     let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
                     let mut err_msg = msgs.into_iter().flatten().fold(
