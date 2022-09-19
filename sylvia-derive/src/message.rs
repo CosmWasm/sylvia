@@ -663,36 +663,29 @@ impl<'a> GlueMessage<'a> {
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
-            let ContractMessageAttr { variant, .. } = interface;
-            let var = Ident::new(&variant.to_string().to_case(Case::Snake), variant.span());
-
+            let ContractMessageAttr {
+                module, variant, ..
+            } = interface;
             quote! {
-                let #var = match val.clone().deserialize_into() {
-                    Ok(msg) => return Ok(Self:: #variant (msg)),
-                    Err(err) => err,
-                };
+                let msgs = &#module :: #name ::messages();
+                if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
+                    match val.deserialize_into() {
+                        Ok(msg) => return Ok(Self:: #variant (msg)),
+                        Err(err) => return Err(D::Error::custom(err)).map(Self:: #variant),
+                    };
+                }
             }
         });
 
-        let contract_variant = Ident::new("contract", Span::mixed_site());
         let contract_deserialization_attempt = quote! {
-            let #contract_variant = match val.clone().deserialize_into() {
-                Ok(msg) => return Ok(Self:: #contract (msg)),
-                Err(err) => err,
-            };
+            let msgs = &#name :: messages();
+            if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
+                match val.deserialize_into() {
+                    Ok(msg) => return Ok(Self:: #contract (msg)),
+                    Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract)
+                };
+            }
         };
-
-        let deser_errors = interfaces.iter().map(|interface| {
-            let ContractMessageAttr { variant, .. } = interface;
-            let var = Ident::new(&variant.to_string().to_case(Case::Snake), variant.span());
-
-            quote! { format!("As {}: {}", stringify!(#variant), #var) }
-        });
-
-        let contract_deser_errors =
-            quote! { format!("As {}: {}", stringify!(#msg_name), #contract_variant) };
-
-        let messages_type = interfaces.iter().map(|interface| &interface.variant);
 
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
@@ -729,17 +722,30 @@ impl<'a> GlueMessage<'a> {
                     where D: serde::Deserializer<'de>,
                 {
                     use serde::de::Error;
+
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
+                    let map = match &val {
+                        #sylvia ::serde_value::Value::Map(map) => map,
+                        _ => panic!("Expected msg to be Value variant Map. Possibly an issue with msg format.")
+                    };
+                    if map.len() != 1 {
+                        panic!("Found more or zero msgs after deserialization. Expected one.")
+                    }
+                    // Due to earlier size check of map this unwrap is safe
+                    let recv_msg_name = map.into_iter().next().unwrap();
 
-                    #(#deserialization_attempts)*
-                    #contract_deserialization_attempt
+                    if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
+                        #(#deserialization_attempts)*
+                        #contract_deserialization_attempt
+                    }
 
-                    Err(D::Error::custom(format!(
-                        "Expected any of {} or {} messages, but cannot deserialize to neither of those\n{}",
-                        stringify!(#(#messages_type),*),
-                        stringify!(#msg_name),
-                        [#(#deser_errors,)* #contract_deser_errors].join("\n")
-                    )))
+                    let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                    let mut err_msg = msgs.into_iter().flatten().fold(
+                        "Unsupported message received. Messages supported by this contract: ".to_owned(),
+                        |mut acc, message| acc + message + ", ",
+                    );
+                    err_msg.truncate(err_msg.len() - 2);
+                    Err(D::Error::custom(err_msg))
                 }
             }
         }
