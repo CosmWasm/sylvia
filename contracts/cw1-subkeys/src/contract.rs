@@ -3,6 +3,7 @@ use cosmwasm_std::{
     MessageInfo, Order, Response, StakingMsg, StdResult,
 };
 use cw1_whitelist::contract::Cw1WhitelistContract;
+use cw1_whitelist::whitelist;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
@@ -28,6 +29,8 @@ pub struct Cw1SubkeysContract<'a> {
 }
 
 #[contract]
+#[messages(cw1 as Cw1)]
+#[messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {
     pub const fn new() -> Self {
         Self {
