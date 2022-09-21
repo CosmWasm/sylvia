@@ -279,6 +279,7 @@ name = "cw1-subkeys"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cosmwasm-schema",
  "cosmwasm-std",
  "cw-multi-test",
  "cw-storage-plus 0.14.0",
