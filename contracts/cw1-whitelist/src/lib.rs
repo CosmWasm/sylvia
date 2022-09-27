@@ -8,10 +8,7 @@ pub mod whitelist;
 
 #[cfg(not(feature = "library"))]
 mod entry_points {
-    use contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
-    use cosmwasm_std::{
-        entry_point, from_slice, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    };
+    use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 
     use crate::contract::{
         ContractExecMsg, ContractQueryMsg, Cw1WhitelistContract, InstantiateMsg,
