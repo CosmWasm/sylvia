@@ -22,4 +22,4 @@ proc-macro-error = "1.0.4"
 proc-macro-crate = "1.2.1"
 
 [dev-dependencies]
-runtime-macros-derive = { git = "https://github.com/CosmWasm/runtime-macros-derive.git", branch = "custom-attributes", version = "0.6.0" }
+runtime-macros-derive = { git = "https://github.com/CosmWasm/runtime-macros-derive.git", version = "0.6.0" }
