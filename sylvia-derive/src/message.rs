@@ -745,8 +745,18 @@ impl<'a> GlueMessage<'a> {
                 quote! { &#module :: #name :: messages()}
             })
             .collect();
-
         interface_names.push(quote! {&#name :: messages()});
+
+        // let mut response_schemas: Vec<TokenStream> = interfaces
+        //     .iter()
+        //     .map(|interface| {
+        //         let ContractMessageAttr { module, .. } = interface;
+
+        //         quote! { &#module :: #name :: response_schemas()}
+        //     })
+        //     .collect();
+        // response_schemas.push(quote! {&#name :: response_schemas()});
+
         let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
@@ -785,6 +795,33 @@ impl<'a> GlueMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
 
+        let mut response_schemas: Vec<TokenStream> = interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, .. } = interface;
+
+                quote! { &#module :: #name :: response_schemas()}
+            })
+            .collect();
+        response_schemas.push(quote! {&#name :: response_schemas()});
+
+        let response_schemas = match name.to_string().as_str() {
+            "QueryMsg" => {
+                quote! {
+                    impl cosmwasm_schema::QueryResponses for #contract_name {
+                        fn response_schemas_impl() -> std::collections::BTreeMap<String, ::schemars::schema::RootSchema> {
+                            let responses = [#(#response_schemas),*];
+                            std::collections::BTreeMap::new()
+                        }
+                    }
+                }
+            }
+            _ => {
+                quote! {}
+            }
+        };
+
+        // for every trait/contract
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
@@ -811,6 +848,8 @@ impl<'a> GlueMessage<'a> {
                     }
                 }
             }
+
+            #response_schemas
 
             impl<'de> serde::Deserialize<'de> for #contract_name {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

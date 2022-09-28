@@ -24,7 +24,6 @@ impl Cw1WhitelistContract<'_> {
             mutable: Item::new("mutable"),
         }
     }
-
     #[msg(instantiate)]
     pub fn instantiate(
         &self,
