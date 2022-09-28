@@ -1,9 +1,10 @@
 use input::{ImplInput, TraitInput};
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::fold::Fold;
-use syn::{parse_macro_input, parse_quote, Ident, ItemImpl, ItemTrait, Path};
+use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
 pub(crate) mod check_generics;
 mod input;
@@ -14,16 +15,22 @@ mod strip_input;
 
 use strip_input::StripInput;
 
+#[cfg(not(test))]
 pub(crate) fn crate_module() -> Path {
     use proc_macro_crate::{crate_name, FoundCrate};
 
-    match crate_name("sylvia").expect("silvia is not found in Cargo.toml") {
+    match crate_name("sylvia").expect("sylvia is not found in Cargo.toml") {
         FoundCrate::Itself => parse_quote!(sylvia),
         FoundCrate::Name(name) => {
-            let ident = Ident::new(&name, proc_macro2::Span::mixed_site());
+            let ident = syn::Ident::new(&name, proc_macro2::Span::mixed_site());
             parse_quote!(#ident)
         }
     }
+}
+
+#[cfg(test)]
+pub(crate) fn crate_module() -> Path {
+    parse_quote!(sylvia)
 }
 
 /// Macro generating messages from contract trait.
@@ -110,22 +117,29 @@ pub(crate) fn crate_module() -> Path {
 ///
 /// For now, `#[msg(...)]` attribute doesn't support any additional data on `#[interface]`
 /// elements, but it may be extended in future.
+#[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let attrs = parse_macro_input!(attr as parser::InterfaceArgs);
-    let input = parse_macro_input!(item as ItemTrait);
+    interface_impl(attr.into(), item.into()).into()
+}
 
-    let expanded = TraitInput::new(&attrs, &input).process();
-    let input = StripInput.fold_item_trait(input);
+fn interface_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
+    fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
+        let attrs: parser::InterfaceArgs = parse2(attr)?;
+        let input: ItemTrait = parse2(item)?;
 
-    let expanded = quote! {
-        #input
+        let expanded = TraitInput::new(&attrs, &input).process();
+        let input = StripInput.fold_item_trait(input);
 
-        #expanded
-    };
+        Ok(quote! {
+            #input
 
-    TokenStream::from(expanded)
+            #expanded
+        })
+    }
+
+    inner(attr, item).unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Macro generating messages from contract impl block.
@@ -184,20 +198,57 @@ pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// supposed to handle:
 /// * `instantiate` - this is instantiation message handler. There should be always exactly one
 /// handler for this kind of message.
+#[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let attrs = parse_macro_input!(attr as parser::ContractArgs);
-    let input = parse_macro_input!(item as ItemImpl);
+    contract_impl(attr.into(), item.into()).into()
+}
 
-    let expanded = ImplInput::new(&attrs, &input).process();
-    let input = StripInput.fold_item_impl(input);
+fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
+    fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
+        let attrs: parser::ContractArgs = parse2(attr)?;
+        let input: ItemImpl = parse2(item)?;
 
-    let expanded = quote! {
-        #input
+        let expanded = ImplInput::new(&attrs, &input).process();
+        let input = StripInput.fold_item_impl(input);
 
-        #expanded
-    };
+        Ok(quote! {
+            #input
 
-    TokenStream::from(expanded)
+            #expanded
+        })
+    }
+
+    inner(attr, item).unwrap_or_else(syn::Error::into_compile_error)
+}
+
+#[cfg(test)]
+mod test {
+    use std::{env, fs};
+
+    use runtime_macros_derive::emulate_attribute_expansion_fallible;
+
+    use crate::{contract_impl, interface_impl};
+
+    // Test expanding macros in sylvia crate tests, to calculate generating code coverage
+    #[test]
+    fn sylvia_test_cov() {
+        let mut path = env::current_dir().unwrap();
+        path.push("..");
+        path.push("sylvia");
+        path.push("tests");
+
+        for entry in fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+
+            if entry.file_type().unwrap().is_file() {
+                let file = fs::File::open(entry.path()).unwrap();
+                emulate_attribute_expansion_fallible(file, "interface", interface_impl).unwrap();
+
+                let file = fs::File::open(entry.path()).unwrap();
+                emulate_attribute_expansion_fallible(file, "contract", contract_impl).unwrap();
+            }
+        }
+    }
 }
