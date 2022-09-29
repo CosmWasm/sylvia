@@ -800,10 +800,10 @@ impl<'a> GlueMessage<'a> {
             .map(|interface| {
                 let ContractMessageAttr { module, .. } = interface;
 
-                quote! { &#module :: #name :: response_schemas()}
+                quote! { #module :: #name :: response_schemas_impl()}
             })
             .collect();
-        response_schemas.push(quote! {&#name :: response_schemas()});
+        response_schemas.push(quote! {#name :: response_schemas_impl()});
 
         let response_schemas = match name.to_string().as_str() {
             "QueryMsg" => {
@@ -811,7 +811,7 @@ impl<'a> GlueMessage<'a> {
                     impl cosmwasm_schema::QueryResponses for #contract_name {
                         fn response_schemas_impl() -> std::collections::BTreeMap<String, ::schemars::schema::RootSchema> {
                             let responses = [#(#response_schemas),*];
-                            std::collections::BTreeMap::new()
+                            responses.into_iter().flatten().collect()
                         }
                     }
                 }
