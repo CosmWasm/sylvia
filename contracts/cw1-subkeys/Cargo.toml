@@ -13,12 +13,12 @@ tests = ["library", "cw-multi-test", "anyhow"]
 anyhow = { version = "1.0.64", optional = true }
 cosmwasm-schema = "1.1.0"
 cosmwasm-std = "1.1.0"
-cw-multi-test = { version = "0.14.0", optional = true }
-cw-storage-plus = "0.14.0"
-cw-utils = "0.14.0"
+cw-multi-test = { version = "0.15.1", optional = true }
+cw-storage-plus = "0.15.1"
+cw-utils = "0.15.1"
 cw1 = { version = "0.1.2", path = "../cw1" }
 cw1-whitelist = { version = "0.1.2", path = "../cw1-whitelist", features = ["library"] }
-cw2 = "0.14.0"
+cw2 = "0.15.1"
 schemars = "0.8.10"
 serde = { version = "1.0.144", features = ["derive"] }
 sylvia = { version = "0.1.2", path = "../../sylvia" }
@@ -26,4 +26,4 @@ thiserror = "1.0.34"
 
 [dev-dependencies]
 anyhow = "1.0.64"
-cw-multi-test = "0.14.0"
+cw-multi-test = "0.15.1"

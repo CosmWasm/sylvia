@@ -22,4 +22,4 @@ konst = "0.2.15"
 
 [dev-dependencies]
 anyhow = "1"
-cw-storage-plus = "0.13.2"
+cw-storage-plus = "0.15.1"
