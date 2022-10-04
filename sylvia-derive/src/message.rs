@@ -821,7 +821,6 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        // for every trait/contract
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
