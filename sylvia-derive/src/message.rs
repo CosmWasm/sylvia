@@ -291,8 +291,6 @@ impl<'a> EnumMessage<'a> {
             args,
         } = self;
 
-        println!("EnumMessage: name {}, trait_name {}", name, trait_name);
-
         let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
@@ -683,6 +681,15 @@ pub struct GlueMessage<'a> {
 }
 
 impl<'a> GlueMessage<'a> {
+    fn merge_module_with_name(module: &syn::Path, name: &syn::Ident) -> syn::Ident {
+        let segments = &module.segments;
+        assert!(!segments.is_empty());
+
+        let syn::PathSegment { ident, .. } = &segments[0];
+        let module_name = ident.to_string().to_case(Case::UpperCamel);
+        syn::Ident::new(&format!("{}{}", module_name, name), name.span())
+    }
+
     pub fn new(name: &'a Ident, source: &'a ItemImpl, msg_ty: MsgType, error: &'a Type) -> Self {
         let interfaces: Vec<_> = source
             .attrs
@@ -737,7 +744,8 @@ impl<'a> GlueMessage<'a> {
                 _ => &[],
             };
 
-            quote! { #variant(#module :: #name<#(#generics,)*>) }
+            let enum_name = GlueMessage::merge_module_with_name(module, name);
+            quote! { #variant(#module :: #enum_name<#(#generics,)*>) }
         });
 
         let msg_name = quote! {#contract ( #name)};
@@ -746,7 +754,8 @@ impl<'a> GlueMessage<'a> {
             .map(|interface| {
                 let ContractMessageAttr { module, .. } = interface;
 
-                quote! { &#module :: #name :: messages()}
+                let enum_name = GlueMessage::merge_module_with_name(module, name);
+                quote! { &#module :: #enum_name :: messages()}
             })
             .collect();
         interface_names.push(quote! {&#name :: messages()});
@@ -765,8 +774,9 @@ impl<'a> GlueMessage<'a> {
             let ContractMessageAttr {
                 module, variant, ..
             } = interface;
+            let enum_name = GlueMessage::merge_module_with_name(module, name);
             quote! {
-                let msgs = &#module :: #name ::messages();
+                let msgs = &#module :: #enum_name ::messages();
                 if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                     match val.deserialize_into() {
                         Ok(msg) => return Ok(Self:: #variant (msg)),
@@ -794,7 +804,8 @@ impl<'a> GlueMessage<'a> {
             .map(|interface| {
                 let ContractMessageAttr { module, .. } = interface;
 
-                quote! { #module :: #name :: response_schemas_impl()}
+                let enum_name = GlueMessage::merge_module_with_name(module, name);
+                quote! { #module :: #enum_name :: response_schemas_impl()}
             })
             .collect();
         response_schemas.push(quote! {#name :: response_schemas_impl()});

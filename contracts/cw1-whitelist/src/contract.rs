@@ -163,7 +163,7 @@ mod tests {
             )
             .unwrap();
 
-        let freeze = whitelist::ExecMsg::Freeze {};
+        let freeze = whitelist::WhitelistExecMsg::Freeze {};
         let msgs = vec![
             BankMsg::Send {
                 to_address: bob.to_string(),
@@ -270,7 +270,7 @@ mod tests {
 
         #[test]
         fn freeze() {
-            let original = whitelist::ExecMsg::Freeze {};
+            let original = whitelist::WhitelistExecMsg::Freeze {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -282,14 +282,14 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Whitelist(whitelist::ExecMsg::Freeze {}),
+                ContractExecMsg::Whitelist(whitelist::WhitelistExecMsg::Freeze {}),
                 deserialized
             );
         }
 
         #[test]
         fn update_admins() {
-            let original = whitelist::ExecMsg::UpdateAdmins {
+            let original = whitelist::WhitelistExecMsg::UpdateAdmins {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
             let serialized = to_binary(&original).unwrap();
@@ -305,7 +305,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Whitelist(whitelist::ExecMsg::UpdateAdmins {
+                ContractExecMsg::Whitelist(whitelist::WhitelistExecMsg::UpdateAdmins {
                     admins: vec!["admin1".to_owned(), "admin3".to_owned()]
                 }),
                 deserialized
@@ -314,7 +314,7 @@ mod tests {
 
         #[test]
         fn admin_list() {
-            let original = whitelist::QueryMsg::AdminList {};
+            let original = whitelist::WhitelistQueryMsg::AdminList {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -326,14 +326,14 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractQueryMsg::Whitelist(whitelist::QueryMsg::AdminList {}),
+                ContractQueryMsg::Whitelist(whitelist::WhitelistQueryMsg::AdminList {}),
                 deserialized
             );
         }
 
         #[test]
         fn execute() {
-            let original = cw1::ExecMsg::Execute {
+            let original = cw1::Cw1ExecMsg::Execute {
                 msgs: vec![BankMsg::Send {
                     to_address: "admin1".to_owned(),
                     amount: vec![],
@@ -347,7 +347,7 @@ mod tests {
 
         #[test]
         fn can_execute() {
-            let original = cw1::QueryMsg::CanExecute {
+            let original = cw1::Cw1QueryMsg::CanExecute {
                 sender: "admin".to_owned(),
                 msg: BankMsg::Send {
                     to_address: "admin1".to_owned(),
