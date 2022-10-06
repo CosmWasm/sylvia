@@ -60,6 +60,12 @@ jobs:
         run: cargo install cosmwasm-check
       - name: Check contracts
         run: find target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
+      - name: Cw1-whitelist schema
+        working-directory: ../contracts/cw1-whitelist/
+        run: cargo schema
+      - name: Cw1-subkeys schema
+        working-directory: ../contracts/cw1-subkeys
+        run: cargo schema
 
   coverage:
     name: Code coverage
