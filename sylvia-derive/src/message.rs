@@ -291,6 +291,8 @@ impl<'a> EnumMessage<'a> {
             args,
         } = self;
 
+        println!("EnumMessage: name {}, trait_name {}", name, trait_name);
+
         let match_arms = variants
             .iter()
             .map(|variant| variant.emit_dispatch_leg(*msg_ty));
@@ -324,12 +326,14 @@ impl<'a> EnumMessage<'a> {
             quote! { <#(#generics,)*> }
         };
 
+        let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
+
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => quote! {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
                 #[serde(rename_all="snake_case")]
-                pub enum #name #generics #where_clause {
+                pub enum #unique_enum_name #generics #where_clause {
                     #(#variants,)*
                 }
             },
@@ -338,7 +342,7 @@ impl<'a> EnumMessage<'a> {
                     #[allow(clippy::derive_partial_eq_without_eq)]
                     #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                     #[serde(rename_all="snake_case")]
-                    pub enum #name #generics #where_clause {
+                    pub enum #unique_enum_name #generics #where_clause {
                         #(#variants,)*
                     }
                 }
@@ -347,11 +351,11 @@ impl<'a> EnumMessage<'a> {
         quote! {
             #enum_declaration
 
-            impl #generics #name #generics #where_clause {
+            impl #generics #unique_enum_name #generics #where_clause {
                 pub fn dispatch<C: #trait_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
                     -> #dispatch_type #full_where
                 {
-                    use #name::*;
+                    use #unique_enum_name::*;
 
                     match self {
                         #(#match_arms,)*
@@ -746,16 +750,6 @@ impl<'a> GlueMessage<'a> {
             })
             .collect();
         interface_names.push(quote! {&#name :: messages()});
-
-        // let mut response_schemas: Vec<TokenStream> = interfaces
-        //     .iter()
-        //     .map(|interface| {
-        //         let ContractMessageAttr { module, .. } = interface;
-
-        //         quote! { &#module :: #name :: response_schemas()}
-        //     })
-        //     .collect();
-        // response_schemas.push(quote! {&#name :: response_schemas()});
 
         let interfaces_cnt = interface_names.len();
 

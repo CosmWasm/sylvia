@@ -65,33 +65,33 @@ mod tests {
 
     #[test]
     fn execute() {
-        let original_msg = ExecMsg::UpdateAdmin {
+        let original_msg = Cw4ExecMsg::UpdateAdmin {
             admin: "admin_name".to_owned(),
         };
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: ExecMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: Cw4ExecMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn query() {
-        let original_msg = QueryMsg::Admin {};
+        let original_msg = Cw4QueryMsg::Admin {};
 
         let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: QueryMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg: Cw4QueryMsg = from_binary(&serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
     fn execute_from_slice() {
-        let deserialized: ExecMsg =
+        let deserialized: Cw4ExecMsg =
             from_slice(br#"{"update_admin": {"admin": "admin_name"}}"#).unwrap();
         assert_eq!(
             deserialized,
-            ExecMsg::UpdateAdmin {
+            Cw4ExecMsg::UpdateAdmin {
                 admin: "admin_name".to_owned()
             }
         );
@@ -99,14 +99,14 @@ mod tests {
 
     #[test]
     fn query_from_slice() {
-        let deserialized: QueryMsg = from_slice(br#"{"admin": {}}"#).unwrap();
-        assert_eq!(deserialized, QueryMsg::Admin {});
+        let deserialized: Cw4QueryMsg = from_slice(br#"{"admin": {}}"#).unwrap();
+        assert_eq!(deserialized, Cw4QueryMsg::Admin {});
     }
 
     #[test]
     fn exec_msgs() {
         assert_eq!(
-            ExecMsg::messages(),
+            Cw4ExecMsg::messages(),
             ["add_hook", "remove_hook", "update_admin", "update_members"]
         );
     }
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn query_msgs() {
         assert_eq!(
-            QueryMsg::messages(),
+            Cw4QueryMsg::messages(),
             ["admin", "hooks", "list_members", "member", "total_weight"]
         );
     }
