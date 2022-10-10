@@ -813,6 +813,7 @@ impl<'a> GlueMessage<'a> {
         let response_schemas = match name.to_string().as_str() {
             "QueryMsg" => {
                 quote! {
+                    #[cfg(not(target_arch = "wasm32"))]
                     impl cosmwasm_schema::QueryResponses for #contract_name {
                         fn response_schemas_impl() -> std::collections::BTreeMap<String, ::schemars::schema::RootSchema> {
                             let responses = [#(#response_schemas),*];
