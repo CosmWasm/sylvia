@@ -49,7 +49,7 @@ jobs:
           override: true
           components: rustfmt, clippy
       - name: Build project
-        run: cargo build --release --target wasm32-unknown-unknown --locked
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Test project
         run: cargo test --locked
       - name: Clippy project
@@ -57,15 +57,22 @@ jobs:
       - name: Fmt check project
         run: cargo fmt --check
       - name: Install cosmwasm-check
-        run: cargo install cosmwasm-check
+        run: cargo install cosmwasm-check --force
       - name: Check contracts
         run: find target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
       - name: Cw1-whitelist schema
-        working-directory: ../contracts/cw1-whitelist/
+        working-directory: contracts/cw1-whitelist/
         run: cargo schema
       - name: Cw1-subkeys schema
-        working-directory: ../contracts/cw1-subkeys
+        working-directory: contracts/cw1-subkeys
         run: cargo schema
+      - name: Archive schema artifats
+        uses: actions/upload-artifact@v3
+        with:
+          name: schema-json
+          path: |
+            contracts/cw1-subkeys/schema/cw1-subkeys.json
+            contracts/cw1-whitelist/schema/cw1-whitelist.json
 
   coverage:
     name: Code coverage
