@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn execute() {
-        let original = Cw1ExecMsg::Execute {
+        let original = ExecMsg::Execute {
             msgs: vec![BankMsg::Send {
                 to_address: "receiver".to_owned(),
                 amount: coins(10, "atom"),
@@ -59,12 +59,12 @@ mod tests {
     #[test]
     fn execute_from_slice() {
         let deserialized = from_slice(br#"{"execute": { "msgs": [] }}"#).unwrap();
-        assert_eq!(Cw1ExecMsg::Execute { msgs: vec![] }, deserialized);
+        assert_eq!(ExecMsg::Execute { msgs: vec![] }, deserialized);
     }
 
     #[test]
     fn query() {
-        let original = Cw1QueryMsg::CanExecute {
+        let original = QueryMsg::CanExecute {
             sender: "sender".to_owned(),
             msg: BankMsg::Send {
                 to_address: "receiver".to_owned(),
@@ -101,7 +101,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            Cw1QueryMsg::CanExecute {
+            QueryMsg::CanExecute {
                 sender: "address".to_owned(),
                 msg: BankMsg::Send {
                     to_address: "receiver".to_owned(),

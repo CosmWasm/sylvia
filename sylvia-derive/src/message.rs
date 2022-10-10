@@ -334,17 +334,17 @@ impl<'a> EnumMessage<'a> {
                 pub enum #unique_enum_name #generics #where_clause {
                     #(#variants,)*
                 }
+                pub type #name #generics = #unique_enum_name #generics;
             },
-            _ => {
-                quote! {
-                    #[allow(clippy::derive_partial_eq_without_eq)]
-                    #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                    #[serde(rename_all="snake_case")]
-                    pub enum #unique_enum_name #generics #where_clause {
-                        #(#variants,)*
-                    }
+            _ => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                #[serde(rename_all="snake_case")]
+                pub enum #unique_enum_name #generics #where_clause {
+                    #(#variants,)*
                 }
-            }
+                pub type #name #generics = #unique_enum_name #generics;
+            },
         };
         quote! {
             #enum_declaration

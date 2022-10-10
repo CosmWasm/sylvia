@@ -96,7 +96,7 @@ mod test {
             .unwrap();
         assert_ne!(second_contract, first_contract);
 
-        let freeze = whitelist::WhitelistExecMsg::Freeze {};
+        let freeze = whitelist::ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
             contract_addr: second_contract.to_string(),
             msg: to_binary(&freeze).unwrap(),
@@ -105,7 +105,7 @@ mod test {
         app.execute_contract(
             owner,
             first_contract,
-            &cw1::Cw1ExecMsg::Execute {
+            &cw1::ExecMsg::Execute {
                 msgs: vec![freeze.into()],
             },
             &[],
@@ -114,7 +114,7 @@ mod test {
 
         let resp = app
             .wrap()
-            .query_wasm_smart(second_contract, &whitelist::WhitelistQueryMsg::AdminList {})
+            .query_wasm_smart(second_contract, &whitelist::QueryMsg::AdminList {})
             .unwrap();
 
         assert_matches!(
