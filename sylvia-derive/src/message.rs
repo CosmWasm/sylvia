@@ -8,11 +8,13 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
+
 use syn::spanned::Spanned;
+
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
-    ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat,
+    PatType, PathArguments, ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 fn filter_wheres<'a>(
@@ -247,7 +249,7 @@ impl<'a> EnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, name))
                     } else {
                         None
                     }
@@ -322,19 +324,36 @@ impl<'a> EnumMessage<'a> {
             quote! { <#(#generics,)*> }
         };
 
-        quote! {
-            #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
-            pub enum #name #generics #where_clause {
-                #(#variants,)*
-            }
+        let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
 
-            impl #generics #name #generics #where_clause {
+        let enum_declaration = match name.to_string().as_str() {
+            "QueryMsg" => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                #[serde(rename_all="snake_case")]
+                pub enum #unique_enum_name #generics #where_clause {
+                    #(#variants,)*
+                }
+                pub type #name #generics = #unique_enum_name #generics;
+            },
+            _ => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                #[serde(rename_all="snake_case")]
+                pub enum #unique_enum_name #generics #where_clause {
+                    #(#variants,)*
+                }
+                pub type #name #generics = #unique_enum_name #generics;
+            },
+        };
+        quote! {
+            #enum_declaration
+
+            impl #generics #unique_enum_name #generics #where_clause {
                 pub fn dispatch<C: #trait_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
                     -> #dispatch_type #full_where
                 {
-                    use #name::*;
+                    use #unique_enum_name::*;
 
                     match self {
                         #(#match_arms,)*
@@ -381,7 +400,7 @@ impl<'a> ContractEnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, name))
                     } else {
                         None
                     }
@@ -425,13 +444,27 @@ impl<'a> ContractEnumMessage<'a> {
         let contract = StripGenerics.fold_type((*contract).clone());
         let ret_type = msg_ty.emit_result_type(&None, error);
 
+        let enum_declaration = match name.to_string().as_str() {
+            "QueryMsg" => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                #[serde(rename_all="snake_case")]
+                pub enum #name {
+                    #(#variants,)*
+                }
+            },
+            _ => quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                #[serde(rename_all="snake_case")]
+                pub enum #name {
+                    #(#variants,)*
+                }
+            },
+        };
+
         quote! {
-            #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
-            pub enum #name {
-                #(#variants,)*
-            }
+            #enum_declaration
 
             impl #name {
                 pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
@@ -456,22 +489,75 @@ pub struct MsgVariant<'a> {
     // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
     // `MsgField<'a>`
     fields: Vec<MsgField<'a>>,
+    return_type: String,
+    message_type: &'a Ident,
 }
 
 impl<'a> MsgVariant<'a> {
     /// Creates new message variant from trait method
-    pub fn new(sig: &'a Signature, generics_checker: &mut CheckGenerics) -> MsgVariant<'a> {
+    pub fn new(
+        sig: &'a Signature,
+        generics_checker: &mut CheckGenerics,
+        message_type: &'a Ident,
+    ) -> MsgVariant<'a> {
         let function_name = &sig.ident;
+
         let name = Ident::new(
             &function_name.to_string().to_case(Case::UpperCamel),
             function_name.span(),
         );
         let fields = process_fields(sig, generics_checker);
+        let return_type = MsgVariant::extract_return_type(&sig.output);
 
         Self {
             name,
             function_name,
             fields,
+            return_type,
+            message_type,
+        }
+    }
+
+    fn extract_return_type(ret_type: &ReturnType) -> String {
+        let ty = if let ReturnType::Type(_, ty) = ret_type {
+            ty
+        } else {
+            unreachable!()
+        };
+        let type_path = if let Type::Path(type_path) = ty.as_ref() {
+            type_path
+        } else {
+            unreachable!()
+        };
+        let segments = &type_path.path.segments;
+        assert!(!segments.is_empty());
+        let args = if let PathArguments::AngleBracketed(arg) = &segments[0].arguments {
+            &arg.args
+        } else {
+            unreachable!()
+        };
+        assert!(!args.is_empty());
+        let type_path = if let GenericArgument::Type(Type::Path(type_path)) = &args[0] {
+            type_path
+        } else {
+            unreachable!()
+        };
+        let segments = &type_path.path.segments;
+        assert!(segments.len() == 1);
+        let ident = segments[0].ident.to_string();
+        match &segments[0].arguments {
+            PathArguments::AngleBracketed(arg) => {
+                let segments = if let GenericArgument::Type(Type::Path(type_path)) = &arg.args[0] {
+                    &type_path.path.segments
+                } else {
+                    unreachable!()
+                };
+                assert!(segments.len() == 1);
+                let generics = segments[0].ident.to_string();
+                format!("{}<{}>", ident, generics)
+            }
+
+            _ => ident,
         }
     }
 
@@ -479,10 +565,20 @@ impl<'a> MsgVariant<'a> {
     pub fn emit(&self) -> TokenStream {
         let Self { name, fields, .. } = self;
         let fields = fields.iter().map(MsgField::emit);
+        let return_type = Ident::new(&self.return_type, Span::mixed_site());
 
-        quote! {
-            #name {
-                #(#fields,)*
+        if self.message_type == "QueryMsg" {
+            quote! {
+                #[returns(#return_type)]
+                #name {
+                    #(#fields,)*
+                }
+            }
+        } else {
+            quote! {
+                #name {
+                    #(#fields,)*
+                }
             }
         }
     }
@@ -497,6 +593,7 @@ impl<'a> MsgVariant<'a> {
             name,
             fields,
             function_name,
+            ..
         } = self;
         let args = fields.iter().map(|field| field.name);
         let fields = fields.iter().map(|field| field.name);
@@ -584,6 +681,15 @@ pub struct GlueMessage<'a> {
 }
 
 impl<'a> GlueMessage<'a> {
+    fn merge_module_with_name(module: &syn::Path, name: &syn::Ident) -> syn::Ident {
+        let segments = &module.segments;
+        assert!(!segments.is_empty());
+
+        let syn::PathSegment { ident, .. } = &segments[0];
+        let module_name = ident.to_string().to_case(Case::UpperCamel);
+        syn::Ident::new(&format!("{}{}", module_name, name), name.span())
+    }
+
     pub fn new(name: &'a Ident, source: &'a ItemImpl, msg_ty: MsgType, error: &'a Type) -> Self {
         let interfaces: Vec<_> = source
             .attrs
@@ -638,7 +744,8 @@ impl<'a> GlueMessage<'a> {
                 _ => &[],
             };
 
-            quote! { #variant(#module :: #name<#(#generics,)*>) }
+            let enum_name = GlueMessage::merge_module_with_name(module, name);
+            quote! { #variant(#module :: #enum_name<#(#generics,)*>) }
         });
 
         let msg_name = quote! {#contract ( #name)};
@@ -647,11 +754,12 @@ impl<'a> GlueMessage<'a> {
             .map(|interface| {
                 let ContractMessageAttr { module, .. } = interface;
 
-                quote! { &#module :: #name :: messages()}
+                let enum_name = GlueMessage::merge_module_with_name(module, name);
+                quote! { &#module :: #enum_name :: messages()}
             })
             .collect();
-
         interface_names.push(quote! {&#name :: messages()});
+
         let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
@@ -666,8 +774,9 @@ impl<'a> GlueMessage<'a> {
             let ContractMessageAttr {
                 module, variant, ..
             } = interface;
+            let enum_name = GlueMessage::merge_module_with_name(module, name);
             quote! {
-                let msgs = &#module :: #name ::messages();
+                let msgs = &#module :: #enum_name ::messages();
                 if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                     match val.deserialize_into() {
                         Ok(msg) => return Ok(Self:: #variant (msg)),
@@ -689,6 +798,34 @@ impl<'a> GlueMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&None, error);
+
+        let mut response_schemas: Vec<TokenStream> = interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, .. } = interface;
+
+                let enum_name = GlueMessage::merge_module_with_name(module, name);
+                quote! { #module :: #enum_name :: response_schemas_impl()}
+            })
+            .collect();
+        response_schemas.push(quote! {#name :: response_schemas_impl()});
+
+        let response_schemas = match name.to_string().as_str() {
+            "QueryMsg" => {
+                quote! {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    impl cosmwasm_schema::QueryResponses for #contract_name {
+                        fn response_schemas_impl() -> std::collections::BTreeMap<String, ::schemars::schema::RootSchema> {
+                            let responses = [#(#response_schemas),*];
+                            responses.into_iter().flatten().collect()
+                        }
+                    }
+                }
+            }
+            _ => {
+                quote! {}
+            }
+        };
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
@@ -716,6 +853,8 @@ impl<'a> GlueMessage<'a> {
                     }
                 }
             }
+
+            #response_schemas
 
             impl<'de> serde::Deserialize<'de> for #contract_name {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

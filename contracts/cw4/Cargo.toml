@@ -10,6 +10,7 @@ homepage = "https://cosmwasm.com"
 
 [dependencies]
 cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+cosmwasm-schema = "1.1.4"
 schemars = "0.8.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 sylvia = { version = "0.1.2", path = "../../sylvia" }
