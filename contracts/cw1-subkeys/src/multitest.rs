@@ -4,7 +4,10 @@ use cw_multi_test::Contract;
 
 use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw1SubkeysContract, InstantiateMsg};
 
+pub mod admin_vote_contracts;
 pub mod proxy;
+#[cfg(test)]
+mod reply;
 #[cfg(test)]
 mod tests;
 
