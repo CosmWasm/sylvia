@@ -1,23 +1,16 @@
 use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{
-    from_slice, to_binary, Addr, Decimal, Deps, DepsMut, Empty, Env, MessageInfo, Response,
-    StdError, StdResult, SubMsg, SubMsgResult, Timestamp, WasmMsg,
+    from_slice, to_binary, Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdError,
+    StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
-use cw_multi_test::Contract;
-use cw_storage_plus::{Item, Map};
-use cw_utils::parse_instantiate_response_data;
+use cw_multi_test::{App, Contract, Executor};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::contract;
 
-pub const ADMINS: Map<Addr, Timestamp> = Map::new("admins");
 pub const VOTE_CODE_ID: Item<u64> = Item::new("vote_code_id");
-pub const QUORUM: Item<Decimal> = Item::new("quorum");
-pub const PROPOSED_ADMIN: Item<Addr> = Item::new("proposed_admin");
-pub const VOTE_OWNER: Item<Addr> = Item::new("vote_owner");
-pub const START_TIME: Item<Timestamp> = Item::new("start_time");
-pub const REQUIRED_VOTES: Item<Decimal> = Item::new("required_approvals");
-pub const PENDING_VOTES: Map<Addr, Addr> = Map::new("pending_votes");
+pub const VOTES_COUNT: Item<u32> = Item::new("votes_count");
 
 pub const VOTE_INSTANTIATE_ID: u64 = 1;
 
@@ -27,8 +20,8 @@ pub struct VoteContract {}
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct AdminsListResp {
-    pub admins: Vec<Addr>,
+pub struct VotesCountResp {
+    pub votes_count: u32,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
@@ -43,36 +36,18 @@ impl AdminContract {
     pub fn instantiate(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
-        admins: Vec<String>,
         vote_code_id: u64,
-        quorum: Decimal,
     ) -> StdResult<Response> {
-        let (deps, env, _) = ctx;
-        for addr in admins.into_iter() {
-            ADMINS.save(
-                deps.storage,
-                deps.api.addr_validate(&addr)?,
-                &env.block.time,
-            )?;
-        }
+        let (deps, ..) = ctx;
         VOTE_CODE_ID.save(deps.storage, &vote_code_id)?;
-        QUORUM.save(deps.storage, &quorum)?;
+        VOTES_COUNT.save(deps.storage, &0)?;
         Ok(Response::new())
     }
 
     #[msg(exec)]
-    pub fn propose_admin(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        admin_code_id: u64,
-        addr: String,
-    ) -> StdResult<Response> {
+    pub fn create_vote(&self, ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         let (deps, _env, info) = ctx;
-        let msg = vote::InstantiateMsg {
-            quorum: QUORUM.load(deps.storage)?,
-            proposed_admin: addr,
-            admin_code_id,
-        };
+        let msg = vote::InstantiateMsg {};
 
         let msg = WasmMsg::Instantiate {
             admin: None,
@@ -84,77 +59,37 @@ impl AdminContract {
 
         let resp = Response::new()
             .add_submessage(SubMsg::reply_on_success(msg, VOTE_INSTANTIATE_ID))
-            .add_attribute("action", "propose_admin")
+            .add_attribute("action", "create_vote")
             .add_attribute("sender", info.sender);
 
         Ok(resp)
     }
 
     #[msg(query)]
-    pub fn admins_list(&self, ctx: (Deps, Env)) -> StdResult<AdminsListResp> {
+    pub fn votes_count(&self, ctx: (Deps, Env)) -> StdResult<VotesCountResp> {
         let (deps, _) = ctx;
-        let admins: Vec<Addr> = ADMINS
-            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-            .filter_map(|admin| admin.ok())
-            .map(|(addr, _)| addr)
-            .collect();
-        let resp = AdminsListResp { admins };
+        let votes_count = VOTES_COUNT.load(deps.storage)?;
+        let resp = VotesCountResp { votes_count };
         Ok(resp)
     }
 
     #[msg(reply)]
-    pub fn vote_instantiated(&self, ctx: (DepsMut, Env), msg: SubMsgResult) -> StdResult<Response> {
-        let (deps, _env) = ctx;
-        let resp = match msg.into_result() {
-            Ok(resp) => resp,
-            Err(err) => return Err(StdError::generic_err(err)),
-        };
+    pub fn reply(&self, ctx: (DepsMut, Env), _msg: SubMsgResult) -> StdResult<Response> {
+        let (deps, _) = ctx;
 
-        let data = resp
-            .data
-            .ok_or_else(|| StdError::generic_err("No instantiate response data"))?;
+        VOTES_COUNT.update(deps.storage, |mut c| -> StdResult<_> {
+            c += 1;
+            Ok(c)
+        })?;
 
-        let resp = parse_instantiate_response_data(&data)
-            .map_err(|err| StdError::generic_err(err.to_string()))?;
-        let vote_addr = Addr::unchecked(&resp.contract_address);
-
-        let proposed_admin = PROPOSED_ADMIN.query(&deps.querier, vote_addr.clone())?;
-        PENDING_VOTES.save(deps.storage, vote_addr.clone(), &proposed_admin)?;
-
-        let resp = Response::new().set_data(to_binary(&ProposeAdminResp { vote_addr })?);
-        Ok(resp)
+        Ok(Response::new())
     }
 }
 
 #[contract(module=vote, error=StdError)]
 impl VoteContract {
     #[msg(instantiate)]
-    pub fn instantiate(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        quorum: Decimal,
-        proposed_admin: String,
-        #[allow(unused_variables)] admin_code_id: u64,
-    ) -> StdResult<Response> {
-        let (deps, env, info) = ctx;
-        PROPOSED_ADMIN.save(deps.storage, &deps.api.addr_validate(&proposed_admin)?)?;
-        START_TIME.save(deps.storage, &env.block.time)?;
-        VOTE_OWNER.save(deps.storage, &info.sender)?;
-
-        let vote_owner = &info.sender;
-
-        let resp: AdminsListResp = deps
-            .querier
-            .query_wasm_smart(vote_owner, &admin::QueryMsg::AdminsList {})?;
-
-        let admins_decimals = match Decimal::from_atomics(resp.admins.len() as u128, 0) {
-            Ok(val) => val,
-            Err(err) => return Err(StdError::generic_err(err.to_string())),
-        };
-
-        let required_votes = quorum * admins_decimals;
-
-        REQUIRED_VOTES.save(deps.storage, &required_votes)?;
+    pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())
     }
 }
@@ -211,9 +146,7 @@ impl Contract<Empty> for AdminContract {
         msg: cosmwasm_std::Reply,
     ) -> AnyResult<cosmwasm_std::Response<Empty>> {
         match msg.id {
-            VOTE_INSTANTIATE_ID => self
-                .vote_instantiated((deps, env), msg.result)
-                .map_err(Into::into),
+            VOTE_INSTANTIATE_ID => self.reply((deps, env), msg.result).map_err(Into::into),
             _ => Err(anyhow::Error::new(StdError::generic_err(
                 "unknown reply id",
             ))),
@@ -292,4 +225,44 @@ impl Contract<Empty> for VoteContract {
     ) -> AnyResult<cosmwasm_std::Response<Empty>> {
         bail!("migrate not implemented for contract")
     }
+}
+
+#[test]
+fn update_count_in_reply() {
+    let mut app = App::default();
+    let admin_code_id = app.store_code(Box::new(AdminContract {}));
+    let vote_code_id = app.store_code(Box::new(VoteContract {}));
+
+    let admin = app
+        .instantiate_contract(
+            admin_code_id,
+            Addr::unchecked("owner"),
+            &admin::InstantiateMsg { vote_code_id },
+            &[],
+            "admin",
+            None,
+        )
+        .unwrap();
+
+    let resp: VotesCountResp = app
+        .wrap()
+        .query_wasm_smart(admin.clone(), &admin::QueryMsg::VotesCount {})
+        .unwrap();
+
+    assert_eq!(resp.votes_count, 0);
+
+    app.execute_contract(
+        Addr::unchecked("owner"),
+        admin.clone(),
+        &admin::ExecMsg::CreateVote {},
+        &[],
+    )
+    .unwrap();
+
+    let resp: VotesCountResp = app
+        .wrap()
+        .query_wasm_smart(admin, &admin::QueryMsg::VotesCount {})
+        .unwrap();
+
+    assert_eq!(resp.votes_count, 1);
 }
