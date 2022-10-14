@@ -3,6 +3,8 @@ use cw1_whitelist::whitelist::Whitelist;
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;
 
+// This can be skipped by tarpaulin as it's covered in cw1-whitelist
+#[cfg(not(tarpaulin_include))]
 impl Whitelist for Cw1SubkeysContract<'_> {
     type Error = ContractError;
 
