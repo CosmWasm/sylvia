@@ -39,7 +39,7 @@ pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
                     State::Ongoing(wi + 1)
                 }
             }
-            _ => panic!("This should never be reached!"),
+            _ => unreachable!(),
         };
     }
 }
@@ -69,7 +69,7 @@ const fn get_next_alphabetical_index<const N: usize>(
                     if let std::cmp::Ordering::Greater =
                         konst::cmp_str(msgs[output_index][inner_i], msgs[i][outer_i])
                     {
-                        output_index = i
+                        output_index = i;
                     }
                 }
                 _ => output_index = i,
