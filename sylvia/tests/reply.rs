@@ -94,6 +94,8 @@ impl VoteContract {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
+// Ignoring coverage of test implementation
 impl Contract<Empty> for AdminContract {
     fn execute(
         &self,
@@ -163,6 +165,8 @@ impl Contract<Empty> for AdminContract {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
+// Ignoring coverage of test implementation
 impl Contract<Empty> for VoteContract {
     fn execute(
         &self,

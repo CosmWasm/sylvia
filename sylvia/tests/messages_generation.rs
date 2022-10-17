@@ -32,6 +32,8 @@ pub trait Interface {
 
 pub struct Contract {}
 
+#[cfg(not(tarpaulin_include))]
+// Ignoring coverage of test implementation
 #[contract(module=contract, error=StdError)]
 impl Contract {
     #[msg(instantiate)]
