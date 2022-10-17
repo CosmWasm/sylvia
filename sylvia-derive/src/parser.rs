@@ -90,6 +90,8 @@ impl Parse for ContractArgs {
 }
 
 impl Parse for Mapping {
+    #[cfg(not(tarpaulin_include))]
+    // False negative. Called in closure
     fn parse(input: ParseStream) -> Result<Self> {
         let index = input.parse()?;
         input.parse::<Token![=]>()?;
@@ -161,6 +163,8 @@ impl MsgType {
 }
 
 impl Parse for MsgType {
+    #[cfg(not(tarpaulin_include))]
+    // False negative. Called in function parse_instantiate
     fn parse(input: ParseStream) -> Result<Self> {
         use MsgType::*;
 
@@ -191,6 +195,7 @@ impl MsgAttr {
         let mut name = Ident::new("InstantiateMsg", content.span());
         let p: Option<Token![,]> = content.parse()?;
 
+        // In what scenario is this true?
         if p.is_some() {
             let attrs: Punctuated<Mapping, Token![,]> = content.parse_terminated(Mapping::parse)?;
             for attr in attrs {
@@ -249,6 +254,8 @@ pub struct ContractMessageAttr {
     pub variant: Ident,
 }
 
+#[cfg(not(tarpaulin_include))]
+// False negative. Called in function below
 fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
     let _: Token![<] = content.parse()?;
     let mut params = vec![];
@@ -271,6 +278,8 @@ fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
     Ok(params)
 }
 
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;

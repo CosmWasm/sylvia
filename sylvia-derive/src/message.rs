@@ -681,6 +681,8 @@ pub struct GlueMessage<'a> {
 }
 
 impl<'a> GlueMessage<'a> {
+    #[cfg(not(tarpaulin_include))]
+    // Lack of coverage here is false negative due to usage in closures
     fn merge_module_with_name(module: &syn::Path, name: &syn::Ident) -> syn::Ident {
         let segments = &module.segments;
         assert!(!segments.is_empty());
