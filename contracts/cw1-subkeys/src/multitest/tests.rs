@@ -423,17 +423,12 @@ mod cw1_execute {
                 &mut app,
                 admin,
                 vec![msg.clone().into()],
-                &vec![coin(2345, ATOM)],
+                &[coin(2345, ATOM)],
             )
             .unwrap();
 
         contract
-            .execute(
-                &mut app,
-                non_admin,
-                vec![msg.into()],
-                &vec![coin(2345, ATOM)],
-            )
+            .execute(&mut app, non_admin, vec![msg.into()], &[coin(2345, ATOM)])
             .unwrap_err();
     }
 }

@@ -140,7 +140,7 @@ impl Cw1SubkeysProxy {
         app: &mut App,
         sender: Addr,
         msgs: Vec<CosmosMsg>,
-        send_funds: &Vec<Coin>,
+        send_funds: &[Coin],
     ) -> Result<(), ContractError> {
         let msg = cw1::ExecMsg::Execute { msgs };
 
