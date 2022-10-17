@@ -7,6 +7,7 @@ pub mod responses;
 pub mod state;
 mod whitelist;
 
+#[cfg(not(tarpaulin_include))]
 #[cfg(not(feature = "library"))]
 mod entry_points {
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};

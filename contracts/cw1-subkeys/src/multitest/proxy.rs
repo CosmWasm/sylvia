@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, StdResult};
+use cosmwasm_std::{Addr, Coin, CosmosMsg, StdResult};
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
@@ -121,5 +121,31 @@ impl Cw1SubkeysProxy {
         };
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn can_execute(
+        &self,
+        app: &App,
+        sender: String,
+        msg: CosmosMsg,
+    ) -> StdResult<cw1::CanExecuteResp> {
+        let msg = cw1::QueryMsg::CanExecute { sender, msg };
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    #[track_caller]
+    pub fn execute(
+        &self,
+        app: &mut App,
+        sender: Addr,
+        msgs: Vec<CosmosMsg>,
+        send_funds: &Vec<Coin>,
+    ) -> Result<(), ContractError> {
+        let msg = cw1::ExecMsg::Execute { msgs };
+
+        app.execute_contract(sender, self.0.clone(), &msg, send_funds)
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
     }
 }
