@@ -599,7 +599,7 @@ impl<'a> MsgVariant<'a> {
         let fields = fields.iter().map(|field| field.name);
 
         match msg_attr {
-            Exec => quote! {
+            Exec | Migrate | Reply => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)

@@ -93,12 +93,12 @@ fn dispatch() {
     let env = mock_env();
     let info = mock_info("owner", &[]);
 
-    let resp = InterfaceExecMsg::NoArgsExecution {}
+    let resp = ExecMsg::NoArgsExecution {}
         .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
         .unwrap();
     assert_eq!(resp, Response::new());
 
-    let resp = InterfaceExecMsg::ArgumentedExecution {
+    let resp = ExecMsg::ArgumentedExecution {
         addr: Addr::unchecked("addr1"),
         coef: Decimal::percent(30),
         desc: "True".to_owned(),
@@ -107,7 +107,7 @@ fn dispatch() {
     .unwrap();
     assert_eq!(resp, Response::new());
 
-    let resp = InterfaceExecMsg::ArgumentedExecution {
+    let resp = ExecMsg::ArgumentedExecution {
         addr: Addr::unchecked("addr2"),
         coef: Decimal::percent(70),
         desc: "False".to_owned(),
@@ -116,12 +116,12 @@ fn dispatch() {
     .unwrap();
     assert_eq!(resp, Response::new());
 
-    let resp = InterfaceQueryMsg::NoArgsQuery {}
+    let resp = QueryMsg::NoArgsQuery {}
         .dispatch(&contract, (deps.as_ref(), env.clone()))
         .unwrap();
     let _resp: EmptyQueryResponse = from_binary(&resp).unwrap();
 
-    let resp = InterfaceQueryMsg::ArgumentedQuery {
+    let resp = QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("addr2"),
     }
     .dispatch(&contract, (deps.as_ref(), env))
