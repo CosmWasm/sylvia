@@ -21,6 +21,8 @@ pub struct ImplInput<'a> {
 }
 
 impl<'a> TraitInput<'a> {
+    #[cfg(not(tarpaulin_include))]
+    // This requires invalid implementation which would fail at compile time and making it impossible to test
     pub fn new(attributes: &'a InterfaceArgs, item: &'a ItemTrait) -> Self {
         let generics = item.generics.params.iter().collect();
 
