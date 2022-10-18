@@ -340,3 +340,95 @@ mod permissions {
         );
     }
 }
+
+mod cw1_execute {
+    use cosmwasm_std::BankMsg;
+
+    use super::*;
+
+    #[test]
+    fn can_execute() {
+        let mut app = App::default();
+
+        let owner = Addr::unchecked("owner");
+        let admin = Addr::unchecked("admin");
+        let non_admin = Addr::unchecked("non_admin");
+
+        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+
+        let contract = code_id
+            .instantiate(
+                &mut app,
+                &owner,
+                &[&owner, &admin],
+                false,
+                "Subkeys contract",
+            )
+            .unwrap();
+
+        let msg = BankMsg::Send {
+            to_address: "owner".to_owned(),
+            amount: vec![],
+        };
+
+        let resp = contract
+            .can_execute(&app, admin.to_string(), msg.clone().into())
+            .unwrap();
+
+        assert!(resp.can_execute);
+
+        let resp = contract
+            .can_execute(&app, non_admin.to_string(), msg.into())
+            .unwrap();
+
+        assert!(!resp.can_execute);
+    }
+
+    #[test]
+    fn execute() {
+        let owner = Addr::unchecked("owner");
+        let admin = Addr::unchecked("admin");
+        let non_admin = Addr::unchecked("non_admin");
+
+        let mut app = App::new(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &admin, coins(2345, ATOM))
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &non_admin, coins(2345, ATOM))
+                .unwrap();
+        });
+
+        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+
+        let contract = code_id
+            .instantiate(
+                &mut app,
+                &owner,
+                &[&owner, &admin],
+                false,
+                "Subkeys contract",
+            )
+            .unwrap();
+
+        let msg = BankMsg::Send {
+            to_address: "owner".to_owned(),
+            amount: vec![coin(2345, ATOM)],
+        };
+
+        contract
+            .execute(
+                &mut app,
+                admin,
+                vec![msg.clone().into()],
+                &[coin(2345, ATOM)],
+            )
+            .unwrap();
+
+        contract
+            .execute(&mut app, non_admin, vec![msg.into()], &[coin(2345, ATOM)])
+            .unwrap_err();
+    }
+}

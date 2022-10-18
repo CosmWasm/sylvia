@@ -1,8 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream};
-use syn::punctuated::Punctuated;
-use syn::{parenthesized, parse2, parse_quote, Ident, Path, Result, Token, Type};
+use syn::{parenthesized, parse_quote, Ident, Path, Result, Token, Type};
 
 use crate::crate_module;
 
@@ -22,11 +21,6 @@ pub struct ContractArgs {
     pub module: Option<Ident>,
     /// The type of a contract error for entry points - `ContractError` by default
     pub error: Type,
-}
-
-struct Mapping {
-    index: Ident,
-    value: TokenStream,
 }
 
 impl Parse for InterfaceArgs {
@@ -86,15 +80,6 @@ impl Parse for ContractArgs {
         let _: Nothing = input.parse()?;
 
         Ok(ContractArgs { module, error })
-    }
-}
-
-impl Parse for Mapping {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let index = input.parse()?;
-        input.parse::<Token![=]>()?;
-        let value = input.parse()?;
-        Ok(Mapping { index, value })
     }
 }
 
@@ -160,26 +145,6 @@ impl MsgType {
     }
 }
 
-impl Parse for MsgType {
-    fn parse(input: ParseStream) -> Result<Self> {
-        use MsgType::*;
-
-        let item: Ident = input.parse()?;
-        if item == "exec" {
-            Ok(Exec)
-        } else if item == "query" {
-            Ok(Query)
-        } else if item == "instantiate" {
-            Ok(Instantiate)
-        } else {
-            Err(Error::new(
-                item.span(),
-                "Invalid message type, expected one of: `exec`, `query`, `instantiate`",
-            ))
-        }
-    }
-}
-
 impl PartialEq<MsgType> for MsgAttr {
     fn eq(&self, other: &MsgType) -> bool {
         self.msg_type() == *other
@@ -188,17 +153,7 @@ impl PartialEq<MsgType> for MsgAttr {
 
 impl MsgAttr {
     fn parse_instantiate(content: ParseBuffer) -> Result<Self> {
-        let mut name = Ident::new("InstantiateMsg", content.span());
-        let p: Option<Token![,]> = content.parse()?;
-
-        if p.is_some() {
-            let attrs: Punctuated<Mapping, Token![,]> = content.parse_terminated(Mapping::parse)?;
-            for attr in attrs {
-                if attr.index == "name" {
-                    name = parse2(attr.value)?;
-                }
-            }
-        }
+        let name = Ident::new("InstantiateMsg", content.span());
 
         Ok(Self::Instantiate { name })
     }
@@ -249,6 +204,8 @@ pub struct ContractMessageAttr {
     pub variant: Ident,
 }
 
+#[cfg(not(tarpaulin_include))]
+// False negative. Called in function below
 fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
     let _: Token![<] = content.parse()?;
     let mut params = vec![];
@@ -271,6 +228,8 @@ fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
     Ok(params)
 }
 
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;

@@ -32,17 +32,6 @@ impl<'g> CheckGenerics<'g> {
 }
 
 impl<'ast, 'g> Visit<'ast> for CheckGenerics<'g> {
-    fn visit_lifetime(&mut self, i: &'ast syn::Lifetime) {
-        if let Some(gen) = self
-            .generics
-            .iter()
-            .find(|gen| matches!(gen, GenericParam::Lifetime(lt) if lt.lifetime == *i))
-        {
-            if !self.used.contains(gen) {
-                self.used.push(gen);
-            }
-        }
-    }
     fn visit_path(&mut self, p: &'ast syn::Path) {
         if let Some(p) = p.get_ident() {
             if let Some(gen) = self
