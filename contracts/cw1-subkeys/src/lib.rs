@@ -7,8 +7,7 @@ pub mod responses;
 pub mod state;
 mod whitelist;
 
-#[cfg(not(tarpaulin_include))]
-#[cfg(not(feature = "library"))]
+#[cfg(not(any(feature = "library", tarpaulin_include)))]
 mod entry_points {
     use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response};
 
@@ -43,5 +42,5 @@ mod entry_points {
     }
 }
 
-#[cfg(not(feature = "library"))]
+#[cfg(not(any(feature = "library", tarpaulin_include)))]
 pub use crate::entry_points::*;
