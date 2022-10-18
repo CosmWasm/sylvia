@@ -1,6 +1,6 @@
 [package]
 name = "sylvia"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
 edition = "2021"
 description = "Framework for generating trait based CosmWasm smart contracts"
@@ -12,7 +12,7 @@ categories = ["api-bindings", "wasm"]
 
 
 [dependencies]
-sylvia-derive = {version = "0.1", path = "../sylvia-derive" }
+sylvia-derive = {version = "0.2", path = "../sylvia-derive" }
 cosmwasm-std = { version = "1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 schemars = "0.8"

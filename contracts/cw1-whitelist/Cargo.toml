@@ -1,6 +1,6 @@
 [package]
 name = "cw1-whitelist"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
 description = "Coverage of cw1-whitelist sylvia message generation."
