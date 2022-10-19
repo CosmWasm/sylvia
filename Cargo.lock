@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "cw1"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "cw1-subkeys"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "cw1-whitelist"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "cw4"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -859,7 +859,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "sylvia"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "sylvia-derive"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "convert_case",
  "proc-macro-crate",
