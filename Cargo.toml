@@ -6,6 +6,7 @@ members = [
 # Contract intefaces
     "contracts/cw1",
     "contracts/cw4",
+    "contracts/cw20-allowances",
 
 # Contracts
     "contracts/cw1-whitelist", 
