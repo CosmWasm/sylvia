@@ -6,7 +6,7 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [0.2.0] - 2022-10-18
+## [0.2.1] - 2022-10-19
 
 This is the first documented and supported implementation. It provides
 macro to generate messsages for interfaces and contracts.
