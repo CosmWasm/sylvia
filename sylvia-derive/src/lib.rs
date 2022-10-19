@@ -227,7 +227,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 mod test {
     use std::{env, fs};
 
-    use runtime_macros_derive::emulate_attribute_expansion_fallible;
+    use sylvia_runtime_macros::emulate_attribute_expansion_fallible;
 
     use crate::{contract_impl, interface_impl};
 
