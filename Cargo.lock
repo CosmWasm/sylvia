@@ -682,16 +682,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "runtime-macros-derive"
-version = "0.6.0"
-source = "git+https://github.com/CosmWasm/runtime-macros-derive.git#7096c176e861d39f1da0ae4e1275280534d08408"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "ryu"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -882,7 +872,18 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2",
  "quote",
- "runtime-macros-derive",
+ "sylvia-runtime-macros",
+ "syn",
+]
+
+[[package]]
+name = "sylvia-runtime-macros"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "220853b6e9134826eab438ebadca5e8943a10ea9f45209e29edf50e725ce7267"
+dependencies = [
+ "proc-macro2",
+ "quote",
  "syn",
 ]
 
