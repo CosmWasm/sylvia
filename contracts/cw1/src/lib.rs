@@ -1,9 +1,10 @@
 use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::interface;
+use sylvia::{interface, schemars};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
+#[derive(
+    Serialize, Deserialize, Clone, PartialEq, Eq, sylvia::schemars::JsonSchema, Debug, Default,
+)]
 pub struct CanExecuteResp {
     pub can_execute: bool,
 }

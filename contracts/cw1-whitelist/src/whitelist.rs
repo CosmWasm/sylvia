@@ -1,5 +1,5 @@
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, Order, Response, StdResult};
-use sylvia::interface;
+use sylvia::{interface, schemars};
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;

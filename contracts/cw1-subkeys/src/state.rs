@@ -1,14 +1,16 @@
 use core::fmt;
 
 use cw_utils::{Expiration, NativeBalance};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::schemars;
 
 // Permissions struct defines users message execution permissions.
 // Could have implemented permissions for each cosmos module(StakingPermissions, GovPermissions etc...)
 // But that meant a lot of code for each module. Keeping the permissions inside one struct is more
 // optimal. Define other modules permissions here.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Default, Copy)]
+#[derive(
+    Serialize, Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema, Default, Copy,
+)]
 pub struct Permissions {
     pub delegate: bool,
     pub redelegate: bool,
@@ -26,7 +28,7 @@ impl fmt::Display for Permissions {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, schemars::JsonSchema, Default)]
 pub struct Allowance {
     pub balance: NativeBalance,
     pub expires: Expiration,
