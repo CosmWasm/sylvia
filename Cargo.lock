@@ -315,6 +315,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-base"
+version = "0.2.1"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "serde",
+ "sylvia",
+]
+
+[[package]]
 name = "cw20-minting"
 version = "0.2.1"
 dependencies = [
