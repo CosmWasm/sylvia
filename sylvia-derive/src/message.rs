@@ -595,8 +595,16 @@ impl<'a> MsgVariant<'a> {
             function_name,
             ..
         } = self;
-        let args = fields.iter().map(|field| field.name);
-        let fields = fields.iter().map(|field| field.name);
+        let args = fields
+            .iter()
+            .zip(1..)
+            .map(|(field, num)| Ident::new(&format!("field{}", num), field.name.span()));
+
+        let fields = fields
+            .iter()
+            .map(|field| field.name)
+            .zip(args.clone())
+            .map(|(field, num_field)| quote!(#field : #num_field));
 
         match msg_attr {
             Exec | Migrate | Reply => quote! {
