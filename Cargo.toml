@@ -7,6 +7,7 @@ members = [
     "contracts/cw1",
     "contracts/cw4",
     "contracts/cw20-allowances",
+    "contracts/cw20-base",
     "contracts/cw20-minting",
     "contracts/cw20-marketing",
 
