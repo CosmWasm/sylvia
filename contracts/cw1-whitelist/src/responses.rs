@@ -1,7 +1,7 @@
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::schemars;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, schemars::JsonSchema, Debug, Default)]
 pub struct AdminListResponse {
     pub admins: Vec<String>,
     pub mutable: bool,

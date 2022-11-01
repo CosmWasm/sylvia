@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
-use sylvia::contract;
+use sylvia::{contract, schemars};
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");

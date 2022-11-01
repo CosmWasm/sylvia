@@ -1,9 +1,9 @@
+use crate::state::Permissions;
+use cosmwasm_schema::schemars::JsonSchema;
 use cosmwasm_std::Addr;
 use cw_utils::{Expiration, NativeBalance};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use crate::state::Permissions;
+use sylvia::schemars;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 pub struct AllAllowancesResponse {
