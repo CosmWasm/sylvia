@@ -2,9 +2,14 @@ use crate::error::ContractError;
 use crate::state::{MinterData, TokenInfo, BALANCES, LOGO, MARKETING_INFO, TOKEN_INFO};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, Uint128};
+use cosmwasm_std::{
+    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+};
 use cw2::set_contract_version;
-use cw20::{Cw20Coin, Logo, LogoInfo, MarketingInfoResponse, MinterResponse};
+use cw20::{
+    BalanceResponse, Cw20Coin, Cw20ReceiveMsg, Logo, LogoInfo, MarketingInfoResponse,
+    MinterResponse, TokenInfoResponse,
+};
 use sylvia::{contract, schemars};
 
 // version info for migration info
@@ -126,39 +131,149 @@ impl Cw20Base {
 
         Ok(Response::default())
     }
-    // /// Transfer is a base message to move tokens to another account without triggering actions
-    // #[msg(exec)]
-    // fn transfer(
-    //     &self,
-    //     ctx: (DepsMut, Env, MessageInfo),
-    //     recipient: String,
-    //     amount: Uint128,
-    // ) -> Result<Response, Self::Error>;
 
-    // /// Burn is a base message to destroy tokens forever
-    // #[msg(exec)]
-    // fn burn(
-    //     &self,
-    //     ctx: (DepsMut, Env, MessageInfo),
-    //     new_minteramount: Uint128,
-    // ) -> Result<Response, Self::Error>;
+    /// Transfer is a base message to move tokens to another account without triggering actions
+    #[msg(exec)]
+    fn transfer(
+        &self,
+        ctx: (DepsMut, Env, MessageInfo),
+        recipient: String,
+        amount: Uint128,
+    ) -> Result<Response, ContractError> {
+        let (deps, _, info) = ctx;
 
-    // /// Send is a base message to transfer tokens to a contract and trigger an action
-    // /// on the receiving contract.
-    // #[msg(exec)]
-    // fn send(
-    //     &self,
-    //     ctx: (DepsMut, Env, MessageInfo),
-    //     contract: String,
-    //     amount: Uint128,
-    //     msg: Binary,
-    // ) -> Result<Response, Self::Error>;
+        if amount == Uint128::zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
 
-    // /// Returns the current balance of the given address, 0 if unset.
-    // #[msg(query)]
-    // fn balance(&self, ctx: (Deps, Env), address: String) -> StdResult<BalanceResponse>;
+        let rcpt_addr = deps.api.addr_validate(&recipient)?;
 
-    // /// Returns metadata on the contract - name, decimals, supply, etc.
-    // #[msg(query)]
-    // fn token_info(&self, ctx: (Deps, Env)) -> StdResult<TokenInfoResponse>;
+        BALANCES.update(
+            deps.storage,
+            &info.sender,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            },
+        )?;
+        BALANCES.update(
+            deps.storage,
+            &rcpt_addr,
+            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        )?;
+
+        let res = Response::new()
+            .add_attribute("action", "transfer")
+            .add_attribute("from", info.sender)
+            .add_attribute("to", recipient)
+            .add_attribute("amount", amount);
+        Ok(res)
+    }
+
+    /// Burn is a base message to destroy tokens forever
+    #[msg(exec)]
+    fn burn(
+        &self,
+        ctx: (DepsMut, Env, MessageInfo),
+        amount: Uint128,
+    ) -> Result<Response, ContractError> {
+        let (deps, _, info) = ctx;
+
+        if amount == Uint128::zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
+
+        // lower balance
+        BALANCES.update(
+            deps.storage,
+            &info.sender,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            },
+        )?;
+        // reduce total_supply
+        TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+            info.total_supply = info.total_supply.checked_sub(amount)?;
+            Ok(info)
+        })?;
+
+        let res = Response::new()
+            .add_attribute("action", "burn")
+            .add_attribute("from", info.sender)
+            .add_attribute("amount", amount);
+        Ok(res)
+    }
+
+    /// Send is a base message to transfer tokens to a contract and trigger an action
+    /// on the receiving contract.
+    #[msg(exec)]
+    fn send(
+        &self,
+        ctx: (DepsMut, Env, MessageInfo),
+        contract: String,
+        amount: Uint128,
+        msg: Binary,
+    ) -> Result<Response, ContractError> {
+        let (deps, _, info) = ctx;
+
+        if amount == Uint128::zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
+
+        let rcpt_addr = deps.api.addr_validate(&contract)?;
+
+        // move the tokens to the contract
+        BALANCES.update(
+            deps.storage,
+            &info.sender,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            },
+        )?;
+        BALANCES.update(
+            deps.storage,
+            &rcpt_addr,
+            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        )?;
+
+        let res = Response::new()
+            .add_attribute("action", "send")
+            .add_attribute("from", &info.sender)
+            .add_attribute("to", &contract)
+            .add_attribute("amount", amount)
+            .add_message(
+                Cw20ReceiveMsg {
+                    sender: info.sender.into(),
+                    amount,
+                    msg,
+                }
+                .into_cosmos_msg(contract)?,
+            );
+        Ok(res)
+    }
+
+    /// Returns the current balance of the given address, 0 if unset.
+    #[msg(query)]
+    fn balance(&self, ctx: (Deps, Env), address: String) -> StdResult<BalanceResponse> {
+        let (deps, _) = ctx;
+        let address = deps.api.addr_validate(&address)?;
+        let balance = BALANCES
+            .may_load(deps.storage, &address)?
+            .unwrap_or_default();
+        Ok(BalanceResponse { balance })
+    }
+
+    /// Returns metadata on the contract - name, decimals, supply, etc.
+    #[msg(query)]
+    fn token_info(&self, ctx: (Deps, Env)) -> StdResult<TokenInfoResponse> {
+        let (deps, _) = ctx;
+
+        let info = TOKEN_INFO.load(deps.storage)?;
+        let res = TokenInfoResponse {
+            name: info.name,
+            symbol: info.symbol,
+            decimals: info.decimals,
+            total_supply: info.total_supply,
+        };
+        Ok(res)
+    }
 }
