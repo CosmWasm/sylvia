@@ -1,3 +1,4 @@
+mod allowances;
 mod contract;
 mod error;
 mod state;

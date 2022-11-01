@@ -1,12 +1,12 @@
-mod responses;
-
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{
+    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+};
+use cw20::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use cw_utils::Expiration;
-use responses::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use sylvia::{interface, schemars};
 
 #[interface]
-pub trait Cw20Approval {
+pub trait Cw20Allowances {
     type Error: From<StdError>;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
@@ -51,6 +51,7 @@ pub trait Cw20Approval {
         owner: String,
         contract: String,
         amount: Uint128,
+        msg: Binary,
     ) -> Result<Response, Self::Error>;
 
     /// Destroys amount of tokens forever

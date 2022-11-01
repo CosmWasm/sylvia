@@ -331,6 +331,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-utils",
+ "cw20",
  "serde",
  "sylvia",
 ]
@@ -347,6 +348,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "cw20",
+ "cw20-allowances",
  "schemars",
  "serde",
  "sylvia",
