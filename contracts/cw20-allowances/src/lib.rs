@@ -1,9 +1,8 @@
 mod responses;
 
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
-use responses::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse, Expiration,
-};
+use cw_utils::Expiration;
+use responses::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use sylvia::{interface, schemars};
 
 #[interface]
