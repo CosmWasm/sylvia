@@ -19,7 +19,7 @@ cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = "0.15.1"
 schemars = "0.8"
 serde = { version = "1.0.145", features = ["derive"] }
-sylvia = { path = "../../sylvia" }
+sylvia = { version = "0.2.1", path = "../../sylvia" }
 thiserror = "1.0.37"
 
 [dev-dependencies]

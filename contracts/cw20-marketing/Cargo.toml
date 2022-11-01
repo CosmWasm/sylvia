@@ -1,16 +1,15 @@
 [package]
-name = "cw4"
+name = "cw20-marketing"
 version = "0.2.1"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
-description = "Coverage of cw4 sylvia message generation."
+description = "Coverage of cw20-marketing message generation."
 license = "Apache-2.0"
 repository = "https://github.com/CosmWasm/sylvia"
 homepage = "https://cosmwasm.com"
 
 [dependencies]
-cosmwasm-std = { version = "1.0.0", features = ["staking"] }
-cosmwasm-schema = "1.1.4"
-schemars = "0.8.1"
+cosmwasm-std = { version = "1.1", features = ["staking"] }
+cosmwasm-schema = "1.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 sylvia = { version = "0.2.1", path = "../../sylvia" }
