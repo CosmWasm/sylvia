@@ -154,8 +154,21 @@ impl Cw20Allowances for Cw20Base {
         let rcpt_addr = deps.api.addr_validate(&recipient)?;
         let owner_addr = deps.api.addr_validate(&owner)?;
 
-        // deduct allowance before doing anything else have enough allowance
-        deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
+        // Avoid doing state update in case of self to self transfer
+        if rcpt_addr == owner_addr {
+            return Ok(Response::new().add_attributes(vec![
+                attr("action", "transfer_from"),
+                attr("from", owner),
+                attr("to", recipient),
+                attr("by", info.sender),
+                attr("amount", amount),
+            ]));
+        }
+
+        if info.sender != owner {
+            // deduct allowance before doing anything else have enough allowance
+            deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
+        }
 
         BALANCES.update(
             deps.storage,

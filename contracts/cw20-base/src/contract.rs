@@ -37,6 +37,7 @@ pub struct InstantiateMsgData {
 pub struct Cw20Base {}
 
 #[contract]
+#[messages(cw20_allowances as Cw20Allowances)]
 impl Cw20Base {
     pub const fn new() -> Self {
         Self {}
