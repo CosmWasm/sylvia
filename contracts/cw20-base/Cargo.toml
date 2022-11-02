@@ -33,3 +33,4 @@ cw20-allowances = { path = "../cw20-allowances" }
 anyhow = "1"
 cw-multi-test = "0.16"
 assert_matches = "1.5.0"
+cw-utils = "0.16"
