@@ -20,12 +20,6 @@ pub struct MinterData {
     pub cap: Option<Uint128>,
 }
 
-impl TokenInfo {
-    pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
-    }
-}
-
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const MARKETING_INFO: Item<MarketingInfoResponse> = Item::new("marketing_info");
 pub const LOGO: Item<Logo> = Item::new("logo");
