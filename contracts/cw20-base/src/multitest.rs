@@ -8,6 +8,10 @@ use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw20Base, InstantiateMs
 mod allowances_tests;
 #[cfg(test)]
 mod proxy;
+#[cfg(test)]
+mod receiver;
+#[cfg(test)]
+mod receiver_contract;
 
 impl Contract<Empty> for Cw20Base {
     fn execute(
