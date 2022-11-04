@@ -8,6 +8,7 @@ use cw_utils::Expiration;
 
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
+use crate::multitest::receiver_contract::ReceiverContractCodeId;
 
 use super::proxy::Cw20BaseCodeId;
 
@@ -564,7 +565,6 @@ fn burn_from_respects_limits() {
 }
 
 // Ignoring currently due to some issue with unsupported msg being sent in send_from
-#[ignore]
 #[test]
 fn send_from_respects_limits() {
     let mut app = App::default();
@@ -576,6 +576,7 @@ fn send_from_respects_limits() {
     let start_amount = Uint128::new(999999);
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let receiver_code_id = ReceiverContractCodeId::store_code(&mut app);
 
     let contract = code_id
         .instantiate(
@@ -596,23 +597,8 @@ fn send_from_respects_limits() {
         )
         .unwrap();
 
-    let contract2 = code_id
-        .instantiate(
-            &mut app,
-            &owner2,
-            InstantiateMsgData {
-                name: "Auto Gen".to_string(),
-                symbol: "AUTO".to_string(),
-                decimals: 3,
-                initial_balances: vec![Cw20Coin {
-                    address: owner2.clone().into(),
-                    amount: start_amount,
-                }],
-                mint: None,
-                marketing: None,
-            },
-            "cool-dex",
-        )
+    let receiver_contract = receiver_code_id
+        .instantiate(&mut app, &owner2, "cool-dex")
         .unwrap();
 
     // provide an allowance
@@ -628,7 +614,7 @@ fn send_from_respects_limits() {
             &mut app,
             &spender,
             owner.to_string(),
-            contract2.addr().to_string(),
+            receiver_contract.addr().to_string(),
             transfer,
             send_msg.clone(),
         )
@@ -660,7 +646,7 @@ fn send_from_respects_limits() {
             &mut app,
             &spender,
             owner.to_string(),
-            contract2.addr().to_string(),
+            receiver_contract.addr().to_string(),
             Uint128::new(33443),
             send_msg.clone(),
         )
@@ -688,7 +674,7 @@ fn send_from_respects_limits() {
             &mut app,
             &spender,
             owner.to_string(),
-            contract2.addr().to_string(),
+            receiver_contract.addr().to_string(),
             Uint128::new(33443),
             send_msg,
         )

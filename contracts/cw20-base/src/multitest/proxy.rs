@@ -37,10 +37,6 @@ impl Cw20BaseCodeId {
 pub struct Cw20BaseProxy(Addr);
 
 impl Cw20BaseProxy {
-    pub fn addr(&self) -> &Addr {
-        &self.0
-    }
-
     pub fn balance(&self, app: &App, address: String) -> StdResult<BalanceResponse> {
         let msg = QueryMsg::Balance { address };
 
