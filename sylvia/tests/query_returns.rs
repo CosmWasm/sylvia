@@ -20,7 +20,7 @@ type QueryResult<E> = Result<QueryResponse, E>;
 pub trait Interface {
     type Error: From<StdError>;
 
-    #[msg(query, QueryResponse)]
+    #[msg(query, resp=QueryResponse)]
     fn query(&self, ctx: (Deps, Env)) -> QueryResult<Self::Error>;
 }
 
@@ -33,7 +33,7 @@ impl SomeContract {
         Ok(Response::new())
     }
 
-    #[msg(query, QueryResponse)]
+    #[msg(query, resp=QueryResponse)]
     fn contract_query(&self, _ctx: (Deps, Env)) -> QueryResult<ContractError> {
         Ok(QueryResponse {})
     }

@@ -120,11 +120,11 @@ pub(crate) fn crate_module() -> Path {
 /// Example for member query
 ///
 /// ```ignore
-///     #[msg(query, MemberQueryResponse)]
+///     #[msg(query, resp=MemberQueryResponse)]
 ///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>;
 /// ```
 ///
-/// For now, `#[msg(...)]` attribute doesn't support any additional data on `#[interface]`
+/// For now `#[msg(...)]` attribute doesn't support anymore data on `#[interface]`
 /// elements, but it may be extended in future.
 #[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
@@ -206,7 +206,19 @@ fn interface_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// `#[msg(msg_type, ...)`. Msg attribute takes as its first argument type of message it is
 /// supposed to handle:
 /// * `instantiate` - this is instantiation message handler. There should be always exactly one
+/// * `exec` - this is execute message variant
+/// * `query` - this is query message variant
+/// * `reply` - this is reply message variant
+/// * `migrate` - this is migrate message variant
 /// handler for this kind of message.
+/// In case of query it is possible to pass second argument which is it's `ResponseType`.
+/// This is required in case of aliased results wrapping their `ResponseType`.
+/// Example for member query
+///
+/// ```ignore
+///     #[msg(query, resp=MemberQueryResponse)]
+///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>
+/// ```
 #[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]

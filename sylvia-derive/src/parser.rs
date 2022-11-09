@@ -161,6 +161,8 @@ impl MsgAttr {
     fn parse_query(content: ParseBuffer) -> Result<Self> {
         if content.peek2(Ident) {
             let _: Punct = content.parse()?;
+            let _: Ident = content.parse()?;
+            let _: Punct = content.parse()?;
             let resp_type: Option<Ident> = Some(content.parse()?);
             Ok(Self::Query { resp_type })
         } else {
