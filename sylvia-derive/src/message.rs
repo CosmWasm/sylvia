@@ -14,7 +14,8 @@ use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
     parse_quote, FnArg, GenericArgument, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat,
-    PatType, PathArguments, ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
+    PatType, PathArguments, PathSegment, ReturnType, Signature, TraitItem, Type, WhereClause,
+    WherePredicate,
 };
 
 fn filter_wheres<'a>(
@@ -489,7 +490,7 @@ pub struct MsgVariant<'a> {
     // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
     // `MsgField<'a>`
     fields: Vec<MsgField<'a>>,
-    return_type: String,
+    return_type: &'a PathSegment,
     message_type: &'a Ident,
 }
 
@@ -518,54 +519,45 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    fn extract_return_type(ret_type: &ReturnType) -> String {
-        let ty = if let ReturnType::Type(_, ty) = ret_type {
-            ty
-        } else {
+    fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
+        let ReturnType::Type(_, ty) = ret_type  else {
             unreachable!()
         };
-        let type_path = if let Type::Path(type_path) = ty.as_ref() {
-            type_path
-        } else {
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert!(!segments.is_empty());
-        let args = if let PathArguments::AngleBracketed(arg) = &segments[0].arguments {
-            &arg.args
-        } else {
-            unreachable!()
-        };
-        assert!(!args.is_empty());
-        let type_path = if let GenericArgument::Type(Type::Path(type_path)) = &args[0] {
-            type_path
-        } else {
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert!(segments.len() == 1);
-        let ident = segments[0].ident.to_string();
-        match &segments[0].arguments {
-            PathArguments::AngleBracketed(arg) => {
-                let segments = if let GenericArgument::Type(Type::Path(type_path)) = &arg.args[0] {
-                    &type_path.path.segments
-                } else {
-                    unreachable!()
-                };
-                assert!(segments.len() == 1);
-                let generics = segments[0].ident.to_string();
-                format!("{}<{}>", ident, generics)
-            }
 
-            _ => ident,
+        let Type::Path(type_path) = ty.as_ref()  else {
+            unreachable!()
+        };
+        let segments = &type_path.path.segments;
+        assert_eq!(segments.len(), 1);
+        let segment = &segments[0];
+
+        // In case of aliased result user need to define the return type by hand
+        if segment.ident != "Result" && segment.ident != "StdResult" {
+            panic!(
+                "Neither Result nor StdResult found in return type. \
+                    You might be using aliased return type. \
+                    Please use #[msg(return_type=<your_return_type>)]"
+            );
         }
+        let PathArguments::AngleBracketed(args) = &segments[0].arguments  else{
+            unreachable!()
+        };
+        let args = &args.args;
+        assert!(!args.is_empty());
+        let GenericArgument::Type(Type::Path(type_path)) = &args[0] else{
+            unreachable!()
+        };
+        let segments = &type_path.path.segments;
+        assert_eq!(segments.len(), 1);
+
+        &segments[0]
     }
 
     /// Emits message variant
     pub fn emit(&self) -> TokenStream {
         let Self { name, fields, .. } = self;
         let fields = fields.iter().map(MsgField::emit);
-        let return_type = Ident::new(&self.return_type, Span::mixed_site());
+        let return_type = &self.return_type;
 
         if self.message_type == "QueryMsg" {
             quote! {

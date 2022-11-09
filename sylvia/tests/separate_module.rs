@@ -27,7 +27,11 @@ pub trait Interface {
     fn no_args_query(&self, ctx: (Deps, Env)) -> Result<QueryResult, Self::Error>;
 
     #[msg(query)]
-    fn argumented_query(&self, ctx: (Deps, Env), user: Addr) -> Result<QueryResult, Self::Error>;
+    fn argumented_query(
+        &self,
+        ctx: (Deps, Env),
+        user: Addr,
+    ) -> Result<Option<QueryResult>, Self::Error>;
 }
 
 #[test]
