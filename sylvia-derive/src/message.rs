@@ -250,7 +250,12 @@ impl<'a> EnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker, name))
+                        Some(MsgVariant::new(
+                            &method.sig,
+                            &mut generics_checker,
+                            name,
+                            attr,
+                        ))
                     } else {
                         None
                     }
@@ -401,7 +406,12 @@ impl<'a> ContractEnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker, name))
+                        Some(MsgVariant::new(
+                            &method.sig,
+                            &mut generics_checker,
+                            name,
+                            attr,
+                        ))
                     } else {
                         None
                     }
@@ -490,7 +500,7 @@ pub struct MsgVariant<'a> {
     // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
     // `MsgField<'a>`
     fields: Vec<MsgField<'a>>,
-    return_type: &'a PathSegment,
+    return_type: TokenStream,
     message_type: &'a Ident,
 }
 
@@ -500,6 +510,7 @@ impl<'a> MsgVariant<'a> {
         sig: &'a Signature,
         generics_checker: &mut CheckGenerics,
         message_type: &'a Ident,
+        msg_attr: MsgAttr,
     ) -> MsgVariant<'a> {
         let function_name = &sig.ident;
 
@@ -508,7 +519,18 @@ impl<'a> MsgVariant<'a> {
             function_name.span(),
         );
         let fields = process_fields(sig, generics_checker);
-        let return_type = MsgVariant::extract_return_type(&sig.output);
+
+        let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
+            match resp_type {
+                Some(resp_type) => quote! {#resp_type},
+                None => {
+                    let return_type = MsgVariant::extract_return_type(&sig.output);
+                    quote! {#return_type}
+                }
+            }
+        } else {
+            quote! {}
+        };
 
         Self {
             name,
