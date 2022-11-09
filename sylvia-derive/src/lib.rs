@@ -115,6 +115,15 @@ pub(crate) fn crate_module() -> Path {
 ///   * `exec` - this is execute message variant
 ///   * `query` - this is query message variant
 ///
+/// In case of query it is possible to pass second argument which is it's `ResponseType`.
+/// This is required in case of aliased results wrapping their `ResponseType`.
+/// Example for member query
+///
+/// ```ignore
+///     #[msg(query, MemberQueryResponse)]
+///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>;
+/// ```
+///
 /// For now, `#[msg(...)]` attribute doesn't support any additional data on `#[interface]`
 /// elements, but it may be extended in future.
 #[cfg(not(tarpaulin_include))]
