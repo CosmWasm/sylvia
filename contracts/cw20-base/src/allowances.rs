@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError,
-    StdResult, Storage, Uint128,
+    attr, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult,
+    Uint128,
 };
 use cw20::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
@@ -11,42 +11,12 @@ use cw_storage_plus::Bound;
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
-use crate::state::{ALLOWANCES, ALLOWANCES_SPENDER, BALANCES, TOKEN_INFO};
 
 // settings for pagination
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-// this can be used to update a lower allowance - call bucket.update with proper keys
-pub fn deduct_allowance(
-    storage: &mut dyn Storage,
-    owner: &Addr,
-    spender: &Addr,
-    block: &BlockInfo,
-    amount: Uint128,
-) -> Result<AllowanceResponse, ContractError> {
-    let update_fn = |current: Option<AllowanceResponse>| -> _ {
-        match current {
-            Some(mut a) => {
-                if a.expires.is_expired(block) {
-                    Err(ContractError::Expired {})
-                } else {
-                    // deduct the allowance if enough
-                    a.allowance = a
-                        .allowance
-                        .checked_sub(amount)
-                        .map_err(StdError::overflow)?;
-                    Ok(a)
-                }
-            }
-            None => Err(ContractError::NoAllowance {}),
-        }
-    };
-    ALLOWANCES.update(storage, (owner, spender), update_fn)?;
-    ALLOWANCES_SPENDER.update(storage, (spender, owner), update_fn)
-}
-
-impl Cw20Allowances for Cw20Base {
+impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
@@ -76,8 +46,10 @@ impl Cw20Allowances for Cw20Base {
             val.allowance += amount;
             Ok(val)
         };
-        ALLOWANCES.update(deps.storage, (&info.sender, &spender_addr), update_fn)?;
-        ALLOWANCES_SPENDER.update(deps.storage, (&spender_addr, &info.sender), update_fn)?;
+        self.allowances
+            .update(deps.storage, (&info.sender, &spender_addr), update_fn)?;
+        self.allowances_spender
+            .update(deps.storage, (&spender_addr, &info.sender), update_fn)?;
 
         let res = Response::new().add_attributes(vec![
             attr("action", "increase_allowance"),
@@ -111,7 +83,7 @@ impl Cw20Allowances for Cw20Base {
         }
 
         // load value and delete if it hits 0, or update otherwise
-        let mut allowance = ALLOWANCES.load(deps.storage, key)?;
+        let mut allowance = self.allowances.load(deps.storage, key)?;
         if amount < allowance.allowance {
             // update the new amount
             allowance.allowance = allowance
@@ -124,11 +96,12 @@ impl Cw20Allowances for Cw20Base {
                 }
                 allowance.expires = exp;
             }
-            ALLOWANCES.save(deps.storage, key, &allowance)?;
-            ALLOWANCES_SPENDER.save(deps.storage, reverse(key), &allowance)?;
+            self.allowances.save(deps.storage, key, &allowance)?;
+            self.allowances_spender
+                .save(deps.storage, reverse(key), &allowance)?;
         } else {
-            ALLOWANCES.remove(deps.storage, key);
-            ALLOWANCES_SPENDER.remove(deps.storage, reverse(key));
+            self.allowances.remove(deps.storage, key);
+            self.allowances_spender.remove(deps.storage, reverse(key));
         }
 
         let res = Response::new().add_attributes(vec![
@@ -167,17 +140,17 @@ impl Cw20Allowances for Cw20Base {
 
         if info.sender != owner {
             // deduct allowance before doing anything else have enough allowance
-            deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
+            self.deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
         }
 
-        BALANCES.update(
+        self.balances.update(
             deps.storage,
             &owner_addr,
             |balance: Option<Uint128>| -> StdResult<_> {
                 Ok(balance.unwrap_or_default().checked_sub(amount)?)
             },
         )?;
-        BALANCES.update(
+        self.balances.update(
             deps.storage,
             &rcpt_addr,
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
@@ -209,17 +182,17 @@ impl Cw20Allowances for Cw20Base {
         let owner_addr = deps.api.addr_validate(&owner)?;
 
         // deduct allowance before doing anything else have enough allowance
-        deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
+        self.deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
 
         // move the tokens to the contract
-        BALANCES.update(
+        self.balances.update(
             deps.storage,
             &owner_addr,
             |balance: Option<Uint128>| -> StdResult<_> {
                 Ok(balance.unwrap_or_default().checked_sub(amount)?)
             },
         )?;
-        BALANCES.update(
+        self.balances.update(
             deps.storage,
             &rcpt_addr,
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
@@ -257,10 +230,10 @@ impl Cw20Allowances for Cw20Base {
         let owner_addr = deps.api.addr_validate(&owner)?;
 
         // deduct allowance before doing anything else have enough allowance
-        deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
+        self.deduct_allowance(deps.storage, &owner_addr, &info.sender, &env.block, amount)?;
 
         // lower balance
-        BALANCES.update(
+        self.balances.update(
             deps.storage,
             &owner_addr,
             |balance: Option<Uint128>| -> StdResult<_> {
@@ -268,10 +241,11 @@ impl Cw20Allowances for Cw20Base {
             },
         )?;
         // reduce total_supply
-        TOKEN_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
-            meta.total_supply = meta.total_supply.checked_sub(amount)?;
-            Ok(meta)
-        })?;
+        self.token_info
+            .update(deps.storage, |mut meta| -> StdResult<_> {
+                meta.total_supply = meta.total_supply.checked_sub(amount)?;
+                Ok(meta)
+            })?;
 
         let res = Response::new().add_attributes(vec![
             attr("action", "burn_from"),
@@ -293,7 +267,8 @@ impl Cw20Allowances for Cw20Base {
 
         let owner_addr = deps.api.addr_validate(&owner)?;
         let spender_addr = deps.api.addr_validate(&spender)?;
-        let allowance = ALLOWANCES
+        let allowance = self
+            .allowances
             .may_load(deps.storage, (&owner_addr, &spender_addr))?
             .unwrap_or_default();
         Ok(allowance)
@@ -313,7 +288,8 @@ impl Cw20Allowances for Cw20Base {
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
         let start = start_after.map(|s| Bound::ExclusiveRaw(s.into_bytes()));
 
-        let allowances = ALLOWANCES
+        let allowances = self
+            .allowances
             .prefix(&owner_addr)
             .range(deps.storage, start, None, Order::Ascending)
             .take(limit)
@@ -342,7 +318,8 @@ impl Cw20Allowances for Cw20Base {
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
         let start = start_after.map(|s| Bound::ExclusiveRaw(s.into_bytes()));
 
-        let allowances = ALLOWANCES_SPENDER
+        let allowances = self
+            .allowances_spender
             .prefix(&spender_addr)
             .range(deps.storage, start, None, Order::Ascending)
             .take(limit)

@@ -13,7 +13,7 @@ mod receiver;
 #[cfg(test)]
 mod receiver_contract;
 
-impl Contract<Empty> for Cw20Base {
+impl Contract<Empty> for Cw20Base<'_> {
     fn execute(
         &self,
         deps: cosmwasm_std::DepsMut<Empty>,
