@@ -38,15 +38,15 @@ impl Cw20Allowances for Cw20Base<'_> {
         }
 
         let update_fn = |allow: Option<AllowanceResponse>| -> Result<_, _> {
-            let mut val = allow.unwrap_or_default();
-            if let Some(exp) = expires {
-                if exp.is_expired(&env.block) {
-                    return Err(ContractError::InvalidExpiration {});
+            let allow = allow.unwrap_or_default();
+            let allowance = allow.allowance + amount;
+            match expires {
+                Some(expires) if !expires.is_expired(&env.block) => {
+                    Ok(AllowanceResponse { allowance, expires })
                 }
-                val.expires = exp;
+                None => Ok(AllowanceResponse { allowance, ..allow }),
+                _ => Err(ContractError::InvalidExpiration {}),
             }
-            val.allowance += amount;
-            Ok(val)
         };
         self.allowances
             .update(deps.storage, (&info.sender, &spender_addr), update_fn)?;

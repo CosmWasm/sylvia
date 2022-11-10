@@ -103,15 +103,16 @@ impl Cw20Base<'_> {
         amount: Uint128,
     ) -> Result<AllowanceResponse, ContractError> {
         let update_fn = |current: Option<AllowanceResponse>| -> _ {
-            let mut allow = current.ok_or(ContractError::NoAllowance {})?;
+            let allowance = current.ok_or(ContractError::NoAllowance {})?;
 
-            if !allow.expires.is_expired(block) {
+            if !allowance.expires.is_expired(block) {
                 // deduct the allowance if enough
-                allow.allowance = allow
+                let expires = allowance.expires;
+                let allowance = allowance
                     .allowance
                     .checked_sub(amount)
                     .map_err(StdError::overflow)?;
-                Ok(allow)
+                Ok(AllowanceResponse { allowance, expires })
             } else {
                 Err(ContractError::Expired {})
             }
