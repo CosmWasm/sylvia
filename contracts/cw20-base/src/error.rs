@@ -7,35 +7,35 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("Cannot set to own account")]
-    CannotSetOwnAccount {},
+    CannotSetOwnAccount,
 
     #[error("Invalid zero amount")]
-    InvalidZeroAmount {},
+    InvalidZeroAmount,
 
     #[error("Allowance is expired")]
-    Expired {},
+    Expired,
 
     #[error("No allowance for this account")]
-    NoAllowance {},
+    NoAllowance,
 
     #[error("Minting cannot exceed the cap")]
-    CannotExceedCap {},
+    CannotExceedCap,
 
     #[error("Logo binary data exceeds 5KB limit")]
-    LogoTooBig {},
+    LogoTooBig,
 
     #[error("Invalid xml preamble for SVG")]
-    InvalidXmlPreamble {},
+    InvalidXmlPreamble,
 
     #[error("Invalid png header")]
-    InvalidPngHeader {},
+    InvalidPngHeader,
 
     #[error("Invalid expiration value")]
-    InvalidExpiration {},
+    InvalidExpiration,
 
     #[error("Duplicate initial balance addresses")]
-    DuplicateInitialBalanceAddresses {},
+    DuplicateInitialBalanceAddresses,
 }

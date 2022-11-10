@@ -3,8 +3,8 @@ use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoRespo
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Storage, Uint128,
+    attr, ensure, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Storage, Uint128,
 };
 use cw2::set_contract_version;
 use cw20_allowances::responses::AllowanceResponse;
@@ -145,11 +145,12 @@ impl Cw20Base<'_> {
         // create initial accounts
         let total_supply = self.create_accounts(&mut deps, &initial_balances)?;
 
-        if let Some(limit) = mint.as_ref().and_then(|v| v.cap) {
-            if total_supply > limit {
-                return Err(StdError::generic_err("Initial supply greater than cap").into());
-            }
-        }
+        ensure!(
+            !matches!(
+                mint.as_ref().and_then(|v| v.cap), Some(limit) if total_supply > limit
+            ),
+            StdError::generic_err("Initial supply greater than cap")
+        );
 
         let mint = match mint {
             Some(m) => Some(MinterData {
@@ -207,9 +208,10 @@ impl Cw20Base<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _, info) = ctx;
 
-        if amount == Uint128::zero() {
-            return Err(ContractError::InvalidZeroAmount {});
-        }
+        ensure!(
+            amount != Uint128::zero(),
+            ContractError::InvalidZeroAmount {}
+        );
 
         let rcpt_addr = deps.api.addr_validate(&recipient)?;
 
@@ -243,9 +245,10 @@ impl Cw20Base<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _, info) = ctx;
 
-        if amount == Uint128::zero() {
-            return Err(ContractError::InvalidZeroAmount {});
-        }
+        ensure!(
+            amount != Uint128::zero(),
+            ContractError::InvalidZeroAmount {}
+        );
 
         // lower balance
         self.balances.update(
@@ -281,9 +284,10 @@ impl Cw20Base<'_> {
     ) -> Result<Response, ContractError> {
         let (deps, _, info) = ctx;
 
-        if amount == Uint128::zero() {
-            return Err(ContractError::InvalidZeroAmount {});
-        }
+        ensure!(
+            amount != Uint128::zero(),
+            ContractError::InvalidZeroAmount {}
+        );
 
         let rcpt_addr = deps.api.addr_validate(&contract)?;
 
@@ -305,15 +309,16 @@ impl Cw20Base<'_> {
             .add_attribute("action", "send")
             .add_attribute("from", &info.sender)
             .add_attribute("to", &contract)
-            .add_attribute("amount", amount)
-            .add_message(
-                Cw20ReceiveMsg {
-                    sender: info.sender.into(),
-                    amount,
-                    msg,
-                }
-                .into_cosmos_msg(contract)?,
-            );
+            .add_attribute("amount", amount);
+
+        let msg = Cw20ReceiveMsg {
+            sender: info.sender.into(),
+            amount,
+            msg,
+        }
+        .into_cosmos_msg(contract)?;
+
+        let res = res.add_message(msg);
         Ok(res)
     }
 
