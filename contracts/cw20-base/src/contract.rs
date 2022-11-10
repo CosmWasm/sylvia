@@ -103,20 +103,17 @@ impl Cw20Base<'_> {
         amount: Uint128,
     ) -> Result<AllowanceResponse, ContractError> {
         let update_fn = |current: Option<AllowanceResponse>| -> _ {
-            match current {
-                Some(mut a) => {
-                    if a.expires.is_expired(block) {
-                        Err(ContractError::Expired {})
-                    } else {
-                        // deduct the allowance if enough
-                        a.allowance = a
-                            .allowance
-                            .checked_sub(amount)
-                            .map_err(StdError::overflow)?;
-                        Ok(a)
-                    }
-                }
-                None => Err(ContractError::NoAllowance {}),
+            let mut allow = current.ok_or(ContractError::NoAllowance {})?;
+
+            if !allow.expires.is_expired(block) {
+                // deduct the allowance if enough
+                allow.allowance = allow
+                    .allowance
+                    .checked_sub(amount)
+                    .map_err(StdError::overflow)?;
+                Ok(allow)
+            } else {
+                Err(ContractError::Expired {})
             }
         };
         self.allowances
