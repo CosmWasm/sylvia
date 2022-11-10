@@ -1,8 +1,10 @@
+pub mod responses;
+
 use cosmwasm_std::{
     Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
-use cw20::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use cw_utils::Expiration;
+use responses::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use sylvia::{interface, schemars};
 
 #[interface]

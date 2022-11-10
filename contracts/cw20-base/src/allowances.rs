@@ -2,15 +2,17 @@ use cosmwasm_std::{
     attr, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult,
     Uint128,
 };
-use cw20::{
+use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
-    Cw20ReceiveMsg, Expiration, SpenderAllowanceInfo,
+    SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::Bound;
+use cw_utils::Expiration;
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
+use crate::responses::Cw20ReceiveMsg;
 
 // settings for pagination
 const MAX_LIMIT: u32 = 30;

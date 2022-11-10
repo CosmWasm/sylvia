@@ -1,13 +1,14 @@
 use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
-use cw20::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse, BalanceResponse,
-};
 
+use cw20_allowances::responses::{
+    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
+};
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
 use crate::contract::{Cw20Base, InstantiateMsg, InstantiateMsgData, QueryMsg};
 use crate::error::ContractError;
+use crate::responses::BalanceResponse;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cw20BaseCodeId(u64);

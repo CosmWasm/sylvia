@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Binary, StdError, Timestamp, Uint128};
-use cw20::{
+use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
-    Cw20Coin, SpenderAllowanceInfo,
+    SpenderAllowanceInfo,
 };
 use cw_multi_test::{next_block, App};
 use cw_utils::Expiration;
@@ -9,6 +9,7 @@ use cw_utils::Expiration;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::multitest::receiver_contract::ReceiverContractCodeId;
+use crate::responses::Cw20Coin;
 
 use super::proxy::Cw20BaseCodeId;
 

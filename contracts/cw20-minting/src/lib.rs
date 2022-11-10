@@ -1,4 +1,4 @@
-mod responses;
+pub mod responses;
 
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
 use responses::MinterResponse;

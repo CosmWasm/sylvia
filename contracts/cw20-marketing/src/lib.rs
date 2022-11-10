@@ -1,4 +1,4 @@
-mod responses;
+pub mod responses;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{

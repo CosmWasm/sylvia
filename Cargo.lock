@@ -312,26 +312,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw20"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a45a8794a5dd33b66af34caee52a7beceb690856adcc1682b6e3db88b2cdee62"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-utils",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "cw20-allowances"
 version = "0.2.1"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-utils",
- "cw20",
  "serde",
  "sylvia",
 ]
@@ -348,8 +334,9 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "cw2",
- "cw20",
  "cw20-allowances",
+ "cw20-marketing",
+ "cw20-minting",
  "schemars",
  "serde",
  "sylvia",

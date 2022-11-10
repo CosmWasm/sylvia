@@ -1,4 +1,5 @@
 use crate::error::ContractError;
+use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
@@ -6,10 +7,10 @@ use cosmwasm_std::{
     Storage, Uint128,
 };
 use cw2::set_contract_version;
-use cw20::{
-    AllowanceResponse, BalanceResponse, Cw20Coin, Cw20ReceiveMsg, Logo, LogoInfo,
-    MarketingInfoResponse, MinterResponse, TokenInfoResponse,
-};
+use cw20_allowances::responses::AllowanceResponse;
+use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
+use cw20_marketing::Logo;
+use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
 use sylvia::{contract, schemars};
 
