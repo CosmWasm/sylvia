@@ -7,7 +7,7 @@ use cw20_allowances::responses::{
     SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
-use cw_storage_plus::Bound;
+use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
 
 use crate::contract::Cw20Base;
@@ -53,12 +53,11 @@ impl Cw20Allowances for Cw20Base<'_> {
         self.allowances_spender
             .update(deps.storage, (&spender_addr, &info.sender), update_fn)?;
 
-        let res = Response::new().add_attributes(vec![
-            attr("action", "increase_allowance"),
-            attr("owner", info.sender),
-            attr("spender", spender),
-            attr("amount", amount),
-        ]);
+        let res = Response::new()
+            .add_attribute("action", "increase_allowance")
+            .add_attribute("owner", info.sender)
+            .add_attribute("spender", spender)
+            .add_attribute("amount", amount);
         Ok(res)
     }
 
@@ -80,9 +79,7 @@ impl Cw20Allowances for Cw20Base<'_> {
 
         let key = (&info.sender, &spender_addr);
 
-        fn reverse<'a>(t: (&'a Addr, &'a Addr)) -> (&'a Addr, &'a Addr) {
-            (t.1, t.0)
-        }
+        let reverse = |(a, b)| (b, a);
 
         // load value and delete if it hits 0, or update otherwise
         let mut allowance = self.allowances.load(deps.storage, key)?;
@@ -106,12 +103,11 @@ impl Cw20Allowances for Cw20Base<'_> {
             self.allowances_spender.remove(deps.storage, reverse(key));
         }
 
-        let res = Response::new().add_attributes(vec![
-            attr("action", "decrease_allowance"),
-            attr("owner", info.sender),
-            attr("spender", spender),
-            attr("amount", amount),
-        ]);
+        let res = Response::new()
+            .add_attribute("action", "decrease_allowance")
+            .add_attribute("owner", info.sender)
+            .add_attribute("spender", spender)
+            .add_attribute("amount", amount);
         Ok(res)
     }
 
@@ -158,13 +154,12 @@ impl Cw20Allowances for Cw20Base<'_> {
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
 
-        let res = Response::new().add_attributes(vec![
-            attr("action", "transfer_from"),
-            attr("from", owner),
-            attr("to", recipient),
-            attr("by", info.sender),
-            attr("amount", amount),
-        ]);
+        let res = Response::new()
+            .add_attribute("action", "transfer_from")
+            .add_attribute("from", owner)
+            .add_attribute("to", recipient)
+            .add_attribute("by", info.sender)
+            .add_attribute("amount", amount);
         Ok(res)
     }
 
@@ -249,12 +244,11 @@ impl Cw20Allowances for Cw20Base<'_> {
                 Ok(meta)
             })?;
 
-        let res = Response::new().add_attributes(vec![
-            attr("action", "burn_from"),
-            attr("from", owner),
-            attr("by", info.sender),
-            attr("amount", amount),
-        ]);
+        let res = Response::new()
+            .add_attribute("action", "burn_from")
+            .add_attribute("owner", owner)
+            .add_attribute("spender", info.sender)
+            .add_attribute("amount", amount);
         Ok(res)
     }
 
