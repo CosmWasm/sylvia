@@ -1,6 +1,6 @@
-mod responses;
+pub mod responses;
 
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use responses::MinterResponse;
 use sylvia::{interface, schemars};
 
@@ -14,7 +14,7 @@ pub trait Cw20Minting {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         recipient: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<Response, Self::Error>;
 
     /// The current minter may set a new minter.

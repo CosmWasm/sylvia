@@ -38,4 +38,7 @@ pub enum ContractError {
 
     #[error("Duplicate initial balance addresses")]
     DuplicateInitialBalanceAddresses {},
+
+    #[error("Overflow on operation")]
+    Overflow {},
 }

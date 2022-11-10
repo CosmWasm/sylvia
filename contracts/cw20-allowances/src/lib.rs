@@ -1,8 +1,8 @@
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
-use cw20::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
+pub mod responses;
+
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use cw_utils::Expiration;
+use responses::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
 use sylvia::{interface, schemars};
 
 #[interface]
@@ -16,7 +16,7 @@ pub trait Cw20Allowances {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
     ) -> Result<Response, Self::Error>;
 
@@ -27,7 +27,7 @@ pub trait Cw20Allowances {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
     ) -> Result<Response, Self::Error>;
 
@@ -39,7 +39,7 @@ pub trait Cw20Allowances {
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
         recipient: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<Response, Self::Error>;
 
     /// Sends amount tokens from owner -> contract
@@ -50,7 +50,7 @@ pub trait Cw20Allowances {
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
         contract: String,
-        amount: Uint128,
+        amount: u128,
         msg: Binary,
     ) -> Result<Response, Self::Error>;
 
@@ -60,7 +60,7 @@ pub trait Cw20Allowances {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<Response, Self::Error>;
 
     /// Returns how much spender can use from owner account, 0 if unset.

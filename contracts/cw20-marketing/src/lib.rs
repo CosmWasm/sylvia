@@ -1,9 +1,7 @@
-mod responses;
+pub mod responses;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
 use sylvia::{interface, schemars};
 
@@ -63,7 +61,7 @@ pub trait Cw20Base {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         contract: String,
-        amount: Uint128,
+        amount: u128,
         msg: Binary,
     ) -> Result<Response, Self::Error>;
 

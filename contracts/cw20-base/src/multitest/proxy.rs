@@ -1,13 +1,14 @@
-use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
-use cw20::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse, BalanceResponse,
-};
+use cosmwasm_std::{Addr, Binary, StdResult};
 
+use cw20_allowances::responses::{
+    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
+};
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
 use crate::contract::{Cw20Base, InstantiateMsg, InstantiateMsgData, QueryMsg};
 use crate::error::ContractError;
+use crate::responses::BalanceResponse;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cw20BaseCodeId(u64);
@@ -50,7 +51,7 @@ impl Cw20BaseProxy {
         app: &mut App,
         sender: &Addr,
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
     ) -> Result<(), ContractError> {
         let msg = cw20_allowances::ExecMsg::IncreaseAllowance {
@@ -70,7 +71,7 @@ impl Cw20BaseProxy {
         app: &mut App,
         sender: &Addr,
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
     ) -> Result<(), ContractError> {
         let msg = cw20_allowances::ExecMsg::DecreaseAllowance {
@@ -91,7 +92,7 @@ impl Cw20BaseProxy {
         sender: &Addr,
         owner: String,
         recipient: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<(), ContractError> {
         let msg = cw20_allowances::ExecMsg::TransferFrom {
             owner,
@@ -111,7 +112,7 @@ impl Cw20BaseProxy {
         sender: &Addr,
         owner: String,
         contract: String,
-        amount: Uint128,
+        amount: u128,
         msg: Binary,
     ) -> Result<(), ContractError> {
         let msg = cw20_allowances::ExecMsg::SendFrom {
@@ -132,7 +133,7 @@ impl Cw20BaseProxy {
         app: &mut App,
         sender: &Addr,
         owner: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<(), ContractError> {
         let msg = cw20_allowances::ExecMsg::BurnFrom { owner, amount };
 

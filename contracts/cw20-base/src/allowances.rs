@@ -1,16 +1,17 @@
 use cosmwasm_std::{
-    attr, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult,
-    Uint128,
+    attr, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult, Uint128,
 };
-use cw20::{
+use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
-    Cw20ReceiveMsg, Expiration, SpenderAllowanceInfo,
+    SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::Bound;
+use cw_utils::Expiration;
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
+use crate::responses::Cw20ReceiveMsg;
 
 // settings for pagination
 const MAX_LIMIT: u32 = 30;
@@ -25,9 +26,9 @@ impl Cw20Allowances for Cw20Base<'_> {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response, ContractError> {
         let (deps, env, info) = ctx;
 
         let spender_addr = deps.api.addr_validate(&spender)?;
@@ -55,7 +56,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             attr("action", "increase_allowance"),
             attr("owner", info.sender),
             attr("spender", spender),
-            attr("amount", amount),
+            attr("amount", amount.to_string()),
         ]);
         Ok(res)
     }
@@ -66,9 +67,9 @@ impl Cw20Allowances for Cw20Base<'_> {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         spender: String,
-        amount: Uint128,
+        amount: u128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response, ContractError> {
         let (deps, env, info) = ctx;
 
         let spender_addr = deps.api.addr_validate(&spender)?;
@@ -89,7 +90,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             allowance.allowance = allowance
                 .allowance
                 .checked_sub(amount)
-                .map_err(StdError::overflow)?;
+                .ok_or(ContractError::Overflow {})?;
             if let Some(exp) = expires {
                 if exp.is_expired(&env.block) {
                     return Err(ContractError::InvalidExpiration {});
@@ -108,7 +109,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             attr("action", "decrease_allowance"),
             attr("owner", info.sender),
             attr("spender", spender),
-            attr("amount", amount),
+            attr("amount", amount.to_string()),
         ]);
         Ok(res)
     }
@@ -120,8 +121,8 @@ impl Cw20Allowances for Cw20Base<'_> {
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
         recipient: String,
-        amount: Uint128,
-    ) -> Result<Response, Self::Error> {
+        amount: u128,
+    ) -> Result<Response, ContractError> {
         let (deps, env, info) = ctx;
 
         let rcpt_addr = deps.api.addr_validate(&recipient)?;
@@ -134,7 +135,7 @@ impl Cw20Allowances for Cw20Base<'_> {
                 attr("from", owner),
                 attr("to", recipient),
                 attr("by", info.sender),
-                attr("amount", amount),
+                attr("amount", amount.to_string()),
             ]));
         }
 
@@ -146,14 +147,16 @@ impl Cw20Allowances for Cw20Base<'_> {
         self.balances.update(
             deps.storage,
             &owner_addr,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            |balance: Option<u128>| -> StdResult<_> {
+                Ok(Uint128::new(balance.unwrap_or_default())
+                    .checked_sub(amount.into())?
+                    .u128())
             },
         )?;
         self.balances.update(
             deps.storage,
             &rcpt_addr,
-            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+            |balance: Option<u128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
 
         let res = Response::new().add_attributes(vec![
@@ -161,7 +164,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             attr("from", owner),
             attr("to", recipient),
             attr("by", info.sender),
-            attr("amount", amount),
+            attr("amount", amount.to_string()),
         ]);
         Ok(res)
     }
@@ -173,9 +176,9 @@ impl Cw20Allowances for Cw20Base<'_> {
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
         contract: String,
-        amount: Uint128,
+        amount: u128,
         msg: Binary,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response, ContractError> {
         let (deps, env, info) = ctx;
 
         let rcpt_addr = deps.api.addr_validate(&contract)?;
@@ -188,14 +191,16 @@ impl Cw20Allowances for Cw20Base<'_> {
         self.balances.update(
             deps.storage,
             &owner_addr,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            |balance: Option<u128>| -> StdResult<_> {
+                Ok(Uint128::new(balance.unwrap_or_default())
+                    .checked_sub(amount.into())?
+                    .u128())
             },
         )?;
         self.balances.update(
             deps.storage,
             &rcpt_addr,
-            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+            |balance: Option<u128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
 
         let attrs = vec![
@@ -203,7 +208,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             attr("from", &owner),
             attr("to", &contract),
             attr("by", &info.sender),
-            attr("amount", amount),
+            attr("amount", amount.to_string()),
         ];
 
         // create a send message
@@ -223,7 +228,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         owner: String,
-        amount: Uint128,
+        amount: u128,
     ) -> Result<Response, Self::Error> {
         let (deps, env, info) = ctx;
 
@@ -236,14 +241,18 @@ impl Cw20Allowances for Cw20Base<'_> {
         self.balances.update(
             deps.storage,
             &owner_addr,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            |balance: Option<u128>| -> StdResult<_> {
+                Ok(Uint128::new(balance.unwrap_or_default())
+                    .checked_sub(amount.into())?
+                    .u128())
             },
         )?;
         // reduce total_supply
         self.token_info
             .update(deps.storage, |mut meta| -> StdResult<_> {
-                meta.total_supply = meta.total_supply.checked_sub(amount)?;
+                meta.total_supply = Uint128::new(meta.total_supply)
+                    .checked_sub(amount.into())?
+                    .u128();
                 Ok(meta)
             })?;
 
@@ -251,7 +260,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             attr("action", "burn_from"),
             attr("from", owner),
             attr("by", info.sender),
-            attr("amount", amount),
+            attr("amount", amount.to_string()),
         ]);
         Ok(res)
     }

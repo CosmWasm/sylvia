@@ -14,4 +14,3 @@ cosmwasm-schema = "1.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 sylvia = { version = "0.2.1", path = "../../sylvia" }
 cw-utils = "0.16"
-cw20 = "0.16"

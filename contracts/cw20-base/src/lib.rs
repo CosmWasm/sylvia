@@ -1,6 +1,7 @@
 mod allowances;
 mod contract;
 mod error;
+mod responses;
 mod validation;
 
 #[cfg(any(test, feature = "tests"))]

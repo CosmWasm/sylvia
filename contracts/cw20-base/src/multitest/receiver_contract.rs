@@ -35,7 +35,7 @@ impl Receiver for ReceiverContract {
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
         _sender: String,
-        _amount: cosmwasm_std::Uint128,
+        _amount: u128,
         _msg: cosmwasm_std::Binary,
     ) -> Result<Response, Self::Error> {
         Ok(Response::default())

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response, StdError, Uint128};
+use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response, StdError};
 use sylvia::interface;
 
 #[interface]
@@ -10,7 +10,7 @@ pub trait Receiver {
         &self,
         ctx: (DepsMut, Env, MessageInfo),
         sender: String,
-        amount: Uint128,
+        amount: u128,
         msg: Binary,
     ) -> Result<Response, Self::Error>;
 }

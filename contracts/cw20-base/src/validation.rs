@@ -1,7 +1,8 @@
 use cosmwasm_std::{StdError, StdResult};
-use cw20::{Cw20Coin, EmbeddedLogo, Logo};
+use cw20_marketing::{EmbeddedLogo, Logo};
 
 use crate::error::ContractError;
+use crate::responses::Cw20Coin;
 
 const LOGO_SIZE_CAP: usize = 5 * 1024;
 

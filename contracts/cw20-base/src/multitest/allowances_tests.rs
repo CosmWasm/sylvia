@@ -1,7 +1,7 @@
-use cosmwasm_std::{Addr, Binary, StdError, Timestamp, Uint128};
-use cw20::{
+use cosmwasm_std::{Addr, Binary, StdError, Timestamp};
+use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
-    Cw20Coin, SpenderAllowanceInfo,
+    SpenderAllowanceInfo,
 };
 use cw_multi_test::{next_block, App};
 use cw_utils::Expiration;
@@ -9,6 +9,7 @@ use cw_utils::Expiration;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::multitest::receiver_contract::ReceiverContractCodeId;
+use crate::responses::Cw20Coin;
 
 use super::proxy::Cw20BaseCodeId;
 
@@ -31,7 +32,7 @@ fn increase_decrease_allowances() {
                 decimals: 3,
                 initial_balances: vec![Cw20Coin {
                     address: owner.clone().into(),
-                    amount: Uint128::new(12340000),
+                    amount: 12340000,
                 }],
                 mint: None,
                 marketing: None,
@@ -47,7 +48,7 @@ fn increase_decrease_allowances() {
     assert_eq!(allowances, AllowanceResponse::default());
 
     // set allowance with height expiration
-    let allowance = Uint128::new(7777);
+    let allowance = 7777;
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(
@@ -67,7 +68,7 @@ fn increase_decrease_allowances() {
     assert_eq!(allowance_resp, AllowanceResponse { allowance, expires });
 
     // decrease it a bit with no expire set - stays the same
-    let lower = Uint128::new(4444);
+    let lower = 4444;
     let allowance = allowance.checked_sub(lower).unwrap();
     contract
         .decrease_allowance(&mut app, &owner, spender.to_string(), lower, None)
@@ -80,7 +81,7 @@ fn increase_decrease_allowances() {
     assert_eq!(allowance_resp, AllowanceResponse { allowance, expires });
 
     // increase it some more and override the expires
-    let raise = Uint128::new(87654);
+    let raise = 87654;
     let allowance = allowance + raise;
     let expires = Expiration::AtTime(Timestamp::from_seconds(8888888888));
     contract
@@ -97,7 +98,7 @@ fn increase_decrease_allowances() {
             &mut app,
             &owner,
             spender.to_string(),
-            Uint128::new(99988647623876347),
+            99988647623876347,
             None,
         )
         .unwrap();
@@ -127,7 +128,7 @@ fn allowances_independent() {
                 decimals: 3,
                 initial_balances: vec![Cw20Coin {
                     address: owner.clone().into(),
-                    amount: Uint128::new(12340000),
+                    amount: 12340000,
                 }],
                 mint: None,
                 marketing: None,
@@ -148,7 +149,7 @@ fn allowances_independent() {
     assert_eq!(allowance_resp, AllowanceResponse::default());
 
     // set allowance with height expiration
-    let allowance = Uint128::new(7777);
+    let allowance = 7777;
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(
@@ -161,7 +162,7 @@ fn allowances_independent() {
         .unwrap();
 
     // set other allowance with no expiration
-    let allowance2 = Uint128::new(87654);
+    let allowance2 = 87654;
     contract
         .increase_allowance(&mut app, &owner, spender2.to_string(), allowance2, None)
         .unwrap();
@@ -183,7 +184,7 @@ fn allowances_independent() {
     assert_eq!(allowance_resp, expect_two);
 
     // also allow spender -> spender2 with no interference
-    let allowance3 = Uint128::new(1821);
+    let allowance3 = 1821;
     let expires3 = Expiration::AtTime(Timestamp::from_seconds(3767626296));
     contract
         .increase_allowance(
@@ -231,7 +232,7 @@ fn no_self_allowance() {
                 decimals: 3,
                 initial_balances: vec![Cw20Coin {
                     address: owner.clone().into(),
-                    amount: Uint128::new(12340000),
+                    amount: 12340000,
                 }],
                 mint: None,
                 marketing: None,
@@ -246,7 +247,7 @@ fn no_self_allowance() {
             &mut app,
             &Addr::unchecked(owner.clone()),
             owner.to_string(),
-            Uint128::new(7777),
+            7777,
             None,
         )
         .unwrap_err();
@@ -259,7 +260,7 @@ fn no_self_allowance() {
             &mut app,
             &Addr::unchecked(owner.clone()),
             owner.to_string(),
-            Uint128::new(7777),
+            7777,
             None,
         )
         .unwrap_err();
@@ -272,7 +273,7 @@ fn transfer_from_self_to_self() {
     let mut app = App::default();
 
     let owner = Addr::unchecked("addr0001");
-    let amount = Uint128::new(999999);
+    let amount = 999999;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
@@ -296,7 +297,7 @@ fn transfer_from_self_to_self() {
         .unwrap();
 
     // valid transfer of part of the allowance
-    let transfer = Uint128::new(44444);
+    let transfer = 44444;
     contract
         .transfer_from(
             &mut app,
@@ -318,7 +319,7 @@ fn transfer_from_owner_requires_no_allowance() {
 
     let owner = Addr::unchecked("addr0001");
     let rcpt = Addr::unchecked("addr0003");
-    let start_amount = Uint128::new(999999);
+    let start_amount = 999999;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
@@ -342,7 +343,7 @@ fn transfer_from_owner_requires_no_allowance() {
         .unwrap();
 
     // valid transfer of part of the allowance
-    let transfer = Uint128::new(44444);
+    let transfer = 44444;
     contract
         .transfer_from(
             &mut app,
@@ -371,7 +372,7 @@ fn transfer_from_respects_limits() {
     let owner = Addr::unchecked("addr0001");
     let spender = Addr::unchecked("addr0002");
     let rcpt = Addr::unchecked("addr0003");
-    let start_amount = Uint128::new(999999);
+    let start_amount = 999999;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
@@ -395,13 +396,13 @@ fn transfer_from_respects_limits() {
         .unwrap();
 
     // provide an allowance
-    let allowance = Uint128::new(77777);
+    let allowance: u128 = 77777;
     contract
         .increase_allowance(&mut app, &owner, spender.to_string(), allowance, None)
         .unwrap();
 
     // valid transfer of part of the allowance
-    let transfer = Uint128::new(44444);
+    let transfer = 44444;
     contract
         .transfer_from(
             &mut app,
@@ -441,7 +442,7 @@ fn transfer_from_respects_limits() {
             &Addr::unchecked(spender.to_string()),
             owner.to_string(),
             rcpt.to_string(),
-            Uint128::new(33443),
+            33443,
         )
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -453,7 +454,7 @@ fn transfer_from_respects_limits() {
             &mut app,
             &owner,
             spender.to_string(),
-            Uint128::new(1000),
+            1000,
             Some(Expiration::AtHeight(next_block_height)),
         )
         .unwrap();
@@ -468,7 +469,7 @@ fn transfer_from_respects_limits() {
             &spender,
             owner.to_string(),
             rcpt.to_string(),
-            Uint128::new(33443),
+            33443,
         )
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired {}));
@@ -480,7 +481,7 @@ fn burn_from_respects_limits() {
 
     let owner = Addr::unchecked("addr0001");
     let spender = Addr::unchecked("addr0002");
-    let start_amount = Uint128::new(999999);
+    let start_amount = 999999;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
@@ -504,13 +505,13 @@ fn burn_from_respects_limits() {
         .unwrap();
 
     // provide an allowance
-    let allowance = Uint128::new(77777);
+    let allowance: u128 = 77777;
     contract
         .increase_allowance(&mut app, &owner, spender.to_string(), allowance, None)
         .unwrap();
 
     // valid burn of part of the allowance
-    let transfer = Uint128::new(44444);
+    let transfer = 44444;
     contract
         .burn_from(&mut app, &spender, owner.to_string(), transfer)
         .unwrap();
@@ -537,7 +538,7 @@ fn burn_from_respects_limits() {
 
     // cannot burn more than the allowance
     let err = contract
-        .burn_from(&mut app, &spender, owner.to_string(), Uint128::new(33443))
+        .burn_from(&mut app, &spender, owner.to_string(), 33443)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -549,7 +550,7 @@ fn burn_from_respects_limits() {
             &mut app,
             &owner,
             spender.to_string(),
-            Uint128::new(1000),
+            1000,
             Some(Expiration::AtHeight(next_block_height)),
         )
         .unwrap();
@@ -559,7 +560,7 @@ fn burn_from_respects_limits() {
 
     // we should now get the expiration error
     let err = contract
-        .burn_from(&mut app, &spender, owner.to_string(), Uint128::new(33443))
+        .burn_from(&mut app, &spender, owner.to_string(), 33443)
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired {}));
 }
@@ -573,7 +574,7 @@ fn send_from_respects_limits() {
     let owner2 = Addr::unchecked("addr0003");
     let spender = Addr::unchecked("addr0002");
     let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
-    let start_amount = Uint128::new(999999);
+    let start_amount = 999999;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
     let receiver_code_id = ReceiverContractCodeId::store_code(&mut app);
@@ -602,13 +603,13 @@ fn send_from_respects_limits() {
         .unwrap();
 
     // provide an allowance
-    let allowance = Uint128::new(77777);
+    let allowance: u128 = 77777;
     contract
         .increase_allowance(&mut app, &owner, spender.to_string(), allowance, None)
         .unwrap();
 
     // valid send of part of the allowance
-    let transfer = Uint128::new(44444);
+    let transfer = 44444;
     contract
         .send_from(
             &mut app,
@@ -647,7 +648,7 @@ fn send_from_respects_limits() {
             &spender,
             owner.to_string(),
             receiver_contract.addr().to_string(),
-            Uint128::new(33443),
+            33443,
             send_msg.clone(),
         )
         .unwrap_err();
@@ -660,7 +661,7 @@ fn send_from_respects_limits() {
             &mut app,
             &owner,
             spender.to_string(),
-            Uint128::new(1000),
+            1000,
             Some(Expiration::AtHeight(next_block_height)),
         )
         .unwrap();
@@ -675,7 +676,7 @@ fn send_from_respects_limits() {
             &spender,
             owner.to_string(),
             receiver_contract.addr().to_string(),
-            Uint128::new(33443),
+            33443,
             send_msg,
         )
         .unwrap_err();
@@ -689,8 +690,8 @@ fn no_past_expiration() {
 
     let owner = Addr::unchecked("addr0001");
     let spender = Addr::unchecked("addr0002");
-    let start_amount = Uint128::new(999999);
-    let allowance = Uint128::new(7777);
+    let start_amount = 999999;
+    let allowance = 7777;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
@@ -841,8 +842,8 @@ fn query_allowances() {
     let owner = Addr::unchecked("addr0001");
     let spender = Addr::unchecked("addr0002");
     let spender2 = Addr::unchecked("addr0003");
-    let start_amount = Uint128::new(999999);
-    let allowance = Uint128::new(7777);
+    let start_amount = 999999;
+    let allowance = 7777;
 
     let code_id = Cw20BaseCodeId::store_code(&mut app);
 
