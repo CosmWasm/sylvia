@@ -883,6 +883,7 @@ dependencies = [
  "serde",
  "serde-cw-value",
  "sylvia-derive",
+ "thiserror",
 ]
 
 [[package]]

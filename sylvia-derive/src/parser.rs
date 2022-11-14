@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Punct, TokenStream};
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream};
 use syn::{parenthesized, parse_quote, Ident, Path, Result, Token, Type};
@@ -96,7 +96,7 @@ pub enum MsgType {
 /// `#[msg(...)]` attribute for `interface` macro
 pub enum MsgAttr {
     Exec,
-    Query,
+    Query { resp_type: Option<Ident> },
     Instantiate { name: Ident },
     Reply,
     Migrate,
@@ -158,12 +158,24 @@ impl MsgAttr {
         Ok(Self::Instantiate { name })
     }
 
+    fn parse_query(content: ParseBuffer) -> Result<Self> {
+        if content.peek2(Ident) {
+            let _: Punct = content.parse()?;
+            let _: Ident = content.parse()?;
+            let _: Punct = content.parse()?;
+            let resp_type: Option<Ident> = Some(content.parse()?);
+            Ok(Self::Query { resp_type })
+        } else {
+            Ok(Self::Query { resp_type: None })
+        }
+    }
+
     pub fn msg_type(&self) -> MsgType {
         use MsgAttr::*;
 
         match self {
             Exec => MsgType::Exec,
-            Query => MsgType::Query,
+            Query { .. } => MsgType::Query,
             Instantiate { .. } => MsgType::Instantiate,
             Reply => MsgType::Reply,
             Migrate => MsgType::Migrate,
@@ -180,7 +192,7 @@ impl Parse for MsgAttr {
         if ty == "exec" {
             Ok(Self::Exec)
         } else if ty == "query" {
-            Ok(Self::Query)
+            Self::parse_query(content)
         } else if ty == "instantiate" {
             Self::parse_instantiate(content)
         } else if ty == "reply" {
