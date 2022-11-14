@@ -555,7 +555,8 @@ impl<'a> MsgVariant<'a> {
 
         // In case of aliased result user need to define the return type by hand
         if segment.ident != "Result" && segment.ident != "StdResult" {
-            panic!(
+            emit_error!(
+                segment.span(),
                 "Neither Result nor StdResult found in return type. \
                     You might be using aliased return type. \
                     Please use #[msg(return_type=<your_return_type>)]"
