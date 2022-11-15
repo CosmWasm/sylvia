@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    attr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
+    Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
 };
 use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
@@ -126,13 +126,13 @@ impl Cw20Allowances for Cw20Base<'_> {
 
         // Avoid doing state update in case of self to self transfer
         if rcpt_addr == owner_addr {
-            return Ok(Response::new().add_attributes(vec![
-                attr("action", "transfer_from"),
-                attr("from", owner),
-                attr("to", recipient),
-                attr("by", info.sender),
-                attr("amount", amount),
-            ]));
+            let resp = Response::new()
+                .add_attribute("action", "transfer_from")
+                .add_attribute("from", owner)
+                .add_attribute("to", recipient)
+                .add_attribute("by", info.sender)
+                .add_attribute("amount", amount);
+            return Ok(resp);
         }
 
         if info.sender != owner {
@@ -194,13 +194,12 @@ impl Cw20Allowances for Cw20Base<'_> {
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
 
-        let attrs = vec![
-            attr("action", "send_from"),
-            attr("from", &owner),
-            attr("to", &contract),
-            attr("by", &info.sender),
-            attr("amount", amount),
-        ];
+        let resp = Response::new()
+            .add_attribute("action", "send_from")
+            .add_attribute("from", &owner)
+            .add_attribute("to", &contract)
+            .add_attribute("by", &info.sender)
+            .add_attribute("amount", amount);
 
         // create a send message
         let msg = Cw20ReceiveMsg {
@@ -210,8 +209,8 @@ impl Cw20Allowances for Cw20Base<'_> {
         }
         .into_cosmos_msg(contract)?;
 
-        let res = Response::new().add_message(msg).add_attributes(attrs);
-        Ok(res)
+        let resp = resp.add_message(msg);
+        Ok(resp)
     }
 
     /// Destroys amount of tokens forever
