@@ -27,6 +27,12 @@ pub struct TokenInfo {
     pub mint: Option<MinterData>,
 }
 
+impl TokenInfo {
+    pub fn get_cap(&self) -> Option<Uint128> {
+        self.mint.as_ref().and_then(|v| v.cap)
+    }
+}
+
 #[cw_serde]
 pub struct MinterData {
     pub minter: Addr,
@@ -65,6 +71,7 @@ pub struct Cw20Base<'a> {
 #[contract]
 #[messages(cw20_allowances as Allowances)]
 #[messages(cw20_marketing as Marketing)]
+#[messages(cw20_minting as Minting)]
 impl Cw20Base<'_> {
     pub const fn new() -> Self {
         Self {
