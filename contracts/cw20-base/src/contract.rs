@@ -3,7 +3,7 @@ use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoRespo
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    attr, ensure, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    ensure, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult, Storage, Uint128,
 };
 use cw2::set_contract_version;
@@ -215,18 +215,13 @@ impl Cw20Base<'_> {
 
         let rcpt_addr = deps.api.addr_validate(&recipient)?;
 
-        self.balances.update(
-            deps.storage,
-            &info.sender,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
-            },
-        )?;
-        self.balances.update(
-            deps.storage,
-            &rcpt_addr,
-            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
-        )?;
+        self.balances
+            .update(deps.storage, &info.sender, |balance| {
+                Ok::<_, StdError>(balance.unwrap_or_default().checked_sub(amount)?)
+            })?;
+        self.balances.update(deps.storage, &rcpt_addr, |balance| {
+            Ok::<_, StdError>(balance.unwrap_or_default().checked_add(amount)?)
+        })?;
 
         let res = Response::new()
             .add_attribute("action", "transfer")
@@ -251,13 +246,10 @@ impl Cw20Base<'_> {
         );
 
         // lower balance
-        self.balances.update(
-            deps.storage,
-            &info.sender,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
-            },
-        )?;
+        self.balances
+            .update(deps.storage, &info.sender, |balance| {
+                Ok::<_, StdError>(balance.unwrap_or_default().checked_sub(amount)?)
+            })?;
         // reduce total_supply
         self.token_info
             .update(deps.storage, |mut info| -> StdResult<_> {
@@ -292,19 +284,13 @@ impl Cw20Base<'_> {
         let rcpt_addr = deps.api.addr_validate(&contract)?;
 
         // move the tokens to the contract
-        self.balances.update(
-            deps.storage,
-            &info.sender,
-            |balance: Option<Uint128>| -> StdResult<_> {
-                Ok(balance.unwrap_or_default().checked_sub(amount)?)
-            },
-        )?;
-        self.balances.update(
-            deps.storage,
-            &rcpt_addr,
-            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
-        )?;
-
+        self.balances
+            .update(deps.storage, &info.sender, |balance| {
+                Ok::<_, StdError>(balance.unwrap_or_default().checked_sub(amount)?)
+            })?;
+        self.balances.update(deps.storage, &rcpt_addr, |balance| {
+            Ok::<_, StdError>(balance.unwrap_or_default().checked_add(amount)?)
+        })?;
         let res = Response::new()
             .add_attribute("action", "send")
             .add_attribute("from", &info.sender)

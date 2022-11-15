@@ -1,13 +1,12 @@
 use cosmwasm_std::{
-    attr, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult,
-    Uint128,
+    attr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
 };
 use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
     SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
-use cw_storage_plus::{Bound, Bounder};
+use cw_storage_plus::Bound;
 use cw_utils::Expiration;
 
 use crate::contract::Cw20Base;
