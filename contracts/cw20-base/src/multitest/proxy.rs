@@ -38,6 +38,7 @@ impl Cw20BaseCodeId {
     }
 }
 
+#[derive(Debug)]
 pub struct Cw20BaseProxy(Addr);
 
 impl Cw20BaseProxy {
@@ -240,7 +241,7 @@ impl Cw20BaseProxy {
     }
 
     // cw20-minting
-    fn mint(
+    pub fn mint(
         &self,
         app: &mut App,
         sender: &Addr,
@@ -254,7 +255,7 @@ impl Cw20BaseProxy {
             .map(|_| ())
     }
 
-    fn update_minter(
+    pub fn update_minter(
         &self,
         app: &mut App,
         sender: &Addr,
@@ -274,7 +275,7 @@ impl Cw20BaseProxy {
     }
 
     // cw20-marketing
-    fn update_marketing(
+    pub fn update_marketing(
         &self,
         app: &mut App,
         sender: &Addr,
@@ -293,7 +294,12 @@ impl Cw20BaseProxy {
             .map(|_| ())
     }
 
-    fn update_logo(&self, app: &mut App, sender: &Addr, logo: Logo) -> Result<(), ContractError> {
+    pub fn update_logo(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        logo: Logo,
+    ) -> Result<(), ContractError> {
         let msg = cw20_marketing::ExecMsg::UploadLogo { logo };
 
         app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])

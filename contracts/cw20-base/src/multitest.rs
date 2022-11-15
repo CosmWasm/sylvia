@@ -7,6 +7,8 @@ use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw20Base, InstantiateMs
 #[cfg(test)]
 mod allowances_tests;
 #[cfg(test)]
+mod minting_tests;
+#[cfg(test)]
 mod proxy;
 #[cfg(test)]
 mod receiver;
