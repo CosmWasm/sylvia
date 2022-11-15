@@ -63,7 +63,8 @@ pub struct Cw20Base<'a> {
 }
 
 #[contract]
-#[messages(cw20_allowances as Cw20Allowances)]
+#[messages(cw20_allowances as Allowances)]
+#[messages(cw20_marketing as Marketing)]
 impl Cw20Base<'_> {
     pub const fn new() -> Self {
         Self {
