@@ -1,12 +1,12 @@
 use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
+    Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
 };
 use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
     SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
-use cw_storage_plus::Bound;
+use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
 
 use crate::contract::Cw20Base;
@@ -310,7 +310,8 @@ impl Cw20Allowances for Cw20Base<'_> {
 
         let spender_addr = deps.api.addr_validate(&spender)?;
         let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-        let start = start_after.map(|s| Bound::ExclusiveRaw(s.into_bytes()));
+        let start_after = start_after.map(Addr::unchecked);
+        let start = start_after.as_ref().and_then(Bounder::exclusive_bound);
 
         let allowances = self
             .allowances_spender
