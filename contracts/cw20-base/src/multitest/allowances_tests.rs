@@ -37,7 +37,7 @@ fn increase_decrease_allowances() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -133,7 +133,7 @@ fn allowances_independent() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -237,7 +237,7 @@ fn no_self_allowance() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -292,7 +292,7 @@ fn transfer_from_self_to_self() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -338,7 +338,7 @@ fn transfer_from_owner_requires_no_allowance() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -391,7 +391,7 @@ fn transfer_from_respects_limits() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -500,7 +500,7 @@ fn burn_from_respects_limits() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -594,7 +594,7 @@ fn send_from_respects_limits() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -710,7 +710,7 @@ fn no_past_expiration() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 
@@ -862,7 +862,7 @@ fn query_allowances() {
                 mint: None,
                 marketing: None,
             },
-            "Cw20Base contract",
+            "Cw20 contract",
         )
         .unwrap();
 

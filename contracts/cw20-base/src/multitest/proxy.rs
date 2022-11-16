@@ -42,6 +42,10 @@ impl Cw20BaseCodeId {
 pub struct Cw20BaseProxy(Addr);
 
 impl Cw20BaseProxy {
+    pub fn addr(&self) -> &Addr {
+        &self.0
+    }
+
     // cw20-base
     #[track_caller]
     pub fn transfer(
@@ -93,7 +97,7 @@ impl Cw20BaseProxy {
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
     }
 
-    pub fn token_info(&self, app: &App, address: String) -> StdResult<TokenInfoResponse> {
+    pub fn token_info(&self, app: &App) -> StdResult<TokenInfoResponse> {
         let msg = QueryMsg::TokenInfo {};
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
