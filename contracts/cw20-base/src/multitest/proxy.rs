@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
 
 use cw20_allowances::responses::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
+    AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
 use cw20_marketing::responses::{DownloadLogoResponse, MarketingInfoResponse};
 use cw20_marketing::Logo;
@@ -236,6 +236,17 @@ impl Cw20BaseProxy {
             start_after,
             limit,
         };
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn all_accounts(
+        &self,
+        app: &App,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllAccountsResponse> {
+        let msg = cw20_allowances::QueryMsg::AllAccounts { start_after, limit };
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
     }

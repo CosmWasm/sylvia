@@ -4,7 +4,9 @@ use cosmwasm_std::{
     Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
 };
 use cw_utils::Expiration;
-use responses::{AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse};
+use responses::{
+    AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
+};
 use sylvia::{interface, schemars};
 
 #[interface]
@@ -93,4 +95,13 @@ pub trait Cw20Allowances {
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllSpenderAllowancesResponse>;
+
+    /// Returns all accounts that have balances. Supports pagination.
+    #[msg(query)]
+    fn all_accounts(
+        &self,
+        ctx: (Deps, Env),
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllAccountsResponse>;
 }

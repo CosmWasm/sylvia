@@ -964,3 +964,241 @@ fn query_allowances() {
         }
     );
 }
+
+#[test]
+fn query_all_allowances_works() {
+    let mut app = App::default();
+
+    let owner = Addr::unchecked("addr0001");
+    let spender = Addr::unchecked("addr0002");
+    let spender2 = Addr::unchecked("addr0003");
+    let start_amount = Uint128::new(12340000);
+
+    let code_id = Cw20BaseCodeId::store_code(&mut app);
+
+    let contract = code_id
+        .instantiate(
+            &mut app,
+            &owner,
+            InstantiateMsgData {
+                name: "Auto Gen".to_string(),
+                symbol: "AUTO".to_string(),
+                decimals: 3,
+                initial_balances: vec![Cw20Coin {
+                    address: owner.clone().into(),
+                    amount: start_amount,
+                }],
+                mint: None,
+                marketing: None,
+            },
+            "Cw20 contract",
+        )
+        .unwrap();
+
+    // no allowance to start
+    let resp = contract
+        .all_allowances(&app, owner.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp.allowances, vec![]);
+
+    // set allowance with height expiration
+    let allow1 = Uint128::new(7777);
+    let expires = Expiration::AtHeight(123_456);
+    contract
+        .increase_allowance(&mut app, &owner, spender.to_string(), allow1, Some(expires))
+        .unwrap();
+
+    // set allowance with no expiration
+    let allow2 = Uint128::new(54321);
+    contract
+        .increase_allowance(&mut app, &owner, spender2.to_string(), allow2, None)
+        .unwrap();
+
+    // query list gets 2
+    let resp = contract
+        .all_allowances(&app, owner.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp.allowances.len(), 2);
+
+    // first one is spender1 (order of CanonicalAddr uncorrelated with String)
+    let resp = contract
+        .all_allowances(&app, owner.to_string(), None, Some(1))
+        .unwrap();
+    assert_eq!(
+        resp,
+        AllAllowancesResponse {
+            allowances: vec![AllowanceInfo {
+                spender: spender.to_string(),
+                allowance: allow1,
+                expires
+            }]
+        }
+    );
+
+    // next one is spender2
+    let resp = contract
+        .all_allowances(
+            &app,
+            owner.to_string(),
+            Some(spender.to_string()),
+            Some(10000),
+        )
+        .unwrap();
+    assert_eq!(
+        resp,
+        AllAllowancesResponse {
+            allowances: vec![AllowanceInfo {
+                spender: spender2.to_string(),
+                allowance: allow2,
+                expires: Expiration::Never {}
+            }]
+        }
+    );
+}
+
+#[test]
+fn all_spender_allowances_on_two_contracts() {
+    let mut app = App::default();
+
+    let owner = Addr::unchecked("addr0001");
+    let owner2 = Addr::unchecked("addr0003");
+    let spender = Addr::unchecked("addr0002");
+    let start_amount = Uint128::new(12340000);
+
+    let code_id = Cw20BaseCodeId::store_code(&mut app);
+
+    let contract = code_id
+        .instantiate(
+            &mut app,
+            &owner,
+            InstantiateMsgData {
+                name: "Auto Gen".to_string(),
+                symbol: "AUTO".to_string(),
+                decimals: 3,
+                initial_balances: vec![Cw20Coin {
+                    address: owner.clone().into(),
+                    amount: start_amount,
+                }],
+                mint: None,
+                marketing: None,
+            },
+            "Cw20 contract",
+        )
+        .unwrap();
+
+    // no allowance to start
+    let resp = contract
+        .all_spender_allowances(&app, spender.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp.allowances, vec![]);
+
+    // set allowance with height expiration
+    let allow1 = Uint128::new(7777);
+    let expires = Expiration::AtHeight(123_456);
+    contract
+        .increase_allowance(&mut app, &owner, spender.to_string(), allow1, Some(expires))
+        .unwrap();
+
+    // set allowance with no expiration, from the other owner
+    let contract2 = code_id
+        .instantiate(
+            &mut app,
+            &owner2,
+            InstantiateMsgData {
+                name: "Auto Gen".to_string(),
+                symbol: "AUTO".to_string(),
+                decimals: 3,
+                initial_balances: vec![Cw20Coin {
+                    address: owner.clone().into(),
+                    amount: start_amount,
+                }],
+                mint: None,
+                marketing: None,
+            },
+            "Cw20 contract",
+        )
+        .unwrap();
+
+    let allow2 = Uint128::new(54321);
+    contract2
+        .increase_allowance(&mut app, &owner2, spender.to_string(), allow2, None)
+        .unwrap();
+
+    // query list on both contracts
+    let resp = contract
+        .all_spender_allowances(&app, spender.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp.allowances.len(), 1);
+    let resp = contract2
+        .all_spender_allowances(&app, spender.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp.allowances.len(), 1);
+}
+
+#[test]
+fn query_all_accounts_works() {
+    let mut app = App::default();
+
+    // insert order and lexicographical order are different
+    let owner = Addr::unchecked("owner");
+    let acct2 = Addr::unchecked("zebra");
+    let acct3 = Addr::unchecked("nice");
+    let acct4 = Addr::unchecked("aaaardvark");
+    let start_amount = Uint128::new(12340000);
+    let expected_order = [
+        acct4.to_string(),
+        acct3.to_string(),
+        owner.to_string(),
+        acct2.to_string(),
+    ];
+
+    let code_id = Cw20BaseCodeId::store_code(&mut app);
+
+    let contract = code_id
+        .instantiate(
+            &mut app,
+            &owner,
+            InstantiateMsgData {
+                name: "Auto Gen".to_string(),
+                symbol: "AUTO".to_string(),
+                decimals: 3,
+                initial_balances: vec![Cw20Coin {
+                    address: owner.clone().into(),
+                    amount: start_amount,
+                }],
+                mint: None,
+                marketing: None,
+            },
+            "Cw20 contract",
+        )
+        .unwrap();
+
+    // put money everywhere (to create balanaces)
+    contract
+        .transfer(&mut app, &owner, acct2.to_string(), Uint128::new(222222))
+        .unwrap();
+    contract
+        .transfer(&mut app, &owner, acct3.to_string(), Uint128::new(333333))
+        .unwrap();
+    contract
+        .transfer(&mut app, &owner, acct4.to_string(), Uint128::new(444444))
+        .unwrap();
+
+    // make sure we get the proper results
+    let resp = contract.all_accounts(&app, None, None).unwrap();
+    assert_eq!(resp.accounts, expected_order);
+
+    // let's do pagination
+    let resp = contract.all_accounts(&app, None, Some(2)).unwrap();
+    assert_eq!(resp.accounts, expected_order[0..2].to_vec());
+
+    let resp = contract
+        .all_accounts(&app, Some(resp.accounts[1].clone()), Some(1))
+        .unwrap();
+    assert_eq!(resp.accounts, expected_order[2..3].to_vec());
+
+    let resp = contract
+        .all_accounts(&app, Some(resp.accounts[0].clone()), Some(777))
+        .unwrap();
+    assert_eq!(resp.accounts, expected_order[3..].to_vec());
+}
