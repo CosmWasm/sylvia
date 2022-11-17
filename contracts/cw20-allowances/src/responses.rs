@@ -4,9 +4,8 @@ use cw_utils::Expiration;
 use serde::{Deserialize, Serialize};
 use sylvia::schemars;
 
-#[cw_serde]
-pub struct SpenderAllowanceInfo {
-    pub owner: String,
+#[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]
+pub struct AllowanceResponse {
     pub allowance: Uint128,
     pub expires: Expiration,
 }
@@ -19,14 +18,15 @@ pub struct AllowanceInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]
-pub struct AllowanceResponse {
-    pub allowance: Uint128,
-    pub expires: Expiration,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]
 pub struct AllAllowancesResponse {
     pub allowances: Vec<AllowanceInfo>,
+}
+
+#[cw_serde]
+pub struct SpenderAllowanceInfo {
+    pub owner: String,
+    pub allowance: Uint128,
+    pub expires: Expiration,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]

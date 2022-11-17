@@ -1,0 +1,38 @@
+[package]
+name = "cw20-base"
+version = "0.2.1"
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
+edition = "2021"
+description = "Coverage of cw20-base message generation."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+library = []
+tests = ["library", "cw-multi-test", "anyhow"]
+
+[dependencies]
+cosmwasm-std = { version = "1.1", features = ["staking"] }
+cosmwasm-schema = "1.1"
+schemars = "0.8"
+serde = { version = "1", default-features = false, features = ["derive"] }
+sylvia = { path = "../../sylvia" }
+cw-storage-plus = "0.16"
+thiserror = { version = "1.0" }
+cw2 = "0.16"
+cw-multi-test = { version = "0.16", optional = true }
+anyhow = { version = "1", optional = true }
+cw20-allowances = { path = "../cw20-allowances" }
+cw20-marketing = { path = "../cw20-marketing" }
+cw20-minting = { path = "../cw20-minting" }
+cw-utils = "0.16"
+
+[dev-dependencies]
+anyhow = "1"
+cw-multi-test = "0.16"
+assert_matches = "1.5.0"
+cw-utils = "0.16"

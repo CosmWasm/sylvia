@@ -323,6 +323,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-base"
+version = "0.2.1"
+dependencies = [
+ "anyhow",
+ "assert_matches",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20-allowances",
+ "cw20-marketing",
+ "cw20-minting",
+ "schemars",
+ "serde",
+ "sylvia",
+ "thiserror",
+]
+
+[[package]]
 name = "cw20-marketing"
 version = "0.2.1"
 dependencies = [
