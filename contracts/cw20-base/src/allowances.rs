@@ -71,7 +71,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     ) -> Result<Response, Self::Error> {
         let (deps, env, info) = ctx;
 
-        let spender_addr = deps.api.addr_validate(&spender)?;
+        let spender_addr = Addr::unchecked(&spender);
         if spender_addr == info.sender {
             return Err(ContractError::CannotSetOwnAccount {});
         }
