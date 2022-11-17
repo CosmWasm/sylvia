@@ -30,6 +30,7 @@ cw20-allowances = { path = "../cw20-allowances" }
 cw20-marketing = { path = "../cw20-marketing" }
 cw20-minting = { path = "../cw20-minting" }
 cw-utils = "0.16"
+semver = "1.0"
 
 [dev-dependencies]
 anyhow = "1"

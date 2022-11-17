@@ -1,5 +1,7 @@
 use cosmwasm_std::{Addr, Binary, StdError, Uint128};
+use cw20_allowances::responses::{AllAllowancesResponse, SpenderAllowanceInfo};
 use cw_multi_test::App;
+use cw_utils::Expiration;
 
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
@@ -32,6 +34,7 @@ fn basic() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -87,6 +90,7 @@ fn instantiate_multiple_accounts() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap_err();
 
@@ -115,6 +119,7 @@ fn instantiate_multiple_accounts() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -160,6 +165,7 @@ fn queries_work() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -215,6 +221,7 @@ fn transfer() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -282,6 +289,7 @@ fn burn() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -351,6 +359,7 @@ fn send() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -399,4 +408,69 @@ fn send() {
     assert_eq!(resp.balance, transfer);
     let resp = contract.token_info(&app).unwrap();
     assert_eq!(resp.total_supply, amount);
+}
+
+#[test]
+fn migrate() {
+    let mut app = App::default();
+
+    let owner = Addr::unchecked("addr0000");
+    let spender = Addr::unchecked("addr0001");
+    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let amount = Uint128::new(100);
+
+    let contract = code_id
+        .instantiate(
+            &mut app,
+            &owner,
+            InstantiateMsgData {
+                name: "Token".to_string(),
+                symbol: "TOKEN".to_string(),
+                decimals: 6,
+                initial_balances: vec![Cw20Coin {
+                    address: owner.clone().into(),
+                    amount,
+                }],
+                mint: None,
+                marketing: None,
+            },
+            "Cw20 contract",
+            Some(owner.to_string()),
+        )
+        .unwrap();
+
+    // no allowance to start
+    let resp = contract
+        .all_allowances(&app, owner.to_string(), None, None)
+        .unwrap();
+    assert_eq!(resp, AllAllowancesResponse::default());
+
+    // Set allowance
+    let allow1 = Uint128::new(7777);
+    let expires = Expiration::AtHeight(123_456);
+    contract
+        .increase_allowance(&mut app, &owner, spender.to_string(), allow1, Some(expires))
+        .unwrap();
+
+    // Now migrate
+    contract
+        .migrate(&mut app, &owner, code_id.code_id())
+        .unwrap();
+
+    // Smoke check that the contract still works.
+    let resp = contract.balance(&app, owner.to_string()).unwrap();
+    assert_eq!(resp.balance, Uint128::new(100));
+
+    // Confirm that the allowance per spender is there
+    let resp = contract
+        .all_spender_allowances(&app, spender.to_string(), None, None)
+        .unwrap();
+    assert_eq!(
+        resp.allowances,
+        &[SpenderAllowanceInfo {
+            owner: owner.to_string(),
+            allowance: allow1,
+            expires
+        }]
+    );
 }

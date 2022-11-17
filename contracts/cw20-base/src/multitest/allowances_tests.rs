@@ -38,6 +38,7 @@ fn increase_decrease_allowances() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -134,6 +135,7 @@ fn allowances_independent() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -238,6 +240,7 @@ fn no_self_allowance() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -293,6 +296,7 @@ fn transfer_from_self_to_self() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -339,6 +343,7 @@ fn transfer_from_owner_requires_no_allowance() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -392,6 +397,7 @@ fn transfer_from_respects_limits() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -501,6 +507,7 @@ fn burn_from_respects_limits() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -595,6 +602,7 @@ fn send_from_respects_limits() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -711,6 +719,7 @@ fn no_past_expiration() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -863,6 +872,7 @@ fn query_allowances() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -992,6 +1002,7 @@ fn query_all_allowances_works() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -1083,6 +1094,7 @@ fn all_spender_allowances_on_two_contracts() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -1116,6 +1128,7 @@ fn all_spender_allowances_on_two_contracts() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -1170,6 +1183,7 @@ fn query_all_accounts_works() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 

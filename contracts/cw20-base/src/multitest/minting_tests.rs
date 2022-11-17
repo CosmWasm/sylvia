@@ -37,6 +37,7 @@ fn mintable() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -105,6 +106,7 @@ fn mintable_over_cap() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap_err();
 
@@ -146,6 +148,7 @@ fn can_mint_by_minter() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -207,6 +210,7 @@ fn others_cannot_mint() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -267,6 +271,7 @@ fn minter_can_update_minter_but_not_cap() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -315,6 +320,7 @@ fn others_cannot_update_minter() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -354,6 +360,7 @@ fn unset_minter() {
                 marketing: None,
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 

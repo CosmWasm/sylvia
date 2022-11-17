@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
@@ -9,7 +9,9 @@ use cw20_minting::responses::MinterResponse;
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
-use crate::contract::{Cw20Base, ExecMsg, InstantiateMsg, InstantiateMsgData, QueryMsg};
+use crate::contract::{
+    Cw20Base, ExecMsg, InstantiateMsg, InstantiateMsgData, MigrateMsg, QueryMsg,
+};
 use crate::error::ContractError;
 use crate::responses::{BalanceResponse, TokenInfoResponse};
 
@@ -22,6 +24,10 @@ impl Cw20BaseCodeId {
         Self(code_id)
     }
 
+    pub fn code_id(&self) -> u64 {
+        self.0
+    }
+
     #[track_caller]
     pub fn instantiate(
         self,
@@ -29,10 +35,11 @@ impl Cw20BaseCodeId {
         sender: &Addr,
         data: InstantiateMsgData,
         label: &str,
+        admin: Option<String>,
     ) -> Result<Cw20BaseProxy, ContractError> {
         let msg = InstantiateMsg { data };
 
-        app.instantiate_contract(self.0, sender.clone(), &msg, &[], label, None)
+        app.instantiate_contract(self.0, sender.clone(), &msg, &[], label, admin)
             .map_err(|err| err.downcast().unwrap())
             .map(Cw20BaseProxy)
     }
@@ -328,5 +335,16 @@ impl Cw20BaseProxy {
         let msg = cw20_marketing::QueryMsg::MarketingInfo {};
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn migrate(&self, app: &mut App, sender: &Addr, code_id: u64) -> Result<(), ContractError> {
+        let msg: CosmosMsg<WasmMsg> = CosmosMsg::Wasm(WasmMsg::Migrate {
+            contract_addr: self.0.to_string(),
+            new_code_id: code_id,
+            msg: to_binary(&MigrateMsg {}).unwrap(),
+        });
+        app.migrate_contract(sender.clone(), self.0.clone(), &msg, code_id)
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
     }
 }

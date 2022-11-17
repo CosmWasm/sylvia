@@ -35,6 +35,7 @@ fn update_unauthorised() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -97,6 +98,7 @@ fn update_project() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -150,6 +152,7 @@ fn clear_project() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -202,6 +205,7 @@ fn update_description() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -260,6 +264,7 @@ fn clear_description() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -313,6 +318,7 @@ fn update_marketing() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -366,6 +372,7 @@ fn update_marketing_invalid() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -425,6 +432,7 @@ fn clear_marketing() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -477,6 +485,7 @@ fn update_logo_url() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -530,6 +539,7 @@ fn update_logo_png() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -590,6 +600,7 @@ fn update_logo_svg() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -650,6 +661,7 @@ fn update_logo_png_oversized() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -716,6 +728,7 @@ fn update_logo_svg_oversized() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -775,6 +788,7 @@ fn update_logo_png_invalid() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
@@ -833,6 +847,7 @@ fn update_logo_svg_invalid() {
                 }),
             },
             "Cw20 contract",
+            None,
         )
         .unwrap();
 
