@@ -42,10 +42,6 @@ impl Cw20BaseCodeId {
 pub struct Cw20BaseProxy(Addr);
 
 impl Cw20BaseProxy {
-    pub fn addr(&self) -> &Addr {
-        &self.0
-    }
-
     // cw20-base
     #[track_caller]
     pub fn transfer(
@@ -298,7 +294,7 @@ impl Cw20BaseProxy {
             .map(|_| ())
     }
 
-    pub fn update_logo(
+    pub fn upload_logo(
         &self,
         app: &mut App,
         sender: &Addr,

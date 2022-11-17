@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Binary, StdError, Uint128};
 use cw_multi_test::App;
 
-use crate::contract::{self, InstantiateMsgData};
+use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::multitest::proxy::Cw20BaseCodeId;
 use crate::multitest::receiver_contract::ReceiverContractCodeId;
@@ -322,7 +322,6 @@ fn send() {
     let mut app = App::default();
 
     let owner = Addr::unchecked("addr0000");
-    let addr = Addr::unchecked("addr0001");
     let amount = Uint128::from(12340000u128);
     let too_much = Uint128::from(12340321u128);
     let transfer = Uint128::from(76543u128);
