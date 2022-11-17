@@ -119,7 +119,7 @@ fn contract_messages_constructible() {
     };
     let _ = contract::InstantiateMsg {};
     let reply = contract::ReplyMsg::Reply {};
-    let migrate = contract::MigrateMsg::Migrate {};
+    let _ = contract::MigrateMsg {};
 
     // Ensure no extra variants are generated
     match no_args_exec {
@@ -134,9 +134,5 @@ fn contract_messages_constructible() {
 
     match reply {
         contract::ReplyMsg::Reply {} => (),
-    }
-
-    match migrate {
-        contract::MigrateMsg::Migrate {} => (),
     }
 }

@@ -99,7 +99,7 @@ pub enum MsgAttr {
     Query { resp_type: Option<Ident> },
     Instantiate { name: Ident },
     Reply,
-    Migrate,
+    Migrate { name: Ident },
 }
 
 impl MsgType {
@@ -152,12 +152,6 @@ impl PartialEq<MsgType> for MsgAttr {
 }
 
 impl MsgAttr {
-    fn parse_instantiate(content: ParseBuffer) -> Result<Self> {
-        let name = Ident::new("InstantiateMsg", content.span());
-
-        Ok(Self::Instantiate { name })
-    }
-
     fn parse_query(content: ParseBuffer) -> Result<Self> {
         if content.peek2(Ident) {
             let _: Punct = content.parse()?;
@@ -178,7 +172,7 @@ impl MsgAttr {
             Query { .. } => MsgType::Query,
             Instantiate { .. } => MsgType::Instantiate,
             Reply => MsgType::Reply,
-            Migrate => MsgType::Migrate,
+            Migrate { .. } => MsgType::Migrate,
         }
     }
 }
@@ -194,11 +188,13 @@ impl Parse for MsgAttr {
         } else if ty == "query" {
             Self::parse_query(content)
         } else if ty == "instantiate" {
-            Self::parse_instantiate(content)
+            let name = Ident::new("InstantiateMsg", content.span());
+            Ok(Self::Instantiate { name })
         } else if ty == "reply" {
             Ok(Self::Reply)
         } else if ty == "migrate" {
-            Ok(Self::Migrate)
+            let name = Ident::new("MigrateMsg", content.span());
+            Ok(Self::Migrate { name })
         } else {
             Err(Error::new(
                 ty.span(),

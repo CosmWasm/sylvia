@@ -106,15 +106,19 @@ impl<'a> StructMessage<'a> {
         let (method, msg_attr) = if let Some(method) = methods.next() {
             method
         } else {
-            emit_error!(source.span(), "No instantiation message");
+            if ty == MsgType::Instantiate {
+                emit_error!(source.span(), "No instantiation message");
+            }
             return None;
         };
 
         if let Some((obsolete, _)) = methods.next() {
-            emit_error!(
-                obsolete.span(), "More than one instantiation message";
-                note = method.span() => "Instantiation message previously defied here"
-            );
+            if ty == MsgType::Instantiate {
+                emit_error!(
+                    obsolete.span(), "More than one instantiation message";
+                    note = method.span() => "Instantiation message previously defied here"
+                );
+            }
         }
 
         let function_name = &method.sig.ident;
@@ -140,6 +144,7 @@ impl<'a> StructMessage<'a> {
 
         match &self.msg_attr {
             Instantiate { name } => self.emit_struct(name),
+            Migrate { name } => self.emit_struct(name),
             _ => {
                 emit_error!(Span::mixed_site(), "Invalid message type");
                 quote! {}
