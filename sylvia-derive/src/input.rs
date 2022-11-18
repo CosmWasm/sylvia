@@ -114,15 +114,12 @@ impl<'a> ImplInput<'a> {
 
     fn emit_messages(&self) -> TokenStream {
         let instantiate = self.emit_struct_msg(MsgType::Instantiate);
+        let migrate = self.emit_struct_msg(MsgType::Migrate);
         let exec_impl =
             self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query_impl =
             self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
         let reply = self.emit_enum_msg(&Ident::new("ReplyMsg", Span::mixed_site()), MsgType::Reply);
-        let migrate = self.emit_enum_msg(
-            &Ident::new("MigrateMsg", Span::mixed_site()),
-            MsgType::Migrate,
-        );
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
