@@ -113,12 +113,10 @@ impl<'a> StructMessage<'a> {
         };
 
         if let Some((obsolete, _)) = methods.next() {
-            if ty == MsgType::Instantiate {
-                emit_error!(
-                    obsolete.span(), "More than one instantiation message";
-                    note = method.span() => "Instantiation message previously defied here"
-                );
-            }
+            emit_error!(
+                obsolete.span(), "More than one instantiation or migration message";
+                note = method.span() => "Instantiation/Migration message previously defined here"
+            );
         }
 
         let function_name = &method.sig.ident;
