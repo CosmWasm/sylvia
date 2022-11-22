@@ -28,5 +28,5 @@ pub trait Cw20Minting {
 
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     #[msg(query)]
-    fn minter(&self, ctx: (Deps, Env)) -> StdResult<MinterResponse>;
+    fn minter(&self, ctx: (Deps, Env)) -> StdResult<Option<MinterResponse>>;
 }

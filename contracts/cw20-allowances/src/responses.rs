@@ -33,3 +33,8 @@ pub struct SpenderAllowanceInfo {
 pub struct AllSpenderAllowancesResponse {
     pub allowances: Vec<SpenderAllowanceInfo>,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, schemars::JsonSchema, Debug, Default)]
+pub struct AllAccountsResponse {
+    pub accounts: Vec<String>,
+}

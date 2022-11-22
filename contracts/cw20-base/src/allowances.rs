@@ -2,8 +2,8 @@ use cosmwasm_std::{
     Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128,
 };
 use cw20_allowances::responses::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
-    SpenderAllowanceInfo,
+    AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
+    AllowanceResponse, SpenderAllowanceInfo,
 };
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::{Bound, Bounder};
@@ -327,5 +327,27 @@ impl Cw20Allowances for Cw20Base<'_> {
             })
             .collect::<StdResult<_>>()?;
         Ok(AllSpenderAllowancesResponse { allowances })
+    }
+
+    /// Returns all allowances this spender has been granted. Supports pagination.
+    fn all_accounts(
+        &self,
+        ctx: (Deps, Env),
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllAccountsResponse> {
+        let (deps, _) = ctx;
+
+        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+        let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
+
+        let accounts = self
+            .balances
+            .keys(deps.storage, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(Into::into))
+            .collect::<StdResult<_>>()?;
+
+        Ok(AllAccountsResponse { accounts })
     }
 }

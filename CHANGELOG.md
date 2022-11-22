@@ -6,6 +6,7 @@ and this project adheres to
 
 ## [Unreleased]
 - Fix: Generate Migrate as struct
+- Cw20 implementation in sylvia
 
 ## [0.2.1] - 2022-10-19
 

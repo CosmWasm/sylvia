@@ -3,7 +3,7 @@ use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoRespo
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    ensure, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    ensure, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError,
     StdResult, Storage, Uint128,
 };
 use cw2::set_contract_version;
@@ -12,6 +12,7 @@ use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
 use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
+use cw_utils::ensure_from_older_version;
 use sylvia::{contract, schemars};
 
 // version info for migration info
@@ -25,6 +26,12 @@ pub struct TokenInfo {
     pub decimals: u8,
     pub total_supply: Uint128,
     pub mint: Option<MinterData>,
+}
+
+impl TokenInfo {
+    pub fn get_cap(&self) -> Option<Uint128> {
+        self.mint.as_ref().and_then(|v| v.cap)
+    }
 }
 
 #[cw_serde]
@@ -63,7 +70,9 @@ pub struct Cw20Base<'a> {
 }
 
 #[contract]
-#[messages(cw20_allowances as Cw20Allowances)]
+#[messages(cw20_allowances as Allowances)]
+#[messages(cw20_marketing as Marketing)]
+#[messages(cw20_minting as Minting)]
 impl Cw20Base<'_> {
     pub const fn new() -> Self {
         Self {
@@ -333,5 +342,25 @@ impl Cw20Base<'_> {
             total_supply: info.total_supply,
         };
         Ok(res)
+    }
+
+    #[msg(migrate)]
+    fn migrate(&self, ctx: (DepsMut, Env)) -> Result<Response, ContractError> {
+        let (deps, ..) = ctx;
+        let original_version =
+            ensure_from_older_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+        if original_version < "0.14.0".parse::<semver::Version>().unwrap() {
+            // Build reverse map of allowances per spender
+            let data = self
+                .allowances
+                .range(deps.storage, None, None, Order::Ascending)
+                .collect::<StdResult<Vec<_>>>()?;
+            for ((owner, spender), allowance) in data {
+                self.allowances_spender
+                    .save(deps.storage, (&spender, &owner), &allowance)?;
+            }
+        }
+        Ok(Response::default())
     }
 }

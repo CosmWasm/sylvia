@@ -66,6 +66,9 @@ jobs:
       - name: Cw1-subkeys schema
         working-directory: contracts/cw1-subkeys
         run: cargo schema
+      - name: Cw20-base schema
+        working-directory: contracts/cw20-base
+        run: cargo schema
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
@@ -73,6 +76,7 @@ jobs:
           path: |
             contracts/cw1-subkeys/schema/cw1-subkeys.json
             contracts/cw1-whitelist/schema/cw1-whitelist.json
+            contracts/cw20-base/schema/cw20-base.json
 
   coverage:
     name: Code coverage

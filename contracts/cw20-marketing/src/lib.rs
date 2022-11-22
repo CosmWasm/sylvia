@@ -1,9 +1,7 @@
 pub mod responses;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
 use sylvia::{interface, schemars};
 
@@ -30,7 +28,7 @@ pub enum EmbeddedLogo {
 }
 
 #[interface]
-pub trait Cw20Base {
+pub trait Cw20Marketing {
     type Error: From<StdError>;
 
     /// If authorized, updates marketing metadata.
@@ -56,22 +54,10 @@ pub trait Cw20Base {
         logo: Logo,
     ) -> Result<Response, Self::Error>;
 
-    /// Send is a base message to transfer tokens to a contract and trigger an action
-    /// on the receiving contract.
-    #[msg(exec)]
-    fn send(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        contract: String,
-        amount: Uint128,
-        msg: Binary,
-    ) -> Result<Response, Self::Error>;
-
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
     #[msg(query)]
-    fn marketing_info(&self, ctx: (Deps, Env), address: String)
-        -> StdResult<MarketingInfoResponse>;
+    fn marketing_info(&self, ctx: (Deps, Env)) -> StdResult<MarketingInfoResponse>;
 
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.

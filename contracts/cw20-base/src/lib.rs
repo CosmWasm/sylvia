@@ -1,11 +1,13 @@
-mod allowances;
-mod contract;
-mod error;
+pub mod allowances;
+pub mod contract;
+pub mod error;
+pub mod marketing;
+pub mod minting;
 pub mod responses;
-mod validation;
+pub mod validation;
 
 #[cfg(any(test, feature = "tests"))]
-pub mod multitest;
+mod multitest;
 
 #[cfg(not(feature = "library"))]
 mod entry_points {

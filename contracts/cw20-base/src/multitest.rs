@@ -2,10 +2,16 @@ use anyhow::{bail, Result as AnyResult};
 use cosmwasm_std::{from_slice, Empty};
 use cw_multi_test::Contract;
 
-use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw20Base, InstantiateMsg};
+use crate::contract::{ContractExecMsg, ContractQueryMsg, Cw20Base, InstantiateMsg, MigrateMsg};
 
 #[cfg(test)]
 mod allowances_tests;
+#[cfg(test)]
+mod base_tests;
+#[cfg(test)]
+mod marketing_tests;
+#[cfg(test)]
+mod minting_tests;
 #[cfg(test)]
 mod proxy;
 #[cfg(test)]
@@ -69,10 +75,12 @@ impl Contract<Empty> for Cw20Base<'_> {
 
     fn migrate(
         &self,
-        _deps: cosmwasm_std::DepsMut<Empty>,
-        _env: cosmwasm_std::Env,
-        _msg: Vec<u8>,
+        deps: cosmwasm_std::DepsMut<Empty>,
+        env: cosmwasm_std::Env,
+        msg: Vec<u8>,
     ) -> AnyResult<cosmwasm_std::Response<Empty>> {
-        bail!("migrate not implemented for contract")
+        from_slice::<MigrateMsg>(&msg)?
+            .dispatch(self, (deps, env))
+            .map_err(Into::into)
     }
 }

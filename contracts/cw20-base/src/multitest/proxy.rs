@@ -1,14 +1,19 @@
-use cosmwasm_std::{Addr, Binary, StdResult, Uint128};
+use cosmwasm_std::{to_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 
 use cw20_allowances::responses::{
-    AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
+    AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
+use cw20_marketing::responses::{DownloadLogoResponse, MarketingInfoResponse};
+use cw20_marketing::Logo;
+use cw20_minting::responses::MinterResponse;
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
-use crate::contract::{Cw20Base, InstantiateMsg, InstantiateMsgData, QueryMsg};
+use crate::contract::{
+    Cw20Base, ExecMsg, InstantiateMsg, InstantiateMsgData, MigrateMsg, QueryMsg,
+};
 use crate::error::ContractError;
-use crate::responses::BalanceResponse;
+use crate::responses::{BalanceResponse, TokenInfoResponse};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cw20BaseCodeId(u64);
@@ -19,6 +24,10 @@ impl Cw20BaseCodeId {
         Self(code_id)
     }
 
+    pub fn code_id(&self) -> u64 {
+        self.0
+    }
+
     #[track_caller]
     pub fn instantiate(
         self,
@@ -26,20 +35,73 @@ impl Cw20BaseCodeId {
         sender: &Addr,
         data: InstantiateMsgData,
         label: &str,
+        admin: Option<String>,
     ) -> Result<Cw20BaseProxy, ContractError> {
         let msg = InstantiateMsg { data };
 
-        app.instantiate_contract(self.0, sender.clone(), &msg, &[], label, None)
+        app.instantiate_contract(self.0, sender.clone(), &msg, &[], label, admin)
             .map_err(|err| err.downcast().unwrap())
             .map(Cw20BaseProxy)
     }
 }
 
+#[derive(Debug)]
 pub struct Cw20BaseProxy(Addr);
 
 impl Cw20BaseProxy {
+    // cw20-base
+    #[track_caller]
+    pub fn transfer(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        recipient: String,
+        amount: Uint128,
+    ) -> Result<(), ContractError> {
+        let msg = ExecMsg::Transfer { recipient, amount };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn burn(&self, app: &mut App, sender: &Addr, amount: Uint128) -> Result<(), ContractError> {
+        let msg = ExecMsg::Burn { amount };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn send(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        contract: String,
+        amount: Uint128,
+        msg: Binary,
+    ) -> Result<(), ContractError> {
+        let msg = ExecMsg::Send {
+            contract,
+            amount,
+            msg,
+        };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
     pub fn balance(&self, app: &App, address: String) -> StdResult<BalanceResponse> {
         let msg = QueryMsg::Balance { address };
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn token_info(&self, app: &App) -> StdResult<TokenInfoResponse> {
+        let msg = QueryMsg::TokenInfo {};
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
     }
@@ -148,7 +210,7 @@ impl Cw20BaseProxy {
         owner: String,
         spender: String,
     ) -> StdResult<AllowanceResponse> {
-        let msg = cw20_allowances::Cw20AllowancesQueryMsg::Allowance { owner, spender };
+        let msg = cw20_allowances::QueryMsg::Allowance { owner, spender };
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
     }
@@ -160,7 +222,7 @@ impl Cw20BaseProxy {
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllAllowancesResponse> {
-        let msg = cw20_allowances::Cw20AllowancesQueryMsg::AllAllowances {
+        let msg = cw20_allowances::QueryMsg::AllAllowances {
             owner,
             start_after,
             limit,
@@ -176,12 +238,113 @@ impl Cw20BaseProxy {
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllSpenderAllowancesResponse> {
-        let msg = cw20_allowances::Cw20AllowancesQueryMsg::AllSpenderAllowances {
+        let msg = cw20_allowances::QueryMsg::AllSpenderAllowances {
             spender,
             start_after,
             limit,
         };
 
         app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn all_accounts(
+        &self,
+        app: &App,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllAccountsResponse> {
+        let msg = cw20_allowances::QueryMsg::AllAccounts { start_after, limit };
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    // cw20-minting
+    pub fn mint(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        recipient: String,
+        amount: Uint128,
+    ) -> Result<(), ContractError> {
+        let msg = cw20_minting::ExecMsg::Mint { recipient, amount };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    pub fn update_minter(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        new_minter: Option<String>,
+    ) -> Result<(), ContractError> {
+        let msg = cw20_minting::ExecMsg::UpdateMinter { new_minter };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    pub fn minter(&self, app: &App) -> StdResult<Option<MinterResponse>> {
+        let msg = cw20_minting::QueryMsg::Minter {};
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    // cw20-marketing
+    pub fn update_marketing(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        project: Option<String>,
+        description: Option<String>,
+        marketing: Option<String>,
+    ) -> Result<(), ContractError> {
+        let msg = cw20_marketing::ExecMsg::UpdateMarketing {
+            project,
+            description,
+            marketing,
+        };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    pub fn upload_logo(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        logo: Logo,
+    ) -> Result<(), ContractError> {
+        let msg = cw20_marketing::ExecMsg::UploadLogo { logo };
+
+        app.execute_contract(sender.clone(), self.0.clone(), &msg, &[])
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
+    }
+
+    pub fn download_logo(&self, app: &App) -> StdResult<DownloadLogoResponse> {
+        let msg = cw20_marketing::QueryMsg::DownloadLogo {};
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn marketing_info(&self, app: &App) -> StdResult<MarketingInfoResponse> {
+        let msg = cw20_marketing::QueryMsg::MarketingInfo {};
+
+        app.wrap().query_wasm_smart(self.0.clone(), &msg)
+    }
+
+    pub fn migrate(&self, app: &mut App, sender: &Addr, code_id: u64) -> Result<(), ContractError> {
+        let msg: CosmosMsg<WasmMsg> = CosmosMsg::Wasm(WasmMsg::Migrate {
+            contract_addr: self.0.to_string(),
+            new_code_id: code_id,
+            msg: to_binary(&MigrateMsg {}).unwrap(),
+        });
+        app.migrate_contract(sender.clone(), self.0.clone(), &msg, code_id)
+            .map_err(|err| err.downcast().unwrap())
+            .map(|_| ())
     }
 }

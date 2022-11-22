@@ -338,6 +338,7 @@ dependencies = [
  "cw20-marketing",
  "cw20-minting",
  "schemars",
+ "semver",
  "serde",
  "sylvia",
  "thiserror",
