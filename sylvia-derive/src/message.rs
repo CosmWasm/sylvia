@@ -625,7 +625,7 @@ impl<'a> MsgVariant<'a> {
             .map(|(field, num_field)| quote!(#field : #num_field));
 
         match msg_attr {
-            Exec | Migrate | Reply => quote! {
+            Exec | Migrate => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)

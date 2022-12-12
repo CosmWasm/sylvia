@@ -46,11 +46,6 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[msg(reply)]
-    pub fn reply(&self, _ctx: (DepsMut, Env)) -> StdResult<Response> {
-        Ok(Response::new())
-    }
-
     #[msg(exec)]
     fn no_args_execution(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())
@@ -118,7 +113,6 @@ fn contract_messages_constructible() {
         user: Addr::unchecked("owner"),
     };
     let _ = contract::InstantiateMsg {};
-    let reply = contract::ReplyMsg::Reply {};
     let _ = contract::MigrateMsg {};
 
     // Ensure no extra variants are generated
@@ -130,9 +124,5 @@ fn contract_messages_constructible() {
     match no_args_query {
         contract::QueryMsg::NoArgsQuery {} => (),
         contract::QueryMsg::ArgumentedQuery { .. } => (),
-    }
-
-    match reply {
-        contract::ReplyMsg::Reply {} => (),
     }
 }
