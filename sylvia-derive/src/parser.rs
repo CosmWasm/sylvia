@@ -89,7 +89,6 @@ pub enum MsgType {
     Exec,
     Query,
     Instantiate,
-    Reply,
     Migrate,
 }
 
@@ -98,7 +97,6 @@ pub enum MsgAttr {
     Exec,
     Query { resp_type: Option<Ident> },
     Instantiate { name: Ident },
-    Reply,
     Migrate { name: Ident },
 }
 
@@ -110,7 +108,7 @@ impl MsgType {
             Exec | Instantiate => quote! {
                 (cosmwasm_std::DepsMut, cosmwasm_std::Env, cosmwasm_std::MessageInfo)
             },
-            Migrate | Reply => quote! {
+            Migrate => quote! {
                 (cosmwasm_std::DepsMut, cosmwasm_std::Env)
             },
             Query => quote! {
@@ -126,15 +124,12 @@ impl MsgType {
         let sylvia = crate_module();
 
         match (self, msg_type) {
-            (Exec, Some(msg_type))
-            | (Instantiate, Some(msg_type))
-            | (Migrate, Some(msg_type))
-            | (Reply, Some(msg_type)) => {
+            (Exec, Some(msg_type)) | (Instantiate, Some(msg_type)) | (Migrate, Some(msg_type)) => {
                 quote! {
                     std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
                 }
             }
-            (Exec, None) | (Instantiate, None) | (Migrate, None) | (Reply, None) => quote! {
+            (Exec, None) | (Instantiate, None) | (Migrate, None) => quote! {
                 std::result::Result<#sylvia ::cw_std::Response, #err_type>
             },
 
@@ -171,7 +166,6 @@ impl MsgAttr {
             Exec => MsgType::Exec,
             Query { .. } => MsgType::Query,
             Instantiate { .. } => MsgType::Instantiate,
-            Reply => MsgType::Reply,
             Migrate { .. } => MsgType::Migrate,
         }
     }
@@ -190,15 +184,13 @@ impl Parse for MsgAttr {
         } else if ty == "instantiate" {
             let name = Ident::new("InstantiateMsg", content.span());
             Ok(Self::Instantiate { name })
-        } else if ty == "reply" {
-            Ok(Self::Reply)
         } else if ty == "migrate" {
             let name = Ident::new("MigrateMsg", content.span());
             Ok(Self::Migrate { name })
         } else {
             Err(Error::new(
                 ty.span(),
-                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `reply`, `migrate`",
+                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`",
             ))
         }
     }

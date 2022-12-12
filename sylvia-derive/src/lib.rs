@@ -208,7 +208,6 @@ fn interface_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// * `instantiate` - this is instantiation message handler. There should be always exactly one
 /// * `exec` - this is execute message variant
 /// * `query` - this is query message variant
-/// * `reply` - this is reply message variant
 /// * `migrate` - this is migrate message variant
 /// handler for this kind of message.
 /// In case of query it is possible to pass second argument which is it's `ResponseType`.

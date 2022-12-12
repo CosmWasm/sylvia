@@ -119,7 +119,6 @@ impl<'a> ImplInput<'a> {
             self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query_impl =
             self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
-        let reply = self.emit_enum_msg(&Ident::new("ReplyMsg", Span::mixed_site()), MsgType::Reply);
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
@@ -129,8 +128,6 @@ impl<'a> ImplInput<'a> {
             #exec_impl
 
             #query_impl
-
-            #reply
 
             #migrate
 
