@@ -1,6 +1,6 @@
 [package]
 name = "cw20-base"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
 description = "Coverage of cw20-base message generation."
@@ -21,19 +21,20 @@ cosmwasm-schema = "1.1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 sylvia = { path = "../../sylvia" }
-cw-storage-plus = "0.16"
+cw-storage-plus = "1.0"
 thiserror = { version = "1.0" }
-cw2 = "0.16"
+cw2 = "1.0"
 cw-multi-test = { version = "0.16", optional = true }
 anyhow = { version = "1", optional = true }
 cw20-allowances = { path = "../cw20-allowances" }
 cw20-marketing = { path = "../cw20-marketing" }
 cw20-minting = { path = "../cw20-minting" }
-cw-utils = "0.16"
+cw-utils = "1.0"
 semver = "1.0"
+getrandom = { version = "0.2.8", features = ["js"] }
 
 [dev-dependencies]
 anyhow = "1"
 cw-multi-test = "0.16"
 assert_matches = "1.5.0"
-cw-utils = "0.16"
+cw-utils = "1.0"

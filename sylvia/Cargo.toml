@@ -1,6 +1,6 @@
 [package]
 name = "sylvia"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
 edition = "2021"
 description = "Framework for generating trait based CosmWasm smart contracts"
@@ -11,16 +11,16 @@ keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
 
 [dependencies]
-sylvia-derive = { version = "0.2.1", path = "../sylvia-derive" }
+sylvia-derive = { version = "0.2.2", path = "../sylvia-derive" }
 cosmwasm-std = { version = "1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde-cw-value = "0.7.0"
-konst = "0.2"
+konst = "0.3"
 
 [dev-dependencies]
 anyhow = "1"
-cw-storage-plus = "0.16.0"
-cw-multi-test = "0.16.0"
+cw-storage-plus = "1.0.1"
+cw-multi-test = "0.16.1"
 thiserror = "1.0.37"

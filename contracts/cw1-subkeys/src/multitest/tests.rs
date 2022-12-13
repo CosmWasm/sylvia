@@ -41,7 +41,8 @@ fn get_contract_version_works() {
         .instantiate(&mut app, &owner, &[], true, "Sublist contract")
         .unwrap();
 
-    let version: ContractVersion = query_contract_info(&app, contract.addr().clone()).unwrap();
+    let version: ContractVersion =
+        query_contract_info(&app.wrap(), contract.addr().clone()).unwrap();
 
     assert_eq!(
         ContractVersion {
