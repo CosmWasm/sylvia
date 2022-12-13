@@ -1,6 +1,6 @@
 [package]
 name = "cw1-whitelist"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
 description = "Coverage of cw1-whitelist sylvia message generation."
@@ -19,11 +19,11 @@ tests = ["library", "cw-multi-test", "anyhow"]
 cosmwasm-std = { version = "1.1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
-sylvia = { version = "0.2.1", path = "../../sylvia" }
+sylvia = { version = "0.2.2", path = "../../sylvia" }
 cw1 = { path = "../cw1" }
-cw-storage-plus = "0.16"
+cw-storage-plus = "1.0"
 thiserror = { version = "1.0" }
-cw2 = "0.16"
+cw2 = "1.0"
 cw-multi-test = { version = "0.16", optional = true }
 anyhow = { version = "1", optional = true }
 

@@ -1,6 +1,6 @@
 [package]
 name = "cw1"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
 description = "Coverage of cw1 sylvia message generation."
@@ -12,4 +12,4 @@ homepage = "https://cosmwasm.com"
 cosmwasm-std = { version = "1.1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 serde = { version = "1", default-features = false, features = ["derive"] }
-sylvia = { version = "0.2.1", path = "../../sylvia" }
+sylvia = { version = "0.2.2", path = "../../sylvia" }
