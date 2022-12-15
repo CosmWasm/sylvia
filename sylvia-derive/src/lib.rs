@@ -12,6 +12,7 @@ mod message;
 mod parser;
 mod strip_generics;
 mod strip_input;
+mod utils;
 
 use strip_input::StripInput;
 
