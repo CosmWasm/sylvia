@@ -4,20 +4,24 @@ use quote::quote;
 use syn::{
     parse::{Parse, Parser},
     spanned::Spanned,
-    GenericParam, ItemTrait, TraitItem, WhereClause, WherePredicate,
+    FnArg, GenericParam, ItemTrait, TraitItem, WhereClause, WherePredicate,
 };
 
 use crate::{
     check_generics::CheckGenerics,
     crate_module,
-    message::MsgVariant,
     parser::{InterfaceArgs, MsgAttr, MsgType},
     utils::filter_wheres,
 };
 
+struct MessageSignature<'a> {
+    pub name: &'a Ident,
+    pub arguments: Vec<&'a FnArg>,
+}
+
 pub struct MultitestHelpers<'a> {
     trait_name: &'a Ident,
-    variants: Vec<MsgVariant<'a>>,
+    messages: Vec<MessageSignature<'a>>,
     generics: Vec<&'a GenericParam>,
     unused_generics: Vec<&'a GenericParam>,
     all_generics: &'a [&'a GenericParam],
@@ -36,8 +40,8 @@ impl<'a> MultitestHelpers<'a> {
     ) -> Self {
         let trait_name = &source.ident;
 
-        let mut generics_checker = CheckGenerics::new(generics);
-        let variants: Vec<_> = source
+        let generics_checker = CheckGenerics::new(generics);
+        let messages: Vec<_> = source
             .items
             .iter()
             .filter_map(|item| match item {
@@ -50,17 +54,11 @@ impl<'a> MultitestHelpers<'a> {
                             return None;
                         }
                     };
+                    let sig = &method.sig;
+                    let name = &sig.ident;
+                    let arguments: Vec<_> = sig.inputs.iter().skip(2).collect();
 
-                    if attr == ty {
-                        Some(MsgVariant::new(
-                            &method.sig,
-                            &mut generics_checker,
-                            &trait_name, // placeholder
-                            attr,
-                        ))
-                    } else {
-                        None
-                    }
+                    Some(MessageSignature { name, arguments })
                 }
                 _ => None,
             })
@@ -71,7 +69,7 @@ impl<'a> MultitestHelpers<'a> {
 
         Self {
             trait_name,
-            variants,
+            messages,
             generics: used_generics,
             unused_generics,
             all_generics: generics,
@@ -84,7 +82,7 @@ impl<'a> MultitestHelpers<'a> {
     pub fn emit(&self) -> TokenStream {
         let Self {
             trait_name,
-            variants,
+            messages,
             generics,
             unused_generics,
             all_generics,
@@ -103,9 +101,20 @@ impl<'a> MultitestHelpers<'a> {
             trait_name.span(),
         );
 
+        let messages = messages.iter().map(|msg| {
+            let MessageSignature { name, arguments } = msg;
+            quote! {
+                pub fn #name ( #(#arguments,)* ) {
+
+                }
+            }
+        });
+
         quote! {
             #[cfg(test)]
             mod test_utils {
+                use super::*;
+
                 pub struct #proxy_name<'app> {
                     pub contract_addr: cosmwasm_std::Addr,
                     pub app: &'app #sylvia ::multitest::App,
@@ -115,6 +124,9 @@ impl<'a> MultitestHelpers<'a> {
                     pub fn new(contract_addr: cosmwasm_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
                         #proxy_name{ contract_addr, app }
                     }
+
+                #(#messages)*
+
                 }
 
                 impl Into<cosmwasm_std::Addr> for #proxy_name<'_> {
