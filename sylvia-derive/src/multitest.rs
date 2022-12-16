@@ -116,6 +116,12 @@ impl<'a> MultitestHelpers<'a> {
                         #proxy_name{ contract_addr, app }
                     }
                 }
+
+                impl Into<cosmwasm_std::Addr> for #proxy_name<'_> {
+                    fn into(self) -> cosmwasm_std::Addr {
+                        self.contract_addr
+                    }
+                }
             }
         }
     }
