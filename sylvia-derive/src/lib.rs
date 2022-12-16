@@ -9,6 +9,7 @@ use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 pub(crate) mod check_generics;
 mod input;
 mod message;
+mod multitest;
 mod parser;
 mod strip_generics;
 mod strip_input;

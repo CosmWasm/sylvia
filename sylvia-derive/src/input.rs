@@ -4,6 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::multitest::{self, MultitestHelpers};
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -72,16 +73,22 @@ impl<'a> TraitInput<'a> {
             MsgType::Query,
             self.attributes,
         );
+        let multitest_helpers = self.emit_multitest_helpers(MsgType::Exec, self.attributes);
 
         quote! {
             #exec
 
             #query
+
+            #multitest_helpers
         }
     }
 
     fn emit_msg(&self, name: &Ident, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
         EnumMessage::new(name, self.item, msg_ty, &self.generics, args).emit()
+    }
+    fn emit_multitest_helpers(&self, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
+        MultitestHelpers::new(self.item, msg_ty, &self.generics, args).emit()
     }
 }
 

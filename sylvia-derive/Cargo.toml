@@ -10,6 +10,9 @@ homepage = "https://cosmwasm.com"
 keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
 
+[features]
+mt = []
+
 [lib]
 proc-macro = true
 

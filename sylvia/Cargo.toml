@@ -10,6 +10,9 @@ homepage = "https://cosmwasm.com"
 keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
 
+[features]
+mt = ["sylvia-derive/mt"]
+
 [dependencies]
 sylvia-derive = { version = "0.2.2", path = "../sylvia-derive" }
 cosmwasm-std = { version = "1", features = ["staking"] }
@@ -18,6 +21,7 @@ schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde-cw-value = "0.7.0"
 konst = "0.3"
+cw-multi-test = "0.16.0"
 
 [dev-dependencies]
 anyhow = "1"
