@@ -82,16 +82,39 @@ impl<'a> MultitestHelpers<'a> {
         }
     }
     pub fn emit(&self) -> TokenStream {
+        let Self {
+            trait_name,
+            variants,
+            generics,
+            unused_generics,
+            all_generics,
+            wheres,
+            full_where,
+            msg_ty,
+            args,
+        } = self;
+
         if cfg!(not(feature = "mt")) {
             return quote! {};
         }
         let sylvia = crate_module();
+        let proxy_name = Ident::new(
+            &format!("{}Proxy", trait_name.to_string()),
+            trait_name.span(),
+        );
 
         quote! {
+            #[cfg(test)]
             mod test_utils {
-                pub struct CounterProxy<'app> {
+                pub struct #proxy_name<'app> {
                     pub contract_addr: cosmwasm_std::Addr,
                     pub app: &'app #sylvia ::multitest::App,
+                }
+
+                impl<'app> #proxy_name<'app> {
+                    pub fn new(contract_addr: cosmwasm_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                        #proxy_name{ contract_addr, app }
+                    }
                 }
             }
         }
