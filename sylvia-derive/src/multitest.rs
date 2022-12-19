@@ -4,7 +4,7 @@ use quote::quote;
 use syn::{
     parse::{Parse, Parser},
     spanned::Spanned,
-    FnArg, GenericParam, ItemTrait, TraitItem, WhereClause, WherePredicate,
+    FnArg, GenericParam, ItemTrait, Pat, PatType, TraitItem, WhereClause, WherePredicate,
 };
 
 use crate::{
@@ -16,7 +16,8 @@ use crate::{
 
 struct MessageSignature<'a> {
     pub name: &'a Ident,
-    pub arguments: Vec<&'a FnArg>,
+    pub params: Vec<&'a FnArg>,
+    pub arguments: Vec<&'a Ident>,
 }
 
 pub struct MultitestHelpers<'a> {
@@ -46,19 +47,32 @@ impl<'a> MultitestHelpers<'a> {
             .iter()
             .filter_map(|item| match item {
                 TraitItem::Method(method) => {
-                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                        Ok(attr) => attr,
-                        Err(err) => {
-                            emit_error!(method.span(), err);
-                            return None;
-                        }
-                    };
+                    // We want to generate helepers only for contract messages
+                    method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+
                     let sig = &method.sig;
                     let name = &sig.ident;
-                    let arguments: Vec<_> = sig.inputs.iter().skip(2).collect();
+                    let params: Vec<_> = sig.inputs.iter().skip(2).collect();
+                    let arguments: Vec<_> = params
+                        .iter()
+                        .filter_map(|arg| match arg {
+                            FnArg::Typed(item) => {
+                                let PatType { pat, .. } = item;
+                                let Pat::Ident(ident) = pat.as_ref() else {
+                                    unreachable!()
+                                };
+                                // println!("ident is {:#?}", ident.ident);
+                                Some(&ident.ident)
+                            }
+                            _ => None,
+                        })
+                        .collect();
 
-                    Some(MessageSignature { name, arguments })
+                    Some(MessageSignature {
+                        name,
+                        params,
+                        arguments,
+                    })
                 }
                 _ => None,
             })
@@ -92,9 +106,6 @@ impl<'a> MultitestHelpers<'a> {
             args,
         } = self;
 
-        if cfg!(not(feature = "mt")) {
-            return quote! {};
-        }
         let sylvia = crate_module();
         let proxy_name = Ident::new(
             &format!("{}Proxy", trait_name.to_string()),
@@ -102,9 +113,13 @@ impl<'a> MultitestHelpers<'a> {
         );
 
         let messages = messages.iter().map(|msg| {
-            let MessageSignature { name, arguments } = msg;
+            let MessageSignature {
+                name,
+                params,
+                arguments,
+            } = msg;
             quote! {
-                pub fn #name ( #(#arguments,)* ) {
+                pub fn #name (&self, params: #sylvia ::multitest::ExecParams, #(#params,)* ) {
 
                 }
             }
@@ -125,7 +140,7 @@ impl<'a> MultitestHelpers<'a> {
                         #proxy_name{ contract_addr, app }
                     }
 
-                #(#messages)*
+                    #(#messages)*
 
                 }
 

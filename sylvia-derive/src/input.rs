@@ -73,7 +73,11 @@ impl<'a> TraitInput<'a> {
             MsgType::Query,
             self.attributes,
         );
-        let multitest_helpers = self.emit_multitest_helpers(MsgType::Exec, self.attributes);
+        let multitest_helpers = if cfg!(feature = "mt") {
+            self.emit_multitest_helpers(MsgType::Exec, self.attributes)
+        } else {
+            quote! {}
+        };
 
         quote! {
             #exec
