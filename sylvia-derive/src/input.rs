@@ -4,7 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
-use crate::multitest::{self, MultitestHelpers};
+use crate::multitest::MultitestHelpers;
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -73,26 +73,16 @@ impl<'a> TraitInput<'a> {
             MsgType::Query,
             self.attributes,
         );
-        let multitest_helpers = if cfg!(feature = "mt") {
-            self.emit_multitest_helpers(MsgType::Exec, self.attributes)
-        } else {
-            quote! {}
-        };
 
         quote! {
             #exec
 
             #query
-
-            #multitest_helpers
         }
     }
 
     fn emit_msg(&self, name: &Ident, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
         EnumMessage::new(name, self.item, msg_ty, &self.generics, args).emit()
-    }
-    fn emit_multitest_helpers(&self, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
-        MultitestHelpers::new(self.item, msg_ty, &self.generics, args).emit()
     }
 }
 
@@ -108,6 +98,14 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
+        if self.item.trait_.is_some() {
+            if cfg!(feature = "mt") {
+                return MultitestHelpers::new(self.item, &self.generics, self.attributes).emit();
+            } else {
+                return quote! {};
+            };
+        }
+
         let messages = self.emit_messages();
 
         if let Some(module) = &self.attributes.module {

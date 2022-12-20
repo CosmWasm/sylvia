@@ -2,7 +2,7 @@ use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
 use crate::strip_generics::StripGenerics;
-use crate::utils::{filter_wheres, process_fields};
+use crate::utils::{extract_return_type, filter_wheres, process_fields};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -14,9 +14,8 @@ use syn::spanned::Spanned;
 
 use syn::visit::Visit;
 use syn::{
-    parse_quote, GenericArgument, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
-    PathArguments, PathSegment, ReturnType, Signature, TraitItem, Type, WhereClause,
-    WherePredicate,
+    parse_quote, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, ReturnType,
+    Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -486,7 +485,7 @@ impl<'a> MsgVariant<'a> {
             match resp_type {
                 Some(resp_type) => quote! {#resp_type},
                 None => {
-                    let return_type = MsgVariant::extract_return_type(&sig.output);
+                    let return_type = extract_return_type(&sig.output);
                     quote! {#return_type}
                 }
             }
@@ -501,41 +500,6 @@ impl<'a> MsgVariant<'a> {
             return_type,
             message_type,
         }
-    }
-
-    fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
-        let ReturnType::Type(_, ty) = ret_type  else {
-            unreachable!()
-        };
-
-        let Type::Path(type_path) = ty.as_ref()  else {
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert_eq!(segments.len(), 1);
-        let segment = &segments[0];
-
-        // In case of aliased result user need to define the return type by hand
-        if segment.ident != "Result" && segment.ident != "StdResult" {
-            emit_error!(
-                segment.span(),
-                "Neither Result nor StdResult found in return type. \
-                    You might be using aliased return type. \
-                    Please use #[msg(return_type=<your_return_type>)]"
-            );
-        }
-        let PathArguments::AngleBracketed(args) = &segments[0].arguments  else{
-            unreachable!()
-        };
-        let args = &args.args;
-        assert!(!args.is_empty());
-        let GenericArgument::Type(Type::Path(type_path)) = &args[0] else{
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert_eq!(segments.len(), 1);
-
-        &segments[0]
     }
 
     /// Emits message variant

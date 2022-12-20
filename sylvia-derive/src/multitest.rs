@@ -1,56 +1,75 @@
+use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{
-    parse::{Parse, Parser},
-    spanned::Spanned,
-    FnArg, GenericParam, ItemTrait, Pat, PatType, TraitItem, WhereClause, WherePredicate,
-};
+use syn::parse::{Parse, Parser};
+use syn::spanned::Spanned;
+use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Type};
 
-use crate::{
-    check_generics::CheckGenerics,
-    crate_module,
-    parser::{InterfaceArgs, MsgAttr, MsgType},
-    utils::filter_wheres,
-};
+use crate::crate_module;
+use crate::parser::{ContractArgs, MsgAttr, MsgType};
+use crate::utils::extract_return_type;
 
 struct MessageSignature<'a> {
     pub name: &'a Ident,
     pub params: Vec<&'a FnArg>,
     pub arguments: Vec<&'a Ident>,
+    pub msg_ty: MsgType,
+    pub return_type: TokenStream,
 }
 
 pub struct MultitestHelpers<'a> {
     trait_name: &'a Ident,
     messages: Vec<MessageSignature<'a>>,
-    generics: Vec<&'a GenericParam>,
-    unused_generics: Vec<&'a GenericParam>,
-    all_generics: &'a [&'a GenericParam],
-    wheres: Vec<&'a WherePredicate>,
-    full_where: Option<&'a WhereClause>,
-    msg_ty: MsgType,
-    args: &'a InterfaceArgs,
+    _args: &'a ContractArgs,
+    error_type: &'a Ident,
+}
+
+fn extract_trait_name<'a>(source: &'a ItemImpl) -> &'a Ident {
+    let Some((_, path, _)) = source.trait_.as_ref() else {
+        unreachable!()
+    };
+    let Some(ident) = path.get_ident() else {
+        unreachable!()
+    };
+    ident
 }
 
 impl<'a> MultitestHelpers<'a> {
     pub fn new(
-        source: &'a ItemTrait,
-        ty: MsgType,
-        generics: &'a [&'a GenericParam],
-        args: &'a InterfaceArgs,
+        source: &'a ItemImpl,
+        _generics: &'a [&'a GenericParam],
+        args: &'a ContractArgs,
     ) -> Self {
-        let trait_name = &source.ident;
+        let trait_name = extract_trait_name(source);
 
-        let generics_checker = CheckGenerics::new(generics);
         let messages: Vec<_> = source
             .items
             .iter()
             .filter_map(|item| match item {
-                TraitItem::Method(method) => {
-                    // We want to generate helepers only for contract messages
-                    method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-
+                ImplItem::Method(method) => {
+                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                        Ok(attr) => attr,
+                        Err(err) => {
+                            emit_error!(method.span(), err);
+                            return None;
+                        }
+                    };
+                    let msg_ty = attr.msg_type();
                     let sig = &method.sig;
+                    let return_type = if let MsgAttr::Query { resp_type } = attr {
+                        match resp_type {
+                            Some(resp_type) => quote! {#resp_type},
+                            None => {
+                                let return_type = extract_return_type(&sig.output);
+                                quote! {#return_type}
+                            }
+                        }
+                    } else {
+                        quote! { cw_multi_test::AppResponse }
+                    };
+
                     let name = &sig.ident;
                     let params: Vec<_> = sig.inputs.iter().skip(2).collect();
                     let arguments: Vec<_> = params
@@ -61,7 +80,6 @@ impl<'a> MultitestHelpers<'a> {
                                 let Pat::Ident(ident) = pat.as_ref() else {
                                     unreachable!()
                                 };
-                                // println!("ident is {:#?}", ident.ident);
                                 Some(&ident.ident)
                             }
                             _ => None,
@@ -72,40 +90,53 @@ impl<'a> MultitestHelpers<'a> {
                         name,
                         params,
                         arguments,
+                        msg_ty,
+                        return_type,
                     })
                 }
                 _ => None,
             })
             .collect();
 
-        let (used_generics, unused_generics) = generics_checker.used_unused();
-        let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
+        let error_type: Vec<_> = source
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                ImplItem::Type(ty) => {
+                    if ty.ident != "Error" {
+                        return None;
+                    }
+
+                    let ty = &ty.ty;
+                    let segments = match ty {
+                        Type::Path(path) => &path.path.segments,
+                        _ => unreachable!(),
+                    };
+                    // assert_eq!(segments.len(), 1);
+
+                    Some(&segments[0].ident)
+                }
+                _ => None,
+            })
+            .collect();
+        println!("error_type = {:#?}", error_type);
+        // assert_eq!(error_type.len(), 1);
+        let error_type = error_type[0];
 
         Self {
             trait_name,
             messages,
-            generics: used_generics,
-            unused_generics,
-            all_generics: generics,
-            wheres,
-            full_where: source.generics.where_clause.as_ref(),
-            msg_ty: ty,
-            args,
+            _args: args,
+            error_type,
         }
     }
     pub fn emit(&self) -> TokenStream {
         let Self {
             trait_name,
             messages,
-            generics,
-            unused_generics,
-            all_generics,
-            wheres,
-            full_where,
-            msg_ty,
-            args,
+            _args,
+            error_type,
         } = self;
-
         let sylvia = crate_module();
         let proxy_name = Ident::new(
             &format!("{}Proxy", trait_name.to_string()),
@@ -117,18 +148,51 @@ impl<'a> MultitestHelpers<'a> {
                 name,
                 params,
                 arguments,
+                msg_ty,
+                return_type,
             } = msg;
-            quote! {
-                pub fn #name (&self, params: #sylvia ::multitest::ExecParams, #(#params,)* ) {
+            let variant = Ident::new(
+                &name.to_string().to_case(Case::UpperCamel),
+                name.span(),
+            );
+            if msg_ty == &MsgType::Exec {
+                quote! {
+                    pub fn #name (&self, params: #sylvia ::multitest::ExecParams, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = ExecMsg:: #variant { #(#arguments,)* }; 
 
+                        self.app
+                            .app
+                            .borrow_mut()
+                            .execute_contract(
+                                params.sender.clone(),
+                                self.contract_addr.clone(),
+                                &msg,
+                                params.funds,
+                            )
+                            .map_err(|err| err.downcast().unwrap())
+                    }
+                }
+            } else {
+                quote! {
+                    pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = QueryMsg:: #variant { #(#arguments,)* };
+
+                        self.app
+                            .app
+                            .borrow()
+                            .wrap()
+                            .query_wasm_smart(self.contract_addr.clone(), &msg)
+                            .map_err(Into::into)
+                    } 
                 }
             }
         });
 
         quote! {
             #[cfg(test)]
-            mod test_utils {
+            mod multitest_utils {
                 use super::*;
+                use cw_multi_test::Executor;
 
                 pub struct #proxy_name<'app> {
                     pub contract_addr: cosmwasm_std::Addr,
