@@ -119,8 +119,7 @@ impl<'a> MultitestHelpers<'a> {
                 _ => None,
             })
             .collect();
-        println!("error_type = {:#?}", error_type);
-        // assert_eq!(error_type.len(), 1);
+
         let error_type = error_type[0];
 
         Self {
@@ -138,10 +137,8 @@ impl<'a> MultitestHelpers<'a> {
             error_type,
         } = self;
         let sylvia = crate_module();
-        let proxy_name = Ident::new(
-            &format!("{}Proxy", trait_name.to_string()),
-            trait_name.span(),
-        );
+        let module_name = trait_name.to_string().to_case(Case::Flat);
+        let module_name = Ident::new(&module_name, trait_name.span());
 
         let messages = messages.iter().map(|msg| {
             let MessageSignature {
@@ -151,14 +148,10 @@ impl<'a> MultitestHelpers<'a> {
                 msg_ty,
                 return_type,
             } = msg;
-            let variant = Ident::new(
-                &name.to_string().to_case(Case::UpperCamel),
-                name.span(),
-            );
             if msg_ty == &MsgType::Exec {
                 quote! {
                     pub fn #name (&self, params: #sylvia ::multitest::ExecParams, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = ExecMsg:: #variant { #(#arguments,)* }; 
+                        let msg = #module_name ::ExecMsg:: #name ( #(#arguments),* ); 
 
                         self.app
                             .app
@@ -175,7 +168,7 @@ impl<'a> MultitestHelpers<'a> {
             } else {
                 quote! {
                     pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = QueryMsg:: #variant { #(#arguments,)* };
+                        let msg = #module_name ::QueryMsg:: #name ( #(#arguments),* );
 
                         self.app
                             .app
@@ -194,21 +187,21 @@ impl<'a> MultitestHelpers<'a> {
                 use super::*;
                 use cw_multi_test::Executor;
 
-                pub struct #proxy_name<'app> {
+                pub struct Proxy<'app> {
                     pub contract_addr: cosmwasm_std::Addr,
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
-                impl<'app> #proxy_name<'app> {
+                impl<'app> Proxy<'app> {
                     pub fn new(contract_addr: cosmwasm_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        #proxy_name{ contract_addr, app }
+                        Proxy{ contract_addr, app }
                     }
 
                     #(#messages)*
 
                 }
 
-                impl Into<cosmwasm_std::Addr> for #proxy_name<'_> {
+                impl Into<cosmwasm_std::Addr> for Proxy<'_> {
                     fn into(self) -> cosmwasm_std::Addr {
                         self.contract_addr
                     }

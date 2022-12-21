@@ -267,6 +267,7 @@ impl<'a> EnumMessage<'a> {
             .collect();
         msgs.sort();
         let msgs_cnt = msgs.len();
+        let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
         let where_clause = if !wheres.is_empty() {
             quote! {
@@ -313,6 +314,7 @@ impl<'a> EnumMessage<'a> {
                 pub type #name #generics = #unique_enum_name #generics;
             },
         };
+
         quote! {
             #enum_declaration
 
@@ -329,6 +331,7 @@ impl<'a> EnumMessage<'a> {
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
+                #(#variants_constructors)*
             }
         }
     }
@@ -561,6 +564,27 @@ impl<'a> MsgVariant<'a> {
             Instantiate => {
                 emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
+            }
+        }
+    }
+
+    /// Emits variants constructors. Constructors names are variants names in snake_case.
+    pub fn emit_variants_constructors(&self) -> TokenStream {
+        let Self { name, fields, .. } = self;
+
+        let method_name = name.to_string().to_case(Case::Snake);
+        let method_name = Ident::new(&method_name, name.span());
+
+        let parameters = fields.iter().map(|field| {
+            let name = field.name;
+            let ty = field.ty;
+            quote! { #name : #ty}
+        });
+        let arguments = fields.iter().map(|field| field.name);
+
+        quote! {
+            pub fn #method_name( #(#parameters),*) -> Self {
+                Self :: #name { #(#arguments),* }
             }
         }
     }

@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use cw1::{CanExecuteResp, Cw1, ExecMsg, QueryMsg};
+use cw1::{CanExecuteResp, Cw1};
 use sylvia::contract;
 
 use crate::contract::Cw1WhitelistContract;
@@ -32,7 +32,7 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         &self,
         ctx: (Deps, Env),
         sender: String,
-        msg: CosmosMsg,
+        _msg: CosmosMsg,
     ) -> StdResult<CanExecuteResp> {
         let (deps, _) = ctx;
 
