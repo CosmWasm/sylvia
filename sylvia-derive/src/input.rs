@@ -100,7 +100,7 @@ impl<'a> ImplInput<'a> {
     pub fn process(&self) -> TokenStream {
         if self.item.trait_.is_some() {
             if cfg!(feature = "mt") {
-                return MultitestHelpers::new(self.item, &self.generics, self.attributes).emit();
+                return MultitestHelpers::new(self.item).emit();
             } else {
                 return quote! {};
             };

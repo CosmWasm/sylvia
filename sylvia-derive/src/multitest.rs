@@ -4,10 +4,10 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Type};
+use syn::{FnArg, ImplItem, ItemImpl, Pat, PatType, Type};
 
 use crate::crate_module;
-use crate::parser::{ContractArgs, MsgAttr, MsgType};
+use crate::parser::{MsgAttr, MsgType};
 use crate::utils::extract_return_type;
 
 struct MessageSignature<'a> {
@@ -21,7 +21,6 @@ struct MessageSignature<'a> {
 pub struct MultitestHelpers<'a> {
     trait_name: &'a Ident,
     messages: Vec<MessageSignature<'a>>,
-    _args: &'a ContractArgs,
     error_type: &'a Ident,
 }
 
@@ -36,11 +35,7 @@ fn extract_trait_name<'a>(source: &'a ItemImpl) -> &'a Ident {
 }
 
 impl<'a> MultitestHelpers<'a> {
-    pub fn new(
-        source: &'a ItemImpl,
-        _generics: &'a [&'a GenericParam],
-        args: &'a ContractArgs,
-    ) -> Self {
+    pub fn new(source: &'a ItemImpl) -> Self {
         let trait_name = extract_trait_name(source);
 
         let messages: Vec<_> = source
@@ -125,7 +120,6 @@ impl<'a> MultitestHelpers<'a> {
         Self {
             trait_name,
             messages,
-            _args: args,
             error_type,
         }
     }
@@ -133,7 +127,6 @@ impl<'a> MultitestHelpers<'a> {
         let Self {
             trait_name,
             messages,
-            _args,
             error_type,
         } = self;
         let sylvia = crate_module();
