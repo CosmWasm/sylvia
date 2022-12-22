@@ -143,19 +143,10 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    pub fn #name (&self, params: #sylvia ::multitest::ExecParams, #(#params,)* ) -> Result<#return_type, #error_type> {
+                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module_name ::ExecMsg> {
                         let msg = #module_name ::ExecMsg:: #name ( #(#arguments),* ); 
 
-                        self.app
-                            .app
-                            .borrow_mut()
-                            .execute_contract(
-                                params.sender.clone(),
-                                self.contract_addr.clone(),
-                                &msg,
-                                params.funds,
-                            )
-                            .map_err(|err| err.downcast().unwrap())
+                        #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
                 }
             } else {
