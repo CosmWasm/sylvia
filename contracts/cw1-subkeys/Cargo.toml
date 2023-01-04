@@ -8,20 +8,21 @@ library = []
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
-anyhow = { version = "1.0.66", optional = true }
+cosmwasm-std = { version = "1.1", features = ["staking"] }
+anyhow = { version = "1.0.68", optional = true }
 cosmwasm-schema = "1.1"
-cosmwasm-std = "1.1"
-cw-multi-test = { version = "0.16.1", optional = true }
+cw-multi-test = { version = "0.16.2", optional = true }
 cw-storage-plus = "1.0"
 cw-utils = "1.0"
 cw1 = { path = "../cw1" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = "1.0"
-serde = { version = "1.0.150", features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"] }
 sylvia = { version = "0.2.2", path = "../../sylvia" }
-thiserror = "1.0.37"
+thiserror = "1.0.38"
 getrandom = { version = "0.2.8", features = ["js"] }
 
 [dev-dependencies]
-anyhow = "1.0.66"
+anyhow = "1.0.68"
 cw-multi-test = "0.16"
+sylvia = { version = "0.2.2", path = "../../sylvia", features = ["mt"] }
