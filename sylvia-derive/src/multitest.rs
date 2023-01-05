@@ -167,9 +167,9 @@ impl<'a> MultitestHelpers<'a> {
 
                 }
 
-                impl Into<cosmwasm_std::Addr> for Proxy<'_> {
-                    fn into(self) -> cosmwasm_std::Addr {
-                        self.contract_addr
+                impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for Proxy<'app> {
+                    fn from(input: (cosmwasm_std::Addr, &'app #sylvia ::multitest::App)) -> Proxy<'app> {
+                        Proxy::new(input.0, input.1)
                     }
                 }
             }
