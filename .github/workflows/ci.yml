@@ -48,14 +48,21 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt, clippy
-      - name: Build project
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Test project
         run: cargo test --locked
       - name: Clippy project
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project
         run: cargo fmt --check
+      - name: Build cw20-base
+        working-directory: contracts/cw20-base
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build cw1-subkeys
+        working-directory: contracts/cw1-subkeys
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build cw1-whitelist
+        working-directory: contracts/cw1-whitelist
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
