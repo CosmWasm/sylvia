@@ -149,7 +149,7 @@ impl<'a> MultitestHelpers<'a> {
 
         quote! {
             #[cfg(test)]
-            mod multitest_utils {
+            pub mod multitest_utils {
                 use super::*;
                 use cw_multi_test::Executor;
 
