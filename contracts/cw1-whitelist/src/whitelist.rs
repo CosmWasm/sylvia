@@ -1,5 +1,5 @@
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, Order, Response, StdResult};
-use sylvia::{interface, schemars};
+use sylvia::{contract, interface, schemars};
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
@@ -23,9 +23,11 @@ pub trait Whitelist {
     fn admin_list(&self, ctx: (Deps, Env)) -> StdResult<AdminListResponse>;
 }
 
+#[contract]
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
+    #[msg(exec)]
     fn freeze(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, ContractError> {
         let (deps, _, info) = ctx;
 

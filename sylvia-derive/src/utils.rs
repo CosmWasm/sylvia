@@ -60,7 +60,7 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
             unreachable!()
         };
     let segments = &type_path.path.segments;
-    assert!(segments.len() != 0);
+    assert!(!segments.is_empty());
     let segment = &segments[0];
 
     // In case of aliased result user need to define the return type by hand
@@ -81,7 +81,7 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
             unreachable!()
         };
     let segments = &type_path.path.segments;
-    assert!(segments.len() != 0);
+    assert!(!segments.is_empty());
 
     &segments[0]
 }

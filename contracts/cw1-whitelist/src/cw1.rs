@@ -1,5 +1,7 @@
 use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
+#[cfg(test)]
+use cw1::{ExecMsg, QueryMsg};
 use sylvia::contract;
 
 use crate::contract::Cw1WhitelistContract;
@@ -37,7 +39,7 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         let (deps, _) = ctx;
 
         let resp = CanExecuteResp {
-            can_execute: self.is_admin(deps, &Addr::unchecked(&sender)),
+            can_execute: self.is_admin(deps, &Addr::unchecked(sender)),
         };
 
         Ok(resp)

@@ -1,4 +1,3 @@
-use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
@@ -19,25 +18,12 @@ struct MessageSignature<'a> {
 }
 
 pub struct MultitestHelpers<'a> {
-    trait_name: &'a Ident,
     messages: Vec<MessageSignature<'a>>,
     error_type: &'a Ident,
 }
 
-fn extract_trait_name<'a>(source: &'a ItemImpl) -> &'a Ident {
-    let Some((_, path, _)) = source.trait_.as_ref() else {
-        unreachable!()
-    };
-    let Some(ident) = path.get_ident() else {
-        unreachable!()
-    };
-    ident
-}
-
 impl<'a> MultitestHelpers<'a> {
     pub fn new(source: &'a ItemImpl) -> Self {
-        let trait_name = extract_trait_name(source);
-
         let messages: Vec<_> = source
             .items
             .iter()
@@ -118,20 +104,16 @@ impl<'a> MultitestHelpers<'a> {
         let error_type = error_type[0];
 
         Self {
-            trait_name,
             messages,
             error_type,
         }
     }
     pub fn emit(&self) -> TokenStream {
         let Self {
-            trait_name,
             messages,
             error_type,
         } = self;
         let sylvia = crate_module();
-        let module_name = trait_name.to_string().to_case(Case::Flat);
-        let module_name = Ident::new(&module_name, trait_name.span());
 
         let messages = messages.iter().map(|msg| {
             let MessageSignature {
@@ -143,8 +125,8 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module_name ::ExecMsg> {
-                        let msg = #module_name ::ExecMsg:: #name ( #(#arguments),* ); 
+                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
+                        let msg = ExecMsg:: #name ( #(#arguments),* ); 
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
@@ -152,7 +134,7 @@ impl<'a> MultitestHelpers<'a> {
             } else {
                 quote! {
                     pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = #module_name ::QueryMsg:: #name ( #(#arguments),* );
+                        let msg = QueryMsg:: #name ( #(#arguments),* );
 
                         self.app
                             .app
