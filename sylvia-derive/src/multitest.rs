@@ -126,7 +126,7 @@ impl<'a> MultitestHelpers<'a> {
             if msg_ty == &MsgType::Exec {
                 quote! {
                     pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
-                        let msg = ExecMsg:: #name ( #(#arguments),* ); 
+                        let msg = ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
@@ -142,7 +142,7 @@ impl<'a> MultitestHelpers<'a> {
                             .wrap()
                             .query_wasm_smart(self.contract_addr.clone(), &msg)
                             .map_err(Into::into)
-                    } 
+                    }
                 }
             }
         });
