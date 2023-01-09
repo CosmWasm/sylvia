@@ -1,12 +1,17 @@
 use cosmwasm_std::{ensure, Addr, DepsMut, Env, MessageInfo, Response, StdResult};
-use cw1::Cw1;
+use cw1::{CanExecuteResp, Cw1};
+#[cfg(test)]
+use cw1::{ExecMsg, QueryMsg};
+use sylvia::contract;
 
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;
 
+#[contract]
 impl Cw1 for Cw1SubkeysContract<'_> {
     type Error = ContractError;
 
+    #[msg(exec)]
     fn execute(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -26,16 +31,17 @@ impl Cw1 for Cw1SubkeysContract<'_> {
         Ok(res)
     }
 
+    #[msg(query)]
     fn can_execute(
         &self,
         ctx: (cosmwasm_std::Deps, cosmwasm_std::Env),
         sender: String,
         msg: cosmwasm_std::CosmosMsg,
-    ) -> StdResult<cw1::CanExecuteResp> {
+    ) -> StdResult<CanExecuteResp> {
         let (deps, env) = ctx;
-        let sender = Addr::unchecked(&sender);
+        let sender = Addr::unchecked(sender);
 
         self.is_authorized(deps, &env, &sender, &msg)
-            .map(|can| cw1::CanExecuteResp { can_execute: can })
+            .map(|can| CanExecuteResp { can_execute: can })
     }
 }

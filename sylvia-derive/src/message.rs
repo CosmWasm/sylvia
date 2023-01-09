@@ -2,6 +2,7 @@ use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
 use crate::strip_generics::StripGenerics;
+use crate::utils::{extract_return_type, filter_wheres, process_fields};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -13,52 +14,9 @@ use syn::spanned::Spanned;
 
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat,
-    PatType, PathArguments, PathSegment, ReturnType, Signature, TraitItem, Type, WhereClause,
-    WherePredicate,
+    parse_quote, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, ReturnType,
+    Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
-
-fn filter_wheres<'a>(
-    clause: &'a Option<WhereClause>,
-    generics: &[&GenericParam],
-    used_generics: &[&GenericParam],
-) -> Vec<&'a WherePredicate> {
-    clause
-        .as_ref()
-        .map(|clause| {
-            clause
-                .predicates
-                .iter()
-                .filter(|pred| {
-                    let mut generics_checker = CheckGenerics::new(generics);
-                    generics_checker.visit_where_predicate(pred);
-                    generics_checker
-                        .used()
-                        .into_iter()
-                        .all(|gen| used_generics.contains(&gen))
-                })
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn process_fields<'s>(
-    sig: &'s Signature,
-    generics_checker: &mut CheckGenerics,
-) -> Vec<MsgField<'s>> {
-    sig.inputs
-        .iter()
-        .skip(2)
-        .filter_map(|arg| match arg {
-            FnArg::Receiver(item) => {
-                emit_error!(item.span(), "Unexpected `self` argument");
-                None
-            }
-
-            FnArg::Typed(item) => MsgField::new(item, generics_checker),
-        })
-        .collect()
-}
 
 /// Representation of single struct message
 pub struct StructMessage<'a> {
@@ -309,6 +267,7 @@ impl<'a> EnumMessage<'a> {
             .collect();
         msgs.sort();
         let msgs_cnt = msgs.len();
+        let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
         let where_clause = if !wheres.is_empty() {
             quote! {
@@ -355,6 +314,7 @@ impl<'a> EnumMessage<'a> {
                 pub type #name #generics = #unique_enum_name #generics;
             },
         };
+
         quote! {
             #enum_declaration
 
@@ -371,6 +331,7 @@ impl<'a> EnumMessage<'a> {
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
+                #(#variants_constructors)*
             }
         }
     }
@@ -527,7 +488,7 @@ impl<'a> MsgVariant<'a> {
             match resp_type {
                 Some(resp_type) => quote! {#resp_type},
                 None => {
-                    let return_type = MsgVariant::extract_return_type(&sig.output);
+                    let return_type = extract_return_type(&sig.output);
                     quote! {#return_type}
                 }
             }
@@ -542,41 +503,6 @@ impl<'a> MsgVariant<'a> {
             return_type,
             message_type,
         }
-    }
-
-    fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
-        let ReturnType::Type(_, ty) = ret_type  else {
-            unreachable!()
-        };
-
-        let Type::Path(type_path) = ty.as_ref()  else {
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert_eq!(segments.len(), 1);
-        let segment = &segments[0];
-
-        // In case of aliased result user need to define the return type by hand
-        if segment.ident != "Result" && segment.ident != "StdResult" {
-            emit_error!(
-                segment.span(),
-                "Neither Result nor StdResult found in return type. \
-                    You might be using aliased return type. \
-                    Please use #[msg(return_type=<your_return_type>)]"
-            );
-        }
-        let PathArguments::AngleBracketed(args) = &segments[0].arguments  else{
-            unreachable!()
-        };
-        let args = &args.args;
-        assert!(!args.is_empty());
-        let GenericArgument::Type(Type::Path(type_path)) = &args[0] else{
-            unreachable!()
-        };
-        let segments = &type_path.path.segments;
-        assert_eq!(segments.len(), 1);
-
-        &segments[0]
     }
 
     /// Emits message variant
@@ -638,6 +564,27 @@ impl<'a> MsgVariant<'a> {
             Instantiate => {
                 emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
+            }
+        }
+    }
+
+    /// Emits variants constructors. Constructors names are variants names in snake_case.
+    pub fn emit_variants_constructors(&self) -> TokenStream {
+        let Self { name, fields, .. } = self;
+
+        let method_name = name.to_string().to_case(Case::Snake);
+        let method_name = Ident::new(&method_name, name.span());
+
+        let parameters = fields.iter().map(|field| {
+            let name = field.name;
+            let ty = field.ty;
+            quote! { #name : #ty}
+        });
+        let arguments = fields.iter().map(|field| field.name);
+
+        quote! {
+            pub fn #method_name( #(#parameters),*) -> Self {
+                Self :: #name { #(#arguments),* }
             }
         }
     }

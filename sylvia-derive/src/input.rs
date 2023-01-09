@@ -4,6 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::multitest::MultitestHelpers;
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -97,6 +98,14 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
+        if self.item.trait_.is_some() {
+            if cfg!(feature = "mt") {
+                return MultitestHelpers::new(self.item).emit();
+            } else {
+                return quote! {};
+            };
+        }
+
         let messages = self.emit_messages();
 
         if let Some(module) = &self.attributes.module {

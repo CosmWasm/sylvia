@@ -1,12 +1,17 @@
 use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
+#[cfg(test)]
+use cw1::{ExecMsg, QueryMsg};
+use sylvia::contract;
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
+#[contract]
 impl Cw1 for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
+    #[msg(exec)]
     fn execute(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -24,16 +29,17 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
+    #[msg(query)]
     fn can_execute(
         &self,
         ctx: (Deps, Env),
         sender: String,
         _msg: CosmosMsg,
-    ) -> StdResult<cw1::CanExecuteResp> {
+    ) -> StdResult<CanExecuteResp> {
         let (deps, _) = ctx;
 
         let resp = CanExecuteResp {
-            can_execute: self.is_admin(deps, &Addr::unchecked(&sender)),
+            can_execute: self.is_admin(deps, &Addr::unchecked(sender)),
         };
 
         Ok(resp)

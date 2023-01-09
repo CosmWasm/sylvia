@@ -2,6 +2,8 @@
 //!
 //! Most of implementation lies in `cw-derive-ng` crate which is reexported here
 
+#[cfg(feature = "mt")]
+pub mod multitest;
 pub mod utils;
 
 pub use cosmwasm_std as cw_std;

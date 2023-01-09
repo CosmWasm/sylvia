@@ -184,7 +184,7 @@ impl Cw1SubkeysContract<'_> {
         let (deps, env) = ctx;
 
         // we can use unchecked here as it is a query - bad value means a miss, we never write it
-        let spender = Addr::unchecked(&spender);
+        let spender = Addr::unchecked(spender);
         let allow = self
             .allowances
             .may_load(deps.storage, &spender)?
@@ -198,7 +198,7 @@ impl Cw1SubkeysContract<'_> {
     pub fn permissions(&self, ctx: (Deps, Env), spender: String) -> StdResult<Permissions> {
         let (deps, _) = ctx;
 
-        let spender = Addr::unchecked(&spender);
+        let spender = Addr::unchecked(spender);
         let permissions = self
             .permissions
             .may_load(deps.storage, &spender)?

@@ -10,20 +10,23 @@ homepage = "https://cosmwasm.com"
 keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
 
+[features]
+mt = []
+
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0.101", features = [
-    "parsing",
-    "derive",
-    "fold",
-    "visit",
-    "full",
-    "extra-traits",
+syn = { version = "1.0.107", features = [
+  "parsing",
+  "derive",
+  "fold",
+  "visit",
+  "full",
+  "extra-traits",
 ] }
-quote = "1.0.21"
-proc-macro2 = "1.0.46"
+quote = "1.0.23"
+proc-macro2 = "1.0.49"
 convert_case = "0.6.0"
 proc-macro-error = "1.0.4"
 proc-macro-crate = "1.2.1"
