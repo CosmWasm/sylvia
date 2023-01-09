@@ -125,6 +125,7 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
+                    #[track_caller]
                     pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
                         let msg = ExecMsg:: #name ( #(#arguments),* );
 
