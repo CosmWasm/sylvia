@@ -26,7 +26,7 @@ pub trait Interface {
 
 pub struct SomeContract {}
 
-#[contract]
+#[contract(error=ContractError)]
 impl SomeContract {
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {

@@ -19,7 +19,7 @@ pub struct InterfaceArgs {
 pub struct ContractArgs {
     /// Module name wrapping generated messages, by default no additional module is created
     pub module: Option<Ident>,
-    /// The type of a contract error for entry points - `ContractError` by default
+    /// The type of a contract error for entry points - `cosmwasm_std::StdError` by default
     pub error: Type,
 }
 
@@ -56,7 +56,7 @@ impl Parse for InterfaceArgs {
 impl Parse for ContractArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut module = None;
-        let mut error = parse_quote!(ContractError);
+        let mut error = parse_quote!(cosmwasm_std::StdError);
 
         while !input.is_empty() {
             let attr: Ident = input.parse()?;

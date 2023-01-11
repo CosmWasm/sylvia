@@ -98,26 +98,35 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
-        if self.item.trait_.is_some() {
+        let is_trait = self.item.trait_.is_some();
+        let multitest_helpers =
+            MultitestHelpers::new(self.item, is_trait, &self.attributes.error).emit();
+
+        if is_trait {
             if cfg!(feature = "mt") {
-                return MultitestHelpers::new(self.item).emit();
+                return multitest_helpers;
             } else {
                 return quote! {};
             };
         }
 
         let messages = self.emit_messages();
+        let code = quote! {
+            #messages
+
+            #multitest_helpers
+        };
 
         if let Some(module) = &self.attributes.module {
             quote! {
                 pub mod #module {
                     use super::*;
 
-                    #messages
+                    #code
                 }
             }
         } else {
-            messages
+            code
         }
     }
 

@@ -6,7 +6,7 @@ use syn::spanned::Spanned;
 use syn::{FnArg, ImplItem, ItemImpl, Pat, PatType, Type};
 
 use crate::crate_module;
-use crate::parser::{MsgAttr, MsgType};
+use crate::parser::{ContractMessageAttr, MsgAttr, MsgType};
 use crate::utils::extract_return_type;
 
 struct MessageSignature<'a> {
@@ -19,11 +19,11 @@ struct MessageSignature<'a> {
 
 pub struct MultitestHelpers<'a> {
     messages: Vec<MessageSignature<'a>>,
-    error_type: &'a Ident,
+    error_type: TokenStream,
 }
 
 impl<'a> MultitestHelpers<'a> {
-    pub fn new(source: &'a ItemImpl) -> Self {
+    pub fn new(source: &'a ItemImpl, is_trait: bool, contract_error: &'a Type) -> Self {
         let messages: Vec<_> = source
             .items
             .iter()
@@ -38,6 +38,10 @@ impl<'a> MultitestHelpers<'a> {
                         }
                     };
                     let msg_ty = attr.msg_type();
+
+                    if msg_ty != MsgType::Query || msg_ty != MsgType::Exec {
+                        return None;
+                    }
                     let sig = &method.sig;
                     let return_type = if let MsgAttr::Query { resp_type } = attr {
                         match resp_type {
@@ -79,29 +83,52 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
-        let error_type: Vec<_> = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                ImplItem::Type(ty) => {
-                    if ty.ident != "Error" {
-                        return None;
+        // let interfaces: Vec<_> = source
+        //     .attrs
+        //     .iter()
+        //     .filter(|attr| attr.path.is_ident("messages"))
+        //     .filter_map(|attr| {
+        //         let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+        //             Ok(interface) => interface,
+        //             Err(err) => {
+        //                 emit_error!(attr.span(), err);
+        //                 return None;
+        //             }
+        //         };
+        //
+        //         Some(interface)
+        //     })
+        //     .collect();
+
+        let error_type = if is_trait {
+            let error_type: Vec<_> = source
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    ImplItem::Type(ty) => {
+                        if ty.ident != "Error" {
+                            return None;
+                        }
+
+                        let ty = &ty.ty;
+                        let segments = match ty {
+                            Type::Path(path) => &path.path.segments,
+                            _ => unreachable!(),
+                        };
+                        assert!(!segments.is_empty());
+
+                        Some(&segments[0].ident)
                     }
+                    _ => None,
+                })
+                .collect();
 
-                    let ty = &ty.ty;
-                    let segments = match ty {
-                        Type::Path(path) => &path.path.segments,
-                        _ => unreachable!(),
-                    };
-                    // assert_eq!(segments.len(), 1);
-
-                    Some(&segments[0].ident)
-                }
-                _ => None,
-            })
-            .collect();
-
-        let error_type = error_type[0];
+            assert!(!error_type.is_empty());
+            let error_type = error_type[0];
+            quote! {#error_type}
+        } else {
+            quote! {#contract_error}
+        };
 
         Self {
             messages,

@@ -28,7 +28,7 @@ pub struct Cw1SubkeysContract<'a> {
     pub(crate) allowances: Map<'static, &'a Addr, Allowance>,
 }
 
-#[contract]
+#[contract(error=ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {

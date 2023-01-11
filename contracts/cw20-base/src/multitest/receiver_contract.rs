@@ -10,12 +10,6 @@ use super::receiver::{self, Receiver};
 
 pub struct ReceiverContract {}
 
-#[derive(Error, Debug, PartialEq)]
-pub enum ContractError {
-    #[error("{0}")]
-    Std(#[from] StdError),
-}
-
 #[contract]
 #[messages(receiver as Receiver)]
 impl ReceiverContract {
@@ -29,7 +23,7 @@ impl ReceiverContract {
 }
 
 impl Receiver for ReceiverContract {
-    type Error = ContractError;
+    type Error = StdError;
 
     fn receive(
         &self,
@@ -121,7 +115,7 @@ impl ReceiverContractCodeId {
         app: &mut App,
         sender: &Addr,
         label: &str,
-    ) -> Result<ReceiverContractProxy, ContractError> {
+    ) -> StdResult<ReceiverContractProxy> {
         let msg = InstantiateMsg {};
 
         app.instantiate_contract(self.0, sender.clone(), &msg, &[], label, None)

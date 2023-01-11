@@ -69,7 +69,7 @@ pub struct Cw20Base<'a> {
     pub(crate) allowances_spender: Map<'static, (&'a Addr, &'a Addr), AllowanceResponse>,
 }
 
-#[contract]
+#[contract(error=ContractError)]
 #[messages(cw20_allowances as Allowances)]
 #[messages(cw20_marketing as Marketing)]
 #[messages(cw20_minting as Minting)]

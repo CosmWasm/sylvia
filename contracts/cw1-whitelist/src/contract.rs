@@ -14,7 +14,7 @@ pub struct Cw1WhitelistContract<'a> {
     pub(crate) mutable: Item<'static, bool>,
 }
 
-#[contract]
+#[contract(error=ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {
