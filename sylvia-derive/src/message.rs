@@ -413,6 +413,7 @@ impl<'a> ContractEnumMessage<'a> {
             .collect();
         msgs.sort();
         let msgs_cnt = msgs.len();
+        let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
 
         let ctx_type = msg_ty.emit_ctx_type();
@@ -452,6 +453,8 @@ impl<'a> ContractEnumMessage<'a> {
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
+
+                #(#variants_constructors)*
             }
         }
     }

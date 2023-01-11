@@ -4,7 +4,9 @@ use crate::validation::verify_logo;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
+use sylvia::contract;
 
+#[contract]
 impl Cw20Marketing for Cw20Base<'_> {
     type Error = ContractError;
 

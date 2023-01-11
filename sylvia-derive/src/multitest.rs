@@ -39,7 +39,7 @@ impl<'a> MultitestHelpers<'a> {
                     };
                     let msg_ty = attr.msg_type();
 
-                    if msg_ty != MsgType::Query || msg_ty != MsgType::Exec {
+                    if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
                         return None;
                     }
                     let sig = &method.sig;
