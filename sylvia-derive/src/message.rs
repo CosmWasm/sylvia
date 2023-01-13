@@ -9,9 +9,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
-
 use syn::spanned::Spanned;
-
 use syn::visit::Visit;
 use syn::{
     parse_quote, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, ReturnType,
@@ -554,7 +552,7 @@ impl<'a> MsgVariant<'a> {
             .map(|(field, num_field)| quote!(#field : #num_field));
 
         match msg_attr {
-            Exec | Migrate => quote! {
+            Exec => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)
@@ -564,8 +562,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => cosmwasm_std::to_binary(&contract.#function_name(ctx.into(), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate => {
-                emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate => {
+                emit_error!(name.span(), "Instantiation and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }

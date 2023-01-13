@@ -1,18 +1,18 @@
 [workspace]
 members = [
-  "sylvia",
-  "sylvia-derive",
+    "sylvia",
+    "sylvia-derive",
 
-  # Contract intefaces
-  "contracts/cw1",
-  "contracts/cw4",
-  "contracts/cw20-allowances",
-  "contracts/cw20-minting",
-  "contracts/cw20-marketing",
+    # Contract intefaces
+    "contracts/cw1",
+    "contracts/cw4",
+    "contracts/cw20-allowances",
+    "contracts/cw20-minting",
+    "contracts/cw20-marketing",
 
-  # Contracts
-  "contracts/cw1-whitelist",
-  "contracts/cw1-subkeys",
-  "contracts/cw20-base",
+    # Contracts
+    "contracts/cw1-whitelist",
+    "contracts/cw1-subkeys",
+    "contracts/cw20-base",
 ]
 resolver = "2"

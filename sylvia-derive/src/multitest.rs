@@ -20,10 +20,14 @@ struct MessageSignature<'a> {
 pub struct MultitestHelpers<'a> {
     messages: Vec<MessageSignature<'a>>,
     error_type: TokenStream,
+    contract: &'a Type,
+    is_trait: bool,
+    is_migrate: bool,
 }
 
 impl<'a> MultitestHelpers<'a> {
     pub fn new(source: &'a ItemImpl, is_trait: bool, contract_error: &'a Type) -> Self {
+        let mut is_migrate = false;
         let messages: Vec<_> = source
             .items
             .iter()
@@ -39,7 +43,10 @@ impl<'a> MultitestHelpers<'a> {
                     };
                     let msg_ty = attr.msg_type();
 
-                    if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
+                    if msg_ty == MsgType::Migrate {
+                        is_migrate = true;
+                        return None;
+                    } else if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
                         return None;
                     }
                     let sig = &method.sig;
@@ -133,12 +140,18 @@ impl<'a> MultitestHelpers<'a> {
         Self {
             messages,
             error_type,
+            contract: &source.self_ty,
+            is_trait,
+            is_migrate,
         }
     }
     pub fn emit(&self) -> TokenStream {
         let Self {
             messages,
             error_type,
+            contract,
+            is_trait,
+            is_migrate,
         } = self;
         let sylvia = crate_module();
 
@@ -175,6 +188,8 @@ impl<'a> MultitestHelpers<'a> {
             }
         });
 
+        let impl_contract = self.generate_impl_contract();
+
         quote! {
             #[cfg(test)]
             pub mod multitest_utils {
@@ -198,6 +213,95 @@ impl<'a> MultitestHelpers<'a> {
                 impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for Proxy<'app> {
                     fn from(input: (cosmwasm_std::Addr, &'app #sylvia ::multitest::App)) -> Proxy<'app> {
                         Proxy::new(input.0, input.1)
+                    }
+                }
+
+                #impl_contract
+            }
+        }
+    }
+
+    fn generate_impl_contract(&self) -> TokenStream {
+        let contract = &self.contract;
+
+        // MigrateMsg is not generated all the time in contrary to Exec, Query and Instantiate.
+        let migrate_body = if self.is_migrate {
+            quote! {
+                cosmwasm_std::from_slice::<MigrateMsg>(&msg)?
+                    .dispatch(self, (deps, env))
+                    .map_err(Into::into)
+            }
+        } else {
+            quote! {
+                anyhow::bail!("migrate not implemented for contract")
+            }
+        };
+
+        if self.is_trait {
+            quote! {}
+        } else {
+            quote! {
+                impl cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
+                    fn execute(
+                        &self,
+                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                        env: cosmwasm_std::Env,
+                        info: cosmwasm_std::MessageInfo,
+                        msg: Vec<u8>,
+                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                        cosmwasm_std::from_slice::<ContractExecMsg>(&msg)?
+                            .dispatch(self, (deps, env, info))
+                            .map_err(Into::into)
+                    }
+
+                    fn instantiate(
+                        &self,
+                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                        env: cosmwasm_std::Env,
+                        info: cosmwasm_std::MessageInfo,
+                        msg: Vec<u8>,
+                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                        cosmwasm_std::from_slice::<InstantiateMsg>(&msg)?
+                            .dispatch(self, (deps, env, info))
+                            .map_err(Into::into)
+                    }
+
+                    fn query(
+                        &self,
+                        deps: cosmwasm_std::Deps<cosmwasm_std::Empty>,
+                        env: cosmwasm_std::Env,
+                        msg: Vec<u8>,
+                    ) -> anyhow::Result<cosmwasm_std::Binary> {
+                        cosmwasm_std::from_slice::<ContractQueryMsg>(&msg)?
+                            .dispatch(self, (deps, env))
+                            .map_err(Into::into)
+                    }
+
+                    fn sudo(
+                        &self,
+                        _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                        _env: cosmwasm_std::Env,
+                        _msg: Vec<u8>,
+                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                        anyhow::bail!("sudo not implemented for contract")
+                    }
+
+                    fn reply(
+                        &self,
+                        _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                        _env: cosmwasm_std::Env,
+                        _msg: cosmwasm_std::Reply,
+                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                        anyhow::bail!("reply not implemented for contract")
+                    }
+
+                    fn migrate(
+                        &self,
+                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                        env: cosmwasm_std::Env,
+                        msg: Vec<u8>,
+                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                        #migrate_body
                     }
                 }
             }
