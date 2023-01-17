@@ -1,7 +1,12 @@
 use proc_macro2::{Punct, TokenStream};
+use proc_macro_error::emit_error;
 use quote::quote;
-use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream};
-use syn::{parenthesized, parse_quote, Ident, Path, Result, Token, Type};
+use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
+use syn::spanned::Spanned;
+use syn::{
+    parenthesized, parse_quote, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token,
+    Type,
+};
 
 use crate::crate_module;
 
@@ -280,4 +285,43 @@ impl Parse for ContractMessageAttr {
             variant,
         })
     }
+}
+
+pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemMethod, MsgAttr)> {
+    let mut methods = source.items.iter().filter_map(|item| match item {
+        ImplItem::Method(method) => {
+            let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+            let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                Ok(attr) => attr,
+                Err(err) => {
+                    emit_error!(method.span(), err);
+                    return None;
+                }
+            };
+
+            if attr == ty {
+                Some((method, attr))
+            } else {
+                None
+            }
+        }
+        _ => None,
+    });
+
+    let (method, msg_attr) = if let Some(method) = methods.next() {
+        method
+    } else {
+        if ty == MsgType::Instantiate {
+            emit_error!(source.span(), "No instantiation message");
+        }
+        return None;
+    };
+
+    if let Some((obsolete, _)) = methods.next() {
+        emit_error!(
+            obsolete.span(), "More than one instantiation or migration message";
+            note = method.span() => "Instantiation/Migration message previously defined here"
+        );
+    }
+    Some((method, msg_attr))
 }

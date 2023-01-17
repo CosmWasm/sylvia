@@ -3,11 +3,13 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, ImplItem, ItemImpl, Pat, PatType, Type};
+use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Type};
 
+use crate::check_generics::CheckGenerics;
 use crate::crate_module;
-use crate::parser::{ContractMessageAttr, MsgAttr, MsgType};
-use crate::utils::extract_return_type;
+use crate::message::MsgField;
+use crate::parser::{parse_struct_message, MsgAttr, MsgType};
+use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
     pub name: &'a Ident,
@@ -23,11 +25,35 @@ pub struct MultitestHelpers<'a> {
     contract: &'a Type,
     is_trait: bool,
     is_migrate: bool,
+    source: &'a ItemImpl,
+    generics: &'a [&'a GenericParam],
 }
 
+// let interfaces: Vec<_> = source
+//     .attrs
+//     .iter()
+//     .filter(|attr| attr.path.is_ident("messages"))
+//     .filter_map(|attr| {
+//         let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+//             Ok(interface) => interface,
+//             Err(err) => {
+//                 emit_error!(attr.span(), err);
+//                 return None;
+//             }
+//         };
+//
+//         Some(interface)
+//     })
+//     .collect();
 impl<'a> MultitestHelpers<'a> {
-    pub fn new(source: &'a ItemImpl, is_trait: bool, contract_error: &'a Type) -> Self {
+    pub fn new(
+        source: &'a ItemImpl,
+        is_trait: bool,
+        contract_error: &'a Type,
+        generics: &'a [&'a GenericParam],
+    ) -> Self {
         let mut is_migrate = false;
+
         let messages: Vec<_> = source
             .items
             .iter()
@@ -90,23 +116,6 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
-        // let interfaces: Vec<_> = source
-        //     .attrs
-        //     .iter()
-        //     .filter(|attr| attr.path.is_ident("messages"))
-        //     .filter_map(|attr| {
-        //         let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-        //             Ok(interface) => interface,
-        //             Err(err) => {
-        //                 emit_error!(attr.span(), err);
-        //                 return None;
-        //             }
-        //         };
-        //
-        //         Some(interface)
-        //     })
-        //     .collect();
-
         let error_type = if is_trait {
             let error_type: Vec<_> = source
                 .items
@@ -120,7 +129,9 @@ impl<'a> MultitestHelpers<'a> {
                         let ty = &ty.ty;
                         let segments = match ty {
                             Type::Path(path) => &path.path.segments,
-                            _ => unreachable!(),
+                            _ => {
+                                unreachable!();
+                            }
                         };
                         assert!(!segments.is_empty());
 
@@ -143,15 +154,15 @@ impl<'a> MultitestHelpers<'a> {
             contract: &source.self_ty,
             is_trait,
             is_migrate,
+            source,
+            generics,
         }
     }
     pub fn emit(&self) -> TokenStream {
         let Self {
             messages,
             error_type,
-            contract,
-            is_trait,
-            is_migrate,
+            ..
         } = self;
         let sylvia = crate_module();
 
@@ -188,7 +199,7 @@ impl<'a> MultitestHelpers<'a> {
             }
         });
 
-        let impl_contract = self.generate_impl_contract();
+        let contract_block = self.generate_contract_helpers();
 
         quote! {
             #[cfg(test)]
@@ -216,7 +227,101 @@ impl<'a> MultitestHelpers<'a> {
                     }
                 }
 
-                #impl_contract
+                #contract_block
+            }
+        }
+    }
+
+    fn generate_contract_helpers(&self) -> TokenStream {
+        let Self {
+            error_type,
+            contract,
+            is_trait,
+            source,
+            generics,
+            ..
+        } = self;
+
+        if *is_trait {
+            return quote! {};
+        }
+
+        let sylvia = crate_module();
+
+        let mut generics_checker = CheckGenerics::new(generics);
+
+        let parsed = parse_struct_message(source, MsgType::Instantiate);
+        let Some((method,_)) = parsed else {
+            return quote! {};
+        };
+
+        let instantiate_fields = process_fields(&method.sig, &mut generics_checker);
+        let fields_names: Vec<_> = instantiate_fields.iter().map(MsgField::name).collect();
+        let fields = instantiate_fields.iter().map(MsgField::emit);
+
+        let impl_contract = self.generate_impl_contract();
+
+        let segments = match contract {
+            Type::Path(path) => &path.path.segments,
+            _ => {
+                unreachable!()
+            }
+        };
+        assert!(!segments.is_empty());
+
+        let contract = &segments[0].ident;
+        let code_id = Ident::new(&format!("{}CodeId", contract), contract.span());
+
+        quote! {
+            #impl_contract
+
+            pub struct #code_id <'app> {
+                code_id: u64,
+                app: &'app #sylvia ::multitest::App,
+            }
+
+            pub struct InstantiateProxy<'a, 'app> {
+                code_id: &'a #code_id <'app>,
+                funds: &'a [cosmwasm_std::Coin],
+                label: &'a str,
+                admin: Option<String>,
+            }
+
+            impl<'a, 'app> InstantiateProxy<'a, 'app> {
+                pub fn with_funds(self, funds: &'a [cosmwasm_std::Coin]) -> Self {
+                    Self { funds, ..self }
+                }
+
+                pub fn with_label(self, label: &'a str) -> Self {
+                    Self { label, ..self }
+                }
+
+                pub fn with_admin<'s>(self, admin: impl Into<Option<&'s str>>) -> Self {
+                    let admin = admin.into().map(str::to_owned);
+                    Self { admin, ..self }
+                }
+
+                #[track_caller]
+                pub fn call(self, sender: &str, #(#fields,)*) -> Result<Proxy<'app>, #error_type> {
+                    let msg = InstantiateMsg {#(#fields_names,)*};
+                    self.code_id
+                        .app
+                        .app
+                        .borrow_mut()
+                        .instantiate_contract(
+                            self.code_id.code_id,
+                            cosmwasm_std::Addr::unchecked(sender),
+                            &msg,
+                            self.funds,
+                            self.label,
+                            self.admin,
+                        )
+                        .map_err(|err| err.downcast().unwrap())
+                        .map(|addr| Proxy {
+                            contract_addr: addr,
+                            app: self.code_id.app,
+                        })
+                }
             }
         }
     }
@@ -236,73 +341,68 @@ impl<'a> MultitestHelpers<'a> {
                 anyhow::bail!("migrate not implemented for contract")
             }
         };
+        quote! {
+            impl cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
+                fn execute(
+                    &self,
+                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                    env: cosmwasm_std::Env,
+                    info: cosmwasm_std::MessageInfo,
+                    msg: Vec<u8>,
+                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                    cosmwasm_std::from_slice::<ContractExecMsg>(&msg)?
+                        .dispatch(self, (deps, env, info))
+                        .map_err(Into::into)
+                }
 
-        if self.is_trait {
-            quote! {}
-        } else {
-            quote! {
-                impl cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
-                    fn execute(
-                        &self,
-                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                        env: cosmwasm_std::Env,
-                        info: cosmwasm_std::MessageInfo,
-                        msg: Vec<u8>,
-                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                        cosmwasm_std::from_slice::<ContractExecMsg>(&msg)?
-                            .dispatch(self, (deps, env, info))
-                            .map_err(Into::into)
-                    }
+                fn instantiate(
+                    &self,
+                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                    env: cosmwasm_std::Env,
+                    info: cosmwasm_std::MessageInfo,
+                    msg: Vec<u8>,
+                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                    cosmwasm_std::from_slice::<InstantiateMsg>(&msg)?
+                        .dispatch(self, (deps, env, info))
+                        .map_err(Into::into)
+                }
 
-                    fn instantiate(
-                        &self,
-                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                        env: cosmwasm_std::Env,
-                        info: cosmwasm_std::MessageInfo,
-                        msg: Vec<u8>,
-                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                        cosmwasm_std::from_slice::<InstantiateMsg>(&msg)?
-                            .dispatch(self, (deps, env, info))
-                            .map_err(Into::into)
-                    }
+                fn query(
+                    &self,
+                    deps: cosmwasm_std::Deps<cosmwasm_std::Empty>,
+                    env: cosmwasm_std::Env,
+                    msg: Vec<u8>,
+                ) -> anyhow::Result<cosmwasm_std::Binary> {
+                    cosmwasm_std::from_slice::<ContractQueryMsg>(&msg)?
+                        .dispatch(self, (deps, env))
+                        .map_err(Into::into)
+                }
 
-                    fn query(
-                        &self,
-                        deps: cosmwasm_std::Deps<cosmwasm_std::Empty>,
-                        env: cosmwasm_std::Env,
-                        msg: Vec<u8>,
-                    ) -> anyhow::Result<cosmwasm_std::Binary> {
-                        cosmwasm_std::from_slice::<ContractQueryMsg>(&msg)?
-                            .dispatch(self, (deps, env))
-                            .map_err(Into::into)
-                    }
+                fn sudo(
+                    &self,
+                    _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                    _env: cosmwasm_std::Env,
+                    _msg: Vec<u8>,
+                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                    anyhow::bail!("sudo not implemented for contract")
+                }
 
-                    fn sudo(
-                        &self,
-                        _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                        _env: cosmwasm_std::Env,
-                        _msg: Vec<u8>,
-                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                        anyhow::bail!("sudo not implemented for contract")
-                    }
+                fn reply(
+                    &self,
+                    _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                    _env: cosmwasm_std::Env,
+                    _msg: cosmwasm_std::Reply,
+                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                    anyhow::bail!("reply not implemented for contract")
+                }
 
-                    fn reply(
-                        &self,
-                        _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                        _env: cosmwasm_std::Env,
-                        _msg: cosmwasm_std::Reply,
-                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                        anyhow::bail!("reply not implemented for contract")
-                    }
-
-                    fn migrate(
-                        &self,
-                        deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                        env: cosmwasm_std::Env,
-                        msg: Vec<u8>,
-                    ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                        #migrate_body
-                    }
+                fn migrate(
+                    &self,
+                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
+                    env: cosmwasm_std::Env,
+                    msg: Vec<u8>,
+                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                    #migrate_body
                 }
             }
         }
