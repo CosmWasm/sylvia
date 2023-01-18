@@ -1,4 +1,10 @@
+#[cfg(test)]
+use crate::allowances::multitest_utils::Cw20AllowancesProxy;
 use crate::error::ContractError;
+#[cfg(test)]
+use crate::marketing::multitest_utils::Cw20MarketingProxy;
+#[cfg(test)]
+use crate::minting::multitest_utils::Cw20MintingProxy;
 use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;

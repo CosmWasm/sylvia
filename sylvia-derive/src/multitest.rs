@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
@@ -181,6 +182,7 @@ impl<'a> MultitestHelpers<'a> {
             messages,
             error_type,
             proxy_name,
+            source,
             ..
         } = self;
         let sylvia = crate_module();
@@ -220,6 +222,38 @@ impl<'a> MultitestHelpers<'a> {
 
         let contract_block = self.generate_contract_helpers();
 
+        let interfaces: Vec<_> = source
+            .attrs
+            .iter()
+            .filter(|attr| attr.path.is_ident("messages"))
+            .filter_map(|attr| {
+                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(interface) => {
+                        let ContractMessageAttr { module, .. } = interface;
+                        assert!(!module.segments.is_empty());
+                        let module = &module.segments[0].ident;
+                        let method_name = Ident::new(&format!("{}_proxy", module), module.span());
+                        let proxy_name = Ident::new(
+                            &format!("{}Proxy", module.to_string().to_case(Case::UpperCamel)),
+                            module.span(),
+                        );
+
+                        quote! {
+                            pub fn #method_name (&self) -> #proxy_name <'app> {
+                                #proxy_name ::new(self.contract_addr.clone(), self.app)
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        return None;
+                    }
+                };
+
+                Some(interface)
+            })
+            .collect();
+
         quote! {
             #[cfg(test)]
             pub mod multitest_utils {
@@ -238,6 +272,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     #(#messages)*
 
+                    #(#interfaces)*
                 }
 
                 impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
@@ -283,7 +318,6 @@ impl<'a> MultitestHelpers<'a> {
         let impl_contract = self.generate_impl_contract();
 
         let code_id = Ident::new(&format!("{}CodeId", contract_name), contract.span());
-        let _interfaces = self.generate_interfaces();
 
         quote! {
             #impl_contract
@@ -419,29 +453,5 @@ impl<'a> MultitestHelpers<'a> {
                 }
             }
         }
-    }
-
-    fn generate_interfaces(&self) -> TokenStream {
-        let Self { source, .. } = self;
-        let _interfaces: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => interface,
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
-
-        // interfaces.iter().for_each(|f| println!("{:#?}", f));
-        //
-        quote! {}
     }
 }

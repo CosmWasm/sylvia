@@ -1,9 +1,10 @@
-use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw_multi_test::{App, Executor};
 use sylvia::contract;
 
-use super::receiver::{self, Receiver};
-
+use super::receiver;
+#[cfg(test)]
+use super::receiver::multitest_utils::ReceiverProxy;
 pub struct ReceiverContract {}
 
 #[contract]
@@ -15,20 +16,6 @@ impl ReceiverContract {
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())
-    }
-}
-
-impl Receiver for ReceiverContract {
-    type Error = StdError;
-
-    fn receive(
-        &self,
-        _ctx: (DepsMut, Env, MessageInfo),
-        _sender: String,
-        _amount: cosmwasm_std::Uint128,
-        _msg: cosmwasm_std::Binary,
-    ) -> Result<Response, Self::Error> {
-        Ok(Response::default())
     }
 }
 
