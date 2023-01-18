@@ -3,12 +3,12 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Type};
+use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Path, Type};
 
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgField;
-use crate::parser::{parse_struct_message, MsgAttr, MsgType};
+use crate::parser::{parse_struct_message, ContractMessageAttr, MsgAttr, MsgType};
 use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
@@ -27,24 +27,29 @@ pub struct MultitestHelpers<'a> {
     is_migrate: bool,
     source: &'a ItemImpl,
     generics: &'a [&'a GenericParam],
+    contract_name: &'a Ident,
+    proxy_name: Ident,
 }
 
-// let interfaces: Vec<_> = source
-//     .attrs
-//     .iter()
-//     .filter(|attr| attr.path.is_ident("messages"))
-//     .filter_map(|attr| {
-//         let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-//             Ok(interface) => interface,
-//             Err(err) => {
-//                 emit_error!(attr.span(), err);
-//                 return None;
-//             }
-//         };
-//
-//         Some(interface)
-//     })
-//     .collect();
+fn interface_name(source: &ItemImpl) -> &Ident {
+    let trait_name = &source.trait_;
+    let Some(trait_name) = trait_name else {unreachable!()};
+    let (_, Path { segments, .. }, _) = &trait_name;
+    assert!(!segments.is_empty());
+
+    &segments[0].ident
+}
+
+fn extract_contract_name(contract: &Type) -> &Ident {
+    let Type::Path(type_path) = contract  else {
+            unreachable!()
+        };
+    let segments = &type_path.path.segments;
+    assert!(!segments.is_empty());
+    let segment = &segments[0];
+    &segment.ident
+}
+
 impl<'a> MultitestHelpers<'a> {
     pub fn new(
         source: &'a ItemImpl,
@@ -148,20 +153,34 @@ impl<'a> MultitestHelpers<'a> {
             quote! {#contract_error}
         };
 
+        let contract = &source.self_ty;
+        let contract_name = extract_contract_name(contract);
+
+        let proxy_name = if is_trait {
+            let interface_name = interface_name(source);
+            Ident::new(&format!("{}Proxy", interface_name), interface_name.span())
+        } else {
+            Ident::new(&format!("{}Proxy", contract_name), contract_name.span())
+        };
+
         Self {
             messages,
             error_type,
-            contract: &source.self_ty,
+            contract,
             is_trait,
             is_migrate,
             source,
             generics,
+            contract_name,
+            proxy_name,
         }
     }
+
     pub fn emit(&self) -> TokenStream {
         let Self {
             messages,
             error_type,
+            proxy_name,
             ..
         } = self;
         let sylvia = crate_module();
@@ -207,23 +226,23 @@ impl<'a> MultitestHelpers<'a> {
                 use super::*;
                 use cw_multi_test::Executor;
 
-                pub struct Proxy<'app> {
+                pub struct #proxy_name <'app> {
                     pub contract_addr: cosmwasm_std::Addr,
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
-                impl<'app> Proxy<'app> {
+                impl<'app> #proxy_name <'app> {
                     pub fn new(contract_addr: cosmwasm_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        Proxy{ contract_addr, app }
+                        #proxy_name{ contract_addr, app }
                     }
 
                     #(#messages)*
 
                 }
 
-                impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for Proxy<'app> {
-                    fn from(input: (cosmwasm_std::Addr, &'app #sylvia ::multitest::App)) -> Proxy<'app> {
-                        Proxy::new(input.0, input.1)
+                impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
+                    fn from(input: (cosmwasm_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
+                        #proxy_name::new(input.0, input.1)
                     }
                 }
 
@@ -239,6 +258,8 @@ impl<'a> MultitestHelpers<'a> {
             is_trait,
             source,
             generics,
+            contract_name,
+            proxy_name,
             ..
         } = self;
 
@@ -261,16 +282,8 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
-        let segments = match contract {
-            Type::Path(path) => &path.path.segments,
-            _ => {
-                unreachable!()
-            }
-        };
-        assert!(!segments.is_empty());
-
-        let contract = &segments[0].ident;
-        let code_id = Ident::new(&format!("{}CodeId", contract), contract.span());
+        let code_id = Ident::new(&format!("{}CodeId", contract_name), contract.span());
+        let _interfaces = self.generate_interfaces();
 
         quote! {
             #impl_contract
@@ -302,7 +315,7 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str, #(#fields,)*) -> Result<Proxy<'app>, #error_type> {
+                pub fn call(self, sender: &str, #(#fields,)*) -> Result<#proxy_name<'app>, #error_type> {
                     let msg = InstantiateMsg {#(#fields_names,)*};
                     self.code_id
                         .app
@@ -317,7 +330,7 @@ impl<'a> MultitestHelpers<'a> {
                             self.admin,
                         )
                         .map_err(|err| err.downcast().unwrap())
-                        .map(|addr| Proxy {
+                        .map(|addr| #proxy_name {
                             contract_addr: addr,
                             app: self.code_id.app,
                         })
@@ -406,5 +419,29 @@ impl<'a> MultitestHelpers<'a> {
                 }
             }
         }
+    }
+
+    fn generate_interfaces(&self) -> TokenStream {
+        let Self { source, .. } = self;
+        let _interfaces: Vec<_> = source
+            .attrs
+            .iter()
+            .filter(|attr| attr.path.is_ident("messages"))
+            .filter_map(|attr| {
+                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(interface) => interface,
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        return None;
+                    }
+                };
+
+                Some(interface)
+            })
+            .collect();
+
+        // interfaces.iter().for_each(|f| println!("{:#?}", f));
+        //
+        quote! {}
     }
 }

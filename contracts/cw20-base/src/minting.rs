@@ -3,7 +3,9 @@ use crate::error::ContractError;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
+use sylvia::contract;
 
+#[contract]
 impl Cw20Minting for Cw20Base<'_> {
     type Error = ContractError;
 
