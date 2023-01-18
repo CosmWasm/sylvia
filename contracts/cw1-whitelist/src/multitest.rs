@@ -3,6 +3,7 @@ mod test {
     use cosmwasm_std::{to_binary, Addr, WasmMsg};
     use cw_multi_test::{App, Executor};
 
+    use crate::contract::multitest_utils::Cw1WhitelistContractCodeId;
     use crate::contract::{Cw1WhitelistContract, InstantiateMsg};
     use crate::responses::AdminListResponse;
     use crate::whitelist;
@@ -73,5 +74,33 @@ mod test {
                 ..
             } if !mutable
         );
+    }
+
+    #[test]
+    fn update_admins() {
+        let mut app = sylvia::multitest::App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
+
+        let owner = "owner";
+        let mut admins = vec!["admin1".to_owned(), "admin2".to_owned()];
+
+        let contract = code_id
+            .instantiate()
+            .call(owner, admins.clone(), true)
+            .unwrap();
+
+        let resp = contract.whitelist_proxy().admin_list().unwrap();
+        assert_eq!(resp.admins, admins);
+
+        admins.push("admin3".to_owned());
+        contract
+            .whitelist_proxy()
+            .update_admins(admins.clone())
+            .with_sender("admin1")
+            .call()
+            .unwrap();
+
+        let resp = contract.whitelist_proxy().admin_list().unwrap();
+        assert_eq!(resp.admins, admins);
     }
 }
