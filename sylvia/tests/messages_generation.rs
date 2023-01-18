@@ -36,6 +36,10 @@ pub struct Contract {}
 // Ignoring coverage of test implementation
 #[contract(module=contract, error=StdError)]
 impl Contract {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())

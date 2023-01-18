@@ -28,6 +28,9 @@ pub struct SomeContract {}
 
 #[contract(error=ContractError)]
 impl SomeContract {
+    pub fn new() -> Self {
+        Self {}
+    }
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())

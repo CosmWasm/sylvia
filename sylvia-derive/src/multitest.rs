@@ -289,7 +289,6 @@ impl<'a> MultitestHelpers<'a> {
     fn generate_contract_helpers(&self) -> TokenStream {
         let Self {
             error_type,
-            contract,
             is_trait,
             source,
             generics,
@@ -317,7 +316,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
-        let code_id = Ident::new(&format!("{}CodeId", contract_name), contract.span());
+        let code_id = Ident::new(&format!("{}CodeId", contract_name), contract_name.span());
 
         quote! {
             #impl_contract
@@ -325,6 +324,31 @@ impl<'a> MultitestHelpers<'a> {
             pub struct #code_id <'app> {
                 code_id: u64,
                 app: &'app #sylvia ::multitest::App,
+            }
+
+            impl<'app> #code_id <'app> {
+                pub fn store_code(app: &'app mut #sylvia ::multitest::App) -> Self {
+                    let code_id = app
+                        .app
+                        .borrow_mut()
+                        .store_code(Box::new(#contract_name ::new()));
+                    Self { code_id, app }
+                }
+
+                pub fn code_id(&self) -> u64 {
+                    self.code_id
+                }
+
+                pub fn instantiate(
+                    &self,
+                ) -> InstantiateProxy<'_, 'app> {
+                    InstantiateProxy {
+                        code_id: self,
+                        funds: &[],
+                        label: "Contract",
+                        admin: None,
+                    }
+                }
             }
 
             pub struct InstantiateProxy<'a, 'app> {
