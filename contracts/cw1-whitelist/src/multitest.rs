@@ -3,6 +3,7 @@ mod test {
     use cosmwasm_std::{to_binary, WasmMsg};
 
     use crate::contract::multitest_utils::Cw1WhitelistContractCodeId;
+    use crate::error::ContractError;
     use crate::responses::AdminListResponse;
     use crate::whitelist;
     use assert_matches::assert_matches;
@@ -32,6 +33,7 @@ mod test {
             msg: to_binary(&freeze).unwrap(),
             funds: vec![],
         };
+
         first_contract
             .cw1_proxy()
             .execute(vec![freeze.into()])
@@ -76,5 +78,43 @@ mod test {
 
         let resp = contract.whitelist_proxy().admin_list().unwrap();
         assert_eq!(resp.admins, admins);
+    }
+
+    #[test]
+    fn unathorized_admin_update() {
+        let mut app = sylvia::multitest::App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
+
+        let owner = "owner";
+
+        let contract = code_id
+            .instantiate()
+            .call(owner, vec![owner.to_string()], true)
+            .unwrap();
+
+        let err = contract
+            .whitelist_proxy()
+            .update_admins(vec![owner.to_owned(), "fake_admin".to_owned()])
+            .with_sender("fake_admin")
+            .call()
+            .unwrap_err();
+
+        assert_eq!(err, ContractError::Unauthorized {});
+
+        contract
+            .whitelist_proxy()
+            .freeze()
+            .with_sender(owner)
+            .call()
+            .unwrap();
+
+        let err = contract
+            .whitelist_proxy()
+            .update_admins(vec![owner.to_owned(), "admin".to_owned()])
+            .with_sender(owner)
+            .call()
+            .unwrap_err();
+
+        assert_eq!(err, ContractError::ContractFrozen {});
     }
 }
