@@ -1,71 +1,45 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{to_binary, Addr, WasmMsg};
-    use cw_multi_test::{App, Executor};
+    use cosmwasm_std::{to_binary, WasmMsg};
 
     use crate::contract::multitest_utils::Cw1WhitelistContractCodeId;
-    use crate::contract::{Cw1WhitelistContract, InstantiateMsg};
     use crate::responses::AdminListResponse;
     use crate::whitelist;
     use assert_matches::assert_matches;
 
     #[test]
     fn proxy_freeze_message() {
-        let mut app = App::default();
+        let mut app = sylvia::multitest::App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
 
-        let owner = Addr::unchecked("owner");
+        let owner = "owner";
 
-        let code_id = app.store_code(Box::new(Cw1WhitelistContract::new()));
-
-        let first_contract = app
-            .instantiate_contract(
-                code_id,
-                owner.clone(),
-                &InstantiateMsg {
-                    admins: vec![owner.to_string()],
-                    mutable: true,
-                },
-                &[],
-                "First contract",
-                None,
-            )
+        let first_contract = code_id
+            .instantiate()
+            .with_label("First contract")
+            .call(owner, vec![owner.to_owned()], true)
             .unwrap();
 
-        let second_contract = app
-            .instantiate_contract(
-                code_id,
-                owner.clone(),
-                &InstantiateMsg {
-                    admins: vec![first_contract.to_string()],
-                    mutable: true,
-                },
-                &[],
-                "Second contract",
-                None,
-            )
+        let second_contract = code_id
+            .instantiate()
+            .with_label("Second contract")
+            .call(owner, vec![first_contract.contract_addr.to_string()], true)
             .unwrap();
-        assert_ne!(second_contract, first_contract);
 
         let freeze = whitelist::ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
-            contract_addr: second_contract.to_string(),
+            contract_addr: second_contract.contract_addr.to_string(),
             msg: to_binary(&freeze).unwrap(),
             funds: vec![],
         };
-        app.execute_contract(
-            owner,
-            first_contract,
-            &cw1::ExecMsg::Execute {
-                msgs: vec![freeze.into()],
-            },
-            &[],
-        )
-        .unwrap();
-
-        let resp = app
-            .wrap()
-            .query_wasm_smart(second_contract, &whitelist::QueryMsg::AdminList {})
+        first_contract
+            .cw1_proxy()
+            .execute(vec![freeze.into()])
+            .with_sender(owner)
+            .call()
             .unwrap();
+
+        let resp = second_contract.whitelist_proxy().admin_list().unwrap();
 
         assert_matches!(
             resp,
