@@ -23,9 +23,9 @@ cw-multi-test = { version = "0.16", optional = true }
 cw-storage-plus = "1.0"
 cw-utils = "1.0"
 cw2 = "1.0"
-cw20-allowances = { path = "../cw20-allowances" }
-cw20-marketing = { path = "../cw20-marketing" }
-cw20-minting = { path = "../cw20-minting" }
+cw20-allowances = { path = "../../interfaces/cw20-allowances" }
+cw20-marketing = { path = "../../interfaces/cw20-marketing" }
+cw20-minting = { path = "../../interfaces/cw20-minting" }
 getrandom = { version = "0.2.8", features = ["js"] }
 semver = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
