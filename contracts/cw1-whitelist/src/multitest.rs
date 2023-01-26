@@ -100,7 +100,7 @@ mod test {
             .call()
             .unwrap_err();
 
-        assert_eq!(err, ContractError::Unauthorized {});
+        assert_eq!(err, ContractError::Unauthorized);
 
         contract
             .whitelist_proxy()
@@ -116,6 +116,6 @@ mod test {
             .call()
             .unwrap_err();
 
-        assert_eq!(err, ContractError::ContractFrozen {});
+        assert_eq!(err, ContractError::ContractFrozen);
     }
 }

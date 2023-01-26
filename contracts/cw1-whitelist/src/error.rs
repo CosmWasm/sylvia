@@ -7,8 +7,8 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("Contract is frozen")]
-    ContractFrozen {},
+    ContractFrozen,
 }
