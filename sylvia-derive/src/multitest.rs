@@ -127,11 +127,7 @@ impl<'a> MultitestHelpers<'a> {
                 .items
                 .iter()
                 .filter_map(|item| match item {
-                    ImplItem::Type(ty) => {
-                        if ty.ident != "Error" {
-                            return None;
-                        }
-
+                    ImplItem::Type(ty) if ty.ident == "Error" => {
                         let ty = &ty.ty;
                         let segments = match ty {
                             Type::Path(path) => &path.path.segments,
