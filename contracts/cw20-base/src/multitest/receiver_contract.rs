@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw_multi_test::{App, Executor};
-use sylvia::contract;
+use sylvia::{contract, schemars};
 
 use super::receiver;
 #[cfg(test)]

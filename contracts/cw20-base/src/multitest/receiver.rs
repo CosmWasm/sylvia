@@ -1,5 +1,5 @@
 use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response, StdError, Uint128};
-use sylvia::{contract, interface};
+use sylvia::{contract, interface, schemars};
 
 use super::receiver_contract::ReceiverContract;
 
