@@ -17,15 +17,15 @@ mod test {
         let owner = "owner";
 
         let first_contract = code_id
-            .instantiate()
+            .instantiate(vec![owner.to_owned()], true)
             .with_label("First contract")
-            .call(owner, vec![owner.to_owned()], true)
+            .call(owner)
             .unwrap();
 
         let second_contract = code_id
-            .instantiate()
+            .instantiate(vec![first_contract.contract_addr.to_string()], true)
             .with_label("Second contract")
-            .call(owner, vec![first_contract.contract_addr.to_string()], true)
+            .call(owner)
             .unwrap();
 
         let freeze = whitelist::ExecMsg::Freeze {};
@@ -62,8 +62,8 @@ mod test {
         let mut admins = vec!["admin1".to_owned(), "admin2".to_owned()];
 
         let contract = code_id
-            .instantiate()
-            .call(owner, admins.clone(), true)
+            .instantiate(admins.clone(), true)
+            .call(owner)
             .unwrap();
 
         let resp = contract.whitelist_proxy().admin_list().unwrap();
@@ -89,8 +89,8 @@ mod test {
         let owner = "owner";
 
         let contract = code_id
-            .instantiate()
-            .call(owner, vec![owner.to_string()], true)
+            .instantiate(vec![owner.to_string()], true)
+            .call(owner)
             .unwrap();
 
         let err = contract

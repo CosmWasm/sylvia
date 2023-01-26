@@ -340,13 +340,15 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 pub fn instantiate(
-                    &self,
+                    &self, #(#fields,)*
                 ) -> InstantiateProxy<'_, 'app> {
+                    let msg = InstantiateMsg {#(#fields_names,)*};
                     InstantiateProxy {
                         code_id: self,
                         funds: &[],
                         label: "Contract",
                         admin: None,
+                        msg,
                     }
                 }
             }
@@ -356,6 +358,7 @@ impl<'a> MultitestHelpers<'a> {
                 funds: &'a [cosmwasm_std::Coin],
                 label: &'a str,
                 admin: Option<String>,
+                msg: InstantiateMsg,
             }
 
             impl<'a, 'app> InstantiateProxy<'a, 'app> {
@@ -373,8 +376,7 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str, #(#fields,)*) -> Result<#proxy_name<'app>, #error_type> {
-                    let msg = InstantiateMsg {#(#fields_names,)*};
+                pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
                     self.code_id
                         .app
                         .app
@@ -382,7 +384,7 @@ impl<'a> MultitestHelpers<'a> {
                         .instantiate_contract(
                             self.code_id.code_id,
                             cosmwasm_std::Addr::unchecked(sender),
-                            &msg,
+                            &self.msg,
                             self.funds,
                             self.label,
                             self.admin,
