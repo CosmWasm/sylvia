@@ -7,10 +7,11 @@ mod test {
     use crate::responses::AdminListResponse;
     use crate::whitelist;
     use assert_matches::assert_matches;
+    use sylvia::multitest::App;
 
     #[test]
     fn proxy_freeze_message() {
-        let mut app = sylvia::multitest::App::default();
+        let mut app = App::default();
         let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
 
         let owner = "owner";
@@ -54,7 +55,7 @@ mod test {
 
     #[test]
     fn update_admins() {
-        let mut app = sylvia::multitest::App::default();
+        let mut app = App::default();
         let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
 
         let owner = "owner";
@@ -82,7 +83,7 @@ mod test {
 
     #[test]
     fn unathorized_admin_update() {
-        let mut app = sylvia::multitest::App::default();
+        let mut app = App::default();
         let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
 
         let owner = "owner";
