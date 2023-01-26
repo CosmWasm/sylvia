@@ -12,7 +12,7 @@ homepage = "https://cosmwasm.com"
 cosmwasm-std = { version = "1.1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-sylvia = { version = "0.2.2", path = "../../sylvia", features = ["mt"] }
+sylvia = { version = "0.2.2", path = "../../sylvia" }
 
 [dev-dependencies]
 anyhow = "1.0"

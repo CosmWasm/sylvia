@@ -19,7 +19,7 @@ tests = ["library", "cw-multi-test", "anyhow"]
 cosmwasm-std = { version = "1.1", features = ["staking"] }
 cosmwasm-schema = "1.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-sylvia = { version = "0.2.2", path = "../../sylvia", features = ["mt"] }
+sylvia = { version = "0.2.2", path = "../../sylvia" }
 cw1 = { path = "../cw1" }
 cw-storage-plus = "1.0"
 thiserror = { version = "1.0" }
