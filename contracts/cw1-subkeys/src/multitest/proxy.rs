@@ -2,7 +2,6 @@ use cosmwasm_std::{Addr, Coin, CosmosMsg, StdResult};
 use cw_multi_test::{App, Executor};
 use cw_utils::Expiration;
 
-use crate::contract::multitest_utils;
 use crate::contract::{Cw1SubkeysContract, ExecMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
 use crate::responses::{AllAllowancesResponse, AllPermissionsResponse};
