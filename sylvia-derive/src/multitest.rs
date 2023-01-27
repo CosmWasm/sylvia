@@ -14,7 +14,7 @@ use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
     pub name: &'a Ident,
-    pub params: Vec<&'a FnArg>,
+    pub params: Vec<TokenStream>,
     pub arguments: Vec<&'a Ident>,
     pub msg_ty: MsgType,
     pub return_type: TokenStream,
@@ -95,9 +95,26 @@ impl<'a> MultitestHelpers<'a> {
                     };
 
                     let name = &sig.ident;
-                    let params: Vec<_> = sig.inputs.iter().skip(2).collect();
-                    let arguments: Vec<_> = params
+                    let params: Vec<_> = sig
+                        .inputs
                         .iter()
+                        .skip(2)
+                        .filter_map(|arg| match arg {
+                            FnArg::Typed(ty) => {
+                                let name = match ty.pat.as_ref() {
+                                    Pat::Ident(ident) => &ident.ident,
+                                    _ => return None,
+                                };
+                                let ty = &ty.ty;
+                                Some(quote! {#name : #ty})
+                            }
+                            _ => None,
+                        })
+                        .collect();
+                    let arguments: Vec<_> = sig
+                        .inputs
+                        .iter()
+                        .skip(2)
                         .filter_map(|arg| match arg {
                             FnArg::Typed(item) => {
                                 let PatType { pat, .. } = item;

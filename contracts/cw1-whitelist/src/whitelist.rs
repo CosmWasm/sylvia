@@ -45,7 +45,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
     fn update_admins(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
-        #[allow(unused_mut)] mut admins: Vec<String>,
+        mut admins: Vec<String>,
     ) -> Result<Response, ContractError> {
         let (deps, _, info) = ctx;
 
