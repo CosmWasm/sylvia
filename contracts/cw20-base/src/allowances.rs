@@ -8,6 +8,7 @@ use cw20_allowances::responses::{
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
+use sylvia::contract;
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
@@ -17,6 +18,7 @@ use crate::responses::Cw20ReceiveMsg;
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
+#[contract]
 impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;
 

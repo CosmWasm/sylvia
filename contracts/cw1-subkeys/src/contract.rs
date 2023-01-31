@@ -9,11 +9,15 @@ use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
 use sylvia::{contract, schemars};
 
+#[cfg(test)]
+use crate::cw1::multitest_utils::Cw1Proxy;
 use crate::error::ContractError;
 use crate::responses::{
     AllAllowancesResponse, AllPermissionsResponse, AllowanceInfo, PermissionsInfo,
 };
 use crate::state::{Allowance, Permissions};
+#[cfg(test)]
+use crate::whitelist::multitest_utils::WhitelistProxy;
 
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -28,7 +32,7 @@ pub struct Cw1SubkeysContract<'a> {
     pub(crate) allowances: Map<'static, &'a Addr, Allowance>,
 }
 
-#[contract]
+#[contract(error=ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {

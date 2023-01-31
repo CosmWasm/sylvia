@@ -1,5 +1,9 @@
+#[cfg(test)]
+use crate::cw1::multitest_utils::Cw1Proxy;
 use crate::error::ContractError;
 use crate::whitelist;
+#[cfg(test)]
+use crate::whitelist::multitest_utils::WhitelistProxy;
 use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 
 use cw2::set_contract_version;
@@ -14,7 +18,7 @@ pub struct Cw1WhitelistContract<'a> {
     pub(crate) mutable: Item<'static, bool>,
 }
 
-#[contract]
+#[contract(error=ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {

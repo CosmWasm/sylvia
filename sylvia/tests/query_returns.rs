@@ -26,8 +26,12 @@ pub trait Interface {
 
 pub struct SomeContract {}
 
-#[contract]
+#[contract(error=ContractError)]
 impl SomeContract {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {}
+    }
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
         Ok(Response::new())

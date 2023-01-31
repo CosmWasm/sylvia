@@ -1,6 +1,8 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
-use crate::parser::{ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType};
+use crate::parser::{
+    parse_struct_message, ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
+};
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
 use convert_case::{Case, Casing};
@@ -9,9 +11,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
-
 use syn::spanned::Spanned;
-
 use syn::visit::Visit;
 use syn::{
     parse_quote, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, ReturnType,
@@ -41,41 +41,11 @@ impl<'a> StructMessage<'a> {
         let mut generics_checker = CheckGenerics::new(generics);
 
         let contract_type = &source.self_ty;
-        let mut methods = source.items.iter().filter_map(|item| match item {
-            ImplItem::Method(method) => {
-                let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                    Ok(attr) => attr,
-                    Err(err) => {
-                        emit_error!(method.span(), err);
-                        return None;
-                    }
-                };
 
-                if attr == ty {
-                    Some((method, attr))
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        });
-
-        let (method, msg_attr) = if let Some(method) = methods.next() {
-            method
-        } else {
-            if ty == MsgType::Instantiate {
-                emit_error!(source.span(), "No instantiation message");
-            }
+        let parsed = parse_struct_message(source, ty);
+        let Some((method, msg_attr)) = parsed else {
             return None;
         };
-
-        if let Some((obsolete, _)) = methods.next() {
-            emit_error!(
-                obsolete.span(), "More than one instantiation or migration message";
-                note = method.span() => "Instantiation/Migration message previously defined here"
-            );
-        }
 
         let function_name = &method.sig.ident;
         let fields = process_fields(&method.sig, &mut generics_checker);
@@ -413,6 +383,7 @@ impl<'a> ContractEnumMessage<'a> {
             .collect();
         msgs.sort();
         let msgs_cnt = msgs.len();
+        let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
 
         let ctx_type = msg_ty.emit_ctx_type();
@@ -452,6 +423,8 @@ impl<'a> ContractEnumMessage<'a> {
                 pub const fn messages() -> [&'static str; #msgs_cnt] {
                     [#(#msgs,)*]
                 }
+
+                #(#variants_constructors)*
             }
         }
     }
@@ -551,7 +524,7 @@ impl<'a> MsgVariant<'a> {
             .map(|(field, num_field)| quote!(#field : #num_field));
 
         match msg_attr {
-            Exec | Migrate => quote! {
+            Exec => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)
@@ -561,8 +534,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => cosmwasm_std::to_binary(&contract.#function_name(ctx.into(), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate => {
-                emit_error!(name.span(), "Instantiation messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate => {
+                emit_error!(name.span(), "Instantiation and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }

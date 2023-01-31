@@ -41,6 +41,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
+    #[msg(exec)]
     fn update_admins(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -102,6 +103,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
+    #[msg(query)]
     fn admin_list(&self, ctx: (Deps, Env)) -> StdResult<AdminListResponse> {
         let (deps, _) = ctx;
 
