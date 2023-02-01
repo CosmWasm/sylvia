@@ -1,6 +1,6 @@
 [package]
 name = "cw1-subkeys"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 
 [features]
