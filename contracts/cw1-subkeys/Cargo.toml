@@ -19,10 +19,10 @@ cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = "1.0"
 getrandom = { version = "0.2.8", features = ["js"] }
 serde = { version = "1.0.152", features = ["derive"] }
-sylvia = { version = "0.2.2", path = "../../sylvia" }
+sylvia = { version = "0.3.0", path = "../../sylvia" }
 thiserror = "1.0.38"
 
 [dev-dependencies]
 anyhow = "1.0.68"
 cw-multi-test = "0.16"
-sylvia = { version = "0.2.2", path = "../../sylvia", features = ["mt"] }
+sylvia = { version = "0.3.0", path = "../../sylvia", features = ["mt"] }

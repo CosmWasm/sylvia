@@ -26,6 +26,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
+name = "autocfg"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
+
+[[package]]
 name = "base16ct"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -108,9 +114,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-crypto"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb56fffc2233212e9546df66e01267277173d55f6237ab939690ef2c5cfd50c2"
+checksum = "7fecd74d3a0041114110d1260f77fcb644c5d2403549b37096c44f0e643a5177"
 dependencies = [
  "digest 0.10.6",
  "ed25519-zebra",
@@ -121,18 +127,18 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-derive"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e26a78e202d602a23fd5d13dff898732814ebe7a8bde20f1bf71eb0209d56d56"
+checksum = "d5abeeb891e6d0098402e4d3d042f90451db52651d2fe14b170e69a1dd3e4115"
 dependencies = [
  "syn",
 ]
 
 [[package]]
 name = "cosmwasm-schema"
-version = "1.1.9"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04135971e2c3b867eb793ca4e832543c077dbf72edaef7672699190f8fcdb619"
+checksum = "9118e36843df6648fd0a626c46438f87038f296ec750cef3832cafc483c483f9"
 dependencies = [
  "cosmwasm-schema-derive",
  "schemars",
@@ -143,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-schema-derive"
-version = "1.1.9"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a06c8f516a13ae481016aa35f0b5c4652459e8aee65b15b6fb51547a07cea5a0"
+checksum = "78d6fc9854ac14e46cb69b0f396547893f93d2847aef975950ebbe73342324f3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -154,9 +160,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-std"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b50f4deaed6196047a3ceec9bc23e85d4292b73442d77af63723842d8b6049d"
+checksum = "5034c772c1369b160731aa00bb81f93733ab2884928edd8d588733d607ac5af4"
 dependencies = [
  "base64",
  "cosmwasm-crypto",
@@ -280,7 +286,7 @@ dependencies = [
 
 [[package]]
 name = "cw1"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -292,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "cw1-subkeys"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -311,7 +317,7 @@ dependencies = [
 
 [[package]]
 name = "cw1-whitelist"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -342,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "cw20-allowances"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -355,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "cw20-base"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -377,7 +383,7 @@ dependencies = [
 
 [[package]]
 name = "cw20-marketing"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -389,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "cw20-minting"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -401,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "cw4"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -586,6 +592,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexmap"
+version = "1.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+dependencies = [
+ "autocfg",
+ "hashbrown",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -660,6 +676,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "memchr"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+
+[[package]]
+name = "nom8"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae01545c9c7fc4486ab7debaf2aad7003ac19431791868fb2e8066df97fad2f8"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -683,13 +714,12 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "1.2.1"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eda0fc3b0fb7c975631757e14d9049da17374063edb6ebbcbc54d880d4fe94e9"
+checksum = "66618389e4ec1c7afe67d51a9bf34ff9236480f8d51e7489b7d5ab0303c13f34"
 dependencies = [
  "once_cell",
- "thiserror",
- "toml",
+ "toml_edit",
 ]
 
 [[package]]
@@ -718,9 +748,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.49"
+version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
+checksum = "6ef7d57beacfaf2d8aee5937dab7b7f28de3cb8b1828479bb5de2a7106f2bae2"
 dependencies = [
  "unicode-ident",
 ]
@@ -951,7 +981,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "sylvia"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -968,7 +998,7 @@ dependencies = [
 
 [[package]]
 name = "sylvia-derive"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "proc-macro-crate",
@@ -1022,12 +1052,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.5.10"
+name = "toml_datetime"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1333c76748e868a4d9d1017b5ab53171dfd095f70c712fdb4653a406547f598f"
+checksum = "4553f467ac8e3d374bc9a177a26801e5d0f9b211aa1673fb137a403afd1c9cf5"
+
+[[package]]
+name = "toml_edit"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c59d8dd7d0dcbc6428bf7aa2f0e823e26e43b3c9aca15bbc9475d23e5fa12b"
 dependencies = [
- "serde",
+ "indexmap",
+ "nom8",
+ "toml_datetime",
 ]
 
 [[package]]
