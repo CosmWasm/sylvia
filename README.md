@@ -9,6 +9,8 @@ building your CosmWasm Smart Contracts. Find your way into the forest of Cosmos 
 provide you toolset, so instead of focusing on the raw structure of your contract, you can create
 them in proper and idiomatic Rust and then just let cargo make sure that they are sound.
 
+Learn more about sylvia in the book: https://cosmwasm.github.io/sylvia-book/index.html
+
 ## The approach
 
 [CosmWasm](https://cosmwasm.com/) ecosystem core provides the base building blocks for smart
@@ -35,3 +37,4 @@ queries and sudo messages. All messages can be generic, so creating a contract e
 across several different CosmWasm blockchains is even possible.
 
 For now, only messages dispatching are generated - queriers utilities and MT helpers are on the TODO list, so expect them soon.
+
