@@ -9,7 +9,7 @@ building your CosmWasm Smart Contracts. Find your way into the forest of Cosmos 
 provide you toolset, so instead of focusing on the raw structure of your contract, you can create
 them in proper and idiomatic Rust and then just let cargo make sure that they are sound.
 
-Learn more about sylvia in the book: https://cosmwasm.github.io/sylvia-book/index.html
+Learn more about sylvia in [the book](https://cosmwasm.github.io/sylvia-book/index.html)
 
 ## The approach
 
