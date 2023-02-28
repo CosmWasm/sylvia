@@ -1,6 +1,6 @@
 [package]
 name = "sylvia-derive"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
 edition = "2021"
 description = "Framework for generating trait based CosmWasm smart contracts - derives"
@@ -26,10 +26,10 @@ syn = { version = "1.0.107", features = [
   "extra-traits",
 ] }
 quote = "1.0.23"
-proc-macro2 = "1.0.49"
+proc-macro2 = "1.0.50"
 convert_case = "0.6.0"
 proc-macro-error = "1.0.4"
-proc-macro-crate = "1.2.1"
+proc-macro-crate = "1.3.0"
 
 [dev-dependencies]
 sylvia-runtime-macros = "0.6.0"

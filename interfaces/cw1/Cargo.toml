@@ -1,6 +1,6 @@
 [package]
 name = "cw1"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
 edition = "2021"
 description = "Coverage of cw1 sylvia message generation."
@@ -9,10 +9,10 @@ repository = "https://github.com/CosmWasm/sylvia"
 homepage = "https://cosmwasm.com"
 
 [dependencies]
-cosmwasm-std = { version = "1.1", features = ["staking"] }
-cosmwasm-schema = "1.1"
+cosmwasm-std = { version = "1.2", features = ["staking"] }
+cosmwasm-schema = "1.2"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-sylvia = { version = "0.2.2", path = "../../sylvia" }
+sylvia = { version = "0.3.0", path = "../../sylvia" }
 
 [dev-dependencies]
 anyhow = "1.0"
