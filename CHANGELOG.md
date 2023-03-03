@@ -4,7 +4,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[0.2.2\] - 2023-02-01
+## \[0.3.1\] - 2023-03-03
+
+- Slight improvement the invalid message received error
+
+## \[0.3.0\] - 2023-02-01
 
 - Interfaces moved to separate directory to avoid errors on workspace optimizer
 - `mt` feature added. Enabling it will:

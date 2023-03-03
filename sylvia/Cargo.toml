@@ -1,6 +1,6 @@
 [package]
 name = "sylvia"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
 edition = "2021"
 description = "Framework for generating trait based CosmWasm smart contracts"
@@ -14,12 +14,13 @@ categories = ["api-bindings", "wasm"]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test"]
 
 [dependencies]
-sylvia-derive = { version = "0.3.0", path = "../sylvia-derive" }
+sylvia-derive = { version = "0.3.1", path = "../sylvia-derive" }
 cosmwasm-std = { version = "1.2", features = ["staking"] }
 cosmwasm-schema = "1.2"
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-cw-value = "0.7.0"
+serde-json-wasm = "0.5.0"
 konst = "0.3"
 cw-multi-test = { version = "0.16.2", optional = true }
 
