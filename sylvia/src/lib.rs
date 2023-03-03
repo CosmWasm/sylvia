@@ -10,4 +10,5 @@ pub use cosmwasm_std as cw_std;
 pub use schemars;
 pub use serde;
 pub use serde_cw_value as serde_value;
+pub use serde_json_wasm as serde_json;
 pub use sylvia_derive::{contract, interface};

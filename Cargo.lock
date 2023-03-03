@@ -981,7 +981,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "sylvia"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -992,13 +992,14 @@ dependencies = [
  "schemars",
  "serde",
  "serde-cw-value",
+ "serde-json-wasm",
  "sylvia-derive",
  "thiserror",
 ]
 
 [[package]]
 name = "sylvia-derive"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "convert_case",
  "proc-macro-crate",
