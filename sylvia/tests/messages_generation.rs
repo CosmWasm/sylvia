@@ -56,14 +56,13 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[allow(unused_variables)]
     #[msg(exec)]
     fn argumented_execution(
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
-        addr: Addr,
-        #[serde(default)] coef: Decimal,
-        #[serde(default)] desc: String,
+        _addr: Addr,
+        #[serde(default)] _coef: Decimal,
+        #[serde(default)] _desc: String,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -73,9 +72,8 @@ impl Contract {
         Ok(QueryResult {})
     }
 
-    #[allow(unused_variables)]
     #[msg(query)]
-    fn argumented_query(&self, _ctx: (Deps, Env), user: Addr) -> StdResult<QueryResult> {
+    fn argumented_query(&self, _ctx: (Deps, Env), _user: Addr) -> StdResult<QueryResult> {
         Ok(QueryResult {})
     }
 }
@@ -109,13 +107,13 @@ fn interface_messages_constructible() {
 fn contract_messages_constructible() {
     let no_args_exec = contract::ExecMsg::NoArgsExecution {};
     let _argumented_exec = contract::ExecMsg::ArgumentedExecution {
-        addr: Addr::unchecked("owner"),
-        coef: Decimal::percent(10),
-        desc: "Some description".to_owned(),
+        _addr: Addr::unchecked("owner"),
+        _coef: Decimal::percent(10),
+        _desc: "Some description".to_owned(),
     };
     let no_args_query = contract::QueryMsg::NoArgsQuery {};
     let _argumented_query = contract::QueryMsg::ArgumentedQuery {
-        user: Addr::unchecked("owner"),
+        _user: Addr::unchecked("owner"),
     };
     let _ = contract::InstantiateMsg {};
     let _ = contract::MigrateMsg {};
