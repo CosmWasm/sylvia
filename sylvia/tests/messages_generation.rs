@@ -61,7 +61,7 @@ impl Contract {
     fn argumented_execution(
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
-        #[serde(default)] addr: Addr,
+        addr: Addr,
         #[serde(default)] coef: Decimal,
         #[serde(default)] desc: String,
     ) -> StdResult<Response> {
