@@ -1,23 +1,44 @@
 use syn::fold::{self, Fold};
-use syn::{ImplItemMethod, ItemImpl, TraitItemMethod};
+use syn::punctuated::Punctuated;
+use syn::{FnArg, ImplItemMethod, ItemImpl, PatType, Receiver, Signature, Token, TraitItemMethod};
 
 /// Utility for stripping all attributes from input before it is emitted
 pub struct StripInput;
+
+fn remove_input_attr(inputs: Punctuated<FnArg, Token![,]>) -> Punctuated<FnArg, Token![,]> {
+    inputs
+        .into_iter()
+        .map(|input| match input {
+            syn::FnArg::Receiver(rec) if !rec.attrs.is_empty() => {
+                let rec = Receiver {
+                    attrs: vec![],
+                    ..rec
+                };
+                syn::FnArg::Receiver(rec)
+            }
+            syn::FnArg::Typed(ty) if !ty.attrs.is_empty() => {
+                let ty = PatType {
+                    attrs: vec![],
+                    ..ty
+                };
+                syn::FnArg::Typed(ty)
+            }
+            _ => input,
+        })
+        .collect()
+}
 
 impl Fold for StripInput {
     fn fold_trait_item_method(&mut self, i: TraitItemMethod) -> TraitItemMethod {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !attr.path.is_ident("msg"));
+            .filter(|attr| !attr.path.is_ident("msg"))
+            .collect();
 
-        fold::fold_trait_item_method(
-            self,
-            TraitItemMethod {
-                attrs: attrs.collect(),
-                ..i
-            },
-        )
+        let inputs = remove_input_attr(i.sig.inputs);
+        let sig = Signature { inputs, ..i.sig };
+        fold::fold_trait_item_method(self, TraitItemMethod { attrs, sig, ..i })
     }
 
     fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
@@ -27,7 +48,9 @@ impl Fold for StripInput {
             .filter(|attr| !attr.path.is_ident("msg"))
             .collect();
 
-        fold::fold_impl_item_method(self, ImplItemMethod { attrs, ..i })
+        let inputs = remove_input_attr(i.sig.inputs);
+        let sig = Signature { inputs, ..i.sig };
+        fold::fold_impl_item_method(self, ImplItemMethod { attrs, sig, ..i })
     }
 
     fn fold_item_impl(&mut self, i: ItemImpl) -> ItemImpl {

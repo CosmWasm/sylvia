@@ -20,7 +20,7 @@ pub trait Interface {
         ctx: (DepsMut, Env, MessageInfo),
         addr: Addr,
         coef: Decimal,
-        desc: String,
+        #[serde(default)] desc: String,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
@@ -61,9 +61,9 @@ impl Contract {
     fn argumented_execution(
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
-        addr: Addr,
-        coef: Decimal,
-        desc: String,
+        #[serde(default)] addr: Addr,
+        #[serde(default)] coef: Decimal,
+        #[serde(default)] desc: String,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
