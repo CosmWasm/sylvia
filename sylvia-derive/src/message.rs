@@ -267,7 +267,7 @@ impl<'a> EnumMessage<'a> {
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => quote! {
                 #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia ::cosmwasm_schema::QueryResponses)]
                 #[serde(rename_all="snake_case")]
                 pub enum #unique_enum_name #generics #where_clause {
                     #(#variants,)*
@@ -393,7 +393,7 @@ impl<'a> ContractEnumMessage<'a> {
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => quote! {
                 #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia ::cosmwasm_schema::QueryResponses)]
                 #[serde(rename_all="snake_case")]
                 pub enum #name {
                     #(#variants,)*
@@ -719,7 +719,8 @@ impl<'a> GlueMessage<'a> {
             quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, ctx) }
         });
 
-        let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
+        let dispatch_arm =
+            quote! {#contract_name :: #contract (msg) => msg.dispatch(contract, ctx)};
 
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr {
@@ -765,7 +766,7 @@ impl<'a> GlueMessage<'a> {
             "QueryMsg" => {
                 quote! {
                     #[cfg(not(target_arch = "wasm32"))]
-                    impl cosmwasm_schema::QueryResponses for #contract_name {
+                    impl #sylvia ::cosmwasm_schema::QueryResponses for #contract_name {
                         fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                             let responses = [#(#response_schemas),*];
                             responses.into_iter().flatten().collect()

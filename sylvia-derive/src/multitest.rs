@@ -59,6 +59,7 @@ impl<'a> MultitestHelpers<'a> {
         generics: &'a [&'a GenericParam],
     ) -> Self {
         let mut is_migrate = false;
+        let sylvia = crate_module();
 
         let messages: Vec<_> = source
             .items
@@ -91,7 +92,7 @@ impl<'a> MultitestHelpers<'a> {
                             }
                         }
                     } else {
-                        quote! { cw_multi_test::AppResponse }
+                        quote! { #sylvia ::cw_multi_test::AppResponse }
                     };
 
                     let name = &sig.ident;
@@ -219,7 +220,7 @@ impl<'a> MultitestHelpers<'a> {
                 }
             } else {
                 quote! {
-                    pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                    pub fn #name (&self, #(#params,)* ) -> anyhow::Result<#return_type, #error_type> {
                         let msg = QueryMsg:: #name ( #(#arguments),* );
 
                         self.app
@@ -389,7 +390,7 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
+                pub fn call(self, sender: &str) -> anyhow::Result<#proxy_name<'app>, #error_type> {
                     self.code_id
                         .app
                         .app
@@ -413,6 +414,7 @@ impl<'a> MultitestHelpers<'a> {
     }
 
     fn generate_impl_contract(&self) -> TokenStream {
+        let sylvia = crate_module();
         let contract = &self.contract;
 
         // MigrateMsg is not generated all the time in contrary to Exec, Query and Instantiate.
@@ -428,7 +430,7 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
         quote! {
-            impl cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
+            impl #sylvia ::cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
                 fn execute(
                     &self,
                     deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
