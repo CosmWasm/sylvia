@@ -99,16 +99,16 @@ impl<'a> ImplInput<'a> {
 
     pub fn process(&self) -> TokenStream {
         let is_trait = self.item.trait_.is_some();
-        let multitest_helpers =
+
+        let multitest_helpers = if cfg!(feature = "mt") {
             MultitestHelpers::new(self.item, is_trait, &self.attributes.error, &self.generics)
-                .emit();
+                .emit()
+        } else {
+            quote! {}
+        };
 
         if is_trait {
-            if cfg!(feature = "mt") {
-                return multitest_helpers;
-            } else {
-                return quote! {};
-            };
+            return multitest_helpers;
         }
 
         let messages = self.emit_messages();

@@ -21,7 +21,7 @@ pub trait Interface {
     type Error: From<StdError>;
 
     #[msg(query, resp=QueryResponse)]
-    fn query(&self, ctx: (Deps, Env)) -> QueryResult<Self::Error>;
+    fn query(&self, ctx: (Deps, Env), #[serde(default)] name: String) -> QueryResult<Self::Error>;
 }
 
 pub struct SomeContract {}
@@ -38,7 +38,11 @@ impl SomeContract {
     }
 
     #[msg(query, resp=QueryResponse)]
-    fn contract_query(&self, _ctx: (Deps, Env)) -> QueryResult<ContractError> {
+    fn contract_query(
+        &self,
+        _ctx: (Deps, Env),
+        #[serde(default)] _name: String,
+    ) -> QueryResult<ContractError> {
         Ok(QueryResponse {})
     }
 }
@@ -49,11 +53,15 @@ mod tests {
 
     #[test]
     fn generate_interface_query() {
-        let _ = msg::InterfaceQueryMsg::Query {};
+        let _ = msg::InterfaceQueryMsg::Query {
+            name: "some_name".to_owned(),
+        };
     }
 
     #[test]
     fn generate_contract_query() {
-        let _ = QueryMsg::ContractQuery {};
+        let _ = QueryMsg::ContractQuery {
+            _name: "some_name".to_owned(),
+        };
     }
 }

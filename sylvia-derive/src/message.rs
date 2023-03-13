@@ -14,8 +14,8 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, ReturnType,
-    Signature, TraitItem, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
+    ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -567,6 +567,7 @@ impl<'a> MsgVariant<'a> {
 pub struct MsgField<'a> {
     name: &'a Ident,
     ty: &'a Type,
+    attrs: &'a Vec<Attribute>,
 }
 
 impl<'a> MsgField<'a> {
@@ -597,16 +598,18 @@ impl<'a> MsgField<'a> {
         }?;
 
         let ty = &item.ty;
+        let attrs = &item.attrs;
         generics_checker.visit_type(ty);
 
-        Some(Self { name, ty })
+        Some(Self { name, ty, attrs })
     }
 
     /// Emits message field
     pub fn emit(&self) -> TokenStream {
-        let Self { name, ty } = self;
+        let Self { name, ty, attrs } = self;
 
         quote! {
+            #(#attrs)*
             #name: #ty
         }
     }
