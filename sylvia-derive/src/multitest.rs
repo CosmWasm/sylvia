@@ -308,6 +308,7 @@ impl<'a> MultitestHelpers<'a> {
             generics,
             contract_name,
             proxy_name,
+            contract,
             ..
         } = self;
 
@@ -338,6 +339,21 @@ impl<'a> MultitestHelpers<'a> {
             pub struct #code_id <'app> {
                 code_id: u64,
                 app: &'app #sylvia ::multitest::App,
+            }
+
+            impl<'app> #sylvia ::multitest::ContractCodeId<'app> for #code_id <'app> {
+                fn store_code(app: &'app mut #sylvia ::multitest::App) -> #code_id <'app> {
+                    Self::store_code(app)
+                }
+            }
+
+            impl<'app> #sylvia ::multitest::Multitest<'app> for #contract {
+                type CodeId = #code_id <'app>;
+                type Contract = #proxy_name <'app>;
+
+                fn store_code(app: &'app mut #sylvia ::multitest::App) -> Self::CodeId {
+                    Self::CodeId::store_code(app)
+                }
             }
 
             impl<'app> #code_id <'app> {
