@@ -197,6 +197,9 @@ impl<'a> MultitestHelpers<'a> {
             error_type,
             proxy_name,
             source,
+            is_trait,
+            contract,
+            is_migrate,
             ..
         } = self;
         let sylvia = crate_module();
@@ -268,7 +271,28 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
+        let expose_types = if *is_trait {
+            quote! {}
+        } else {
+            let migrate_msg = if *is_migrate {
+                quote! {MigrateMsg}
+            } else {
+                quote! {#sylvia ::cw_std::Empty}
+            };
+            quote! {
+                impl #sylvia ::multitest::Contract for #contract {
+                    type InstantiateMsg = InstantiateMsg;
+                    type ExecMsg = ContractExecMsg;
+                    type QueryMsg = ContractQueryMsg;
+                    type MigrationMsg = #migrate_msg ;
+                }
+
+            }
+        };
+
         quote! {
+            #expose_types
+
             #[cfg(test)]
             pub mod multitest_utils {
                 use super::*;
