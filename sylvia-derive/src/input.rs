@@ -4,7 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
-use crate::multitest::MultitestHelpers;
+use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
@@ -48,6 +48,7 @@ impl<'a> TraitInput<'a> {
 
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
+        let multitest_helpers = self.emit_helpers();
 
         if let Some(module) = &self.attributes.module {
             quote! {
@@ -55,11 +56,21 @@ impl<'a> TraitInput<'a> {
                     use super::*;
 
                     #messages
+
+                    #multitest_helpers
                 }
             }
         } else {
-            messages
+            quote! {
+                #messages
+                #multitest_helpers
+            }
         }
+    }
+
+    fn emit_helpers(&self) -> TokenStream {
+        let multitest_helpers = TraitMultitestHelpers::new(self.item);
+        multitest_helpers.emit()
     }
 
     fn emit_messages(&self) -> TokenStream {

@@ -4,7 +4,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericParam, ImplItem, ItemImpl, Pat, PatType, Path, Type};
+use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type};
 
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
@@ -489,6 +489,44 @@ impl<'a> MultitestHelpers<'a> {
                     msg: Vec<u8>,
                 ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
                     #migrate_body
+                }
+            }
+        }
+    }
+}
+
+pub struct TraitMultitestHelpers<'a> {
+    trait_name: &'a Ident,
+}
+
+impl<'a> TraitMultitestHelpers<'a> {
+    pub fn new(source: &'a ItemTrait) -> Self {
+        Self {
+            trait_name: &source.ident,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let trait_name = self.trait_name;
+        let sylvia = crate_module();
+        let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
+
+        quote! {
+            #[cfg(test)]
+            pub mod trait_utils {
+                pub struct #proxy_name <'app> {
+                    pub contract_addr: #sylvia ::cw_std::Addr,
+                    pub app: &'app #sylvia ::multitest::App,
+                }
+                impl<'app> #proxy_name <'app> {
+                    pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                        #proxy_name { contract_addr, app }
+                    }
+                }
+                impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
+                    fn into(self) -> #sylvia ::cw_std::Addr {
+                        self.contract_addr
+                    }
                 }
             }
         }
