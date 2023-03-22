@@ -323,7 +323,7 @@ impl<'a> MultitestHelpers<'a> {
             .iter()
             .filter(|attr| attr.path.is_ident("messages"))
             .filter_map(
-                |attr| match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+                |attr| match ContractMessageAttr::parse.parse1(attr.tokens.clone()) {
                     Ok(interface) => {
                         let ContractMessageAttr { module, .. } = &interface;
                         assert!(!module.segments.is_empty());
@@ -396,11 +396,11 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg>; 
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg>;
                 }
             } else {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>; 
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
                 }
             }
         });
