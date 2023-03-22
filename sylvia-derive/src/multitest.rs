@@ -323,7 +323,7 @@ impl<'a> MultitestHelpers<'a> {
             .iter()
             .filter(|attr| attr.path.is_ident("messages"))
             .filter_map(
-                |attr| match ContractMessageAttr::parse.parse1(attr.tokens.clone()) {
+                |attr| match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
                     Ok(interface) => {
                         let ContractMessageAttr { module, .. } = &interface;
                         assert!(!module.segments.is_empty());
