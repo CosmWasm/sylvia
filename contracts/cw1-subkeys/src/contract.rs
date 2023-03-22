@@ -9,14 +9,14 @@ use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
 use sylvia::{contract, schemars};
 
-#[cfg(test)]
+#[cfg(any(test, feature = "mt"))]
 use crate::cw1::multitest_utils::Cw1Proxy;
 use crate::error::ContractError;
 use crate::responses::{
     AllAllowancesResponse, AllPermissionsResponse, AllowanceInfo, PermissionsInfo,
 };
 use crate::state::{Allowance, Permissions};
-#[cfg(test)]
+#[cfg(any(test, feature = "mt"))]
 use crate::whitelist::multitest_utils::WhitelistProxy;
 
 pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");

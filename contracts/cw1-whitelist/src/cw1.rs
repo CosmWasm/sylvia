@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
-#[cfg(test)]
+#[cfg(feature = "mt")]
 use cw1::{ExecMsg, QueryMsg};
 use sylvia::contract;
 

@@ -11,7 +11,7 @@ keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
 
 [features]
-mt = ["sylvia-derive/mt", "dep:cw-multi-test"]
+mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow"]
 
 [dependencies]
 sylvia-derive = { version = "0.3.1", path = "../sylvia-derive" }
@@ -23,9 +23,10 @@ serde-cw-value = "0.7.0"
 serde-json-wasm = "0.5.0"
 konst = "0.3"
 cw-multi-test = { version = "0.16.2", optional = true }
+anyhow = { version = "1.0.70", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"
 cw-storage-plus = "1.0.1"
 cw-multi-test = "0.16.2"
-thiserror = "1.0.38"
+thiserror = "1.0.40"
