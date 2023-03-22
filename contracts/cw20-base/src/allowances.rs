@@ -19,11 +19,13 @@ const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
 #[contract]
+#[messages(cw20_allowances as Cw20Allowances)]
 impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
+    #[msg(exec)]
     fn increase_allowance(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -64,6 +66,7 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Lowers the spender's access of tokens from the owner's (env.sender) account by amount.
     /// If expires is Some(), overwrites current allowance expiration with this one.
+    #[msg(exec)]
     fn decrease_allowance(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -114,6 +117,7 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Transfers amount tokens from owner -> recipient
     /// if `env.sender` has sufficient pre-approval.
+    #[msg(exec)]
     fn transfer_from(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -166,6 +170,7 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Sends amount tokens from owner -> contract
     /// if `env.sender` has sufficient pre-approval.
+    #[msg(exec)]
     fn send_from(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -216,6 +221,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Destroys amount of tokens forever
+    #[msg(exec)]
     fn burn_from(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -253,6 +259,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns how much spender can use from owner account, 0 if unset.
+    #[msg(query)]
     fn allowance(
         &self,
         ctx: (Deps, Env),
@@ -301,6 +308,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this spender has been granted. Supports pagination.
+    #[msg(query)]
     fn all_spender_allowances(
         &self,
         ctx: (Deps, Env),
@@ -332,6 +340,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this spender has been granted. Supports pagination.
+    #[msg(query)]
     fn all_accounts(
         &self,
         ctx: (Deps, Env),

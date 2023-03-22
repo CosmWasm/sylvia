@@ -26,3 +26,5 @@ thiserror = "1.0.38"
 anyhow = "1.0.68"
 cw-multi-test = "0.16"
 sylvia = { path = "../../sylvia", features = ["mt"] }
+cw1-whitelist = { path = "../cw1-whitelist", features = ["library", "mt"] }
+cw1 = { path = "../../interfaces/cw1", features = ["mt"] }

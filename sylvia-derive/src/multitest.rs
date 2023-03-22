@@ -196,9 +196,14 @@ impl<'a> MultitestHelpers<'a> {
             error_type,
             proxy_name,
             source,
+            is_trait,
             ..
         } = self;
         let sylvia = crate_module();
+
+        if *is_trait {
+            return self.impl_trait_on_proxy();
+        }
 
         let messages = messages.iter().map(|msg| {
             let MessageSignature {
@@ -244,16 +249,16 @@ impl<'a> MultitestHelpers<'a> {
                     Ok(interface) => {
                         let ContractMessageAttr { module, .. } = interface;
                         assert!(!module.segments.is_empty());
-                        let module = &module.segments[0].ident;
-                        let method_name = Ident::new(&format!("{}_proxy", module), module.span());
+                        let module_name = &module.segments[0].ident;
+                        let method_name = Ident::new(&format!("{}_proxy", module_name), module_name.span());
                         let proxy_name = Ident::new(
-                            &format!("{}Proxy", module.to_string().to_case(Case::UpperCamel)),
-                            module.span(),
+                            &format!("{}Proxy", module_name.to_string().to_case(Case::UpperCamel)),
+                            module_name.span(),
                         );
 
                         quote! {
-                            pub fn #method_name (&self) -> #proxy_name <'app> {
-                                #proxy_name ::new(self.contract_addr.clone(), self.app)
+                            pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app> {
+                                #module ::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
                             }
                         }
                     }
@@ -295,6 +300,123 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 #contract_block
+            }
+        }
+    }
+
+    fn impl_trait_on_proxy(&self) -> TokenStream {
+        let Self {
+            messages,
+            error_type,
+            source,
+            ..
+        } = self;
+
+        let sylvia = crate_module();
+
+        let interface_name = interface_name(self.source);
+        let proxy_name = &self.proxy_name;
+        let trait_name = Ident::new(&format!("{}Methods", interface_name), interface_name.span());
+
+        let modules: Vec<_> = source
+            .attrs
+            .iter()
+            .filter(|attr| attr.path.is_ident("messages"))
+            .filter_map(
+                |attr| match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(interface) => {
+                        let ContractMessageAttr { module, .. } = &interface;
+                        assert!(!module.segments.is_empty());
+                        Some(module.segments[0].ident.clone())
+                    }
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        None
+                    }
+                },
+            )
+            .collect();
+
+        let module = match modules.len() {
+            0 => {
+                quote! {}
+            }
+            1 => {
+                let module = &modules[0];
+                quote! {#module ::}
+            }
+            _ => {
+                emit_error!(
+                    source.span(),
+                    "Only one #[messages] attribute is allowed per contract"
+                );
+                return quote! {};
+            }
+        };
+        let methods_definitions = messages.iter().map(|msg| {
+            let MessageSignature {
+                name,
+                params,
+                arguments,
+                msg_ty,
+                return_type,
+            } = msg;
+            if msg_ty == &MsgType::Exec {
+                quote! {
+                    #[track_caller]
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg> {
+                        let msg = #module ExecMsg:: #name ( #(#arguments),* );
+
+                        #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+                    }
+                }
+            } else {
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = #module QueryMsg:: #name ( #(#arguments),* );
+
+                        self.app
+                            .app
+                            .borrow()
+                            .wrap()
+                            .query_wasm_smart(self.contract_addr.clone(), &msg)
+                            .map_err(Into::into)
+                    }
+                }
+            }
+        });
+
+        let methods_declarations = messages.iter().map(|msg| {
+            let MessageSignature {
+                name,
+                params,
+                msg_ty,
+                return_type,
+                ..
+            } = msg;
+            if msg_ty == &MsgType::Exec {
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg>; 
+                }
+            } else {
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>; 
+                }
+            }
+        });
+
+        quote! {
+            #[cfg(test)]
+            pub mod test_utils {
+                use super::*;
+
+                pub trait #trait_name {
+                    #(#methods_declarations)*
+                }
+
+                impl #trait_name for #module trait_utils:: #proxy_name<'_> {
+                    #(#methods_definitions)*
+                }
             }
         }
     }
@@ -512,7 +634,7 @@ impl<'a> TraitMultitestHelpers<'a> {
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
         quote! {
-            #[cfg(test)]
+            // #[cfg(features = "mt")]
             pub mod trait_utils {
                 pub struct #proxy_name <'app> {
                     pub contract_addr: #sylvia ::cw_std::Addr,

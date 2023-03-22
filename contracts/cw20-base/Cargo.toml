@@ -38,3 +38,8 @@ assert_matches = "1.5.0"
 cw-multi-test = "0.16"
 cw-utils = "1.0"
 sylvia = { path = "../../sylvia", features = ["mt"] }
+cw20-allowances = { path = "../../interfaces/cw20-allowances", features = [
+    "mt",
+] }
+cw20-marketing = { path = "../../interfaces/cw20-marketing", features = ["mt"] }
+cw20-minting = { path = "../../interfaces/cw20-minting", features = ["mt"] }

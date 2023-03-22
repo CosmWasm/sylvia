@@ -69,8 +69,12 @@ impl<'a> TraitInput<'a> {
     }
 
     fn emit_helpers(&self) -> TokenStream {
-        let multitest_helpers = TraitMultitestHelpers::new(self.item);
-        multitest_helpers.emit()
+        if cfg!(feature = "mt") {
+            let multitest_helpers = TraitMultitestHelpers::new(self.item);
+            multitest_helpers.emit()
+        } else {
+            quote! {}
+        }
     }
 
     fn emit_messages(&self) -> TokenStream {

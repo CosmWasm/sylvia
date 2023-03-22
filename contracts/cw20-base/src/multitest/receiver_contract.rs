@@ -3,8 +3,6 @@ use cw_multi_test::{App, Executor};
 use sylvia::{contract, schemars};
 
 use super::receiver;
-#[cfg(test)]
-use super::receiver::multitest_utils::ReceiverProxy;
 pub struct ReceiverContract {}
 
 #[contract]
