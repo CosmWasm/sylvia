@@ -5,8 +5,14 @@ edition = "2021"
 
 [features]
 library = []
-tests = ["library", "cw-multi-test", "anyhow"]
-mt = ["sylvia/mt", "cw1/mt", "cw1-whitelist/mt"]
+mt = [
+    "library",
+    "cw-multi-test",
+    "anyhow",
+    "sylvia/mt",
+    "cw1/mt",
+    "cw1-whitelist/mt",
+]
 
 [dependencies]
 anyhow = { version = "1.0.68", optional = true }

@@ -49,7 +49,7 @@ jobs:
           override: true
           components: rustfmt, clippy
       - name: Test project
-        run: cargo test --locked
+        run: cargo test --locked --features mt
       - name: Clippy project
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project

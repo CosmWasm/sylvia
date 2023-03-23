@@ -13,8 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-tests = ["library", "cw-multi-test", "anyhow"]
-mt = ["sylvia/mt"]
+mt = ["library", "cw-multi-test", "anyhow", "sylvia/mt"]
 
 [dependencies]
 anyhow = { version = "1.0", optional = true }
