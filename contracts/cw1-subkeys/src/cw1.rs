@@ -1,5 +1,7 @@
 use cosmwasm_std::{ensure, Addr, DepsMut, Env, MessageInfo, Response, StdResult};
-use cw1::{CanExecuteResp, Cw1, ExecMsg, QueryMsg};
+use cw1::{CanExecuteResp, Cw1};
+#[cfg(any(feature = "mt", test))]
+use cw1::{ExecMsg, QueryMsg};
 use sylvia::contract;
 
 use crate::contract::Cw1SubkeysContract;

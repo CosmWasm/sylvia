@@ -1,6 +1,7 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1_whitelist::responses::AdminListResponse;
 use cw1_whitelist::whitelist::Whitelist;
+#[cfg(any(feature = "mt", test))]
 use cw1_whitelist::whitelist::{ExecMsg, QueryMsg};
 use sylvia::contract;
 
