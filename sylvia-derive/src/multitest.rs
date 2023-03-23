@@ -268,7 +268,6 @@ impl<'a> MultitestHelpers<'a> {
             .collect();
 
         quote! {
-            #[cfg(any(test, feature = "mt"))]
             pub mod multitest_utils {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;

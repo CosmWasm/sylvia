@@ -20,3 +20,4 @@ sylvia = { path = "../../sylvia" }
 [dev-dependencies]
 anyhow = "1.0"
 cw-multi-test = "0.16"
+sylvia = { path = "../../sylvia", features = ["mt"] }

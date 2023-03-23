@@ -1,8 +1,8 @@
-#[cfg(any(test, feature = "mt"))]
+#[cfg(feature = "mt")]
 use crate::cw1::multitest_utils::Cw1Proxy;
 use crate::error::ContractError;
 use crate::whitelist;
-#[cfg(any(test, feature = "mt"))]
+#[cfg(feature = "mt")]
 use crate::whitelist::multitest_utils::WhitelistProxy;
 use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
 

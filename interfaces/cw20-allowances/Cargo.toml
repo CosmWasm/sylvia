@@ -21,3 +21,4 @@ cw-utils = "1.0"
 [dev-dependencies]
 anyhow = "1.0"
 cw-multi-test = "0.16"
+sylvia = { path = "../../sylvia", features = ["mt"] }
