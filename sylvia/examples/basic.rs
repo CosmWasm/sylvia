@@ -96,7 +96,7 @@ impl Group for GroupContract {
 #[contract(module=contract, error=Error)]
 #[messages(group as Group)]
 impl GroupContract {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             admin: Item::new("admin"),
             _members: Map::new("members"),
