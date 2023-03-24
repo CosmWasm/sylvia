@@ -3,8 +3,11 @@ name = "cw1-subkeys"
 version = "0.3.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [features]
-library = []
+library = ["sylvia/library"]
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
