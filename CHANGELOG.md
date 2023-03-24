@@ -7,6 +7,7 @@ and this project adheres to
 ## Unreleased
 
 - Changed the way multitest helpers are generated to avoid weird `use` statements in code.
+- Entry points generated if `library` flag is not set
 
 ## \[0.3.1\] - 2023-03-03
 
