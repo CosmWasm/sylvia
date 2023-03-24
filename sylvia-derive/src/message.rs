@@ -858,51 +858,52 @@ impl<'a> GlueMessage<'a> {
 
 #[derive(Debug)]
 pub struct EntryPoints<'a> {
-    name: &'a Type,
+    name: Type,
     error: &'a Type,
 }
 
 impl<'a> EntryPoints<'a> {
     pub fn new(source: &'a ItemImpl, error: &'a Type) -> Self {
-        Self {
-            name: &source.self_ty,
-            error,
-        }
+        let name = StripGenerics.fold_type(*source.self_ty.clone());
+        Self { name, error }
     }
 
     pub fn emit(&self) -> TokenStream {
-        if cfg!(not(feature = "library")) {
+        if cfg!(feature = "library") {
             return quote! {};
         }
         let Self { name, error } = self;
         let sylvia = crate_module();
 
         quote! {
-            const CONTRACT: #name = #name ::new();
+            pub mod entry_points {
+                use super::*;
+                const CONTRACT: #name = #name ::new();
 
-            #[#sylvia ::cw_std::entry_point]
-            pub fn instantiate(
-                deps: #sylvia ::cw_std::DepsMut,
-                env: #sylvia ::cw_std::Env,
-                info: #sylvia ::cw_std::MessageInfo,
-                msg: InstantiateMsg,
-            ) -> Result<#sylvia ::cw_std::Response, #error> {
-                msg.dispatch(&CONTRACT, (deps, env, info))
-            }
+                #[#sylvia ::cw_std::entry_point]
+                pub fn instantiate(
+                    deps: #sylvia ::cw_std::DepsMut,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
+                    msg: InstantiateMsg,
+                ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                }
 
-            #[#sylvia ::cw_std::entry_point]
-            pub fn execute(
-                deps: #sylvia ::cw_std::DepsMut,
-                env: #sylvia ::cw_std::Env,
-                info: #sylvia ::cw_std::MessageInfo,
-                msg: ContractExecMsg,
-            ) -> Result<#sylvia ::cw_std::Response, #error> {
-                msg.dispatch(&CONTRACT, (deps, env, info))
-            }
+                #[#sylvia ::cw_std::entry_point]
+                pub fn execute(
+                    deps: #sylvia ::cw_std::DepsMut,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
+                    msg: ContractExecMsg,
+                ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                }
 
-            #[#sylvia ::cw_std::entry_point]
-            pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
-                msg.dispatch(&CONTRACT, (deps, env))
+                #[#sylvia ::cw_std::entry_point]
+                pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
+                }
             }
         }
     }

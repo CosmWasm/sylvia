@@ -177,6 +177,7 @@ impl<'a> ImplInput<'a> {
     fn emit_entry_points(&self) -> TokenStream {
         EntryPoints::new(self.item, &self.attributes.error).emit()
     }
+
     fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
         StructMessage::new(self.item, msg_ty, &self.generics).map_or(quote! {}, |msg| msg.emit())
     }

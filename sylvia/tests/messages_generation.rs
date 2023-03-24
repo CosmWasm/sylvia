@@ -38,7 +38,7 @@ pub struct Contract {}
 #[contract(module=contract, error=StdError)]
 impl Contract {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 
