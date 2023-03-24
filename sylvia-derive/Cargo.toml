@@ -12,18 +12,19 @@ categories = ["api-bindings", "wasm"]
 
 [features]
 mt = []
+library = []
 
 [lib]
 proc-macro = true
 
 [dependencies]
 syn = { version = "1.0.107", features = [
-  "parsing",
-  "derive",
-  "fold",
-  "visit",
-  "full",
-  "extra-traits",
+    "parsing",
+    "derive",
+    "fold",
+    "visit",
+    "full",
+    "extra-traits",
 ] }
 quote = "1.0.23"
 proc-macro2 = "1.0.50"

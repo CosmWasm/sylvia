@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::message::{ContractEnumMessage, EntryPoints, EnumMessage, GlueMessage, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
 
@@ -155,6 +155,7 @@ impl<'a> ImplInput<'a> {
             self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
+        let entry_points = self.emit_entry_points();
 
         quote! {
             #instantiate
@@ -168,9 +169,14 @@ impl<'a> ImplInput<'a> {
             #exec
 
             #query
+
+            #entry_points
         }
     }
 
+    fn emit_entry_points(&self) -> TokenStream {
+        EntryPoints::new(self.item, &self.attributes.error).emit()
+    }
     fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
         StructMessage::new(self.item, msg_ty, &self.generics).map_or(quote! {}, |msg| msg.emit())
     }
