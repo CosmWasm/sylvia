@@ -5,17 +5,13 @@ pub struct MigrateCtx<'a> {
     pub env: Env,
 }
 
-pub struct InstantiateCtx<'a> {
-    pub deps: DepsMut<'a>,
-    pub env: Env,
-    pub info: MessageInfo,
-}
-
 pub struct ExecCtx<'a> {
     pub deps: DepsMut<'a>,
     pub env: Env,
     pub info: MessageInfo,
 }
+
+pub type InstantiateCtx<'a> = ExecCtx<'a>;
 
 pub struct QueryCtx<'a> {
     pub deps: Deps<'a>,
@@ -25,12 +21,6 @@ pub struct QueryCtx<'a> {
 impl<'a> From<(DepsMut<'a>, Env)> for MigrateCtx<'a> {
     fn from((deps, env): (DepsMut<'a>, Env)) -> Self {
         Self { deps, env }
-    }
-}
-
-impl<'a> From<(DepsMut<'a>, Env, MessageInfo)> for InstantiateCtx<'a> {
-    fn from((deps, env, info): (DepsMut<'a>, Env, MessageInfo)) -> Self {
-        Self { deps, env, info }
     }
 }
 
