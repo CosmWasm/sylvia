@@ -1,9 +1,10 @@
 use crate::contract::{Cw20Base, MinterData};
 use crate::error::ContractError;
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use cosmwasm_std::{Response, StdResult, Uint128};
 use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
 use sylvia::contract;
+use sylvia::types::{ExecCtx, QueryCtx};
 
 #[contract]
 #[messages(cw20_minting as Cw20Minting)]
@@ -13,19 +14,17 @@ impl Cw20Minting for Cw20Base<'_> {
     #[msg(exec)]
     fn mint(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         recipient: String,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
-        let (deps, _, info) = ctx;
-
         if amount == Uint128::zero() {
             return Err(ContractError::InvalidZeroAmount {});
         }
 
         let mut config = self
             .token_info
-            .may_load(deps.storage)?
+            .may_load(ctx.deps.storage)?
             .ok_or(ContractError::Unauthorized {})?;
 
         if config
@@ -33,7 +32,7 @@ impl Cw20Minting for Cw20Base<'_> {
             .as_ref()
             .ok_or(ContractError::Unauthorized {})?
             .minter
-            != info.sender
+            != ctx.info.sender
         {
             return Err(ContractError::Unauthorized {});
         }
@@ -45,12 +44,12 @@ impl Cw20Minting for Cw20Base<'_> {
                 return Err(ContractError::CannotExceedCap {});
             }
         }
-        self.token_info.save(deps.storage, &config)?;
+        self.token_info.save(ctx.deps.storage, &config)?;
 
         // add amount to recipient balance
-        let rcpt_addr = deps.api.addr_validate(&recipient)?;
+        let rcpt_addr = ctx.deps.api.addr_validate(&recipient)?;
         self.balances.update(
-            deps.storage,
+            ctx.deps.storage,
             &rcpt_addr,
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?;
@@ -65,23 +64,21 @@ impl Cw20Minting for Cw20Base<'_> {
     #[msg(exec)]
     fn update_minter(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         new_minter: Option<String>,
     ) -> Result<Response, Self::Error> {
-        let (deps, _, info) = ctx;
-
         let mut config = self
             .token_info
-            .may_load(deps.storage)?
+            .may_load(ctx.deps.storage)?
             .ok_or(ContractError::Unauthorized {})?;
 
         let mint = config.mint.as_ref().ok_or(ContractError::Unauthorized {})?;
-        if mint.minter != info.sender {
+        if mint.minter != ctx.info.sender {
             return Err(ContractError::Unauthorized {});
         }
 
         let minter_data = new_minter
-            .map(|new_minter| deps.api.addr_validate(&new_minter))
+            .map(|new_minter| ctx.deps.api.addr_validate(&new_minter))
             .transpose()?
             .map(|minter| MinterData {
                 minter,
@@ -90,7 +87,7 @@ impl Cw20Minting for Cw20Base<'_> {
 
         config.mint = minter_data;
 
-        self.token_info.save(deps.storage, &config)?;
+        self.token_info.save(ctx.deps.storage, &config)?;
 
         let resp = Response::new()
             .add_attribute("action", "update_minter")
@@ -105,10 +102,8 @@ impl Cw20Minting for Cw20Base<'_> {
     }
 
     #[msg(query)]
-    fn minter(&self, ctx: (Deps, Env)) -> StdResult<Option<MinterResponse>> {
-        let (deps, _) = ctx;
-
-        let meta = self.token_info.load(deps.storage)?;
+    fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>> {
+        let meta = self.token_info.load(ctx.deps.storage)?;
         let minter = match meta.mint {
             Some(m) => Some(MinterResponse {
                 minter: m.minter.into(),

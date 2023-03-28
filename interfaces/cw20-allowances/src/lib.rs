@@ -1,12 +1,11 @@
 pub mod responses;
 
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
+use cosmwasm_std::{Binary, Response, StdError, StdResult, Uint128};
 use cw_utils::Expiration;
 use responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
+use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
@@ -18,7 +17,7 @@ pub trait Cw20Allowances {
     #[msg(exec)]
     fn increase_allowance(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
@@ -29,7 +28,7 @@ pub trait Cw20Allowances {
     #[msg(exec)]
     fn decrease_allowance(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
@@ -40,7 +39,7 @@ pub trait Cw20Allowances {
     #[msg(exec)]
     fn transfer_from(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         owner: String,
         recipient: String,
         amount: Uint128,
@@ -51,7 +50,7 @@ pub trait Cw20Allowances {
     #[msg(exec)]
     fn send_from(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         owner: String,
         contract: String,
         amount: Uint128,
@@ -62,7 +61,7 @@ pub trait Cw20Allowances {
     #[msg(exec)]
     fn burn_from(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         owner: String,
         amount: Uint128,
     ) -> Result<Response, Self::Error>;
@@ -71,7 +70,7 @@ pub trait Cw20Allowances {
     #[msg(query)]
     fn allowance(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         owner: String,
         spender: String,
     ) -> StdResult<AllowanceResponse>;
@@ -80,7 +79,7 @@ pub trait Cw20Allowances {
     #[msg(query)]
     fn all_allowances(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         owner: String,
         start_after: Option<String>,
         limit: Option<u32>,
@@ -90,7 +89,7 @@ pub trait Cw20Allowances {
     #[msg(query)]
     fn all_spender_allowances(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         spender: String,
         start_after: Option<String>,
         limit: Option<u32>,
@@ -100,7 +99,7 @@ pub trait Cw20Allowances {
     #[msg(query)]
     fn all_accounts(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllAccountsResponse>;

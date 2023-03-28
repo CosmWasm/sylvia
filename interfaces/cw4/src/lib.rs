@@ -1,9 +1,7 @@
 use cosmwasm_std::{Response, StdError};
 
-use sylvia::{
-    interface, schemars,
-    types::{ExecCtx, QueryCtx},
-};
+use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::{interface, schemars};
 
 #[interface]
 pub trait Cw4 {

@@ -1,9 +1,7 @@
 use cosmwasm_std::{Response, StdError, StdResult};
 
-use sylvia::{
-    contract, interface,
-    types::{InstantiateCtx, QueryCtx},
-};
+use sylvia::types::{InstantiateCtx, QueryCtx};
+use sylvia::{contract, interface};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]

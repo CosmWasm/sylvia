@@ -1,9 +1,7 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use serde::{Deserialize, Serialize};
-use sylvia::{
-    interface, schemars,
-    types::{ExecCtx, QueryCtx},
-};
+use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::{interface, schemars};
 
 #[derive(
     Serialize, Deserialize, Clone, PartialEq, Eq, sylvia::schemars::JsonSchema, Debug, Default,

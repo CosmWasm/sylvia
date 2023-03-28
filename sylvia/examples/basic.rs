@@ -1,10 +1,8 @@
 use anyhow::Error;
 use cosmwasm_std::{Addr, Response, StdError};
 use cw_storage_plus::{Item, Map};
-use sylvia::{
-    contract, interface,
-    types::{ExecCtx, InstantiateCtx, QueryCtx},
-};
+use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+use sylvia::{contract, interface};
 
 #[derive(
     sylvia::serde::Serialize,

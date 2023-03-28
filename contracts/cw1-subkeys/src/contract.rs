@@ -48,7 +48,6 @@ impl Cw1SubkeysContract<'_> {
         admins: Vec<String>,
         mutable: bool,
     ) -> Result<Response, ContractError> {
-        // here deps was branched
         let result = self.whitelist.instantiate(
             InstantiateCtx {
                 deps: ctx.deps.branch(),

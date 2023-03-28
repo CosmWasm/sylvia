@@ -1,9 +1,7 @@
 use cosmwasm_std::{Addr, Decimal, Response, StdError, StdResult};
 
-use sylvia::{
-    contract, interface,
-    types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx},
-};
+use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+use sylvia::{contract, interface};
 
 #[derive(
     serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
