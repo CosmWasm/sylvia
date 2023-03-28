@@ -23,7 +23,7 @@ mod entry_points {
         info: MessageInfo,
         msg: InstantiateMsg,
     ) -> Result<Response, ContractError> {
-        msg.dispatch(&CONTRACT, (deps, env, info))
+        msg.dispatch(&CONTRACT, (deps, env, info).into())
     }
 
     #[entry_point]
@@ -33,12 +33,12 @@ mod entry_points {
         info: MessageInfo,
         msg: ContractExecMsg,
     ) -> Result<Response, ContractError> {
-        msg.dispatch(&CONTRACT, (deps, env, info))
+        msg.dispatch(&CONTRACT, (deps, env, info).into())
     }
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: ContractQueryMsg) -> Result<Binary, ContractError> {
-        msg.dispatch(&CONTRACT, (deps, env))
+        msg.dispatch(&CONTRACT, (deps, env).into())
     }
 }
 

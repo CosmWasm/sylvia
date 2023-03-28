@@ -1,6 +1,9 @@
-use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use serde::{Deserialize, Serialize};
-use sylvia::{interface, schemars};
+use sylvia::{
+    interface, schemars,
+    types::{ExecCtx, QueryCtx},
+};
 
 #[derive(
     Serialize, Deserialize, Clone, PartialEq, Eq, sylvia::schemars::JsonSchema, Debug, Default,
@@ -17,11 +20,7 @@ pub trait Cw1 {
     /// contract's address as sender. Every implementation has it's own logic to
     /// determine in
     #[msg(exec)]
-    fn execute(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        msgs: Vec<CosmosMsg>,
-    ) -> Result<Response, Self::Error>;
+    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
 
     /// Checks permissions of the caller on this proxy.
     /// If CanExecute returns true then a call to `Execute` with the same message,
@@ -29,7 +28,7 @@ pub trait Cw1 {
     #[msg(query)]
     fn can_execute(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         sender: String,
         msg: CosmosMsg,
     ) -> StdResult<CanExecuteResp>;

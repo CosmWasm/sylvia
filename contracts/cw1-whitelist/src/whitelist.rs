@@ -1,4 +1,5 @@
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo, Order, Response, StdResult};
+use cosmwasm_std::{Empty, Order, Response, StdResult};
+use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{contract, interface, schemars};
 
 use crate::contract::Cw1WhitelistContract;
@@ -10,17 +11,13 @@ pub trait Whitelist {
     type Error: From<cosmwasm_std::StdError>;
 
     #[msg(exec)]
-    fn freeze(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, Self::Error>;
+    fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
-    fn update_admins(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        admins: Vec<String>,
-    ) -> Result<Response, Self::Error>;
+    fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn admin_list(&self, ctx: (Deps, Env)) -> StdResult<AdminListResponse>;
+    fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
 }
 
 #[contract]
@@ -28,14 +25,12 @@ impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
     #[msg(exec)]
-    fn freeze(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, ContractError> {
-        let (deps, _, info) = ctx;
-
-        if !self.is_admin(deps.as_ref(), &info.sender) {
+    fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
+        if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized {});
         }
 
-        self.mutable.save(deps.storage, &false)?;
+        self.mutable.save(ctx.deps.storage, &false)?;
 
         let resp = Response::new().add_attribute("action", "freeze");
         Ok(resp)
@@ -44,16 +39,14 @@ impl Whitelist for Cw1WhitelistContract<'_> {
     #[msg(exec)]
     fn update_admins(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         mut admins: Vec<String>,
     ) -> Result<Response, ContractError> {
-        let (deps, _, info) = ctx;
-
-        if !self.is_admin(deps.as_ref(), &info.sender) {
+        if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized {});
         }
 
-        if !self.mutable.load(deps.storage)? {
+        if !self.mutable.load(ctx.deps.storage)? {
             return Err(ContractError::ContractFrozen {});
         }
 
@@ -62,7 +55,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
 
         let to_remove: Vec<_> = self
             .admins
-            .keys(deps.storage, None, None, Order::Ascending)
+            .keys(ctx.deps.storage, None, None, Order::Ascending)
             .filter(|addr| {
                 // This is a bit of optimization basing on the fact that both `admins` and queried
                 // keys range are sorted. Binary search would always return the index which is at
@@ -91,12 +84,12 @@ impl Whitelist for Cw1WhitelistContract<'_> {
             .collect::<Result<_, _>>()?;
 
         for addr in to_remove {
-            self.admins.remove(deps.storage, &addr);
+            self.admins.remove(ctx.deps.storage, &addr);
         }
 
         for admin in admins {
-            let admin = deps.api.addr_validate(&admin)?;
-            self.admins.save(deps.storage, &admin, &Empty {})?;
+            let admin = ctx.deps.api.addr_validate(&admin)?;
+            self.admins.save(ctx.deps.storage, &admin, &Empty {})?;
         }
 
         let resp = Response::new().add_attribute("action", "update_admins");
@@ -104,18 +97,16 @@ impl Whitelist for Cw1WhitelistContract<'_> {
     }
 
     #[msg(query)]
-    fn admin_list(&self, ctx: (Deps, Env)) -> StdResult<AdminListResponse> {
-        let (deps, _) = ctx;
-
+    fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse> {
         let admins: Result<_, _> = self
             .admins
-            .keys(deps.storage, None, None, Order::Ascending)
+            .keys(ctx.deps.storage, None, None, Order::Ascending)
             .map(|addr| addr.map(String::from))
             .collect();
 
         Ok(AdminListResponse {
             admins: admins?,
-            mutable: self.mutable.load(deps.storage)?,
+            mutable: self.mutable.load(ctx.deps.storage)?,
         })
     }
 }
