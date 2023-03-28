@@ -1,53 +1,40 @@
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError};
+use cosmwasm_std::{Response, StdError};
 
-use sylvia::{interface, schemars};
+use sylvia::{
+    interface, schemars,
+    types::{ExecCtx, QueryCtx},
+};
 
 #[interface]
 pub trait Cw4 {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn update_admin(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        admin: String,
-    ) -> Result<Response, Self::Error>;
+    fn update_admin(&self, ctx: ExecCtx, admin: String) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
-    fn update_members(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        members: Vec<String>,
-    ) -> Result<Response, Self::Error>;
+    fn update_members(&self, ctx: ExecCtx, members: Vec<String>) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
-    fn add_hook(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        hook: String,
-    ) -> Result<Response, Self::Error>;
+    fn add_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
-    fn remove_hook(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        hook: String,
-    ) -> Result<Response, Self::Error>;
+    fn remove_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn member(&self, ctx: (Deps, Env), member: String) -> Result<Response, Self::Error>;
+    fn member(&self, ctx: QueryCtx, member: String) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn list_members(&self, ctx: (Deps, Env)) -> Result<Response, Self::Error>;
+    fn list_members(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn total_weight(&self, ctx: (Deps, Env)) -> Result<Response, Self::Error>;
+    fn total_weight(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn admin(&self, ctx: (Deps, Env)) -> Result<Response, Self::Error>;
+    fn admin(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn hooks(&self, ctx: (Deps, Env)) -> Result<Response, Self::Error>;
+    fn hooks(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 }
 
 #[cfg(test)]
