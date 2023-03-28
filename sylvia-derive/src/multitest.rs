@@ -542,7 +542,7 @@ impl<'a> MultitestHelpers<'a> {
         let migrate_body = if self.is_migrate {
             quote! {
                 #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
-                    .dispatch(self, (deps, env))
+                    .dispatch(self, (deps, env).into())
                     .map_err(Into::into)
             }
         } else {
@@ -560,7 +560,7 @@ impl<'a> MultitestHelpers<'a> {
                     msg: Vec<u8>,
                 ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
                     #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
-                        .dispatch(self, (deps, env, info))
+                        .dispatch(self, (deps, env, info).into())
                         .map_err(Into::into)
                 }
 
@@ -572,7 +572,7 @@ impl<'a> MultitestHelpers<'a> {
                     msg: Vec<u8>,
                 ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
                     #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
-                        .dispatch(self, (deps, env, info))
+                        .dispatch(self, (deps, env, info).into())
                         .map_err(Into::into)
                 }
 
@@ -583,7 +583,7 @@ impl<'a> MultitestHelpers<'a> {
                     msg: Vec<u8>,
                 ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
                     #sylvia ::cw_std::from_slice::<ContractQueryMsg>(&msg)?
-                        .dispatch(self, (deps, env))
+                        .dispatch(self, (deps, env).into())
                         .map_err(Into::into)
                 }
 

@@ -1,11 +1,10 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{
-    from_binary, Addr, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-};
+use cosmwasm_std::{from_binary, Addr, Decimal, Response, StdError};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use sylvia::types::{ExecCtx, QueryCtx};
 
 use sylvia::{contract, interface};
 
@@ -14,22 +13,22 @@ pub trait Interface {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn no_args_execution(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, Self::Error>;
+    fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
     fn argumented_execution(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         addr: Addr,
         coef: Decimal,
         desc: String,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn no_args_query(&self, ctx: (Deps, Env)) -> Result<EmptyQueryResponse, Self::Error>;
+    fn no_args_query(&self, ctx: QueryCtx) -> Result<EmptyQueryResponse, Self::Error>;
 
     #[msg(query)]
-    fn argumented_query(&self, ctx: (Deps, Env), user: Addr) -> Result<QueryResponse, Self::Error>;
+    fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResponse, Self::Error>;
 }
 
 #[derive(Default)]
@@ -56,7 +55,7 @@ impl Interface for Contract {
     type Error = StdError;
 
     #[msg(exec)]
-    fn no_args_execution(&self, _: (DepsMut, Env, MessageInfo)) -> Result<Response, StdError> {
+    fn no_args_execution(&self, _: ExecCtx) -> Result<Response, StdError> {
         *self.execs.borrow_mut() += 1;
         Ok(Response::new())
     }
@@ -64,7 +63,7 @@ impl Interface for Contract {
     #[msg(exec)]
     fn argumented_execution(
         &self,
-        _: (DepsMut, Env, MessageInfo),
+        _: ExecCtx,
         addr: Addr,
         coef: Decimal,
         desc: String,
@@ -78,13 +77,13 @@ impl Interface for Contract {
     }
 
     #[msg(query)]
-    fn no_args_query(&self, _: (Deps, Env)) -> Result<EmptyQueryResponse, StdError> {
+    fn no_args_query(&self, _: QueryCtx) -> Result<EmptyQueryResponse, StdError> {
         *self.queries.borrow_mut() += 1;
         Ok(dbg!(EmptyQueryResponse {}))
     }
 
     #[msg(query)]
-    fn argumented_query(&self, _: (Deps, Env), user: Addr) -> Result<QueryResponse, Self::Error> {
+    fn argumented_query(&self, _: QueryCtx, user: Addr) -> Result<QueryResponse, Self::Error> {
         *self.queries.borrow_mut() += 1;
         Ok(self.data.borrow().get(&user).unwrap().clone())
     }
@@ -99,7 +98,7 @@ fn dispatch() {
     let info = mock_info("owner", &[]);
 
     let resp = ExecMsg::NoArgsExecution {}
-        .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
+        .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()).into())
         .unwrap();
     assert_eq!(resp, Response::new());
 
@@ -108,7 +107,7 @@ fn dispatch() {
         coef: Decimal::percent(30),
         desc: "True".to_owned(),
     }
-    .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
+    .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()).into())
     .unwrap();
     assert_eq!(resp, Response::new());
 
@@ -117,19 +116,19 @@ fn dispatch() {
         coef: Decimal::percent(70),
         desc: "False".to_owned(),
     }
-    .dispatch(&contract, (deps.as_mut(), env.clone(), info))
+    .dispatch(&contract, (deps.as_mut(), env.clone(), info).into())
     .unwrap();
     assert_eq!(resp, Response::new());
 
     let resp = QueryMsg::NoArgsQuery {}
-        .dispatch(&contract, (deps.as_ref(), env.clone()))
+        .dispatch(&contract, (deps.as_ref(), env.clone()).into())
         .unwrap();
     let _resp: EmptyQueryResponse = from_binary(&resp).unwrap();
 
     let resp = QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("addr2"),
     }
-    .dispatch(&contract, (deps.as_ref(), env))
+    .dispatch(&contract, (deps.as_ref(), env).into())
     .unwrap();
     let resp: QueryResponse = from_binary(&resp).unwrap();
     assert_eq!(
