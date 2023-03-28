@@ -109,15 +109,20 @@ impl MsgType {
     pub fn emit_ctx_type(self) -> TokenStream {
         use MsgType::*;
 
+        let sylvia = crate_module();
+
         match self {
-            Exec | Instantiate => quote! {
-                (cosmwasm_std::DepsMut, cosmwasm_std::Env, cosmwasm_std::MessageInfo)
+            Exec => quote! {
+                #sylvia ::types::ExecCtx
+            },
+            Instantiate => quote! {
+                #sylvia ::types::InstantiateCtx
             },
             Migrate => quote! {
-                (cosmwasm_std::DepsMut, cosmwasm_std::Env)
+                #sylvia ::types::MigrateCtx,
             },
             Query => quote! {
-                (cosmwasm_std::Deps, cosmwasm_std::Env)
+                #sylvia ::types::QueryCtx
             },
         }
     }

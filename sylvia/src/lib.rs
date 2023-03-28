@@ -4,6 +4,7 @@
 
 #[cfg(feature = "mt")]
 pub mod multitest;
+pub mod types;
 pub mod utils;
 
 #[cfg(feature = "mt")]
