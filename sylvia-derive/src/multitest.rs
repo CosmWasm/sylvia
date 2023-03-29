@@ -59,6 +59,7 @@ impl<'a> MultitestHelpers<'a> {
         generics: &'a [&'a GenericParam],
     ) -> Self {
         let mut is_migrate = false;
+        let sylvia = crate_module();
 
         let messages: Vec<_> = source
             .items
@@ -91,7 +92,7 @@ impl<'a> MultitestHelpers<'a> {
                             }
                         }
                     } else {
-                        quote! { cw_multi_test::AppResponse }
+                        quote! { #sylvia ::cw_multi_test::AppResponse }
                     };
 
                     let name = &sig.ident;
@@ -273,18 +274,17 @@ impl<'a> MultitestHelpers<'a> {
             .collect();
 
         quote! {
-            #[cfg(test)]
             pub mod multitest_utils {
                 use super::*;
-                use cw_multi_test::Executor;
+                use #sylvia ::cw_multi_test::Executor;
 
                 pub struct #proxy_name <'app> {
-                    pub contract_addr: cosmwasm_std::Addr,
+                    pub contract_addr: #sylvia ::cw_std::Addr,
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
                 impl<'app> #proxy_name <'app> {
-                    pub fn new(contract_addr: cosmwasm_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                    pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
                         #proxy_name{ contract_addr, app }
                     }
 
@@ -293,8 +293,8 @@ impl<'a> MultitestHelpers<'a> {
                     #(#interfaces)*
                 }
 
-                impl<'app> From<(cosmwasm_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
-                    fn from(input: (cosmwasm_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
+                impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
+                    fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
                         #proxy_name::new(input.0, input.1)
                     }
                 }
@@ -490,14 +490,14 @@ impl<'a> MultitestHelpers<'a> {
 
             pub struct InstantiateProxy<'a, 'app> {
                 code_id: &'a #code_id <'app>,
-                funds: &'a [cosmwasm_std::Coin],
+                funds: &'a [#sylvia ::cw_std::Coin],
                 label: &'a str,
                 admin: Option<String>,
                 msg: InstantiateMsg,
             }
 
             impl<'a, 'app> InstantiateProxy<'a, 'app> {
-                pub fn with_funds(self, funds: &'a [cosmwasm_std::Coin]) -> Self {
+                pub fn with_funds(self, funds: &'a [#sylvia ::cw_std::Coin]) -> Self {
                     Self { funds, ..self }
                 }
 
@@ -518,7 +518,7 @@ impl<'a> MultitestHelpers<'a> {
                         .borrow_mut()
                         .instantiate_contract(
                             self.code_id.code_id,
-                            cosmwasm_std::Addr::unchecked(sender),
+                            #sylvia ::cw_std::Addr::unchecked(sender),
                             &self.msg,
                             self.funds,
                             self.label,
@@ -536,80 +536,81 @@ impl<'a> MultitestHelpers<'a> {
 
     fn generate_impl_contract(&self) -> TokenStream {
         let contract = &self.contract;
+        let sylvia = crate_module();
 
         // MigrateMsg is not generated all the time in contrary to Exec, Query and Instantiate.
         let migrate_body = if self.is_migrate {
             quote! {
-                cosmwasm_std::from_slice::<MigrateMsg>(&msg)?
+                #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
                     .dispatch(self, (deps, env))
                     .map_err(Into::into)
             }
         } else {
             quote! {
-                anyhow::bail!("migrate not implemented for contract")
+                #sylvia ::anyhow::bail!("migrate not implemented for contract")
             }
         };
         quote! {
-            impl cw_multi_test::Contract<cosmwasm_std::Empty> for #contract {
+            impl #sylvia ::cw_multi_test::Contract<#sylvia ::cw_std::Empty> for #contract {
                 fn execute(
                     &self,
-                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                    env: cosmwasm_std::Env,
-                    info: cosmwasm_std::MessageInfo,
+                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
                     msg: Vec<u8>,
-                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                    cosmwasm_std::from_slice::<ContractExecMsg>(&msg)?
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
                         .dispatch(self, (deps, env, info))
                         .map_err(Into::into)
                 }
 
                 fn instantiate(
                     &self,
-                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                    env: cosmwasm_std::Env,
-                    info: cosmwasm_std::MessageInfo,
+                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
                     msg: Vec<u8>,
-                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                    cosmwasm_std::from_slice::<InstantiateMsg>(&msg)?
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
                         .dispatch(self, (deps, env, info))
                         .map_err(Into::into)
                 }
 
                 fn query(
                     &self,
-                    deps: cosmwasm_std::Deps<cosmwasm_std::Empty>,
-                    env: cosmwasm_std::Env,
+                    deps: #sylvia ::cw_std::Deps<#sylvia ::cw_std::Empty>,
+                    env: #sylvia ::cw_std::Env,
                     msg: Vec<u8>,
-                ) -> anyhow::Result<cosmwasm_std::Binary> {
-                    cosmwasm_std::from_slice::<ContractQueryMsg>(&msg)?
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
+                    #sylvia ::cw_std::from_slice::<ContractQueryMsg>(&msg)?
                         .dispatch(self, (deps, env))
                         .map_err(Into::into)
                 }
 
                 fn sudo(
                     &self,
-                    _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                    _env: cosmwasm_std::Env,
+                    _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                    _env: #sylvia ::cw_std::Env,
                     _msg: Vec<u8>,
-                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                    anyhow::bail!("sudo not implemented for contract")
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    #sylvia ::anyhow::bail!("sudo not implemented for contract")
                 }
 
                 fn reply(
                     &self,
-                    _deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                    _env: cosmwasm_std::Env,
-                    _msg: cosmwasm_std::Reply,
-                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
-                    anyhow::bail!("reply not implemented for contract")
+                    _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                    _env: #sylvia ::cw_std::Env,
+                    _msg: #sylvia ::cw_std::Reply,
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    #sylvia ::anyhow::bail!("reply not implemented for contract")
                 }
 
                 fn migrate(
                     &self,
-                    deps: cosmwasm_std::DepsMut<cosmwasm_std::Empty>,
-                    env: cosmwasm_std::Env,
+                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                    env: #sylvia ::cw_std::Env,
                     msg: Vec<u8>,
-                ) -> anyhow::Result<cosmwasm_std::Response<cosmwasm_std::Empty>> {
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
                     #migrate_body
                 }
             }
@@ -634,7 +635,6 @@ impl<'a> TraitMultitestHelpers<'a> {
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
         quote! {
-            // #[cfg(features = "mt")]
             pub mod trait_utils {
                 pub struct #proxy_name <'app> {
                     pub contract_addr: #sylvia ::cw_std::Addr,
