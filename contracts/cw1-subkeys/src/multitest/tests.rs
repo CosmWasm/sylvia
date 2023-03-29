@@ -1,11 +1,10 @@
 use cosmwasm_std::{coin, coins, Addr};
 use cw2::{query_contract_info, ContractVersion};
-use cw_multi_test::{next_block, App};
 use cw_utils::{Expiration, NativeBalance};
+use sylvia::multitest::App;
 
+use crate::contract::multitest_utils::Cw1SubkeysContractCodeId;
 use crate::contract::{CONTRACT_NAME, CONTRACT_VERSION};
-
-use super::proxy::Cw1SubkeysCodeId;
 
 const ATOM: &str = "atom";
 
@@ -31,18 +30,20 @@ macro_rules! assert_sorted_eq {
 
 #[test]
 fn get_contract_version_works() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("owner");
+    let owner = "owner";
 
-    let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+    let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(&mut app, &owner, &[], true, "Sublist contract")
+        .instantiate(vec![owner.to_owned()], true)
+        .with_label("Sublist contract")
+        .call(owner)
         .unwrap();
 
     let version: ContractVersion =
-        query_contract_info(&app.wrap(), contract.addr().clone()).unwrap();
+        query_contract_info(&app.app.borrow().wrap(), contract.contract_addr.to_string()).unwrap();
 
     assert_eq!(
         ContractVersion {
@@ -54,6 +55,8 @@ fn get_contract_version_works() {
 }
 
 mod allowance {
+    use cw_multi_test::next_block;
+
     use crate::responses::AllowanceInfo;
     use crate::state::Allowance;
 
@@ -61,25 +64,31 @@ mod allowance {
 
     #[test]
     fn query() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let spender1 = Addr::unchecked("spender1");
-        let spender2 = Addr::unchecked("spender2");
-        let spender3 = Addr::unchecked("spender3");
+        let owner = "owner";
+        let spender1 = "spender1";
+        let spender2 = "spender2";
+        let spender3 = "spender3";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(&mut app, &owner, &[&owner], false, "Sublist contract")
+            .instantiate(vec![owner.to_owned()], false)
+            .with_label("Sublist contract")
+            .call(owner)
             .unwrap();
 
         contract
-            .increase_allowance(&mut app, &owner, &spender1, coin(1, ATOM), None)
+            .increase_allowance(spender1.to_owned(), coin(1, ATOM), None)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
-            .increase_allowance(&mut app, &owner, &spender2, coin(2, ATOM), None)
+            .increase_allowance(spender2.to_owned(), coin(2, ATOM), None)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         assert_eq!(
@@ -87,7 +96,7 @@ mod allowance {
                 balance: NativeBalance(coins(1, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(&app, &spender1).unwrap()
+            contract.allowance(spender1.to_owned()).unwrap()
         );
 
         assert_eq!(
@@ -95,40 +104,42 @@ mod allowance {
                 balance: NativeBalance(coins(2, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(&app, &spender2).unwrap()
+            contract.allowance(spender2.to_owned()).unwrap()
         );
 
         assert_eq!(
             Allowance::default(),
-            contract.allowance(&app, &spender3).unwrap()
+            contract.allowance(spender3.to_owned()).unwrap()
         );
     }
 
     #[test]
     fn query_expired() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let spender = Addr::unchecked("spender");
+        let owner = "owner";
+        let spender = "spender";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(&mut app, &owner, &[&owner], false, "Sublist contract")
+            .instantiate(vec![owner.to_owned()], false)
+            .with_label("Sublist contract")
+            .call(owner)
             .unwrap();
 
-        let height = app.block_info().height;
+        let height = app.app.borrow().block_info().height;
         contract
             .increase_allowance(
-                &mut app,
-                &owner,
-                &spender,
+                spender.to_owned(),
                 coin(1, ATOM),
-                Expiration::AtHeight(height + 1),
+                Some(Expiration::AtHeight(height + 1)),
             )
+            .with_sender(owner)
+            .call()
             .unwrap();
 
-        app.update_block(next_block);
+        app.app.borrow_mut().update_block(next_block);
 
         // Check allowances work for accounts with balances
         assert_eq!(
@@ -136,86 +147,90 @@ mod allowance {
                 balance: NativeBalance(vec![]),
                 expires: Expiration::Never {},
             },
-            contract.allowance(&app, &spender).unwrap()
+            contract.allowance(spender.to_owned()).unwrap()
         );
     }
 
     #[test]
     fn query_all() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let spender1 = Addr::unchecked("spender1");
-        let spender2 = Addr::unchecked("spender2");
-        let spender3 = Addr::unchecked("spender3");
-        let spender4 = Addr::unchecked("spender4");
+        let owner = "owner";
+        let spender1 = "spender1";
+        let spender2 = "spender2";
+        let spender3 = "spender3";
+        let spender4 = "spender4";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(&mut app, &owner, &[&owner], false, "Sublist contract")
+            .instantiate(vec![owner.to_owned()], false)
+            .with_label("Sublist contract")
+            .call(owner)
             .unwrap();
 
-        let height = app.block_info().height;
+        let height = app.app.borrow().block_info().height;
         contract
-            .increase_allowance(&mut app, &owner, &spender1, coin(1234, ATOM), None)
+            .increase_allowance(spender1.to_owned(), coin(1234, ATOM), None)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
             .increase_allowance(
-                &mut app,
-                &owner,
-                &spender2,
+                spender2.to_owned(),
                 coin(2345, ATOM),
-                Expiration::Never {},
+                Some(Expiration::Never {}),
             )
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
             .increase_allowance(
-                &mut app,
-                &owner,
-                &spender3,
+                spender3.to_owned(),
                 coin(3456, ATOM),
-                Expiration::AtHeight(height + 2),
+                Some(Expiration::AtHeight(height + 2)),
             )
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
             .increase_allowance(
-                &mut app,
-                &owner,
-                &spender4,
+                spender4.to_owned(),
                 coin(2222, ATOM),
-                Expiration::AtHeight(height + 1),
+                Some(Expiration::AtHeight(height + 1)),
             )
+            .with_sender(owner)
+            .call()
             .unwrap();
 
-        app.update_block(next_block);
+        app.app.borrow_mut().update_block(next_block);
 
-        let batch1 = contract.all_allowances(&app, None, 2).unwrap().allowances;
+        let batch1 = contract.all_allowances(None, Some(2)).unwrap().allowances;
         assert_eq!(2, batch1.len());
 
         let batch2 = contract
-            .all_allowances(&app, &batch1.last().unwrap().spender, 2)
+            .all_allowances(Some(batch1.last().unwrap().spender.to_string()), Some(2))
             .unwrap()
             .allowances;
         assert_eq!(1, batch2.len());
 
-        let height = app.block_info().height;
+        let height = app.app.borrow().block_info().height;
         let expected = vec![
             AllowanceInfo {
-                spender: spender1,
+                spender: Addr::unchecked(spender1),
                 balance: NativeBalance(coins(1234, ATOM)),
                 expires: Expiration::Never {}, // Not set, expected default
             },
             AllowanceInfo {
-                spender: spender2,
+                spender: Addr::unchecked(spender2),
                 balance: NativeBalance(coins(2345, ATOM)),
                 expires: Expiration::Never {},
             },
             AllowanceInfo {
-                spender: spender3,
+                spender: Addr::unchecked(spender3),
                 balance: NativeBalance(coins(3456, ATOM)),
                 expires: Expiration::AtHeight(height + 1),
             },
@@ -252,83 +267,109 @@ mod permissions {
 
     #[test]
     fn query() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let spender1 = Addr::unchecked("spender1");
-        let spender2 = Addr::unchecked("spender2");
-        let spender3 = Addr::unchecked("spender2");
+        let owner = "owner";
+        let spender1 = "spender1";
+        let spender2 = "spender2";
+        let spender3 = "spender2";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(&mut app, &owner, &[&owner], false, "Subkeys contract")
+            .instantiate(vec![owner.to_string()], false)
+            .with_label("Subkeys contract")
+            .call(owner)
             .unwrap();
 
         contract
-            .set_permission(&mut app, &owner, &spender1, ALL_PERMS)
+            .set_permissions(spender1.to_string(), ALL_PERMS)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
-            .set_permission(&mut app, &owner, &spender2, NO_PERMS)
+            .set_permissions(spender2.to_string(), NO_PERMS)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
-        assert_eq!(ALL_PERMS, contract.permissions(&app, &spender1).unwrap());
-        assert_eq!(NO_PERMS, contract.permissions(&app, &spender2).unwrap());
-        assert_eq!(NO_PERMS, contract.permissions(&app, &spender3).unwrap());
+        assert_eq!(
+            ALL_PERMS,
+            contract.permissions(spender1.to_string()).unwrap()
+        );
+        assert_eq!(
+            NO_PERMS,
+            contract.permissions(spender2.to_string()).unwrap()
+        );
+        assert_eq!(
+            NO_PERMS,
+            contract.permissions(spender3.to_string()).unwrap()
+        );
     }
 
     #[test]
     fn query_all() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let spender1 = Addr::unchecked("spender1");
-        let spender2 = Addr::unchecked("spender2");
-        let spender3 = Addr::unchecked("spender3");
+        let owner = "owner";
+        let spender1 = "spender1";
+        let spender2 = "spender2";
+        let spender3 = "spender3";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(&mut app, &owner, &[&owner], false, "Subkeys contract")
+            .instantiate(vec![owner.to_owned()], false)
+            .with_label("Subkeys contract")
+            .call(owner)
             .unwrap();
 
         contract
-            .set_permission(&mut app, &owner, &spender1, ALL_PERMS)
+            .set_permissions(spender1.to_owned(), ALL_PERMS)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
-            .set_permission(&mut app, &owner, &spender2, NO_PERMS)
+            .set_permissions(spender2.to_owned(), NO_PERMS)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
         contract
-            .set_permission(&mut app, &owner, &spender3, NO_PERMS)
+            .set_permissions(spender3.to_owned(), NO_PERMS)
+            .with_sender(owner)
+            .call()
             .unwrap();
 
-        assert_eq!(ALL_PERMS, contract.permissions(&app, &spender1).unwrap());
-        assert_eq!(NO_PERMS, contract.permissions(&app, &spender2).unwrap());
-        assert_eq!(NO_PERMS, contract.permissions(&app, &spender3).unwrap());
+        assert_eq!(
+            ALL_PERMS,
+            contract.permissions(spender1.to_owned()).unwrap()
+        );
+        assert_eq!(NO_PERMS, contract.permissions(spender2.to_owned()).unwrap());
+        assert_eq!(NO_PERMS, contract.permissions(spender3.to_owned()).unwrap());
 
-        let batch1 = contract.all_permissions(&app, None, 2).unwrap().permissions;
+        let batch1 = contract.all_permissions(None, Some(2)).unwrap().permissions;
         assert_eq!(2, batch1.len());
 
         let batch2 = contract
-            .all_permissions(&app, &batch1.last().unwrap().spender, 2)
+            .all_permissions(Some(batch1.last().unwrap().spender.to_string()), Some(2))
             .unwrap()
             .permissions;
         assert_eq!(1, batch2.len());
 
         let expected = vec![
             PermissionsInfo {
-                spender: spender1,
+                spender: Addr::unchecked(spender1),
                 permissions: ALL_PERMS,
             },
             PermissionsInfo {
-                spender: spender2,
+                spender: Addr::unchecked(spender2),
                 permissions: NO_PERMS,
             },
             PermissionsInfo {
-                spender: spender3,
+                spender: Addr::unchecked(spender3),
                 permissions: NO_PERMS,
             },
         ];
@@ -343,28 +384,25 @@ mod permissions {
 }
 
 mod cw1_execute {
+    use crate::cw1::test_utils::Cw1Methods;
     use cosmwasm_std::BankMsg;
 
     use super::*;
 
     #[test]
     fn can_execute() {
-        let mut app = App::default();
+        let app = App::default();
 
-        let owner = Addr::unchecked("owner");
-        let admin = Addr::unchecked("admin");
-        let non_admin = Addr::unchecked("non_admin");
+        let owner = "owner";
+        let admin = "admin";
+        let non_admin = "non_admin";
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(
-                &mut app,
-                &owner,
-                &[&owner, &admin],
-                false,
-                "Subkeys contract",
-            )
+            .instantiate(vec![owner.to_owned(), admin.to_owned()], false)
+            .with_label("Subkeys contract")
+            .call(owner)
             .unwrap();
 
         let msg = BankMsg::Send {
@@ -373,13 +411,15 @@ mod cw1_execute {
         };
 
         let resp = contract
-            .can_execute(&app, admin.to_string(), msg.clone().into())
+            .cw1_proxy()
+            .can_execute(admin.to_string(), msg.clone().into())
             .unwrap();
 
         assert!(resp.can_execute);
 
         let resp = contract
-            .can_execute(&app, non_admin.to_string(), msg.into())
+            .cw1_proxy()
+            .can_execute(non_admin.to_string(), msg.into())
             .unwrap();
 
         assert!(!resp.can_execute);
@@ -387,11 +427,11 @@ mod cw1_execute {
 
     #[test]
     fn execute() {
-        let owner = Addr::unchecked("owner");
+        let owner = "owner";
         let admin = Addr::unchecked("admin");
         let non_admin = Addr::unchecked("non_admin");
 
-        let mut app = App::new(|router, _api, storage| {
+        let app = cw_multi_test::App::new(|router, _api, storage| {
             router
                 .bank
                 .init_balance(storage, &admin, coins(2345, ATOM))
@@ -402,16 +442,14 @@ mod cw1_execute {
                 .unwrap();
         });
 
-        let code_id = Cw1SubkeysCodeId::store_code(&mut app);
+        let app = App::new(app);
+
+        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(
-                &mut app,
-                &owner,
-                &[&owner, &admin],
-                false,
-                "Subkeys contract",
-            )
+            .instantiate(vec![owner.to_owned(), admin.to_string()], false)
+            .with_label("Subkeys contract")
+            .call(owner)
             .unwrap();
 
         let msg = BankMsg::Send {
@@ -420,16 +458,19 @@ mod cw1_execute {
         };
 
         contract
-            .execute(
-                &mut app,
-                admin,
-                vec![msg.clone().into()],
-                &[coin(2345, ATOM)],
-            )
+            .cw1_proxy()
+            .execute(vec![msg.clone().into()])
+            .with_sender(admin.to_string().as_ref())
+            .with_funds(&[coin(2345, ATOM)])
+            .call()
             .unwrap();
 
         contract
-            .execute(&mut app, non_admin, vec![msg.into()], &[coin(2345, ATOM)])
+            .cw1_proxy()
+            .execute(vec![msg.into()])
+            .with_sender(non_admin.to_string().as_ref())
+            .with_funds(&[coin(2345, ATOM)])
+            .call()
             .unwrap_err();
     }
 }

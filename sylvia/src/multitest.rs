@@ -10,6 +10,14 @@ pub struct App {
     pub app: RefCell<cw_multi_test::App>,
 }
 
+impl App {
+    pub fn new(app: cw_multi_test::App) -> Self {
+        Self {
+            app: RefCell::new(app),
+        }
+    }
+}
+
 #[must_use]
 pub struct ExecProxy<'a, 'app, Error, Msg>
 where

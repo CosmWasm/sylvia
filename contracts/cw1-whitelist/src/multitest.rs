@@ -13,8 +13,8 @@ mod test {
 
     #[test]
     fn proxy_freeze_message() {
-        let mut app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
+        let app = App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
 
         let owner = "owner";
 
@@ -57,8 +57,8 @@ mod test {
 
     #[test]
     fn update_admins() {
-        let mut app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
+        let app = App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
 
         let owner = "owner";
         let mut admins = vec!["admin1".to_owned(), "admin2".to_owned()];
@@ -85,8 +85,8 @@ mod test {
 
     #[test]
     fn unathorized_admin_update() {
-        let mut app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&mut app);
+        let app = App::default();
+        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
 
         let owner = "owner";
 

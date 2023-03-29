@@ -462,7 +462,7 @@ impl<'a> MultitestHelpers<'a> {
             }
 
             impl<'app> #code_id <'app> {
-                pub fn store_code(app: &'app mut #sylvia ::multitest::App) -> Self {
+                pub fn store_code(app: &'app #sylvia ::multitest::App) -> Self {
                     let code_id = app
                         .app
                         .borrow_mut()
