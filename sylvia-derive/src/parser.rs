@@ -278,13 +278,12 @@ impl Parse for ContractMessageAttr {
             ));
         }
 
-        let s = Self {
+        Ok(Self {
             module,
             exec_generic_params,
             query_generic_params,
             variant,
-        };
-        Ok(s)
+        })
     }
 }
 
