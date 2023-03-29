@@ -7,9 +7,11 @@ use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
 use sylvia::contract;
 
 #[contract]
+#[messages(cw20_marketing as Cw20Marketing)]
 impl Cw20Marketing for Cw20Base<'_> {
     type Error = ContractError;
 
+    #[msg(exec)]
     fn update_marketing(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -65,6 +67,7 @@ impl Cw20Marketing for Cw20Base<'_> {
         Ok(res)
     }
 
+    #[msg(exec)]
     fn upload_logo(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -102,6 +105,7 @@ impl Cw20Marketing for Cw20Base<'_> {
         Ok(res)
     }
 
+    #[msg(query)]
     fn marketing_info(&self, ctx: (Deps, Env)) -> StdResult<MarketingInfoResponse> {
         let (deps, _) = ctx;
 
@@ -111,6 +115,7 @@ impl Cw20Marketing for Cw20Base<'_> {
             .unwrap_or_default())
     }
 
+    #[msg(query)]
     fn download_logo(&self, ctx: (Deps, Env)) -> StdResult<DownloadLogoResponse> {
         let (deps, _) = ctx;
 

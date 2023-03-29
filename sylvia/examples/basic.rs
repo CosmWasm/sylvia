@@ -64,9 +64,11 @@ impl Default for GroupContract {
     }
 }
 
+#[contract]
 impl Group for GroupContract {
     type Error = Error;
 
+    #[msg(exec)]
     fn update_admin(
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
@@ -75,6 +77,7 @@ impl Group for GroupContract {
         todo!()
     }
 
+    #[msg(exec)]
     fn update_members(
         &self,
         _ctx: (DepsMut, Env, MessageInfo),
@@ -84,6 +87,7 @@ impl Group for GroupContract {
         todo!()
     }
 
+    #[msg(query)]
     fn member(&self, _ctx: (Deps, Env), _addr: String) -> Result<MemberResp, Self::Error> {
         todo!()
     }

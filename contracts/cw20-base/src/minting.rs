@@ -6,9 +6,11 @@ use cw20_minting::Cw20Minting;
 use sylvia::contract;
 
 #[contract]
+#[messages(cw20_minting as Cw20Minting)]
 impl Cw20Minting for Cw20Base<'_> {
     type Error = ContractError;
 
+    #[msg(exec)]
     fn mint(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -60,6 +62,7 @@ impl Cw20Minting for Cw20Base<'_> {
         Ok(res)
     }
 
+    #[msg(exec)]
     fn update_minter(
         &self,
         ctx: (DepsMut, Env, MessageInfo),
@@ -101,6 +104,7 @@ impl Cw20Minting for Cw20Base<'_> {
         Ok(resp)
     }
 
+    #[msg(query)]
     fn minter(&self, ctx: (Deps, Env)) -> StdResult<Option<MinterResponse>> {
         let (deps, _) = ctx;
 

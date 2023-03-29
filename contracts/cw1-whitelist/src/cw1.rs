@@ -1,13 +1,12 @@
 use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
-#[cfg(test)]
-use cw1::{ExecMsg, QueryMsg};
 use sylvia::contract;
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
 #[contract]
+#[messages(cw1 as Cw1)]
 impl Cw1 for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 

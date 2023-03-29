@@ -6,7 +6,11 @@
 pub mod multitest;
 pub mod utils;
 
+#[cfg(feature = "mt")]
+pub use anyhow;
 pub use cosmwasm_std as cw_std;
+#[cfg(feature = "mt")]
+pub use cw_multi_test;
 pub use schemars;
 pub use serde;
 pub use serde_cw_value as serde_value;

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use sylvia::interface;
+use sylvia::{contract, interface};
 
 #[interface]
 pub trait Interface {
@@ -51,14 +51,17 @@ pub struct QueryResponse {
     desc: String,
 }
 
+#[contract]
 impl Interface for Contract {
     type Error = StdError;
 
+    #[msg(exec)]
     fn no_args_execution(&self, _: (DepsMut, Env, MessageInfo)) -> Result<Response, StdError> {
         *self.execs.borrow_mut() += 1;
         Ok(Response::new())
     }
 
+    #[msg(exec)]
     fn argumented_execution(
         &self,
         _: (DepsMut, Env, MessageInfo),
@@ -74,11 +77,13 @@ impl Interface for Contract {
         Ok(Response::new())
     }
 
+    #[msg(query)]
     fn no_args_query(&self, _: (Deps, Env)) -> Result<EmptyQueryResponse, StdError> {
         *self.queries.borrow_mut() += 1;
         Ok(dbg!(EmptyQueryResponse {}))
     }
 
+    #[msg(query)]
     fn argumented_query(&self, _: (Deps, Env), user: Addr) -> Result<QueryResponse, Self::Error> {
         *self.queries.borrow_mut() += 1;
         Ok(self.data.borrow().get(&user).unwrap().clone())
