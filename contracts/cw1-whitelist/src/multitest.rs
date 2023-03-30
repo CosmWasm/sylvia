@@ -40,8 +40,7 @@ mod test {
         first_contract
             .cw1_proxy()
             .execute(vec![freeze.into()])
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         let resp = second_contract.whitelist_proxy().admin_list().unwrap();
@@ -75,8 +74,7 @@ mod test {
         contract
             .whitelist_proxy()
             .update_admins(admins.clone())
-            .with_sender("admin1")
-            .call()
+            .call("admin1")
             .unwrap();
 
         let resp = contract.whitelist_proxy().admin_list().unwrap();
@@ -98,24 +96,17 @@ mod test {
         let err = contract
             .whitelist_proxy()
             .update_admins(vec![owner.to_owned(), "fake_admin".to_owned()])
-            .with_sender("fake_admin")
-            .call()
+            .call("fake_admin")
             .unwrap_err();
 
         assert_eq!(err, ContractError::Unauthorized);
 
-        contract
-            .whitelist_proxy()
-            .freeze()
-            .with_sender(owner)
-            .call()
-            .unwrap();
+        contract.whitelist_proxy().freeze().call(owner).unwrap();
 
         let err = contract
             .whitelist_proxy()
             .update_admins(vec![owner.to_owned(), "admin".to_owned()])
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap_err();
 
         assert_eq!(err, ContractError::ContractFrozen);

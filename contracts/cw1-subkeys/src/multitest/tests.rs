@@ -81,14 +81,12 @@ mod allowance {
 
         contract
             .increase_allowance(spender1.to_owned(), coin(1, ATOM), None)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
             .increase_allowance(spender2.to_owned(), coin(2, ATOM), None)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         assert_eq!(
@@ -135,8 +133,7 @@ mod allowance {
                 coin(1, ATOM),
                 Some(Expiration::AtHeight(height + 1)),
             )
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         app.app.borrow_mut().update_block(next_block);
@@ -172,8 +169,7 @@ mod allowance {
         let height = app.app.borrow().block_info().height;
         contract
             .increase_allowance(spender1.to_owned(), coin(1234, ATOM), None)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
@@ -182,8 +178,7 @@ mod allowance {
                 coin(2345, ATOM),
                 Some(Expiration::Never {}),
             )
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
@@ -192,8 +187,7 @@ mod allowance {
                 coin(3456, ATOM),
                 Some(Expiration::AtHeight(height + 2)),
             )
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
@@ -202,8 +196,7 @@ mod allowance {
                 coin(2222, ATOM),
                 Some(Expiration::AtHeight(height + 1)),
             )
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         app.app.borrow_mut().update_block(next_block);
@@ -284,14 +277,12 @@ mod permissions {
 
         contract
             .set_permissions(spender1.to_string(), ALL_PERMS)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
             .set_permissions(spender2.to_string(), NO_PERMS)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         assert_eq!(
@@ -327,20 +318,17 @@ mod permissions {
 
         contract
             .set_permissions(spender1.to_owned(), ALL_PERMS)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
             .set_permissions(spender2.to_owned(), NO_PERMS)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         contract
             .set_permissions(spender3.to_owned(), NO_PERMS)
-            .with_sender(owner)
-            .call()
+            .call(owner)
             .unwrap();
 
         assert_eq!(
@@ -428,17 +416,17 @@ mod cw1_execute {
     #[test]
     fn execute() {
         let owner = "owner";
-        let admin = Addr::unchecked("admin");
-        let non_admin = Addr::unchecked("non_admin");
+        let admin = "admin";
+        let non_admin = "non_admin";
 
         let app = cw_multi_test::App::new(|router, _api, storage| {
             router
                 .bank
-                .init_balance(storage, &admin, coins(2345, ATOM))
+                .init_balance(storage, &Addr::unchecked(admin), coins(2345, ATOM))
                 .unwrap();
             router
                 .bank
-                .init_balance(storage, &non_admin, coins(2345, ATOM))
+                .init_balance(storage, &Addr::unchecked(non_admin), coins(2345, ATOM))
                 .unwrap();
         });
 
@@ -460,17 +448,15 @@ mod cw1_execute {
         contract
             .cw1_proxy()
             .execute(vec![msg.clone().into()])
-            .with_sender(admin.to_string().as_ref())
             .with_funds(&[coin(2345, ATOM)])
-            .call()
+            .call(admin)
             .unwrap();
 
         contract
             .cw1_proxy()
             .execute(vec![msg.into()])
-            .with_sender(non_admin.to_string().as_ref())
             .with_funds(&[coin(2345, ATOM)])
-            .call()
+            .call(non_admin)
             .unwrap_err();
     }
 }

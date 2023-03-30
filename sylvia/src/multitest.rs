@@ -25,7 +25,6 @@ where
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
 {
     funds: &'a [Coin],
-    sender: &'a str,
     contract_addr: &'a Addr,
     msg: Msg,
     app: &'app App,
@@ -40,7 +39,6 @@ where
     pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
         Self {
             funds: &[],
-            sender: "",
             contract_addr,
             msg,
             app,
@@ -51,17 +49,13 @@ where
         Self { funds, ..self }
     }
 
-    pub fn with_sender(self, sender: &'a str) -> Self {
-        Self { sender, ..self }
-    }
-
     #[track_caller]
-    pub fn call(self) -> Result<cw_multi_test::AppResponse, Error> {
+    pub fn call(self, sender: &'a str) -> Result<cw_multi_test::AppResponse, Error> {
         self.app
             .app
             .borrow_mut()
             .execute_contract(
-                Addr::unchecked(self.sender),
+                Addr::unchecked(sender),
                 Addr::unchecked(self.contract_addr),
                 &self.msg,
                 self.funds,
