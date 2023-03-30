@@ -277,9 +277,13 @@ impl<'a> MultitestHelpers<'a> {
             pub mod multitest_utils {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
+                use #sylvia ::derivative::Derivative;
 
+                #[derive(Derivative)]
+                #[derivative(Debug)]
                 pub struct #proxy_name <'app> {
                     pub contract_addr: #sylvia ::cw_std::Addr,
+                    #[derivative(Debug="ignore")]
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
