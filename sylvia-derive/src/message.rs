@@ -103,8 +103,14 @@ impl<'a> StructMessage<'a> {
 
         let ctx_type = msg_attr.msg_type().emit_ctx_type();
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
+        let parameters = fields.iter().map(|field| {
+            let name = field.name;
+            let ty = field.ty;
+            quote! { #name : #ty}
+        });
         let fields = fields.iter().map(MsgField::emit);
 
+        // let arguments = fields.iter().map(|field| field.name);
         let generics = if generics.is_empty() {
             quote! {}
         } else {
@@ -130,6 +136,10 @@ impl<'a> StructMessage<'a> {
             }
 
             impl #generics #name #generics #where_clause {
+                pub fn new(#(#parameters,)*) -> Self {
+                    Self { #(#fields_names,)* }
+                }
+
                 pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
                     #result #full_where
                 {

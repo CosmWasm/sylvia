@@ -78,7 +78,6 @@ impl<'a> MultitestHelpers<'a> {
 
                     if msg_ty == MsgType::Migrate {
                         is_migrate = true;
-                        return None;
                     } else if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
                         return None;
                     }
@@ -221,6 +220,15 @@ impl<'a> MultitestHelpers<'a> {
                         let msg = ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+                    }
+                }
+            } else if msg_ty == &MsgType::Migrate {
+                quote! {
+                    #[track_caller]
+                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
+                        let msg = MigrateMsg::new( #(#arguments),* );
+
+                        #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                     }
                 }
             } else {
