@@ -22,6 +22,7 @@ pub trait Receiver {
 impl Receiver for ReceiverContract {
     type Error = StdError;
 
+    #[msg(exec)]
     fn receive(
         &self,
         _ctx: ExecCtx,
