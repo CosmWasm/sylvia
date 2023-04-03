@@ -110,7 +110,6 @@ impl<'a> StructMessage<'a> {
         });
         let fields = fields.iter().map(MsgField::emit);
 
-        // let arguments = fields.iter().map(|field| field.name);
         let generics = if generics.is_empty() {
             quote! {}
         } else {
