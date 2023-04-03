@@ -29,7 +29,7 @@ fn increase_decrease_allowances() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
@@ -129,7 +129,7 @@ fn allowances_independent() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
@@ -234,7 +234,7 @@ fn no_self_allowance() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
@@ -280,7 +280,7 @@ fn transfer_from_self_to_self() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -320,7 +320,7 @@ fn transfer_from_owner_requires_no_allowance() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -367,7 +367,7 @@ fn transfer_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -469,7 +469,7 @@ fn burn_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -574,7 +574,7 @@ fn send_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -697,7 +697,7 @@ fn no_past_expiration() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -831,7 +831,7 @@ fn query_allowances() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -962,7 +962,7 @@ fn query_all_allowances_works() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -1055,7 +1055,7 @@ fn all_spender_allowances_on_two_contracts() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -1089,7 +1089,7 @@ fn all_spender_allowances_on_two_contracts() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,
@@ -1146,7 +1146,7 @@ fn query_all_accounts_works() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount: start_amount,
             }],
             mint: None,

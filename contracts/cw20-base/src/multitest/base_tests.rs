@@ -25,7 +25,7 @@ fn basic() {
             symbol: "CASH".to_string(),
             decimals: 9,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -97,11 +97,11 @@ fn instantiate_multiple_accounts() {
             decimals: 6,
             initial_balances: vec![
                 Cw20Coin {
-                    address: addr1.clone().into(),
+                    address: addr1.into(),
                     amount: amount1,
                 },
                 Cw20Coin {
-                    address: addr2.clone().into(),
+                    address: addr2.into(),
                     amount: amount2,
                 },
             ],
@@ -144,7 +144,7 @@ fn queries_work() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -196,7 +196,7 @@ fn transfer() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -268,7 +268,7 @@ fn burn() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -342,7 +342,7 @@ fn send() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -414,7 +414,7 @@ fn migrate() {
             symbol: "TOKEN".to_string(),
             decimals: 6,
             initial_balances: vec![Cw20Coin {
-                address: owner.clone().into(),
+                address: owner.into(),
                 amount,
             }],
             mint: None,
@@ -443,7 +443,7 @@ fn migrate() {
         .unwrap();
 
     // Now migrate
-    contract.migrate().call(&owner, code_id.code_id()).unwrap();
+    contract.migrate().call(owner, code_id.code_id()).unwrap();
 
     // Smoke check that the contract still works.
     let resp = contract.balance(owner.to_string()).unwrap();
