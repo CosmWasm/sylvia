@@ -67,9 +67,7 @@ mod allowance {
         let app = App::default();
 
         let owner = "owner";
-        let spender1 = "spender1";
-        let spender2 = "spender2";
-        let spender3 = "spender3";
+        let spenders = ["spender1", "spender2", "spender3"];
 
         let code_id = CodeId::store_code(&app);
 
@@ -80,12 +78,12 @@ mod allowance {
             .unwrap();
 
         contract
-            .increase_allowance(spender1.to_owned(), coin(1, ATOM), None)
+            .increase_allowance(spenders[0].to_owned(), coin(1, ATOM), None)
             .call(owner)
             .unwrap();
 
         contract
-            .increase_allowance(spender2.to_owned(), coin(2, ATOM), None)
+            .increase_allowance(spenders[1].to_owned(), coin(2, ATOM), None)
             .call(owner)
             .unwrap();
 
@@ -94,7 +92,7 @@ mod allowance {
                 balance: NativeBalance(coins(1, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(spender1.to_owned()).unwrap()
+            contract.allowance(spenders[0].to_owned()).unwrap()
         );
 
         assert_eq!(
@@ -102,12 +100,12 @@ mod allowance {
                 balance: NativeBalance(coins(2, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(spender2.to_owned()).unwrap()
+            contract.allowance(spenders[1].to_owned()).unwrap()
         );
 
         assert_eq!(
             Allowance::default(),
-            contract.allowance(spender3.to_owned()).unwrap()
+            contract.allowance(spenders[2].to_owned()).unwrap()
         );
     }
 
