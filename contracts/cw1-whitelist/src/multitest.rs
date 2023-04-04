@@ -2,7 +2,7 @@
 mod test {
     use cosmwasm_std::{to_binary, WasmMsg};
 
-    use crate::contract::multitest_utils::Cw1WhitelistContractCodeId;
+    use crate::contract::multitest_utils::CodeId;
     use crate::cw1::test_utils::Cw1Methods;
     use crate::error::ContractError;
     use crate::responses::AdminListResponse;
@@ -14,7 +14,7 @@ mod test {
     #[test]
     fn proxy_freeze_message() {
         let app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let owner = "owner";
 
@@ -57,7 +57,7 @@ mod test {
     #[test]
     fn update_admins() {
         let app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let owner = "owner";
         let mut admins = vec!["admin1".to_owned(), "admin2".to_owned()];
@@ -84,7 +84,7 @@ mod test {
     #[test]
     fn unathorized_admin_update() {
         let app = App::default();
-        let code_id = Cw1WhitelistContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let owner = "owner";
 

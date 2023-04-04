@@ -3,7 +3,7 @@ use cw2::{query_contract_info, ContractVersion};
 use cw_utils::{Expiration, NativeBalance};
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::Cw1SubkeysContractCodeId;
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::{CONTRACT_NAME, CONTRACT_VERSION};
 
 const ATOM: &str = "atom";
@@ -34,7 +34,7 @@ fn get_contract_version_works() {
 
     let owner = "owner";
 
-    let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(vec![owner.to_owned()], true)
@@ -71,7 +71,7 @@ mod allowance {
         let spender2 = "spender2";
         let spender3 = "spender3";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned()], false)
@@ -118,7 +118,7 @@ mod allowance {
         let owner = "owner";
         let spender = "spender";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned()], false)
@@ -158,7 +158,7 @@ mod allowance {
         let spender3 = "spender3";
         let spender4 = "spender4";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned()], false)
@@ -267,7 +267,7 @@ mod permissions {
         let spender2 = "spender2";
         let spender3 = "spender2";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_string()], false)
@@ -308,7 +308,7 @@ mod permissions {
         let spender2 = "spender2";
         let spender3 = "spender3";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned()], false)
@@ -385,7 +385,7 @@ mod cw1_execute {
         let admin = "admin";
         let non_admin = "non_admin";
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned(), admin.to_owned()], false)
@@ -432,7 +432,7 @@ mod cw1_execute {
 
         let app = App::new(app);
 
-        let code_id = Cw1SubkeysContractCodeId::store_code(&app);
+        let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_owned(), admin.to_string()], false)
