@@ -869,7 +869,7 @@ impl<'a> EntryPoints<'a> {
     }
 
     pub fn emit(&self) -> TokenStream {
-        if cfg!(feature = "library") {
+        if cfg!(feature = "no_entry_points") {
             return quote! {};
         }
         let Self { name, error } = self;

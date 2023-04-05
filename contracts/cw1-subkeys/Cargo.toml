@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-library = ["sylvia/library"]
+library = ["sylvia/no_entry_points"]
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
