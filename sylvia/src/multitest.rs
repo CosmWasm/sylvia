@@ -1,7 +1,7 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::marker::PhantomData;
 
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::{Addr, BlockInfo, Coin};
 use cw_multi_test::Executor;
 use serde::Serialize;
 
@@ -15,6 +15,26 @@ impl App {
         Self {
             app: RefCell::new(app),
         }
+    }
+
+    pub fn app(&self) -> Ref<'_, cw_multi_test::App> {
+        Ref::map(self.app.borrow(), |app| app)
+    }
+
+    pub fn app_mut(&self) -> RefMut<'_, cw_multi_test::App> {
+        RefMut::map(self.app.borrow_mut(), |app| app)
+    }
+
+    pub fn block_info(&self) -> BlockInfo {
+        self.app.borrow().block_info()
+    }
+
+    pub fn set_block(&self, block: BlockInfo) {
+        self.app.borrow_mut().set_block(block)
+    }
+
+    pub fn update_block<F: Fn(&mut BlockInfo)>(&self, action: F) {
+        self.app.borrow_mut().update_block(action)
     }
 }
 
