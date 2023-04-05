@@ -48,14 +48,7 @@ impl Cw1SubkeysContract<'_> {
         admins: Vec<String>,
         mutable: bool,
     ) -> Result<Response, ContractError> {
-        let result = self.whitelist.instantiate(
-            InstantiateCtx {
-                deps: ctx.deps.branch(),
-                ..ctx
-            },
-            admins,
-            mutable,
-        )?;
+        let result = self.whitelist.instantiate(ctx.branch(), admins, mutable)?;
         set_contract_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
         Ok(result)
     }

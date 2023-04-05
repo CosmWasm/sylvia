@@ -18,6 +18,16 @@ pub struct QueryCtx<'a> {
     pub env: Env,
 }
 
+impl ExecCtx<'_> {
+    pub fn branch(&'_ mut self) -> ExecCtx<'_> {
+        ExecCtx {
+            deps: self.deps.branch(),
+            env: self.env.clone(),
+            info: self.info.clone(),
+        }
+    }
+}
+
 impl<'a> From<(DepsMut<'a>, Env)> for MigrateCtx<'a> {
     fn from((deps, env): (DepsMut<'a>, Env)) -> Self {
         Self { deps, env }
