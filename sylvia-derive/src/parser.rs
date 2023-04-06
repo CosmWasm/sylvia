@@ -112,17 +112,14 @@ impl MsgType {
         let sylvia = crate_module();
 
         match self {
-            Exec => quote! {
-                #sylvia ::types::ExecCtx
-            },
-            Instantiate => quote! {
-                #sylvia ::types::InstantiateCtx
+            Exec | Instantiate => quote! {
+                (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
             },
             Migrate => quote! {
-                #sylvia ::types::MigrateCtx,
+                (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
             },
             Query => quote! {
-                #sylvia ::types::QueryCtx
+                (#sylvia ::cw_std::Deps, #sylvia ::cw_std::Env)
             },
         }
     }
