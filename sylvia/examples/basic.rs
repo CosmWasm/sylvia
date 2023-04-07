@@ -1,6 +1,7 @@
 use anyhow::Error;
-use cosmwasm_std::{Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError};
+use cosmwasm_std::{Addr, Response, StdError};
 use cw_storage_plus::{Item, Map};
+use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, interface};
 
 #[derive(
@@ -35,22 +36,18 @@ pub trait Group {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn update_admin(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        admin: Option<String>,
-    ) -> Result<Response, Self::Error>;
+    fn update_admin(&self, ctx: ExecCtx, admin: Option<String>) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
     fn update_members(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         remove: Vec<String>,
         add: Vec<Member>,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn member(&self, ctx: (Deps, Env), addr: String) -> Result<MemberResp, Self::Error>;
+    fn member(&self, ctx: QueryCtx, addr: String) -> Result<MemberResp, Self::Error>;
 }
 
 pub struct GroupContract {
@@ -69,18 +66,14 @@ impl Group for GroupContract {
     type Error = Error;
 
     #[msg(exec)]
-    fn update_admin(
-        &self,
-        _ctx: (DepsMut, Env, MessageInfo),
-        _admin: Option<String>,
-    ) -> Result<Response, Self::Error> {
+    fn update_admin(&self, _ctx: ExecCtx, _admin: Option<String>) -> Result<Response, Self::Error> {
         todo!()
     }
 
     #[msg(exec)]
     fn update_members(
         &self,
-        _ctx: (DepsMut, Env, MessageInfo),
+        _ctx: ExecCtx,
         _remove: Vec<String>,
         _add: Vec<Member>,
     ) -> Result<Response, Self::Error> {
@@ -88,7 +81,7 @@ impl Group for GroupContract {
     }
 
     #[msg(query)]
-    fn member(&self, _ctx: (Deps, Env), _addr: String) -> Result<MemberResp, Self::Error> {
+    fn member(&self, _ctx: QueryCtx, _addr: String) -> Result<MemberResp, Self::Error> {
         todo!()
     }
 }
@@ -106,12 +99,12 @@ impl GroupContract {
     #[msg(instantiate)]
     pub fn instantiate(
         &self,
-        (deps, _env, _msg): (DepsMut, Env, MessageInfo),
+        ctx: InstantiateCtx,
         admin: Option<String>,
     ) -> Result<Response, Error> {
         if let Some(admin) = admin {
-            let admin = deps.api.addr_validate(&admin)?;
-            self.admin.save(deps.storage, &admin)?;
+            let admin = ctx.deps.api.addr_validate(&admin)?;
+            self.admin.save(ctx.deps.storage, &admin)?;
         }
 
         Ok(Response::new())

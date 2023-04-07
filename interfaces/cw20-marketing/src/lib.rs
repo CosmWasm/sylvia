@@ -1,8 +1,9 @@
 pub mod responses;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Binary, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
+use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 /// This is used for uploading logo data, or setting it in InstantiateData
@@ -40,7 +41,7 @@ pub trait Cw20Marketing {
     #[msg(exec)]
     fn update_marketing(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         project: Option<String>,
         description: Option<String>,
         marketing: Option<String>,
@@ -48,19 +49,15 @@ pub trait Cw20Marketing {
 
     /// If set as the "marketing" role on the contract, upload a new URL, SVG, or PNG for the token
     #[msg(exec)]
-    fn upload_logo(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        logo: Logo,
-    ) -> Result<Response, Self::Error>;
+    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error>;
 
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
     #[msg(query)]
-    fn marketing_info(&self, ctx: (Deps, Env)) -> StdResult<MarketingInfoResponse>;
+    fn marketing_info(&self, ctx: QueryCtx) -> StdResult<MarketingInfoResponse>;
 
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.
     #[msg(query)]
-    fn download_logo(&self, ctx: (Deps, Env)) -> StdResult<DownloadLogoResponse>;
+    fn download_logo(&self, ctx: QueryCtx) -> StdResult<DownloadLogoResponse>;
 }

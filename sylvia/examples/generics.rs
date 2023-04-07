@@ -1,5 +1,6 @@
-use cosmwasm_std::{CosmosMsg, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{CosmosMsg, Response};
 
+use sylvia::types::ExecCtx;
 use sylvia_derive::interface;
 
 #[interface(module=msg)]
@@ -10,11 +11,7 @@ where
     type Error;
 
     #[msg(exec)]
-    fn execute(
-        &self,
-        ctx: (DepsMut, Env, MessageInfo),
-        msgs: Vec<CosmosMsg<Msg>>,
-    ) -> Result<Response, Self::Error>;
+    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg<Msg>>) -> Result<Response, Self::Error>;
 }
 
 fn main() {}

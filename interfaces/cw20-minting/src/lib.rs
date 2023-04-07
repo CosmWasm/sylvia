@@ -1,7 +1,8 @@
 pub mod responses;
 
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Response, StdError, StdResult, Uint128};
 use responses::MinterResponse;
+use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
@@ -12,7 +13,7 @@ pub trait Cw20Minting {
     #[msg(exec)]
     fn mint(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         recipient: String,
         amount: Uint128,
     ) -> Result<Response, Self::Error>;
@@ -22,11 +23,11 @@ pub trait Cw20Minting {
     #[msg(exec)]
     fn update_minter(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         new_minter: Option<String>,
     ) -> Result<Response, Self::Error>;
 
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     #[msg(query)]
-    fn minter(&self, ctx: (Deps, Env)) -> StdResult<Option<MinterResponse>>;
+    fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>>;
 }

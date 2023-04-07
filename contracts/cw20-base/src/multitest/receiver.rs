@@ -1,4 +1,5 @@
-use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response, StdError, Uint128};
+use cosmwasm_std::{Binary, Response, StdError, Uint128};
+use sylvia::types::ExecCtx;
 use sylvia::{contract, interface, schemars};
 
 use super::receiver_contract::ReceiverContract;
@@ -10,7 +11,7 @@ pub trait Receiver {
     #[msg(exec)]
     fn receive(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         sender: String,
         amount: Uint128,
         msg: Binary,
@@ -23,7 +24,7 @@ impl Receiver for ReceiverContract {
 
     fn receive(
         &self,
-        _ctx: (DepsMut, Env, MessageInfo),
+        _ctx: ExecCtx,
         _sender: String,
         _amount: cosmwasm_std::Uint128,
         _msg: cosmwasm_std::Binary,

@@ -1,9 +1,10 @@
 use crate::error::ContractError;
 use crate::whitelist;
-use cosmwasm_std::{Addr, Deps, DepsMut, Empty, Env, MessageInfo, Response};
+use cosmwasm_std::{Addr, Deps, Empty, Response};
 
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
+use sylvia::types::InstantiateCtx;
 use sylvia::{contract, schemars};
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -27,19 +28,18 @@ impl Cw1WhitelistContract<'_> {
     #[msg(instantiate)]
     pub fn instantiate(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: InstantiateCtx,
         admins: Vec<String>,
         mutable: bool,
     ) -> Result<Response, ContractError> {
-        let (deps, _, _) = ctx;
-        set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+        set_contract_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
         for admin in admins {
-            let admin = deps.api.addr_validate(&admin)?;
-            self.admins.save(deps.storage, &admin, &Empty {})?;
+            let admin = ctx.deps.api.addr_validate(&admin)?;
+            self.admins.save(ctx.deps.storage, &admin, &Empty {})?;
         }
 
-        self.mutable.save(deps.storage, &mutable)?;
+        self.mutable.save(ctx.deps.storage, &mutable)?;
 
         Ok(Response::new())
     }
@@ -74,7 +74,7 @@ mod tests {
         let info = mock_info(anyone, &[]);
         contract
             .instantiate(
-                (deps.as_mut(), mock_env(), info),
+                (deps.as_mut(), mock_env(), info).into(),
                 vec![alice.to_string(), bob.to_string(), carl.to_string()],
                 true,
             )
@@ -86,14 +86,19 @@ mod tests {
             mutable: true,
         };
         assert_eq!(
-            contract.admin_list((deps.as_ref(), mock_env())).unwrap(),
+            contract
+                .admin_list((deps.as_ref(), mock_env()).into())
+                .unwrap(),
             expected
         );
 
         // anyone cannot modify the contract
         let info = mock_info(anyone, &[]);
         let err = contract
-            .update_admins((deps.as_mut(), mock_env(), info), vec![anyone.to_string()])
+            .update_admins(
+                (deps.as_mut(), mock_env(), info).into(),
+                vec![anyone.to_string()],
+            )
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
 
@@ -101,7 +106,7 @@ mod tests {
         let info = mock_info(alice, &[]);
         contract
             .update_admins(
-                (deps.as_mut(), mock_env(), info),
+                (deps.as_mut(), mock_env(), info).into(),
                 vec![alice.to_string(), bob.to_string()],
             )
             .unwrap();
@@ -112,33 +117,42 @@ mod tests {
             mutable: true,
         };
         assert_eq!(
-            contract.admin_list((deps.as_ref(), mock_env())).unwrap(),
+            contract
+                .admin_list((deps.as_ref(), mock_env()).into())
+                .unwrap(),
             expected
         );
 
         // carl cannot freeze it
         let info = mock_info(carl, &[]);
         let err = contract
-            .freeze((deps.as_mut(), mock_env(), info))
+            .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
 
         // but bob can
         let info = mock_info(bob, &[]);
-        contract.freeze((deps.as_mut(), mock_env(), info)).unwrap();
+        contract
+            .freeze((deps.as_mut(), mock_env(), info).into())
+            .unwrap();
         let expected = AdminListResponse {
             admins: vec![alice.to_string(), bob.to_string()],
             mutable: false,
         };
         assert_eq!(
-            contract.admin_list((deps.as_ref(), mock_env())).unwrap(),
+            contract
+                .admin_list((deps.as_ref(), mock_env()).into())
+                .unwrap(),
             expected
         );
 
         // and now alice cannot change it again
         let info = mock_info(alice, &[]);
         let err = contract
-            .update_admins((deps.as_mut(), mock_env(), info), vec![alice.to_string()])
+            .update_admins(
+                (deps.as_mut(), mock_env(), info).into(),
+                vec![alice.to_string()],
+            )
             .unwrap_err();
         assert_eq!(err, ContractError::ContractFrozen {});
     }
@@ -157,7 +171,7 @@ mod tests {
         let info = mock_info(bob, &[]);
         contract
             .instantiate(
-                (deps.as_mut(), mock_env(), info),
+                (deps.as_mut(), mock_env(), info).into(),
                 vec![alice.to_string(), carl.to_string()],
                 false,
             )
@@ -181,14 +195,14 @@ mod tests {
         // bob cannot execute them
         let info = mock_info(bob, &[]);
         let err = contract
-            .execute((deps.as_mut(), mock_env(), info), msgs.clone())
+            .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
 
         // but carl can
         let info = mock_info(carl, &[]);
         let res = contract
-            .execute((deps.as_mut(), mock_env(), info), msgs.clone())
+            .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap();
         assert_eq!(
             res.messages,
@@ -212,7 +226,7 @@ mod tests {
         let info = mock_info(anyone, &[]);
         contract
             .instantiate(
-                (deps.as_mut(), mock_env(), info),
+                (deps.as_mut(), mock_env(), info).into(),
                 vec![alice.to_string(), bob.to_string()],
                 false,
             )
@@ -231,7 +245,7 @@ mod tests {
         // owner can send
         let res = contract
             .can_execute(
-                (deps.as_ref(), mock_env()),
+                (deps.as_ref(), mock_env()).into(),
                 alice.to_string(),
                 send_msg.clone(),
             )
@@ -241,7 +255,7 @@ mod tests {
         // owner can stake
         let res = contract
             .can_execute(
-                (deps.as_ref(), mock_env()),
+                (deps.as_ref(), mock_env()).into(),
                 bob.to_string(),
                 staking_msg.clone(),
             )
@@ -250,13 +264,21 @@ mod tests {
 
         // anyone cannot send
         let res = contract
-            .can_execute((deps.as_ref(), mock_env()), anyone.to_string(), send_msg)
+            .can_execute(
+                (deps.as_ref(), mock_env()).into(),
+                anyone.to_string(),
+                send_msg,
+            )
             .unwrap();
         assert!(!res.can_execute);
 
         // anyone cannot stake
         let res = contract
-            .can_execute((deps.as_ref(), mock_env()), anyone.to_string(), staking_msg)
+            .can_execute(
+                (deps.as_ref(), mock_env()).into(),
+                anyone.to_string(),
+                staking_msg,
+            )
             .unwrap();
         assert!(!res.can_execute);
     }

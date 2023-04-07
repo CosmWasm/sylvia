@@ -1,5 +1,6 @@
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Response, StdError, StdResult};
 
+use sylvia::types::{InstantiateCtx, QueryCtx};
 use sylvia::{contract, interface};
 use thiserror::Error;
 
@@ -21,7 +22,7 @@ pub trait Interface {
     type Error: From<StdError>;
 
     #[msg(query, resp=QueryResponse)]
-    fn query(&self, ctx: (Deps, Env), #[serde(default)] name: String) -> QueryResult<Self::Error>;
+    fn query(&self, ctx: QueryCtx, #[serde(default)] name: String) -> QueryResult<Self::Error>;
 }
 
 pub struct SomeContract {}
@@ -33,14 +34,14 @@ impl SomeContract {
         Self {}
     }
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[msg(query, resp=QueryResponse)]
     fn contract_query(
         &self,
-        _ctx: (Deps, Env),
+        _ctx: QueryCtx,
         #[serde(default)] _name: String,
     ) -> QueryResult<ContractError> {
         Ok(QueryResponse {})
