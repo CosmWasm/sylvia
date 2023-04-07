@@ -540,7 +540,7 @@ impl<'a> MultitestHelpers<'a> {
         let migrate_body = if self.is_migrate {
             quote! {
                 #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
-                    .dispatch(self, (deps, env))
+                    .dispatch(self, (deps, env).into())
                     .map_err(Into::into)
             }
         } else {

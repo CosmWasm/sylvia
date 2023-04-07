@@ -1,5 +1,6 @@
-use cosmwasm_std::{Addr, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Addr, Decimal, Response, StdError, StdResult};
 
+use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::{contract, interface};
 
 #[derive(
@@ -12,22 +13,22 @@ pub trait Interface {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn no_args_execution(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, Self::Error>;
+    fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
     fn argumented_execution(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         addr: Addr,
         coef: Decimal,
         #[serde(default)] desc: String,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn no_args_query(&self, ctx: (Deps, Env)) -> Result<QueryResult, Self::Error>;
+    fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;
 
     #[msg(query)]
-    fn argumented_query(&self, ctx: (Deps, Env), user: Addr) -> Result<QueryResult, Self::Error>;
+    fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResult, Self::Error>;
 }
 
 pub struct Contract {}
@@ -42,24 +43,24 @@ impl Contract {
     }
 
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[msg(migrate)]
-    pub fn migrate(&self, _ctx: (DepsMut, Env)) -> StdResult<Response> {
+    pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[msg(exec)]
-    fn no_args_execution(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
+    fn no_args_execution(&self, _ctx: ExecCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[msg(exec)]
     fn argumented_execution(
         &self,
-        _ctx: (DepsMut, Env, MessageInfo),
+        _ctx: ExecCtx,
         _addr: Addr,
         #[serde(default)] _coef: Decimal,
         #[serde(default)] _desc: String,
@@ -68,12 +69,12 @@ impl Contract {
     }
 
     #[msg(query)]
-    fn no_args_query(&self, _ctx: (Deps, Env)) -> StdResult<QueryResult> {
+    fn no_args_query(&self, _ctx: QueryCtx) -> StdResult<QueryResult> {
         Ok(QueryResult {})
     }
 
     #[msg(query)]
-    fn argumented_query(&self, _ctx: (Deps, Env), _user: Addr) -> StdResult<QueryResult> {
+    fn argumented_query(&self, _ctx: QueryCtx, _user: Addr) -> StdResult<QueryResult> {
         Ok(QueryResult {})
     }
 }

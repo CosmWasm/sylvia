@@ -1,5 +1,6 @@
-use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{Addr, Response, StdResult};
 use cw_multi_test::{App, Executor};
+use sylvia::types::InstantiateCtx;
 use sylvia::{contract, schemars};
 
 use super::receiver;
@@ -12,7 +13,7 @@ impl ReceiverContract {
         Self {}
     }
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 }

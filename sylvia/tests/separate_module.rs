@@ -1,6 +1,7 @@
-use cosmwasm_std::{Addr, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError};
+use cosmwasm_std::{Addr, Decimal, Response, StdError};
 
 use sylvia::interface;
+use sylvia::types::{ExecCtx, QueryCtx};
 
 #[derive(
     serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
@@ -12,24 +13,24 @@ pub trait Interface {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn no_args_execution(&self, ctx: (DepsMut, Env, MessageInfo)) -> Result<Response, Self::Error>;
+    fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
     #[msg(exec)]
     fn argumented_execution(
         &self,
-        ctx: (DepsMut, Env, MessageInfo),
+        ctx: ExecCtx,
         addr: Addr,
         coef: Decimal,
         desc: String,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn no_args_query(&self, ctx: (Deps, Env)) -> Result<QueryResult, Self::Error>;
+    fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;
 
     #[msg(query)]
     fn argumented_query(
         &self,
-        ctx: (Deps, Env),
+        ctx: QueryCtx,
         user: Addr,
     ) -> Result<Option<QueryResult>, Self::Error>;
 }

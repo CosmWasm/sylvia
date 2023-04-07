@@ -134,7 +134,7 @@ impl<'a> StructMessage<'a> {
                     #result #full_where
                 {
                     let Self { #(#fields_names,)* } = self;
-                    contract.#function_name(ctx.into(), #(#fields_names,)*).map_err(Into::into)
+                    contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
                 }
             }
         }
@@ -527,12 +527,12 @@ impl<'a> MsgVariant<'a> {
             Exec => quote! {
                 #name {
                     #(#fields,)*
-                } => contract.#function_name(ctx.into(), #(#args),*).map_err(Into::into)
+                } => contract.#function_name(Into::into(ctx), #(#args),*).map_err(Into::into)
             },
             Query => quote! {
                 #name {
                     #(#fields,)*
-                } => cosmwasm_std::to_binary(&contract.#function_name(ctx.into(), #(#args),*)?).map_err(Into::into)
+                } => cosmwasm_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
             Instantiate | Migrate => {
                 emit_error!(name.span(), "Instantiation and Migrate messages not supported on traits, they should be defined on contracts directly");
@@ -716,7 +716,7 @@ impl<'a> GlueMessage<'a> {
         let dispatch_arms = interfaces.iter().map(|interface| {
             let ContractMessageAttr { variant, .. } = interface;
 
-            quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, ctx) }
+            quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into(ctx)) }
         });
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};

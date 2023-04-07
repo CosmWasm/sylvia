@@ -7,6 +7,7 @@ and this project adheres to
 ## Unreleased
 
 - Changed the way multitest helpers are generated to avoid weird `use` statements in code.
+- Introduced Context types in place of tuples
 
 ## \[0.3.1\] - 2023-03-03
 
