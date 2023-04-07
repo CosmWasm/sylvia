@@ -23,15 +23,15 @@ impl Cw20Marketing for Cw20Base<'_> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?
-            .ok_or(ContractError::Unauthorized {})?;
+            .ok_or(ContractError::Unauthorized)?;
 
         if marketing_info
             .marketing
             .as_ref()
-            .ok_or(ContractError::Unauthorized {})?
+            .ok_or(ContractError::Unauthorized)?
             != &ctx.info.sender
         {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         match project {
@@ -74,17 +74,17 @@ impl Cw20Marketing for Cw20Base<'_> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?
-            .ok_or(ContractError::Unauthorized {})?;
+            .ok_or(ContractError::Unauthorized)?;
 
         verify_logo(&logo)?;
 
         if marketing_info
             .marketing
             .as_ref()
-            .ok_or(ContractError::Unauthorized {})?
+            .ok_or(ContractError::Unauthorized)?
             != &ctx.info.sender
         {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         self.logo.save(ctx.deps.storage, &logo)?;

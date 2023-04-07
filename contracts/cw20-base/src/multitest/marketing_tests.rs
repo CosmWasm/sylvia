@@ -46,7 +46,7 @@ fn update_unauthorised() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::Unauthorized {});
+    assert_eq!(err, ContractError::Unauthorized);
 
     // Ensure marketing didn't change
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -630,7 +630,7 @@ fn update_logo_png_oversized() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::LogoTooBig {});
+    assert_eq!(err, ContractError::LogoTooBig);
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
 
@@ -691,7 +691,7 @@ fn update_logo_svg_oversized() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::LogoTooBig {});
+    assert_eq!(err, ContractError::LogoTooBig);
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
     assert_eq!(
@@ -744,7 +744,7 @@ fn update_logo_png_invalid() {
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
         .call(owner)
         .unwrap_err();
-    assert_eq!(err, ContractError::InvalidPngHeader {});
+    assert_eq!(err, ContractError::InvalidPngHeader);
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
     assert_eq!(
@@ -797,7 +797,7 @@ fn update_logo_svg_invalid() {
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
         .call(owner)
         .unwrap_err();
-    assert_eq!(err, ContractError::InvalidXmlPreamble {});
+    assert_eq!(err, ContractError::InvalidXmlPreamble);
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
     assert_eq!(

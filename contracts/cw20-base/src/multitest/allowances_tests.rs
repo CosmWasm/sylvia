@@ -244,7 +244,7 @@ fn no_self_allowance() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::CannotSetOwnAccount {});
+    assert_eq!(err, ContractError::CannotSetOwnAccount);
 
     // decrease self-allowance
     let err = contract
@@ -253,7 +253,7 @@ fn no_self_allowance() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::CannotSetOwnAccount {});
+    assert_eq!(err, ContractError::CannotSetOwnAccount);
 }
 
 #[test]
@@ -434,7 +434,7 @@ fn transfer_from_respects_limits() {
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
-    assert!(matches!(err, ContractError::Expired {}));
+    assert!(matches!(err, ContractError::Expired));
 }
 
 #[test]
@@ -530,7 +530,7 @@ fn burn_from_respects_limits() {
         .burn_from(owner.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
-    assert!(matches!(err, ContractError::Expired {}));
+    assert!(matches!(err, ContractError::Expired));
 }
 
 // Ignoring currently due to some issue with unsupported msg being sent in send_from
@@ -651,7 +651,7 @@ fn send_from_respects_limits() {
         .call(spender)
         .unwrap_err();
 
-    assert!(matches!(err, ContractError::Expired {}));
+    assert!(matches!(err, ContractError::Expired));
 }
 
 #[test]
@@ -692,7 +692,7 @@ fn no_past_expiration() {
         .unwrap_err();
 
     // ensure it is rejected
-    assert_eq!(ContractError::InvalidExpiration {}, err);
+    assert_eq!(ContractError::InvalidExpiration, err);
 
     // set allowance with time expiration in the past
     let block_time = app.app.borrow().block_info().time;
@@ -705,7 +705,7 @@ fn no_past_expiration() {
         .unwrap_err();
 
     // ensure it is rejected
-    assert_eq!(ContractError::InvalidExpiration {}, err);
+    assert_eq!(ContractError::InvalidExpiration, err);
 
     // set allowance with height expiration at next block height
     let block_height = app.app.borrow().block_info().height + 1;
@@ -760,7 +760,7 @@ fn no_past_expiration() {
         .unwrap_err();
 
     // ensure it is rejected
-    assert_eq!(ContractError::InvalidExpiration {}, err);
+    assert_eq!(ContractError::InvalidExpiration, err);
 
     // decrease with height expiration at next block height
     let block_height = app.app.borrow().block_info().height + 1;

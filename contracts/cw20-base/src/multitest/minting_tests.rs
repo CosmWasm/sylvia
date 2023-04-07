@@ -155,7 +155,7 @@ fn can_mint_by_minter() {
         .call(minter)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::InvalidZeroAmount);
 
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
@@ -165,7 +165,7 @@ fn can_mint_by_minter() {
         .call(minter)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::CannotExceedCap {});
+    assert_eq!(err, ContractError::CannotExceedCap);
 }
 
 #[test]
@@ -214,7 +214,7 @@ fn others_cannot_mint() {
         .call(minter)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::InvalidZeroAmount);
 
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
@@ -224,7 +224,7 @@ fn others_cannot_mint() {
         .call(minter)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::CannotExceedCap {});
+    assert_eq!(err, ContractError::CannotExceedCap);
 }
 
 #[test]
@@ -310,7 +310,7 @@ fn others_cannot_update_minter() {
         .update_minter(Some(new_minter.to_string()))
         .call(new_minter)
         .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+    assert_eq!(err, ContractError::Unauthorized);
 }
 
 #[test]
@@ -360,5 +360,5 @@ fn unset_minter() {
         .call(minter)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::Unauthorized {});
+    assert_eq!(err, ContractError::Unauthorized);
 }

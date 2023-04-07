@@ -9,16 +9,16 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
 
     #[error("Contract is frozen")]
-    ContractFrozen {},
+    ContractFrozen,
 
     #[error("Cannot set to own account")]
-    CannotSetOwnAccount {},
+    CannotSetOwnAccount,
 
     #[error("No allowance for this account")]
-    NoAllowance {},
+    NoAllowance,
 
     #[error("Allowance already expired while setting: {0}")]
     SettingExpiredAllowance(Expiration),
@@ -28,8 +28,8 @@ pub enum ContractError {
 impl From<WhitelistError> for ContractError {
     fn from(err: WhitelistError) -> Self {
         match err {
-            WhitelistError::Unauthorized {} => ContractError::Unauthorized {},
-            WhitelistError::ContractFrozen {} => ContractError::ContractFrozen {},
+            WhitelistError::Unauthorized => ContractError::Unauthorized,
+            WhitelistError::ContractFrozen => ContractError::ContractFrozen,
             WhitelistError::Std(err) => ContractError::Std(err),
         }
     }
