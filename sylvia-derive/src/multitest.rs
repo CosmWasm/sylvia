@@ -451,18 +451,16 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
-        let code_id = Ident::new(&format!("{}CodeId", contract_name), contract_name.span());
-
         quote! {
             #impl_contract
 
-            pub struct #code_id <'app> {
+            pub struct CodeId<'app> {
                 code_id: u64,
                 app: &'app #sylvia ::multitest::App,
             }
 
-            impl<'app> #code_id <'app> {
-                pub fn store_code(app: &'app mut #sylvia ::multitest::App) -> Self {
+            impl<'app> CodeId<'app> {
+                pub fn store_code(app: &'app #sylvia ::multitest::App) -> Self {
                     let code_id = app
                         .app
                         .borrow_mut()
@@ -489,7 +487,7 @@ impl<'a> MultitestHelpers<'a> {
             }
 
             pub struct InstantiateProxy<'a, 'app> {
-                code_id: &'a #code_id <'app>,
+                code_id: &'a CodeId <'app>,
                 funds: &'a [#sylvia ::cw_std::Coin],
                 label: &'a str,
                 admin: Option<String>,

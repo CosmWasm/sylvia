@@ -1,13 +1,41 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::marker::PhantomData;
 
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::{Addr, BlockInfo, Coin};
 use cw_multi_test::Executor;
 use serde::Serialize;
 
 #[derive(Default)]
 pub struct App {
     pub app: RefCell<cw_multi_test::App>,
+}
+
+impl App {
+    pub fn new(app: cw_multi_test::App) -> Self {
+        Self {
+            app: RefCell::new(app),
+        }
+    }
+
+    pub fn app(&self) -> Ref<'_, cw_multi_test::App> {
+        Ref::map(self.app.borrow(), |app| app)
+    }
+
+    pub fn app_mut(&self) -> RefMut<'_, cw_multi_test::App> {
+        RefMut::map(self.app.borrow_mut(), |app| app)
+    }
+
+    pub fn block_info(&self) -> BlockInfo {
+        self.app.borrow().block_info()
+    }
+
+    pub fn set_block(&self, block: BlockInfo) {
+        self.app.borrow_mut().set_block(block)
+    }
+
+    pub fn update_block<F: Fn(&mut BlockInfo)>(&self, action: F) {
+        self.app.borrow_mut().update_block(action)
+    }
 }
 
 #[must_use]
@@ -17,7 +45,6 @@ where
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
 {
     funds: &'a [Coin],
-    sender: &'a str,
     contract_addr: &'a Addr,
     msg: Msg,
     app: &'app App,
@@ -32,7 +59,6 @@ where
     pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
         Self {
             funds: &[],
-            sender: "",
             contract_addr,
             msg,
             app,
@@ -43,17 +69,13 @@ where
         Self { funds, ..self }
     }
 
-    pub fn with_sender(self, sender: &'a str) -> Self {
-        Self { sender, ..self }
-    }
-
     #[track_caller]
-    pub fn call(self) -> Result<cw_multi_test::AppResponse, Error> {
+    pub fn call(self, sender: &'a str) -> Result<cw_multi_test::AppResponse, Error> {
         self.app
             .app
             .borrow_mut()
             .execute_contract(
-                Addr::unchecked(self.sender),
+                Addr::unchecked(sender),
                 Addr::unchecked(self.contract_addr),
                 &self.msg,
                 self.funds,
