@@ -98,7 +98,7 @@ fn dispatch() {
     let info = mock_info("owner", &[]);
 
     let resp = ExecMsg::NoArgsExecution {}
-        .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()).into())
+        .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
         .unwrap();
     assert_eq!(resp, Response::new());
 
@@ -107,7 +107,7 @@ fn dispatch() {
         coef: Decimal::percent(30),
         desc: "True".to_owned(),
     }
-    .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()).into())
+    .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
     .unwrap();
     assert_eq!(resp, Response::new());
 
@@ -116,19 +116,19 @@ fn dispatch() {
         coef: Decimal::percent(70),
         desc: "False".to_owned(),
     }
-    .dispatch(&contract, (deps.as_mut(), env.clone(), info).into())
+    .dispatch(&contract, (deps.as_mut(), env.clone(), info))
     .unwrap();
     assert_eq!(resp, Response::new());
 
     let resp = QueryMsg::NoArgsQuery {}
-        .dispatch(&contract, (deps.as_ref(), env.clone()).into())
+        .dispatch(&contract, (deps.as_ref(), env.clone()))
         .unwrap();
     let _resp: EmptyQueryResponse = from_binary(&resp).unwrap();
 
     let resp = QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("addr2"),
     }
-    .dispatch(&contract, (deps.as_ref(), env).into())
+    .dispatch(&contract, (deps.as_ref(), env))
     .unwrap();
     let resp: QueryResponse = from_binary(&resp).unwrap();
     assert_eq!(
