@@ -8,10 +8,10 @@ use cw_utils::Expiration;
 use sylvia::multitest::App;
 
 use crate::allowances::test_utils::Cw20AllowancesMethods;
-use crate::contract::multitest_utils::Cw20BaseCodeId;
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::multitest::receiver_contract::multitest_utils::ReceiverContractCodeId;
+use crate::multitest::receiver_contract::multitest_utils::CodeId as ReceiverCodeId;
 use crate::responses::Cw20Coin;
 
 #[test]
@@ -21,7 +21,7 @@ fn increase_decrease_allowances() {
     let owner = "addr0001";
     let spender = "addr0002";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -52,8 +52,7 @@ fn increase_decrease_allowances() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // ensure it looks good
@@ -70,8 +69,7 @@ fn increase_decrease_allowances() {
     contract
         .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), lower, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -88,8 +86,7 @@ fn increase_decrease_allowances() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), raise, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -102,8 +99,7 @@ fn increase_decrease_allowances() {
     contract
         .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), Uint128::new(99988647623876347), None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -121,7 +117,7 @@ fn allowances_independent() {
     let spender = "addr0002";
     let spender2 = "addr0003";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -158,8 +154,7 @@ fn allowances_independent() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // set other allowance with no expiration
@@ -167,8 +162,7 @@ fn allowances_independent() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allowance2, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // check they are proper
@@ -195,8 +189,7 @@ fn allowances_independent() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allowance3, Some(expires3))
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap();
 
     let expect_three = AllowanceResponse {
@@ -226,7 +219,7 @@ fn no_self_allowance() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -248,8 +241,7 @@ fn no_self_allowance() {
     let err = contract
         .cw20_allowances_proxy()
         .increase_allowance(owner.to_string(), Uint128::new(7777), None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotSetOwnAccount {});
@@ -258,8 +250,7 @@ fn no_self_allowance() {
     let err = contract
         .cw20_allowances_proxy()
         .decrease_allowance(owner.to_string(), Uint128::new(7777), None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotSetOwnAccount {});
@@ -272,7 +263,7 @@ fn transfer_from_self_to_self() {
     let owner = "addr0001";
     let amount = Uint128::new(999999);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -295,8 +286,7 @@ fn transfer_from_self_to_self() {
     contract
         .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), owner.to_string(), transfer)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // make sure amount of money is the same
@@ -312,7 +302,7 @@ fn transfer_from_owner_requires_no_allowance() {
     let rcpt = "addr0003";
     let start_amount = Uint128::new(999999);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -335,8 +325,7 @@ fn transfer_from_owner_requires_no_allowance() {
     contract
         .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // make sure money arrived
@@ -359,7 +348,7 @@ fn transfer_from_respects_limits() {
     let rcpt = "addr0003";
     let start_amount = Uint128::new(999999);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -382,8 +371,7 @@ fn transfer_from_respects_limits() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // valid transfer of part of the allowance
@@ -391,8 +379,7 @@ fn transfer_from_respects_limits() {
     contract
         .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap();
 
     // make sure money arrived
@@ -422,8 +409,7 @@ fn transfer_from_respects_limits() {
     let err = contract
         .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -436,8 +422,7 @@ fn transfer_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // move to next block
@@ -447,8 +432,7 @@ fn transfer_from_respects_limits() {
     let err = contract
         .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired {}));
 }
@@ -461,7 +445,7 @@ fn burn_from_respects_limits() {
     let spender = "addr0002";
     let start_amount = Uint128::new(999999);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -484,8 +468,7 @@ fn burn_from_respects_limits() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // valid burn of part of the allowance
@@ -493,8 +476,7 @@ fn burn_from_respects_limits() {
     contract
         .cw20_allowances_proxy()
         .burn_from(owner.to_string(), transfer)
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap();
 
     // make sure money burnt
@@ -522,8 +504,7 @@ fn burn_from_respects_limits() {
     let err = contract
         .cw20_allowances_proxy()
         .burn_from(owner.to_string(), Uint128::new(33443))
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -537,8 +518,7 @@ fn burn_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // move to next block
@@ -548,8 +528,7 @@ fn burn_from_respects_limits() {
     let err = contract
         .cw20_allowances_proxy()
         .burn_from(owner.to_string(), Uint128::new(33443))
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired {}));
 }
@@ -565,8 +544,8 @@ fn send_from_respects_limits() {
     let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
     let start_amount = Uint128::new(999999);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
-    let receiver_code_id = ReceiverContractCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
+    let receiver_code_id = ReceiverCodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -595,8 +574,7 @@ fn send_from_respects_limits() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // valid send of part of the allowance
@@ -609,8 +587,7 @@ fn send_from_respects_limits() {
             transfer,
             send_msg.clone(),
         )
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap();
 
     // make sure money burnt
@@ -643,8 +620,7 @@ fn send_from_respects_limits() {
             Uint128::new(33443),
             send_msg.clone(),
         )
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -657,8 +633,7 @@ fn send_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // move to next block
@@ -673,8 +648,7 @@ fn send_from_respects_limits() {
             Uint128::new(33443),
             send_msg,
         )
-        .with_sender(spender)
-        .call()
+        .call(spender)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Expired {}));
@@ -689,7 +663,7 @@ fn no_past_expiration() {
     let start_amount = Uint128::new(999999);
     let allowance = Uint128::new(7777);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -714,8 +688,7 @@ fn no_past_expiration() {
     let err = contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -728,8 +701,7 @@ fn no_past_expiration() {
     let err = contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -742,8 +714,7 @@ fn no_past_expiration() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // ensure it looks good
@@ -761,8 +732,7 @@ fn no_past_expiration() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // ensure it looks good
@@ -786,8 +756,7 @@ fn no_past_expiration() {
     let err = contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -800,8 +769,7 @@ fn no_past_expiration() {
     contract
         .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), allowance, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // ensure it looks good
@@ -823,7 +791,7 @@ fn query_allowances() {
     let start_amount = Uint128::new(999999);
     let allowance = Uint128::new(7777);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -856,8 +824,7 @@ fn query_allowances() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // check all allowances
@@ -899,8 +866,7 @@ fn query_allowances() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), increased_allowances, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // check all allowances
@@ -954,7 +920,7 @@ fn query_all_allowances_works() {
     let spender2 = "addr0003";
     let start_amount = Uint128::new(12340000);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -985,8 +951,7 @@ fn query_all_allowances_works() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // set allowance with no expiration
@@ -994,8 +959,7 @@ fn query_all_allowances_works() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allow2, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // query list gets 2
@@ -1047,7 +1011,7 @@ fn all_spender_allowances_on_two_contracts() {
     let spender = "addr0002";
     let start_amount = Uint128::new(12340000);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -1078,8 +1042,7 @@ fn all_spender_allowances_on_two_contracts() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // set allowance with no expiration, from the other owner
@@ -1103,8 +1066,7 @@ fn all_spender_allowances_on_two_contracts() {
     contract2
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow2, None)
-        .with_sender(owner2)
-        .call()
+        .call(owner2)
         .unwrap();
 
     // query list on both contracts
@@ -1138,7 +1100,7 @@ fn query_all_accounts_works() {
         acct2.to_string(),
     ];
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -1159,18 +1121,15 @@ fn query_all_accounts_works() {
     // put money everywhere (to create balanaces)
     contract
         .transfer(acct2.to_string(), Uint128::new(222222))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
     contract
         .transfer(acct3.to_string(), Uint128::new(333333))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
     contract
         .transfer(acct4.to_string(), Uint128::new(444444))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // make sure we get the proper results

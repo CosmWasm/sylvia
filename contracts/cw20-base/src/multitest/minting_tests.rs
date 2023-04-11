@@ -2,7 +2,7 @@ use cosmwasm_std::{StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::Cw20BaseCodeId;
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::minting::test_utils::Cw20MintingMethods;
@@ -17,7 +17,7 @@ fn mintable() {
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(511223344);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -82,7 +82,7 @@ fn mintable_over_cap() {
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(11223300);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let err = code_id
         .instantiate(InstantiateMsgData {
@@ -120,7 +120,7 @@ fn can_mint_by_minter() {
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(11223344);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -145,16 +145,14 @@ fn can_mint_by_minter() {
     contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), prize)
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::zero())
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -164,8 +162,7 @@ fn can_mint_by_minter() {
     let err = contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::new(333_222_222))
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap {});
@@ -182,7 +179,7 @@ fn others_cannot_mint() {
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -207,16 +204,14 @@ fn others_cannot_mint() {
     contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), prize)
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::zero())
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -226,8 +221,7 @@ fn others_cannot_mint() {
     let err = contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::new(333_222_222))
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap {});
@@ -243,7 +237,7 @@ fn minter_can_update_minter_but_not_cap() {
     let amount = Uint128::new(1234);
     let cap = Some(Uint128::from(3000000u128));
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -268,8 +262,7 @@ fn minter_can_update_minter_but_not_cap() {
     contract
         .cw20_minting_proxy()
         .update_minter(Some(new_minter.to_string()))
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap();
 
     let resp = contract.cw20_minting_proxy().minter().unwrap().unwrap();
@@ -291,7 +284,7 @@ fn others_cannot_update_minter() {
     let new_minter = "new_minter";
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -315,8 +308,7 @@ fn others_cannot_update_minter() {
     let err = contract
         .cw20_minting_proxy()
         .update_minter(Some(new_minter.to_string()))
-        .with_sender(new_minter)
-        .call()
+        .call(new_minter)
         .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 }
@@ -330,7 +322,7 @@ fn unset_minter() {
     let winner = "lucky";
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -355,8 +347,7 @@ fn unset_minter() {
     contract
         .cw20_minting_proxy()
         .update_minter(None)
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap();
 
     let resp = contract.cw20_minting_proxy().minter().unwrap();
@@ -366,8 +357,7 @@ fn unset_minter() {
     let err = contract
         .cw20_minting_proxy()
         .mint(winner.to_string(), amount)
-        .with_sender(minter)
-        .call()
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::Unauthorized {});

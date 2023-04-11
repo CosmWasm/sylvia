@@ -4,10 +4,10 @@ use cw_utils::Expiration;
 use sylvia::multitest::App;
 
 use crate::allowances::test_utils::Cw20AllowancesMethods;
-use crate::contract::multitest_utils::Cw20BaseCodeId;
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::multitest::receiver_contract::multitest_utils::ReceiverContractCodeId;
+use crate::multitest::receiver_contract::multitest_utils::CodeId as ReceiverCodeId;
 use crate::responses::{BalanceResponse, Cw20Coin, TokenInfoResponse};
 
 #[test]
@@ -17,7 +17,7 @@ fn basic() {
     let amount = Uint128::from(11223344u128);
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -62,7 +62,7 @@ fn instantiate_multiple_accounts() {
     let amount2 = Uint128::from(7890987u128);
     let addr2 = "addr0002";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     // Fails with duplicate addresses
     let err = code_id
@@ -136,7 +136,7 @@ fn queries_work() {
     let amount = Uint128::from(12340000u128);
     let addr = Addr::unchecked("addr0001");
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -188,7 +188,7 @@ fn transfer() {
     let transfer = Uint128::from(76543u128);
     let too_much = Uint128::from(12340321u128);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -209,16 +209,14 @@ fn transfer() {
     // cannot transfer nothing
     let err = contract
         .transfer(addr.to_string(), Uint128::zero())
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
 
     // cannot send more than we have
     let err = contract
         .transfer(addr.to_string(), too_much)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -226,8 +224,7 @@ fn transfer() {
     // cannot send from empty account
     let err = contract
         .transfer(owner.to_string(), transfer)
-        .with_sender(addr)
-        .call()
+        .call(addr)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -235,8 +232,7 @@ fn transfer() {
     // valid transfer
     contract
         .transfer(addr.to_string(), transfer)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // Check balance
@@ -260,7 +256,7 @@ fn burn() {
     let burn = Uint128::from(76543u128);
     let too_much = Uint128::from(12340321u128);
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -279,34 +275,26 @@ fn burn() {
         .unwrap();
 
     // cannot burn nothing
-    let err = contract
-        .burn(Uint128::zero())
-        .with_sender(owner)
-        .call()
-        .unwrap_err();
+    let err = contract.burn(Uint128::zero()).call(owner).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount {});
 
     let resp = contract.token_info().unwrap();
     assert_eq!(resp.total_supply, amount);
 
     // cannot burn more than we have
-    let err = contract
-        .burn(too_much)
-        .with_sender(owner)
-        .call()
-        .unwrap_err();
+    let err = contract.burn(too_much).call(owner).unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
     let resp = contract.token_info().unwrap();
     assert_eq!(resp.total_supply, amount);
 
     // cannot send from empty account
-    let err = contract.burn(burn).with_sender(addr).call().unwrap_err();
+    let err = contract.burn(burn).call(addr).unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
     // valid burn reduces total supply
-    contract.burn(burn).with_sender(owner).call().unwrap();
+    contract.burn(burn).call(owner).unwrap();
 
     // check balance
     let remainder = amount.checked_sub(burn).unwrap();
@@ -326,10 +314,10 @@ fn send() {
     let transfer = Uint128::from(76543u128);
     let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     // Receiver contract
-    let receiver_code_id = ReceiverContractCodeId::store_code(&app);
+    let receiver_code_id = ReceiverCodeId::store_code(&app);
     let receiver_contract = receiver_code_id
         .instantiate()
         .with_label("cool-dex")
@@ -358,8 +346,7 @@ fn send() {
             Uint128::zero(),
             send_msg.clone(),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -371,8 +358,7 @@ fn send() {
             too_much,
             send_msg.clone(),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -383,8 +369,7 @@ fn send() {
             transfer,
             send_msg,
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // ensure balance is properly transferred
@@ -405,7 +390,7 @@ fn migrate() {
 
     let owner = "addr0000";
     let spender = "addr0001";
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
     let amount = Uint128::new(100);
 
     let contract = code_id
@@ -438,8 +423,7 @@ fn migrate() {
     contract
         .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     // Now migrate

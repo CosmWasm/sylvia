@@ -3,7 +3,7 @@ use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoRes
 use cw20_marketing::{EmbeddedLogo, Logo};
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::Cw20BaseCodeId;
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::{InstantiateMarketingInfo, InstantiateMsgData};
 use crate::error::ContractError;
 use crate::marketing::test_utils::Cw20MarketingMethods;
@@ -16,7 +16,7 @@ fn update_unauthorised() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -43,8 +43,7 @@ fn update_unauthorised() {
             Some("Better description".to_owned()),
             Some("creator".to_owned()),
         )
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::Unauthorized {});
@@ -76,7 +75,7 @@ fn update_project() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -99,8 +98,7 @@ fn update_project() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(Some("New project".to_owned()), None, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -129,7 +127,7 @@ fn clear_project() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -152,8 +150,7 @@ fn clear_project() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(Some("".to_owned()), None, None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -181,7 +178,7 @@ fn update_description() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -204,8 +201,7 @@ fn update_description() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(None, Some("Better description".to_owned()), None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -233,7 +229,7 @@ fn clear_description() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -256,8 +252,7 @@ fn clear_description() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(None, Some("".to_owned()), None)
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -286,7 +281,7 @@ fn update_marketing() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -309,8 +304,7 @@ fn update_marketing() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(None, None, Some("marketing".to_owned()))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -339,7 +333,7 @@ fn update_marketing_invalid() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -362,8 +356,7 @@ fn update_marketing_invalid() {
     let err = contract
         .cw20_marketing_proxy()
         .update_marketing(None, None, Some("m".to_owned()))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert!(
@@ -398,7 +391,7 @@ fn clear_marketing() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -421,8 +414,7 @@ fn clear_marketing() {
     contract
         .cw20_marketing_proxy()
         .update_marketing(None, None, Some("".to_owned()))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -450,7 +442,7 @@ fn update_logo_url() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -473,8 +465,7 @@ fn update_logo_url() {
     contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Url("new_url".to_owned()))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -503,7 +494,7 @@ fn update_logo_png() {
 
     let owner = "addr0001";
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -526,8 +517,7 @@ fn update_logo_png() {
     contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(PNG_HEADER.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -559,7 +549,7 @@ fn update_logo_svg() {
     let owner = "addr0001";
     let img = "<?xml version=\"1.0\"?><svg></svg>".as_bytes();
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -582,8 +572,7 @@ fn update_logo_svg() {
     contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap();
 
     let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
@@ -615,7 +604,7 @@ fn update_logo_png_oversized() {
     let owner = "addr0001";
     let img = [&PNG_HEADER[..], &[1; 6000][..]].concat();
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -638,8 +627,7 @@ fn update_logo_png_oversized() {
     let err = contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig {});
@@ -677,7 +665,7 @@ fn update_logo_svg_oversized() {
     .concat()
     .into_bytes();
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -700,8 +688,7 @@ fn update_logo_svg_oversized() {
     let err = contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig {});
@@ -732,7 +719,7 @@ fn update_logo_png_invalid() {
     let owner = "addr0001";
     let img = &[1];
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -755,8 +742,7 @@ fn update_logo_png_invalid() {
     let err = contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidPngHeader {});
 
@@ -786,7 +772,7 @@ fn update_logo_svg_invalid() {
     let owner = "addr0001";
     let img = &[1];
 
-    let code_id = Cw20BaseCodeId::store_code(&app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
         .instantiate(InstantiateMsgData {
@@ -809,8 +795,7 @@ fn update_logo_svg_invalid() {
     let err = contract
         .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .with_sender(owner)
-        .call()
+        .call(owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidXmlPreamble {});
 
