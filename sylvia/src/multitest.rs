@@ -83,3 +83,44 @@ where
             .map_err(|err| err.downcast().unwrap())
     }
 }
+
+#[must_use]
+pub struct MigrateProxy<'a, 'app, Error, Msg>
+where
+    Msg: Serialize + std::fmt::Debug,
+    Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+{
+    contract_addr: &'a Addr,
+    msg: Msg,
+    app: &'app App,
+    phantom: PhantomData<Error>,
+}
+
+impl<'a, 'app, Error, Msg> MigrateProxy<'a, 'app, Error, Msg>
+where
+    Msg: Serialize + std::fmt::Debug,
+    Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+{
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
+        Self {
+            contract_addr,
+            msg,
+            app,
+            phantom: PhantomData,
+        }
+    }
+
+    #[track_caller]
+    pub fn call(self, sender: &str, new_code_id: u64) -> Result<cw_multi_test::AppResponse, Error> {
+        self.app
+            .app
+            .borrow_mut()
+            .migrate_contract(
+                Addr::unchecked(sender),
+                Addr::unchecked(self.contract_addr),
+                &self.msg,
+                new_code_id,
+            )
+            .map_err(|err| err.downcast().unwrap())
+    }
+}

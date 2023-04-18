@@ -6,7 +6,7 @@ pub mod minting;
 pub mod responses;
 pub mod validation;
 
-#[cfg(any(test, feature = "tests"))]
+#[cfg(test)]
 mod multitest;
 
 #[cfg(not(feature = "library"))]

@@ -290,6 +290,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this owner has approved. Supports pagination.
+    #[msg(query)]
     fn all_allowances(
         &self,
         ctx: QueryCtx,

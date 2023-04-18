@@ -988,6 +988,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-multi-test",
  "cw-storage-plus 1.0.1",
+ "derivative",
  "konst",
  "schemars",
  "serde",

@@ -1,48 +1,45 @@
-use cosmwasm_std::{Addr, StdError, Uint128};
+use cosmwasm_std::{StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
-use cw_multi_test::App;
+use sylvia::multitest::App;
 
+use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::multitest::proxy::Cw20BaseCodeId;
+use crate::minting::test_utils::Cw20MintingMethods;
 use crate::responses::{Cw20Coin, TokenInfoResponse};
 
 #[test]
 fn mintable() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
+    let owner = "addr0001";
+    let minter = "addr0002";
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(511223344);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: Some(limit),
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: Some(limit),
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     // read token info
-    let resp = contract.token_info(&app).unwrap();
+    let resp = contract.token_info().unwrap();
 
     assert_eq!(
         resp,
@@ -55,17 +52,17 @@ fn mintable() {
     );
 
     // get owner balance
-    let resp = contract.balance(&app, owner.to_string()).unwrap();
+    let resp = contract.balance(owner.to_string()).unwrap();
 
     assert_eq!(resp.balance, Uint128::new(11223344));
 
     // get minter balance
-    let resp = contract.balance(&app, minter.to_string()).unwrap();
+    let resp = contract.balance(minter.to_string()).unwrap();
 
     assert_eq!(resp.balance, Uint128::new(0));
 
     // get minter
-    let resp = contract.minter(&app).unwrap();
+    let resp = contract.cw20_minting_proxy().minter().unwrap();
 
     assert_eq!(
         resp,
@@ -78,36 +75,32 @@ fn mintable() {
 
 #[test]
 fn mintable_over_cap() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
+    let owner = "addr0001";
+    let minter = "addr0002";
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(11223300);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let err = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: Some(limit),
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: Some(limit),
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap_err();
 
     assert_eq!(
@@ -118,48 +111,48 @@ fn mintable_over_cap() {
 
 #[test]
 fn can_mint_by_minter() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
-    let winner = Addr::unchecked("lucky");
+    let owner = "addr0001";
+    let minter = "addr0002";
+    let winner = "lucky";
     let prize = Uint128::new(222_222_222);
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(11223344);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: Some(limit),
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: Some(limit),
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
-        .mint(&mut app, &minter, winner.to_string(), prize)
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), prize)
+        .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
-        .mint(&mut app, &minter, winner.to_string(), Uint128::zero())
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), Uint128::zero())
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -167,12 +160,9 @@ fn can_mint_by_minter() {
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
     let err = contract
-        .mint(
-            &mut app,
-            &minter,
-            winner.to_string(),
-            Uint128::new(333_222_222),
-        )
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), Uint128::new(333_222_222))
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap {});
@@ -180,48 +170,48 @@ fn can_mint_by_minter() {
 
 #[test]
 fn others_cannot_mint() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
-    let winner = Addr::unchecked("lucky");
+    let owner = "addr0001";
+    let minter = "addr0002";
+    let winner = "lucky";
     let prize = Uint128::new(222_222_222);
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: Some(limit),
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: Some(limit),
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
-        .mint(&mut app, &minter, winner.to_string(), prize)
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), prize)
+        .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
-        .mint(&mut app, &minter, winner.to_string(), Uint128::zero())
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), Uint128::zero())
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount {});
@@ -229,12 +219,9 @@ fn others_cannot_mint() {
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
     let err = contract
-        .mint(
-            &mut app,
-            &minter,
-            winner.to_string(),
-            Uint128::new(333_222_222),
-        )
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), Uint128::new(333_222_222))
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap {});
@@ -242,45 +229,43 @@ fn others_cannot_mint() {
 
 #[test]
 fn minter_can_update_minter_but_not_cap() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
-    let new_minter = Addr::unchecked("new_minter");
+    let owner = "addr0001";
+    let minter = "addr0002";
+    let new_minter = "new_minter";
     let amount = Uint128::new(1234);
     let cap = Some(Uint128::from(3000000u128));
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap,
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap,
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
-        .update_minter(&mut app, &minter, Some(new_minter.to_string()))
+        .cw20_minting_proxy()
+        .update_minter(Some(new_minter.to_string()))
+        .call(minter)
         .unwrap();
 
-    let resp = contract.minter(&app).unwrap().unwrap();
+    let resp = contract.cw20_minting_proxy().minter().unwrap().unwrap();
     assert_eq!(
         resp,
         MinterResponse {
@@ -292,87 +277,87 @@ fn minter_can_update_minter_but_not_cap() {
 
 #[test]
 fn others_cannot_update_minter() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
-    let new_minter = Addr::unchecked("new_minter");
+    let owner = "addr0001";
+    let minter = "addr0002";
+    let new_minter = "new_minter";
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: None,
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: None,
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     let err = contract
-        .update_minter(&mut app, &new_minter, Some(new_minter.to_string()))
+        .cw20_minting_proxy()
+        .update_minter(Some(new_minter.to_string()))
+        .call(new_minter)
         .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 }
 
 #[test]
 fn unset_minter() {
-    let mut app = App::default();
+    let app = App::default();
 
-    let owner = Addr::unchecked("addr0001");
-    let minter = Addr::unchecked("addr0002");
-    let winner = Addr::unchecked("lucky");
+    let owner = "addr0001";
+    let minter = "addr0002";
+    let winner = "lucky";
     let amount = Uint128::new(1234);
 
-    let code_id = Cw20BaseCodeId::store_code(&mut app);
+    let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(
-            &mut app,
-            &owner,
-            InstantiateMsgData {
-                name: "Cash Token".to_string(),
-                symbol: "CASH".to_string(),
-                decimals: 9,
-                initial_balances: vec![Cw20Coin {
-                    address: owner.to_string(),
-                    amount,
-                }],
-                mint: Some(MinterResponse {
-                    minter: minter.to_string(),
-                    cap: None,
-                }),
-                marketing: None,
-            },
-            "Cw20 contract",
-            None,
-        )
+        .instantiate(InstantiateMsgData {
+            name: "Cash Token".to_string(),
+            symbol: "CASH".to_string(),
+            decimals: 9,
+            initial_balances: vec![Cw20Coin {
+                address: owner.to_string(),
+                amount,
+            }],
+            mint: Some(MinterResponse {
+                minter: minter.to_string(),
+                cap: None,
+            }),
+            marketing: None,
+        })
+        .with_label("Cw20 contract")
+        .call(owner)
         .unwrap();
 
     // Unset minter
-    contract.update_minter(&mut app, &minter, None).unwrap();
+    contract
+        .cw20_minting_proxy()
+        .update_minter(None)
+        .call(minter)
+        .unwrap();
 
-    let resp = contract.minter(&app).unwrap();
+    let resp = contract.cw20_minting_proxy().minter().unwrap();
     assert_eq!(resp, None);
 
     // Old minter can no longer mint
     let err = contract
-        .mint(&mut app, &minter, winner.to_string(), amount)
+        .cw20_minting_proxy()
+        .mint(winner.to_string(), amount)
+        .call(minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::Unauthorized {});
