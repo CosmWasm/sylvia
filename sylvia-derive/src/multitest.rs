@@ -448,6 +448,15 @@ impl<'a> MultitestHelpers<'a> {
             return quote! {};
         }
 
+        source
+            .items
+            .iter()
+            .find(|item| match item {
+                ImplItem::Method(method) if method.sig.ident == "new" => true,
+                _ => false,
+            })
+            .expect("Contract must have a `new` method");
+
         let sylvia = crate_module();
 
         let mut generics_checker = CheckGenerics::new(generics);

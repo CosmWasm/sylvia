@@ -1,5 +1,0 @@
-error: No instantiation message
- --> tests/ui/no_instantiation.rs:6:1
-  |
-6 | impl Sth {
-  | ^^^^
