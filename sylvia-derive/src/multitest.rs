@@ -451,10 +451,7 @@ impl<'a> MultitestHelpers<'a> {
         source
             .items
             .iter()
-            .find(|item| match item {
-                ImplItem::Method(method) if method.sig.ident == "new" => true,
-                _ => false,
-            })
+            .find(|item| matches!(item, ImplItem::Method(method) if method.sig.ident == "new"))
             .expect("Contract must have a `new` method");
 
         let sylvia = crate_module();
