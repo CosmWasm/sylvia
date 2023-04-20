@@ -78,7 +78,6 @@ impl<'a> MultitestHelpers<'a> {
 
                     if msg_ty == MsgType::Migrate {
                         is_migrate = true;
-                        return None;
                     } else if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
                         return None;
                     }
@@ -223,6 +222,15 @@ impl<'a> MultitestHelpers<'a> {
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
                 }
+            } else if msg_ty == &MsgType::Migrate {
+                quote! {
+                    #[track_caller]
+                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
+                        let msg = MigrateMsg::new( #(#arguments),* );
+
+                        #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
+                    }
+                }
             } else {
                 quote! {
                     pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
@@ -277,9 +285,13 @@ impl<'a> MultitestHelpers<'a> {
             pub mod multitest_utils {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
+                use #sylvia ::derivative::Derivative;
 
+                #[derive(Derivative)]
+                #[derivative(Debug)]
                 pub struct #proxy_name <'app> {
                     pub contract_addr: #sylvia ::cw_std::Addr,
+                    #[derivative(Debug="ignore")]
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
