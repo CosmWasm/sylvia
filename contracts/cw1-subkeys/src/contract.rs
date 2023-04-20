@@ -10,6 +10,9 @@ use cw_utils::Expiration;
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 use crate::error::ContractError;
 use crate::responses::{
     AllAllowancesResponse, AllPermissionsResponse, AllowanceInfo, PermissionsInfo,
@@ -29,7 +32,9 @@ pub struct Cw1SubkeysContract<'a> {
     pub(crate) allowances: Map<'static, &'a Addr, Allowance>,
 }
 
-#[contract(error=ContractError)]
+#[cfg_attr(not(feature = "library"), entry_points)]
+#[contract]
+#[error(ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {

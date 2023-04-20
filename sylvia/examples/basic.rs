@@ -86,7 +86,8 @@ impl Group for GroupContract {
     }
 }
 
-#[contract(module=contract, error=Error)]
+#[contract(module=contract)]
+#[error(Error)]
 #[messages(group as Group)]
 impl GroupContract {
     pub const fn new() -> Self {

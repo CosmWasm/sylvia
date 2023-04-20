@@ -35,7 +35,7 @@ pub struct Contract {}
 
 #[cfg(not(tarpaulin_include))]
 // Ignoring coverage of test implementation
-#[contract(module=contract, error=StdError)]
+#[contract(module=contract)]
 impl Contract {
     #[allow(clippy::new_without_default)]
     pub const fn new() -> Self {

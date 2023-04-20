@@ -16,6 +16,9 @@ use cw_utils::ensure_from_older_version;
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-base";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -70,7 +73,9 @@ pub struct Cw20Base<'a> {
     pub(crate) allowances_spender: Map<'static, (&'a Addr, &'a Addr), AllowanceResponse>,
 }
 
-#[contract(error=ContractError)]
+#[cfg_attr(not(feature = "library"), entry_points)]
+#[contract]
+#[error(ContractError)]
 #[messages(cw20_allowances as Allowances)]
 #[messages(cw20_marketing as Marketing)]
 #[messages(cw20_minting as Minting)]

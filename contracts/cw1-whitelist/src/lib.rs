@@ -5,6 +5,3 @@ pub mod error;
 pub mod multitest;
 pub mod responses;
 pub mod whitelist;
-
-#[cfg(not(feature = "library"))]
-pub use crate::contract::entry_points::*;

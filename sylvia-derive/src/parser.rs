@@ -3,10 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
-use syn::{
-    parenthesized, parse_quote, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token,
-    Type,
-};
+use syn::{parenthesized, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token, Type};
 
 use crate::crate_module;
 
@@ -24,8 +21,6 @@ pub struct InterfaceArgs {
 pub struct ContractArgs {
     /// Module name wrapping generated messages, by default no additional module is created
     pub module: Option<Ident>,
-    /// The type of a contract error for entry points - `cosmwasm_std::StdError` by default
-    pub error: Type,
 }
 
 impl Parse for InterfaceArgs {
@@ -42,7 +37,7 @@ impl Parse for InterfaceArgs {
             } else if attr == "msg_type" {
                 msg_type = Some(input.parse()?);
             } else {
-                return Err(Error::new(attr.span(), "expected `module` or `msg_type`"));
+                return Err(Error::new(attr.span(), "expected `module`, or `msg_type`"));
             }
 
             if input.peek(Token![,]) {
@@ -61,7 +56,6 @@ impl Parse for InterfaceArgs {
 impl Parse for ContractArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut module = None;
-        let mut error = parse_quote!(cosmwasm_std::StdError);
 
         while !input.is_empty() {
             let attr: Ident = input.parse()?;
@@ -69,10 +63,8 @@ impl Parse for ContractArgs {
 
             if attr == "module" {
                 module = Some(input.parse()?);
-            } else if attr == "error" {
-                error = input.parse()?;
             } else {
-                return Err(Error::new(attr.span(), "expected `module` or `error`"));
+                return Err(Error::new(attr.span(), "expected `module`"));
             }
 
             if input.peek(Token![,]) {
@@ -84,7 +76,7 @@ impl Parse for ContractArgs {
 
         let _: Nothing = input.parse()?;
 
-        Ok(ContractArgs { module, error })
+        Ok(ContractArgs { module })
     }
 }
 
@@ -200,6 +192,22 @@ impl Parse for MsgAttr {
                 "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`",
             ))
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct ContractErrorAttr {
+    pub error: Type,
+}
+
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
+impl Parse for ContractErrorAttr {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let content;
+        parenthesized!(content in input);
+
+        content.parse().map(|error| Self { error })
     }
 }
 
