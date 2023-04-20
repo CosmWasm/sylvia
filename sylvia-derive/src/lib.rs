@@ -17,6 +17,8 @@ mod utils;
 
 use strip_input::StripInput;
 
+use crate::message::EntryPoints;
+
 #[cfg(not(test))]
 pub(crate) fn crate_module() -> Path {
     use proc_macro_crate::{crate_name, FoundCrate};
@@ -234,6 +236,28 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 
         let expanded = ImplInput::new(&attrs, &input).process();
         let input = StripInput.fold_item_impl(input);
+
+        Ok(quote! {
+            #input
+
+            #expanded
+        })
+    }
+
+    inner(attr, item).unwrap_or_else(syn::Error::into_compile_error)
+}
+
+#[cfg(not(tarpaulin_include))]
+#[proc_macro_error]
+#[proc_macro_attribute]
+pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
+    entry_points_impl(attr.into(), item.into()).into()
+}
+
+fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
+    fn inner(_attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
+        let input: ItemImpl = parse2(item)?;
+        let expanded = EntryPoints::new(&input).emit();
 
         Ok(quote! {
             #input

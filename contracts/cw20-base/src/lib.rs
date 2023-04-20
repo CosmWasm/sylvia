@@ -8,6 +8,3 @@ pub mod validation;
 
 #[cfg(any(test, feature = "tests"))]
 mod multitest;
-
-#[cfg(not(feature = "library"))]
-pub use crate::contract::entry_points::*;
