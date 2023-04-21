@@ -7,6 +7,9 @@ use cw_storage_plus::{Item, Map};
 use sylvia::types::InstantiateCtx;
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -15,7 +18,9 @@ pub struct Cw1WhitelistContract<'a> {
     pub(crate) mutable: Item<'static, bool>,
 }
 
-#[contract(error=ContractError)]
+#[cfg_attr(not(feature = "library"), entry_points)]
+#[contract]
+#[error(ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {
