@@ -27,10 +27,11 @@ pub trait Interface {
 
 pub struct SomeContract {}
 
-#[contract(error=ContractError)]
+#[contract]
+#[error(ContractError)]
 impl SomeContract {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
     #[msg(instantiate)]

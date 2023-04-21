@@ -21,7 +21,7 @@ impl Cw1 for Cw1SubkeysContract<'_> {
             Ok(acc? & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
         });
 
-        ensure!(authorized?, ContractError::Unauthorized {});
+        ensure!(authorized?, ContractError::Unauthorized);
 
         let res = Response::new()
             .add_messages(msgs)

@@ -87,7 +87,7 @@ fn instantiate_multiple_accounts() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::DuplicateInitialBalanceAddresses {});
+    assert_eq!(err, ContractError::DuplicateInitialBalanceAddresses);
 
     // Works with unique addresses
     let contract = code_id
@@ -211,7 +211,7 @@ fn transfer() {
         .transfer(addr.to_string(), Uint128::zero())
         .call(owner)
         .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::InvalidZeroAmount);
 
     // cannot send more than we have
     let err = contract
@@ -276,7 +276,7 @@ fn burn() {
 
     // cannot burn nothing
     let err = contract.burn(Uint128::zero()).call(owner).unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::InvalidZeroAmount);
 
     let resp = contract.token_info().unwrap();
     assert_eq!(resp.total_supply, amount);
@@ -349,7 +349,7 @@ fn send() {
         .call(owner)
         .unwrap_err();
 
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::InvalidZeroAmount);
 
     // cannot send more than we have
     let err = contract

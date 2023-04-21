@@ -1,11 +1,14 @@
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
+use syn::parse::{Parse, Parser};
+use syn::spanned::Spanned;
+use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
+use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
-use crate::parser::{ContractArgs, InterfaceArgs, MsgType};
+use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -17,6 +20,7 @@ pub struct TraitInput<'a> {
 /// Preprocessed `contract` macro input for non-trait impl block
 pub struct ImplInput<'a> {
     attributes: &'a ContractArgs,
+    error: Type,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
 }
@@ -103,12 +107,30 @@ impl<'a> TraitInput<'a> {
 
 impl<'a> ImplInput<'a> {
     pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
+        let sylvia = crate_module();
+
         let generics = item.generics.params.iter().collect();
+
+        let error = item
+            .attrs
+            .iter()
+            .find(|attr| attr.path.is_ident("error"))
+            .and_then(
+                |attr| match ContractErrorAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(error) => Some(error.error),
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        None
+                    }
+                },
+            )
+            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         Self {
             attributes,
             item,
             generics,
+            error,
         }
     }
 
@@ -116,8 +138,7 @@ impl<'a> ImplInput<'a> {
         let is_trait = self.item.trait_.is_some();
 
         let multitest_helpers = if cfg!(feature = "mt") {
-            MultitestHelpers::new(self.item, is_trait, &self.attributes.error, &self.generics)
-                .emit()
+            MultitestHelpers::new(self.item, is_trait, &self.error, &self.generics).emit()
         } else {
             quote! {}
         };
@@ -176,10 +197,10 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, self.attributes).emit()
+        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, &self.error).emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        GlueMessage::new(name, self.item, msg_ty, &self.attributes.error).emit()
+        GlueMessage::new(name, self.item, msg_ty, &self.error).emit()
     }
 }

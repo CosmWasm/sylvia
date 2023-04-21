@@ -1,7 +1,7 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
-    parse_struct_message, ContractArgs, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
+    parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -331,7 +331,7 @@ impl<'a> ContractEnumMessage<'a> {
         source: &'a ItemImpl,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
-        args: &'a ContractArgs,
+        error: &'a Type,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
         let variants: Vec<_> = source
@@ -368,7 +368,7 @@ impl<'a> ContractEnumMessage<'a> {
             variants,
             msg_ty: ty,
             contract: &source.self_ty,
-            error: &args.error,
+            error,
         }
     }
 
@@ -850,6 +850,72 @@ impl<'a> GlueMessage<'a> {
                     );
                     err_msg.truncate(err_msg.len() - 2);
                     Err(D::Error::custom(err_msg))
+                }
+            }
+        }
+    }
+}
+
+pub struct EntryPoints {
+    name: Type,
+    error: Type,
+}
+
+impl EntryPoints {
+    pub fn new(source: &ItemImpl) -> Self {
+        let sylvia = crate_module();
+        let name = StripGenerics.fold_type(*source.self_ty.clone());
+
+        let error = source
+            .attrs
+            .iter()
+            .find(|attr| attr.path.is_ident("error"))
+            .and_then(
+                |attr| match ContractErrorAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(error) => Some(error.error),
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        None
+                    }
+                },
+            )
+            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
+
+        Self { name, error }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let Self { name, error } = self;
+        let sylvia = crate_module();
+
+        quote! {
+            pub mod entry_points {
+                use super::*;
+                const CONTRACT: #name = #name ::new();
+
+                #[#sylvia ::cw_std::entry_point]
+                pub fn instantiate(
+                    deps: #sylvia ::cw_std::DepsMut,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
+                    msg: InstantiateMsg,
+                ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                }
+
+                #[#sylvia ::cw_std::entry_point]
+                pub fn execute(
+                    deps: #sylvia ::cw_std::DepsMut,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
+                    msg: ContractExecMsg,
+                ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                }
+
+                #[#sylvia ::cw_std::entry_point]
+                pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
+                    msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
                 }
             }
         }

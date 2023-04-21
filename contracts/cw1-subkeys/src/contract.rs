@@ -10,6 +10,9 @@ use cw_utils::Expiration;
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 use crate::error::ContractError;
 use crate::responses::{
     AllAllowancesResponse, AllPermissionsResponse, AllowanceInfo, PermissionsInfo,
@@ -29,7 +32,9 @@ pub struct Cw1SubkeysContract<'a> {
     pub(crate) allowances: Map<'static, &'a Addr, Allowance>,
 }
 
-#[contract(error=ContractError)]
+#[cfg_attr(not(feature = "library"), entry_points)]
+#[contract]
+#[error(ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {
@@ -63,15 +68,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
 
         self.allowances
             .update(ctx.deps.storage, &spender, |allow| {
@@ -117,15 +118,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
 
         let allowance = self
             .allowances
@@ -133,7 +130,7 @@ impl Cw1SubkeysContract<'_> {
                 // Fail fast
                 let mut allowance = allow
                     .filter(|allow| !allow.expires.is_expired(&ctx.env.block))
-                    .ok_or(ContractError::NoAllowance {})?;
+                    .ok_or(ContractError::NoAllowance)?;
 
                 if let Some(exp) = expires {
                     if exp.is_expired(&ctx.env.block) {
@@ -171,15 +168,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
         self.permissions
             .save(ctx.deps.storage, &spender, &permissions)?;
 

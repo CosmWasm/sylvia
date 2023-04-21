@@ -7,6 +7,9 @@ use cw_storage_plus::{Item, Map};
 use sylvia::types::InstantiateCtx;
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -15,7 +18,9 @@ pub struct Cw1WhitelistContract<'a> {
     pub(crate) mutable: Item<'static, bool>,
 }
 
-#[contract(error=ContractError)]
+#[cfg_attr(not(feature = "library"), entry_points)]
+#[contract]
+#[error(ContractError)]
 #[messages(cw1 as Cw1)]
 #[messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {
@@ -100,7 +105,7 @@ mod tests {
                 vec![anyone.to_string()],
             )
             .unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
+        assert_eq!(err, ContractError::Unauthorized);
 
         // but alice can kick out carl
         let info = mock_info(alice, &[]);
@@ -128,7 +133,7 @@ mod tests {
         let err = contract
             .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
+        assert_eq!(err, ContractError::Unauthorized);
 
         // but bob can
         let info = mock_info(bob, &[]);
@@ -154,7 +159,7 @@ mod tests {
                 vec![alice.to_string()],
             )
             .unwrap_err();
-        assert_eq!(err, ContractError::ContractFrozen {});
+        assert_eq!(err, ContractError::ContractFrozen);
     }
 
     #[test]
@@ -197,7 +202,7 @@ mod tests {
         let err = contract
             .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
+        assert_eq!(err, ContractError::Unauthorized);
 
         // but carl can
         let info = mock_info(carl, &[]);
