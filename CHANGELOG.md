@@ -6,7 +6,8 @@ and this project adheres to
 
 ## \[Unreleased\]
 
-- Entry points generated if `library` flag is not set
+- Introduced new `entry_points` macro
+- Custom errors can be passed through `error` attribute
 
 ## \[0.3.2\] - 2023-04-18
 
