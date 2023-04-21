@@ -12,7 +12,7 @@ homepage = "https://cosmwasm.com"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-library = ["sylvia/no_entry_points"]
+library = []
 tests = ["library", "cw-multi-test", "anyhow"]
 mt = ["sylvia/mt"]
 
