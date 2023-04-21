@@ -19,29 +19,29 @@ impl Cw20Minting for Cw20Base<'_> {
         amount: Uint128,
     ) -> Result<Response, ContractError> {
         if amount == Uint128::zero() {
-            return Err(ContractError::InvalidZeroAmount {});
+            return Err(ContractError::InvalidZeroAmount);
         }
 
         let mut config = self
             .token_info
             .may_load(ctx.deps.storage)?
-            .ok_or(ContractError::Unauthorized {})?;
+            .ok_or(ContractError::Unauthorized)?;
 
         if config
             .mint
             .as_ref()
-            .ok_or(ContractError::Unauthorized {})?
+            .ok_or(ContractError::Unauthorized)?
             .minter
             != ctx.info.sender
         {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         // update supply and enforce cap
         config.total_supply += amount;
         if let Some(limit) = config.get_cap() {
             if config.total_supply > limit {
-                return Err(ContractError::CannotExceedCap {});
+                return Err(ContractError::CannotExceedCap);
             }
         }
         self.token_info.save(ctx.deps.storage, &config)?;
@@ -70,11 +70,11 @@ impl Cw20Minting for Cw20Base<'_> {
         let mut config = self
             .token_info
             .may_load(ctx.deps.storage)?
-            .ok_or(ContractError::Unauthorized {})?;
+            .ok_or(ContractError::Unauthorized)?;
 
-        let mint = config.mint.as_ref().ok_or(ContractError::Unauthorized {})?;
+        let mint = config.mint.as_ref().ok_or(ContractError::Unauthorized)?;
         if mint.minter != ctx.info.sender {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         let minter_data = new_minter
