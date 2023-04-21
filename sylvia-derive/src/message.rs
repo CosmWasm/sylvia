@@ -879,7 +879,7 @@ impl EntryPoints {
                     }
                 },
             )
-            .unwrap_or(parse_quote! { #sylvia ::cw_std::StdError });
+            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         Self { name, error }
     }
