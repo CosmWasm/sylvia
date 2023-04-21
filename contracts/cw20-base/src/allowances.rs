@@ -34,7 +34,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     ) -> Result<Response, Self::Error> {
         let spender_addr = ctx.deps.api.addr_validate(&spender)?;
         if spender_addr == ctx.info.sender {
-            return Err(ContractError::CannotSetOwnAccount {});
+            return Err(ContractError::CannotSetOwnAccount);
         }
 
         let update_fn = |allow: Option<AllowanceResponse>| -> Result<_, _> {
@@ -45,7 +45,7 @@ impl Cw20Allowances for Cw20Base<'_> {
                     Ok(AllowanceResponse { allowance, expires })
                 }
                 None => Ok(AllowanceResponse { allowance, ..allow }),
-                _ => Err(ContractError::InvalidExpiration {}),
+                _ => Err(ContractError::InvalidExpiration),
             }
         };
         self.allowances.update(
@@ -79,7 +79,7 @@ impl Cw20Allowances for Cw20Base<'_> {
     ) -> Result<Response, Self::Error> {
         let spender_addr = Addr::unchecked(&spender);
         if spender_addr == ctx.info.sender {
-            return Err(ContractError::CannotSetOwnAccount {});
+            return Err(ContractError::CannotSetOwnAccount);
         }
 
         let key = (&ctx.info.sender, &spender_addr);
@@ -96,7 +96,7 @@ impl Cw20Allowances for Cw20Base<'_> {
                 .map_err(StdError::overflow)?;
             if let Some(exp) = expires {
                 if exp.is_expired(&ctx.env.block) {
-                    return Err(ContractError::InvalidExpiration {});
+                    return Err(ContractError::InvalidExpiration);
                 }
                 allowance.expires = exp;
             }

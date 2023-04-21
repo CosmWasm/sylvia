@@ -30,7 +30,7 @@ pub fn validate_accounts(accounts: &[Cw20Coin]) -> Result<(), ContractError> {
     addresses.dedup();
 
     if addresses.len() != accounts.len() {
-        Err(ContractError::DuplicateInitialBalanceAddresses {})
+        Err(ContractError::DuplicateInitialBalanceAddresses)
     } else {
         Ok(())
     }
@@ -71,7 +71,7 @@ fn verify_xml_logo(logo: &[u8]) -> Result<(), ContractError> {
     verify_xml_preamble(logo)?;
 
     if logo.len() > LOGO_SIZE_CAP {
-        Err(ContractError::LogoTooBig {})
+        Err(ContractError::LogoTooBig)
     } else {
         Ok(())
     }
@@ -87,9 +87,9 @@ fn verify_png_logo(logo: &[u8]) -> Result<(), ContractError> {
     // 0x0a - unix style line ending
     const HEADER: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
     if logo.len() > LOGO_SIZE_CAP {
-        Err(ContractError::LogoTooBig {})
+        Err(ContractError::LogoTooBig)
     } else if !logo.starts_with(&HEADER) {
-        Err(ContractError::InvalidPngHeader {})
+        Err(ContractError::InvalidPngHeader)
     } else {
         Ok(())
     }
@@ -103,13 +103,13 @@ fn verify_xml_preamble(data: &[u8]) -> Result<(), ContractError> {
     let preamble = data
         .split_inclusive(|c| *c == b'>')
         .next()
-        .ok_or(ContractError::InvalidXmlPreamble {})?;
+        .ok_or(ContractError::InvalidXmlPreamble)?;
 
     const PREFIX: &[u8] = b"<?xml ";
     const POSTFIX: &[u8] = b"?>";
 
     if !(preamble.starts_with(PREFIX) && preamble.ends_with(POSTFIX)) {
-        Err(ContractError::InvalidXmlPreamble {})
+        Err(ContractError::InvalidXmlPreamble)
     } else {
         Ok(())
     }

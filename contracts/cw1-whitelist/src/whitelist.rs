@@ -27,7 +27,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
     #[msg(exec)]
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         self.mutable.save(ctx.deps.storage, &false)?;
@@ -43,11 +43,11 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         mut admins: Vec<String>,
     ) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized);
         }
 
         if !self.mutable.load(ctx.deps.storage)? {
-            return Err(ContractError::ContractFrozen {});
+            return Err(ContractError::ContractFrozen);
         }
 
         admins.sort_unstable();

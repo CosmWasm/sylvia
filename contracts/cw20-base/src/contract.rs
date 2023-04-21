@@ -118,7 +118,7 @@ impl Cw20Base<'_> {
         amount: Uint128,
     ) -> Result<AllowanceResponse, ContractError> {
         let update_fn = |current: Option<AllowanceResponse>| -> _ {
-            let allowance = current.ok_or(ContractError::NoAllowance {})?;
+            let allowance = current.ok_or(ContractError::NoAllowance)?;
 
             if !allowance.expires.is_expired(block) {
                 // deduct the allowance if enough
@@ -129,7 +129,7 @@ impl Cw20Base<'_> {
                     .map_err(StdError::overflow)?;
                 Ok(AllowanceResponse { allowance, expires })
             } else {
-                Err(ContractError::Expired {})
+                Err(ContractError::Expired)
             }
         };
         self.allowances
@@ -220,10 +220,7 @@ impl Cw20Base<'_> {
         recipient: String,
         amount: Uint128,
     ) -> Result<Response, ContractError> {
-        ensure!(
-            amount != Uint128::zero(),
-            ContractError::InvalidZeroAmount {}
-        );
+        ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         let rcpt_addr = ctx.deps.api.addr_validate(&recipient)?;
 
@@ -247,10 +244,7 @@ impl Cw20Base<'_> {
     /// Burn is a base message to destroy tokens forever
     #[msg(exec)]
     fn burn(&self, ctx: ExecCtx, amount: Uint128) -> Result<Response, ContractError> {
-        ensure!(
-            amount != Uint128::zero(),
-            ContractError::InvalidZeroAmount {}
-        );
+        ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         // lower balance
         self.balances
@@ -281,10 +275,7 @@ impl Cw20Base<'_> {
         amount: Uint128,
         msg: Binary,
     ) -> Result<Response, ContractError> {
-        ensure!(
-            amount != Uint128::zero(),
-            ContractError::InvalidZeroAmount {}
-        );
+        ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         let rcpt_addr = ctx.deps.api.addr_validate(&contract)?;
 

@@ -68,15 +68,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
 
         self.allowances
             .update(ctx.deps.storage, &spender, |allow| {
@@ -122,15 +118,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
 
         let allowance = self
             .allowances
@@ -138,7 +130,7 @@ impl Cw1SubkeysContract<'_> {
                 // Fail fast
                 let mut allowance = allow
                     .filter(|allow| !allow.expires.is_expired(&ctx.env.block))
-                    .ok_or(ContractError::NoAllowance {})?;
+                    .ok_or(ContractError::NoAllowance)?;
 
                 if let Some(exp) = expires {
                     if exp.is_expired(&ctx.env.block) {
@@ -176,15 +168,11 @@ impl Cw1SubkeysContract<'_> {
     ) -> Result<Response, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
-            ContractError::Unauthorized {}
+            ContractError::Unauthorized
         );
 
         let spender = ctx.deps.api.addr_validate(&spender)?;
-        ensure_ne!(
-            ctx.info.sender,
-            spender,
-            ContractError::CannotSetOwnAccount {}
-        );
+        ensure_ne!(ctx.info.sender, spender, ContractError::CannotSetOwnAccount);
         self.permissions
             .save(ctx.deps.storage, &spender, &permissions)?;
 
