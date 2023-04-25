@@ -1,4 +1,4 @@
-use proc_macro2::{Punct, TokenStream};
+use proc_macro2::{Literal, Punct, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
@@ -92,9 +92,17 @@ pub enum MsgType {
 /// `#[msg(...)]` attribute for `interface` macro
 pub enum MsgAttr {
     Exec,
-    Query { resp_type: Option<Ident> },
-    Instantiate { name: Ident },
-    Migrate { name: Ident },
+    Query {
+        resp_type: Option<Ident>,
+    },
+    Instantiate {
+        name: Ident,
+    },
+    Migrate {
+        name: Ident,
+        from: Literal,
+        to: Literal,
+    },
 }
 
 impl MsgType {
@@ -158,6 +166,30 @@ impl MsgAttr {
         }
     }
 
+    fn parse_migrate(content: ParseBuffer) -> Result<Self> {
+        let name = Ident::new("MigrateMsg", content.span());
+        let err = |e: Error| -> Error {
+            Error::new(
+                e.span(),
+                format!(
+                    "{}: supported format `#[msg(migrate, from = X, to = Y)]`",
+                    e
+                ),
+            )
+        };
+
+        let _: Punct = content.parse().map_err(err)?;
+        let _: Ident = content.parse().map_err(err)?;
+        let _: Punct = content.parse().map_err(err)?;
+        let from: Literal = content.parse().map_err(err)?;
+        let _: Punct = content.parse().map_err(err)?;
+        let _: Ident = content.parse().map_err(err)?;
+        let _: Punct = content.parse().map_err(err)?;
+        let to: Literal = content.parse().map_err(err)?;
+
+        Ok(Self::Migrate { name, from, to })
+    }
+
     pub fn msg_type(&self) -> MsgType {
         use MsgAttr::*;
 
@@ -184,8 +216,7 @@ impl Parse for MsgAttr {
             let name = Ident::new("InstantiateMsg", content.span());
             Ok(Self::Instantiate { name })
         } else if ty == "migrate" {
-            let name = Ident::new("MigrateMsg", content.span());
-            Ok(Self::Migrate { name })
+            Self::parse_migrate(content)
         } else {
             Err(Error::new(
                 ty.span(),

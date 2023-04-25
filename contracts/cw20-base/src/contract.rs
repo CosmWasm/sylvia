@@ -329,7 +329,7 @@ impl Cw20Base<'_> {
         Ok(res)
     }
 
-    #[msg(migrate)]
+    #[msg(migrate, from = 1.0, to = 1.1)]
     fn migrate(&self, ctx: MigrateCtx) -> Result<Response, ContractError> {
         let original_version =
             ensure_from_older_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;

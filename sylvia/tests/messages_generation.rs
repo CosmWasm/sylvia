@@ -47,7 +47,7 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[msg(migrate)]
+    #[msg(migrate, from = 1.0, to = 1.1)]
     pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }

@@ -70,7 +70,7 @@ impl<'a> StructMessage<'a> {
 
         match &self.msg_attr {
             Instantiate { name } => self.emit_struct(name),
-            Migrate { name } => self.emit_struct(name),
+            Migrate { name, .. } => self.emit_struct(name),
             _ => {
                 emit_error!(Span::mixed_site(), "Invalid message type");
                 quote! {}
