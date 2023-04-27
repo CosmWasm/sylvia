@@ -9,7 +9,9 @@ use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgField;
-use crate::parser::{parse_struct_message, ContractMessageAttr, MsgAttr, MsgType};
+use crate::parser::{
+    parse_instantiate_message, parse_struct_message, ContractMessageAttr, MsgAttr, MsgType,
+};
 use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
@@ -449,9 +451,9 @@ impl<'a> MultitestHelpers<'a> {
 
         let sylvia = crate_module();
 
-        let mut generics_checker = CheckGenerics::new(generics);
+        let generics_checker = CheckGenerics::new(generics);
 
-        let parsed = parse_struct_message(source, MsgType::Instantiate);
+        let parsed = parse_instantiate_message(source);
         let Some((method,_)) = parsed else {
             return quote! {};
         };

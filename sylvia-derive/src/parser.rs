@@ -1,3 +1,6 @@
+use std::iter::FilterMap;
+use std::slice::Iter;
+
 use proc_macro2::{Literal, Punct, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
@@ -328,41 +331,45 @@ impl Parse for ContractMessageAttr {
     }
 }
 
-pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemMethod, MsgAttr)> {
-    let mut methods = source.items.iter().filter_map(|item| match item {
-        ImplItem::Method(method) => {
-            let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-            let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                Ok(attr) => attr,
-                Err(err) => {
-                    emit_error!(method.span(), err);
-                    return None;
+pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Vec<(&ImplItemMethod, MsgAttr)> {
+    source
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            ImplItem::Method(method) => {
+                let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                    Ok(attr) => attr,
+                    Err(err) => {
+                        emit_error!(method.span(), err);
+                        return None;
+                    }
+                };
+
+                if attr == ty {
+                    Some((method, attr))
+                } else {
+                    None
                 }
-            };
-
-            if attr == ty {
-                Some((method, attr))
-            } else {
-                None
             }
-        }
-        _ => None,
-    });
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+}
 
-    let (method, msg_attr) = if let Some(method) = methods.next() {
-        method
-    } else {
-        if ty == MsgType::Instantiate {
-            emit_error!(source.span(), "No instantiation message");
-        }
+pub fn parse_instantiate_message(source: &ItemImpl) -> Option<(&ImplItemMethod, MsgAttr)> {
+    let methods = parse_struct_message(source, MsgType::Instantiate);
+
+    if methods.is_empty() {
+        emit_error!(source.span(), "No instantiation message");
         return None;
-    };
+    }
 
-    if let Some((obsolete, _)) = methods.next() {
+    if methods.len() > 1 {
         emit_error!(
-            obsolete.span(), "More than one instantiation or migration message";
-            note = method.span() => "Instantiation/Migration message previously defined here"
+            methods[1].0.span(), "More than one instantiation message";
+            note = methods[0].0.span() => "Instantiation message previously defined here"
         );
     }
-    Some((method, msg_attr))
+    Some(methods[0])
 }

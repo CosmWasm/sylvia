@@ -1,7 +1,8 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
-    parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
+    parse_instantiate_message, parse_struct_message, ContractErrorAttr, ContractMessageAttr,
+    InterfaceArgs, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -14,12 +15,176 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
-    ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericParam, Ident, ImplItem, ImplItemMethod, ItemImpl, ItemTrait,
+    Pat, PatType, ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
-pub struct StructMessage<'a> {
+pub struct MigrateMessage<'a> {
+    contract_type: &'a Type,
+    generics: Vec<&'a GenericParam>,
+    unused_generics: Vec<&'a GenericParam>,
+    wheres: Vec<&'a WherePredicate>,
+    full_where: Option<&'a WhereClause>,
+    methods: Vec<MsgMethod<'a>>,
+}
+
+pub struct MsgMethod<'a> {
+    pub method_fields: Vec<MsgField<'a>>,
+    pub function_name: &'a Ident,
+    pub result: &'a ReturnType,
+    pub msg_attr: &'a MsgAttr,
+}
+
+impl<'a> MsgMethod<'a> {
+    pub fn new(
+        method: &'a (&'a ImplItemMethod, MsgAttr),
+        generics_checker: &'a CheckGenerics,
+    ) -> Self {
+        let (method, msg_attr) = method;
+
+        let function_name = &method.sig.ident;
+        let method_fields = process_fields(&method.sig, generics_checker);
+        let result = &method.sig.output;
+
+        Self {
+            method_fields,
+            function_name,
+            result,
+            msg_attr,
+        }
+    }
+}
+
+impl<'a> MigrateMessage<'a> {
+    /// Creates new migrate message from impl block
+    pub fn new(
+        source: &'a ItemImpl,
+        generics: &'a [&'a GenericParam],
+    ) -> Option<MigrateMessage<'a>> {
+        let generics_checker = CheckGenerics::new(generics);
+
+        let contract_type = &source.self_ty;
+
+        let methods = parse_struct_message(source, MsgType::Migrate);
+        if methods.is_empty() {
+            return None;
+        }
+
+        let methods = methods
+            .iter()
+            .map(|method| MsgMethod::new(method, &generics_checker))
+            .collect::<Vec<_>>();
+
+        let (used_generics, unused_generics) = generics_checker.used_unused();
+        let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
+
+        Some(Self {
+            contract_type,
+            generics: used_generics,
+            unused_generics,
+            wheres,
+            full_where: source.generics.where_clause.as_ref(),
+            methods,
+        })
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+
+        let Self {
+            contract_type,
+            generics,
+            unused_generics,
+            wheres,
+            full_where,
+            methods,
+        } = self;
+
+        let where_clause = if !wheres.is_empty() {
+            quote! {
+                where #(#wheres,)*
+            }
+        } else {
+            quote! {}
+        };
+
+        let ctx_type = methods[0].msg_attr.msg_type().emit_ctx_type();
+
+        let generics = if generics.is_empty() {
+            quote! {}
+        } else {
+            quote! {
+                <#(#generics,)*>
+            }
+        };
+
+        let unused_generics = if unused_generics.is_empty() {
+            quote! {}
+        } else {
+            quote! {
+                <#(#unused_generics,)*>
+            }
+        };
+
+        let fields = methods
+            .iter()
+            .map(|method| method.method_fields.iter().map(MsgField::emit))
+            .flatten();
+        let fields_names = methods
+            .iter()
+            .map(|method| method.method_fields.iter().map(MsgField::name))
+            .flatten();
+        let parameters = methods
+            .iter()
+            .map(|method| method.method_fields)
+            .flatten()
+            .map(|field| {
+                let name = field.name;
+                let ty = field.ty;
+                quote! { #name : #ty}
+            });
+        let result = methods[0].result;
+
+        // let definitions = methods
+        //     .iter()
+        //     .map(|method| {
+        //         let MsgMethod {
+        //             method_fields,
+        //             function_name,
+        //             result,
+        //             msg_attr,
+        //         } = method;
+        //         let result = result;
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // TODO: Add builder for every method, so we can use it in dispatch
+        quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #[serde(rename_all="snake_case")]
+            pub struct MigrateMsg #generics #where_clause {
+                #(pub Option<#fields>,)*
+            }
+
+            impl #generics MigrateMsg #generics #where_clause {
+                pub fn new(#(#parameters,)*) -> Self {
+                    Self { #(#fields_names,)* }
+                }
+
+                // pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
+                //     #result #full_where
+                // {
+                //     let Self { #(#fields_names,)* } = self;
+                //     contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
+                // }
+            }
+        }
+    }
+}
+/// Representation of single struct message
+pub struct InstantiateMessage<'a> {
     contract_type: &'a Type,
     fields: Vec<MsgField<'a>>,
     function_name: &'a Ident,
@@ -31,20 +196,20 @@ pub struct StructMessage<'a> {
     msg_attr: MsgAttr,
 }
 
-impl<'a> StructMessage<'a> {
+impl<'a> InstantiateMessage<'a> {
     /// Creates new struct message of given type from impl block
     pub fn new(
         source: &'a ItemImpl,
-        ty: MsgType,
         generics: &'a [&'a GenericParam],
-    ) -> Option<StructMessage<'a>> {
+    ) -> Option<InstantiateMessage<'a>> {
         let mut generics_checker = CheckGenerics::new(generics);
 
         let contract_type = &source.self_ty;
 
-        let parsed = parse_struct_message(source, ty);
+        let parsed = parse_instantiate_message(source);
+
         let Some((method, msg_attr)) = parsed else {
-            return None;
+             return None;
         };
 
         let function_name = &method.sig.ident;
@@ -70,7 +235,6 @@ impl<'a> StructMessage<'a> {
 
         match &self.msg_attr {
             Instantiate { name } => self.emit_struct(name),
-            Migrate { name, .. } => self.emit_struct(name),
             _ => {
                 emit_error!(Span::mixed_site(), "Invalid message type");
                 quote! {}

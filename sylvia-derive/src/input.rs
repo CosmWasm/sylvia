@@ -6,7 +6,9 @@ use syn::spanned::Spanned;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
 use crate::crate_module;
-use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::message::{
+    ContractEnumMessage, EnumMessage, GlueMessage, InstantiateMessage, MigrateMessage,
+};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 
@@ -168,8 +170,10 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_messages(&self) -> TokenStream {
-        let instantiate = self.emit_struct_msg(MsgType::Instantiate);
-        let migrate = self.emit_struct_msg(MsgType::Migrate);
+        let instantiate =
+            InstantiateMessage::new(self.item, &self.generics).map_or(quote! {}, |msg| msg.emit());
+        let migrate =
+            MigrateMessage::new(self.item, &self.generics).map_or(quote! {}, |msg| msg.emit());
         let exec_impl =
             self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query_impl =
@@ -190,10 +194,6 @@ impl<'a> ImplInput<'a> {
 
             #query
         }
-    }
-
-    fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
-        StructMessage::new(self.item, msg_ty, &self.generics).map_or(quote! {}, |msg| msg.emit())
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
