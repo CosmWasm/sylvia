@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
@@ -30,25 +32,21 @@ pub struct MigrateMessage<'a> {
 }
 
 pub struct MsgMethod<'a> {
-    pub method_fields: Vec<MsgField<'a>>,
+    pub fields: Vec<MsgField<'a>>,
     pub function_name: &'a Ident,
     pub result: &'a ReturnType,
-    pub msg_attr: &'a MsgAttr,
+    pub msg_attr: MsgAttr,
 }
 
 impl<'a> MsgMethod<'a> {
-    pub fn new(
-        method: &'a (&'a ImplItemMethod, MsgAttr),
-        generics_checker: &'a CheckGenerics,
-    ) -> Self {
+    pub fn new(method: (&'a ImplItemMethod, MsgAttr), fields: Vec<MsgField<'a>>) -> Self {
         let (method, msg_attr) = method;
 
         let function_name = &method.sig.ident;
-        let method_fields = process_fields(&method.sig, generics_checker);
         let result = &method.sig.output;
 
         Self {
-            method_fields,
+            fields,
             function_name,
             result,
             msg_attr,
@@ -62,7 +60,7 @@ impl<'a> MigrateMessage<'a> {
         source: &'a ItemImpl,
         generics: &'a [&'a GenericParam],
     ) -> Option<MigrateMessage<'a>> {
-        let generics_checker = CheckGenerics::new(generics);
+        let mut generics_checker = CheckGenerics::new(generics);
 
         let contract_type = &source.self_ty;
 
@@ -72,8 +70,11 @@ impl<'a> MigrateMessage<'a> {
         }
 
         let methods = methods
-            .iter()
-            .map(|method| MsgMethod::new(method, &generics_checker))
+            .into_iter()
+            .map(|method| {
+                let fields = process_fields(&method.0.sig, &mut generics_checker);
+                MsgMethod::new(method, fields)
+            })
             .collect::<Vec<_>>();
 
         let (used_generics, unused_generics) = generics_checker.used_unused();
@@ -129,15 +130,15 @@ impl<'a> MigrateMessage<'a> {
 
         let fields = methods
             .iter()
-            .map(|method| method.method_fields.iter().map(MsgField::emit))
+            .map(|method| method.fields.iter().map(MsgField::emit))
             .flatten();
         let fields_names = methods
             .iter()
-            .map(|method| method.method_fields.iter().map(MsgField::name))
+            .map(|method| method.fields.iter().map(MsgField::name))
             .flatten();
         let parameters = methods
             .iter()
-            .map(|method| method.method_fields)
+            .map(|method| &method.fields)
             .flatten()
             .map(|field| {
                 let name = field.name;
@@ -145,6 +146,34 @@ impl<'a> MigrateMessage<'a> {
                 quote! { #name : #ty}
             });
         let result = methods[0].result;
+
+        let builders: Vec<_> = methods
+            .iter()
+            .map(|method| {
+                let MsgMethod {
+                    function_name,
+                    fields,
+                    ..
+                } = method;
+
+                let fields_names = fields.iter().map(MsgField::name);
+
+                let fields = fields.iter().map(|field| {
+                    let name = field.name;
+                    let ty = field.ty;
+                    quote! { #name : #ty}
+                });
+
+                quote! {
+                    pub fn #function_name(self, #(#fields),*)  {
+                        Self {
+                            #(#fields_names),*
+                            ..self
+                        }
+                    }
+                }
+            })
+            .collect();
 
         // let definitions = methods
         //     .iter()
@@ -173,10 +202,13 @@ impl<'a> MigrateMessage<'a> {
                     Self { #(#fields_names,)* }
                 }
 
+                #(#builders)*
+
                 // pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
                 //     #result #full_where
                 // {
                 //     let Self { #(#fields_names,)* } = self;
+                //
                 //     contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
                 // }
             }

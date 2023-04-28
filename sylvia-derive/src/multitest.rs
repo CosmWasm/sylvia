@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
@@ -451,8 +453,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let sylvia = crate_module();
 
-        let generics_checker = CheckGenerics::new(generics);
-
+        let mut generics_checker = CheckGenerics::new(generics);
         let parsed = parse_instantiate_message(source);
         let Some((method,_)) = parsed else {
             return quote! {};

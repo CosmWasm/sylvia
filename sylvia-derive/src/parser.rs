@@ -358,7 +358,7 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Vec<(&ImplItemMet
 }
 
 pub fn parse_instantiate_message(source: &ItemImpl) -> Option<(&ImplItemMethod, MsgAttr)> {
-    let methods = parse_struct_message(source, MsgType::Instantiate);
+    let mut methods = parse_struct_message(source, MsgType::Instantiate);
 
     if methods.is_empty() {
         emit_error!(source.span(), "No instantiation message");
@@ -371,5 +371,5 @@ pub fn parse_instantiate_message(source: &ItemImpl) -> Option<(&ImplItemMethod, 
             note = methods[0].0.span() => "Instantiation message previously defined here"
         );
     }
-    Some(methods[0])
+    methods.pop()
 }
