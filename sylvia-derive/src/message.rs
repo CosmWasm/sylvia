@@ -132,10 +132,11 @@ impl<'a> MigrateMessage<'a> {
             .iter()
             .map(|method| method.fields.iter().map(MsgField::emit))
             .flatten();
-        let fields_names = methods
+        let fields_names: Vec<_> = methods
             .iter()
             .map(|method| method.fields.iter().map(MsgField::name))
-            .flatten();
+            .flatten()
+            .collect();
         let parameters = methods
             .iter()
             .map(|method| &method.fields)
@@ -147,9 +148,20 @@ impl<'a> MigrateMessage<'a> {
             });
         let result = methods[0].result;
 
-        let builders: Vec<_> = methods
+        let migrate_variants: Vec<_> = methods
             .iter()
             .map(|method| {
+                Ident::new(
+                    &method.function_name.to_string().to_case(Case::UpperCamel),
+                    method.function_name.span(),
+                )
+            })
+            .collect();
+
+        let builders: Vec<_> = methods
+            .iter()
+            .zip(migrate_variants.iter())
+            .map(|(method, variant)| {
                 let MsgMethod {
                     function_name,
                     fields,
@@ -165,7 +177,8 @@ impl<'a> MigrateMessage<'a> {
                 });
 
                 quote! {
-                    pub fn #function_name(self, #(#fields),*)  {
+                    pub fn #function_name(self, #(#fields),*) -> Self {
+                        self.variants.push(MigrateVariant::#variant);
                         Self {
                             #(#fields_names),*
                             ..self
@@ -175,42 +188,57 @@ impl<'a> MigrateMessage<'a> {
             })
             .collect();
 
-        // let definitions = methods
-        //     .iter()
-        //     .map(|method| {
-        //         let MsgMethod {
-        //             method_fields,
-        //             function_name,
-        //             result,
-        //             msg_attr,
-        //         } = method;
-        //         let result = result;
-        //     })
-        //     .collect::<Vec<_>>();
+        let dispatch_arms = methods
+            .iter()
+            .zip(migrate_variants.iter())
+            .map(|(method, variant)| {
+                let MsgMethod {
+                    function_name,
+                    fields,
+                    ..
+                } = method;
+                let fields_names = fields.iter().map(MsgField::name);
+                quote! {
+                    MigrateVariant :: #variant=> {
+                        contract.#function_name(ctx.into(), #(#fields_names),*).map_err(|e| e.into())?
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
 
         // TODO: Add builder for every method, so we can use it in dispatch
         quote! {
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            pub enum MigrateVariant {
+                #(#migrate_variants),*
+            }
+
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case")]
             pub struct MigrateMsg #generics #where_clause {
+                variants: Vec<MigrateVariant>,
                 #(pub Option<#fields>,)*
             }
 
             impl #generics MigrateMsg #generics #where_clause {
                 pub fn new(#(#parameters,)*) -> Self {
-                    Self { #(#fields_names,)* }
+                    Self { variants: vec![], #(#fields_names,)* }
                 }
 
                 #(#builders)*
 
-                // pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
-                //     #result #full_where
-                // {
-                //     let Self { #(#fields_names,)* } = self;
-                //
-                //     contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
-                // }
+                pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
+                    #result #full_where
+                {
+                    let Self { variants, #(#fields_names,)* } = self;
+
+                    variants.iter().for_each(|v| match v {
+                        #(#dispatch_arms)*
+                    });
+                    Ok(Response::new())
+                    // TODO: Figure out how to handle multiple Ok Responses in one return
+                }
             }
         }
     }
