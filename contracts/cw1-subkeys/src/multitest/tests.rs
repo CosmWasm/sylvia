@@ -450,7 +450,7 @@ mod cw1_execute {
             .call(admin)
             .unwrap();
 
-        let e = contract
+        contract
             .cw1_proxy()
             .execute(vec![msg.into()])
             .with_funds(&[coin(2345, ATOM)])

@@ -532,7 +532,7 @@ but this is just to show how I enable the `mt` flag. With that, we can use mt
 utils in the contract:
 
 ```rust
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
     use super::*;
     use sylvia::multitest::App;
@@ -547,7 +547,8 @@ mod tests {
 
         let contract = code_id.instantiate(3)
             .with_label("My contract")
-            .call(owner);
+            .call(owner)
+            .unwrap();
 
         let counter = contract.counter().unwrap();
         assert_eq!(counter, contract::CounterResp { counter: 3});
@@ -605,39 +606,34 @@ Because of implementation restrictions, calling methods from the contract interf
 looks slightly different:
 
 ```rust
-use sylvia::multitest::App;
+#[test]
+fn member_test() {
+    let app = App::default();
 
-#[cfg(tests)]
-mod tests {
-    #[test]
-    fn counter_test() {
-        let app = App::default();
+    let owner = "owner";
+    let member = "john";
 
-        let owner = "owner";
-        let member = "john";
+    let code_id = contract::multitest_utils::CodeId::store_code(&app);
 
-        let code_id = contract::multitest_utils::CodeId::store_code(&app);
+    let contract = code_id.instantiate(0)
+        .with_label("My contract")
+        .call(owner);
 
-        let contract = code_id.instantiate(0)
-            .with_label("My contract")
-            .call(owner);
+    contract
+        .group()
+        .add_member(member.to_owned())
+        .call(owner);
 
-        contract
-            .group()
-            .add_member(member.to_owned())
-            .call(owner);
+    let resp = contract
+        .group_proxy()
+        .is_member(member.to_owned())
 
-        let resp = contract
-            .group()
-            .is_member(member.to_owned())
-
-        assert_eq!(resp, group::IsMemberResp { is_member: true });
-    }
+    assert_eq!(resp, group::IsMemberResp { is_member: true });
 }
 ```
 
-Note an additional `group()` call for executions and queries - it returns an extra
-wrapper that would send the messages from a particular interface.
+Note an additional `group_proxy()` call for executions and queries - it returns an
+extra proxy wrapper that would send the messages from a particular interface.
 
 ## Generating schema
 
