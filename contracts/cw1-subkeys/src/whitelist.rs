@@ -1,8 +1,6 @@
 use cosmwasm_std::{Response, StdResult};
 use cw1_whitelist::responses::AdminListResponse;
-#[cfg(test)]
-use cw1_whitelist::whitelist;
-use cw1_whitelist::whitelist::Whitelist;
+use cw1_whitelist::whitelist::{self, Whitelist};
 use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 

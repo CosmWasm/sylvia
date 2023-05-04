@@ -328,7 +328,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let interface_name = interface_name(self.source);
         let proxy_name = &self.proxy_name;
-        let trait_name = Ident::new(&format!("{}Methods", interface_name), interface_name.span());
+        let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
 
         let modules: Vec<_> = source
             .attrs
@@ -418,7 +418,6 @@ impl<'a> MultitestHelpers<'a> {
         });
 
         quote! {
-            #[cfg(test)]
             pub mod test_utils {
                 use super::*;
 
