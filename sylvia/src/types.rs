@@ -28,6 +28,15 @@ impl ExecCtx<'_> {
     }
 }
 
+impl MigrateCtx<'_> {
+    pub fn branch(&'_ mut self) -> MigrateCtx<'_> {
+        MigrateCtx {
+            deps: self.deps.branch(),
+            env: self.env.clone(),
+        }
+    }
+}
+
 impl<'a> From<(DepsMut<'a>, Env)> for MigrateCtx<'a> {
     fn from((deps, env): (DepsMut<'a>, Env)) -> Self {
         Self { deps, env }

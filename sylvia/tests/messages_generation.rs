@@ -117,7 +117,7 @@ fn contract_messages_constructible() {
         _user: Addr::unchecked("owner"),
     };
     let _ = contract::InstantiateMsg {};
-    let _ = contract::MigrateMsg {};
+    let _ = contract::MigrateMsg::new();
 
     // Ensure no extra variants are generated
     match no_args_exec {

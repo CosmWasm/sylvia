@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
@@ -177,7 +175,7 @@ impl<'a> MigrateMessage<'a> {
                 });
 
                 quote! {
-                    pub fn #function_name(self, #(#fields),*) -> Self {
+                    pub fn #function_name(mut self, #(#fields),*) -> Self {
                         self.variants.push(MigrateVariant::#variant);
                         Self {
                             #(#fields_names),*
@@ -200,11 +198,17 @@ impl<'a> MigrateMessage<'a> {
                 let fields_names = fields.iter().map(MsgField::name);
                 quote! {
                     MigrateVariant :: #variant=> {
-                        contract.#function_name(ctx.into(), #(#fields_names),*).map_err(|e| e.into())?
+                        contract.#function_name(ctx.branch().into(), #(#fields_names),*).map_err(|e| e.into())
                     }
                 }
             })
             .collect::<Vec<_>>();
+
+        // println!("{:#?}", result);
+        let result = match result {
+            ReturnType::Type(_, ty) => ty,
+            _ => unreachable!(),
+        };
 
         // TODO: Add builder for every method, so we can use it in dispatch
         quote! {
@@ -228,14 +232,15 @@ impl<'a> MigrateMessage<'a> {
 
                 #(#builders)*
 
-                pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
-                    #result #full_where
+                pub fn dispatch #unused_generics(mut self, contract: &#contract_type, ctx: #ctx_type)
+                    -> #result #full_where
                 {
                     let Self { variants, #(#fields_names,)* } = self;
+                    let mut ctx: #sylvia ::types::MigrateCtx = ctx.into();
 
-                    variants.iter().for_each(|v| match v {
-                        #(#dispatch_arms)*
-                    });
+                    let results: Vec< #result > = variants.iter().map(|v| match v {
+                        #(#dispatch_arms),*
+                    }).collect();
                     Ok(Response::new())
                     // TODO: Figure out how to handle multiple Ok Responses in one return
                 }
