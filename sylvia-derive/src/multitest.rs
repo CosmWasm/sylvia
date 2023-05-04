@@ -4,10 +4,13 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type};
+use syn::{
+    FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, TraitItem, Type,
+};
 
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
+use crate::input::WithSpan;
 use crate::message::MsgField;
 use crate::parser::{parse_struct_message, ContractMessageAttr, MsgAttr, MsgType};
 use crate::utils::{extract_return_type, process_fields};
@@ -16,7 +19,7 @@ struct MessageSignature<'a> {
     pub name: &'a Ident,
     pub params: Vec<TokenStream>,
     pub arguments: Vec<&'a Ident>,
-    pub msg_ty: MsgType,
+    pub msg_ty: WithSpan<MsgType>,
     pub return_type: TokenStream,
 }
 
@@ -25,11 +28,10 @@ pub struct MultitestHelpers<'a> {
     error_type: TokenStream,
     contract: &'a Type,
     is_trait: bool,
-    is_migrate: bool,
+    has_migrate: bool,
     source: &'a ItemImpl,
     generics: &'a [&'a GenericParam],
     contract_name: &'a Ident,
-    proxy_name: Ident,
 }
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -75,10 +77,11 @@ impl<'a> MultitestHelpers<'a> {
                         }
                     };
                     let msg_ty = attr.msg_type();
+                    let msg_ty = WithSpan::new(msg_ty, msg_attr.span());
 
-                    if msg_ty == MsgType::Migrate {
+                    if msg_ty.inner() == &MsgType::Migrate {
                         is_migrate = true;
-                    } else if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
+                    } else if [MsgType::Query, MsgType::Exec].contains(msg_ty.inner()) {
                         return None;
                     }
                     let sig = &method.sig;
@@ -170,23 +173,15 @@ impl<'a> MultitestHelpers<'a> {
         let contract = &source.self_ty;
         let contract_name = extract_contract_name(contract);
 
-        let proxy_name = if is_trait {
-            let interface_name = interface_name(source);
-            Ident::new(&format!("{}Proxy", interface_name), interface_name.span())
-        } else {
-            Ident::new(&format!("{}Proxy", contract_name), contract_name.span())
-        };
-
         Self {
             messages,
             error_type,
             contract,
             is_trait,
-            is_migrate,
+            has_migrate: is_migrate,
             source,
             generics,
             contract_name,
-            proxy_name,
         }
     }
 
@@ -194,9 +189,9 @@ impl<'a> MultitestHelpers<'a> {
         let Self {
             messages,
             error_type,
-            proxy_name,
             source,
             is_trait,
+            contract_name,
             ..
         } = self;
         let sylvia = crate_module();
@@ -213,26 +208,26 @@ impl<'a> MultitestHelpers<'a> {
                 msg_ty,
                 return_type,
             } = msg;
-            if msg_ty == &MsgType::Exec {
-                quote! {
+
+            match msg_ty.inner() {
+                MsgType::Instantiate => quote! {},
+                MsgType::Exec => quote! {
                     #[track_caller]
                     pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
                         let msg = ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
-                }
-            } else if msg_ty == &MsgType::Migrate {
-                quote! {
+                },
+                MsgType::Migrate => quote! {
                     #[track_caller]
                     pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
                         let msg = MigrateMsg::new( #(#arguments),* );
 
                         #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                     }
-                }
-            } else {
-                quote! {
+                },
+                MsgType::Query => quote! {
                     pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
                         let msg = QueryMsg:: #name ( #(#arguments),* );
 
@@ -243,71 +238,38 @@ impl<'a> MultitestHelpers<'a> {
                             .query_wasm_smart(self.contract_addr.clone(), &msg)
                             .map_err(Into::into)
                     }
-                }
+                },
             }
         });
 
         let contract_block = self.generate_contract_helpers();
 
-        let interfaces: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => {
-                        let ContractMessageAttr { module, .. } = interface;
-                        assert!(!module.segments.is_empty());
-                        let module_name = &module.segments[0].ident;
-                        let method_name = Ident::new(&format!("{}_proxy", module_name), module_name.span());
-                        let proxy_name = Ident::new(
-                            &format!("{}Proxy", module_name.to_string().to_case(Case::UpperCamel)),
-                            module_name.span(),
-                        );
-
-                        quote! {
-                            pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app> {
-                                #module ::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
-
         quote! {
-            pub mod multitest_utils {
+            pub mod multitest {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
                 use #sylvia ::derivative::Derivative;
 
                 #[derive(Derivative)]
                 #[derivative(Debug)]
-                pub struct #proxy_name <'app> {
+                pub struct #contract_name <'app> {
                     pub contract_addr: #sylvia ::cw_std::Addr,
                     #[derivative(Debug="ignore")]
                     pub app: &'app #sylvia ::multitest::App,
                 }
 
-                impl<'app> #proxy_name <'app> {
+                impl<'app> #contract_name <'app> {
                     pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        #proxy_name{ contract_addr, app }
+                        Self { contract_addr, app }
                     }
 
                     #(#messages)*
 
-                    #(#interfaces)*
                 }
 
-                impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
-                    fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
-                        #proxy_name::new(input.0, input.1)
+                impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #contract_name<'app> {
+                    fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #contract_name<'app> {
+                        #contract_name::new(input.0, input.1)
                     }
                 }
 
@@ -321,14 +283,15 @@ impl<'a> MultitestHelpers<'a> {
             messages,
             error_type,
             source,
+            contract_name,
             ..
         } = self;
 
         let sylvia = crate_module();
-
         let interface_name = interface_name(self.source);
-        let proxy_name = &self.proxy_name;
-        let trait_name = Ident::new(&format!("{}Methods", interface_name), interface_name.span());
+
+        println!("Interface: {:?}", interface_name);
+        println!("Proxy: {:?}", contract_name);
 
         let modules: Vec<_> = source
             .attrs
@@ -360,43 +323,11 @@ impl<'a> MultitestHelpers<'a> {
             _ => {
                 emit_error!(
                     source.span(),
-                    "Only one #[messages] attribute is allowed per contract"
+                    "Only one #[messages] attribute is allowed per interface"
                 );
                 return quote! {};
             }
         };
-        let methods_definitions = messages.iter().map(|msg| {
-            let MessageSignature {
-                name,
-                params,
-                arguments,
-                msg_ty,
-                return_type,
-            } = msg;
-            if msg_ty == &MsgType::Exec {
-                quote! {
-                    #[track_caller]
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg> {
-                        let msg = #module ExecMsg:: #name ( #(#arguments),* );
-
-                        #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
-                    }
-                }
-            } else {
-                quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = #module QueryMsg:: #name ( #(#arguments),* );
-
-                        self.app
-                            .app
-                            .borrow()
-                            .wrap()
-                            .query_wasm_smart(self.contract_addr.clone(), &msg)
-                            .map_err(Into::into)
-                    }
-                }
-            }
-        });
 
         let methods_declarations = messages.iter().map(|msg| {
             let MessageSignature {
@@ -406,27 +337,65 @@ impl<'a> MultitestHelpers<'a> {
                 return_type,
                 ..
             } = msg;
-            if msg_ty == &MsgType::Exec {
-                quote! {
+            match msg_ty.inner() {
+                MsgType::Exec => quote! {
                     fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg>;
-                }
-            } else {
-                quote! {
+                },
+                MsgType::Query => quote! {
                     fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
+                },
+                _ => {
+                    emit_error!(msg_ty.span(), "Invalid message type for interface: {:?}", msg_ty.inner());
+                    quote! {}
+                }
+            }
+        });
+
+        let methods_definitions = messages.iter().map(|msg| {
+            let MessageSignature {
+                name,
+                params,
+                msg_ty,
+                return_type,
+                arguments,
+                ..
+            } = msg;
+            match msg_ty.inner() {
+                MsgType::Exec => quote! {
+                    #[track_caller]
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg> {
+                        let msg = #module ExecMsg:: #name(#(#arguments),*);
+                        #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+                    }
+                },
+                MsgType::Query => quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = QueryMsg:: #name(#(#arguments),*);
+
+                        self
+                            .app
+                            .borrow()
+                            .wrap()
+                            .query_wasm_smart(self.contract_addr.clone(), &msg)
+                            .map_err(Into::into)
+                    }
+                },
+                _ => {
+                    emit_error!(msg_ty.span(), "Invalid message type for interface: {:?}", msg_ty.inner());
+                    quote! {}
                 }
             }
         });
 
         quote! {
-            #[cfg(test)]
-            pub mod test_utils {
+            pub mod multitest {
                 use super::*;
 
-                pub trait #trait_name {
+                pub trait #interface_name {
                     #(#methods_declarations)*
                 }
 
-                impl #trait_name for #module trait_utils:: #proxy_name<'_> {
+                impl #interface_name for #contract_name<'_> {
                     #(#methods_definitions)*
                 }
             }
@@ -440,7 +409,6 @@ impl<'a> MultitestHelpers<'a> {
             source,
             generics,
             contract_name,
-            proxy_name,
             ..
         } = self;
 
@@ -521,7 +489,7 @@ impl<'a> MultitestHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
+                pub fn call(self, sender: &str) -> Result<#contract_name<'app>, #error_type> {
                     self.code_id
                         .app
                         .app
@@ -535,7 +503,7 @@ impl<'a> MultitestHelpers<'a> {
                             self.admin,
                         )
                         .map_err(|err| err.downcast().unwrap())
-                        .map(|addr| #proxy_name {
+                        .map(|addr| #contract_name {
                             contract_addr: addr,
                             app: self.code_id.app,
                         })
@@ -549,7 +517,7 @@ impl<'a> MultitestHelpers<'a> {
         let sylvia = crate_module();
 
         // MigrateMsg is not generated all the time in contrary to Exec, Query and Instantiate.
-        let migrate_body = if self.is_migrate {
+        let migrate_body = if self.has_migrate {
             quote! {
                 #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
                     .dispatch(self, (deps, env).into())
@@ -622,43 +590,6 @@ impl<'a> MultitestHelpers<'a> {
                     msg: Vec<u8>,
                 ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
                     #migrate_body
-                }
-            }
-        }
-    }
-}
-
-pub struct TraitMultitestHelpers<'a> {
-    trait_name: &'a Ident,
-}
-
-impl<'a> TraitMultitestHelpers<'a> {
-    pub fn new(source: &'a ItemTrait) -> Self {
-        Self {
-            trait_name: &source.ident,
-        }
-    }
-
-    pub fn emit(&self) -> TokenStream {
-        let trait_name = self.trait_name;
-        let sylvia = crate_module();
-        let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
-
-        quote! {
-            pub mod trait_utils {
-                pub struct #proxy_name <'app> {
-                    pub contract_addr: #sylvia ::cw_std::Addr,
-                    pub app: &'app #sylvia ::multitest::App,
-                }
-                impl<'app> #proxy_name <'app> {
-                    pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        #proxy_name { contract_addr, app }
-                    }
-                }
-                impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
-                    fn into(self) -> #sylvia ::cw_std::Addr {
-                        self.contract_addr
-                    }
                 }
             }
         }

@@ -90,6 +90,7 @@ pub enum MsgType {
 }
 
 /// `#[msg(...)]` attribute for `interface` macro
+#[derive(Debug)]
 pub enum MsgAttr {
     Exec,
     Query { resp_type: Option<Ident> },

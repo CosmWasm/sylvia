@@ -7,8 +7,31 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type
 
 use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
-use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
+use crate::multitest::MultitestHelpers;
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+
+/// Wraps any type adding span to it
+#[derive(Debug)]
+pub struct WithSpan<T> {
+    item: T,
+    span: Span,
+}
+
+impl<T> WithSpan<T> {
+    pub fn new(item: T, span: Span) -> Self {
+        Self { item, span }
+    }
+
+    pub fn inner(&self) -> &T {
+        &self.item
+    }
+}
+
+impl<T> Spanned for WithSpan<T> {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -52,7 +75,6 @@ impl<'a> TraitInput<'a> {
 
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
-        let multitest_helpers = self.emit_helpers();
 
         if let Some(module) = &self.attributes.module {
             quote! {
@@ -60,24 +82,12 @@ impl<'a> TraitInput<'a> {
                     use super::*;
 
                     #messages
-
-                    #multitest_helpers
                 }
             }
         } else {
             quote! {
                 #messages
-                #multitest_helpers
             }
-        }
-    }
-
-    fn emit_helpers(&self) -> TokenStream {
-        if cfg!(feature = "mt") {
-            let multitest_helpers = TraitMultitestHelpers::new(self.item);
-            multitest_helpers.emit()
-        } else {
-            quote! {}
         }
     }
 
