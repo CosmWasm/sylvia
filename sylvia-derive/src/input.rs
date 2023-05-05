@@ -172,8 +172,8 @@ impl<'a> ImplInput<'a> {
     fn emit_messages(&self) -> TokenStream {
         let instantiate =
             InstantiateMessage::new(self.item, &self.generics).map_or(quote! {}, |msg| msg.emit());
-        let migrate =
-            MigrateMessage::new(self.item, &self.generics).map_or(quote! {}, |msg| msg.emit());
+        let migrate = MigrateMessage::new(self.item, &self.generics, &self.error)
+            .map_or(quote! {}, |msg| msg.emit());
         let exec_impl =
             self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query_impl =

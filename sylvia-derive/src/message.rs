@@ -27,6 +27,7 @@ pub struct MigrateMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     methods: Vec<MsgMethod<'a>>,
+    error: &'a Type,
 }
 
 pub struct MsgMethod<'a> {
@@ -57,6 +58,7 @@ impl<'a> MigrateMessage<'a> {
     pub fn new(
         source: &'a ItemImpl,
         generics: &'a [&'a GenericParam],
+        error: &'a Type,
     ) -> Option<MigrateMessage<'a>> {
         let mut generics_checker = CheckGenerics::new(generics);
 
@@ -85,6 +87,7 @@ impl<'a> MigrateMessage<'a> {
             wheres,
             full_where: source.generics.where_clause.as_ref(),
             methods,
+            error,
         })
     }
 
@@ -98,6 +101,7 @@ impl<'a> MigrateMessage<'a> {
             wheres,
             full_where,
             methods,
+            error,
         } = self;
 
         let where_clause = if !wheres.is_empty() {
@@ -140,7 +144,9 @@ impl<'a> MigrateMessage<'a> {
                 quote! { #name : #ty}
             })
         });
-        let result = methods[0].result;
+        let result = quote! {
+            Result< #sylvia ::cw_std::Response, #error >
+        };
 
         let migrate_variants: Vec<_> = methods
             .iter()
@@ -199,11 +205,6 @@ impl<'a> MigrateMessage<'a> {
                 }
             })
             .collect::<Vec<_>>();
-
-        let result = match result {
-            ReturnType::Type(_, ty) => ty,
-            _ => unreachable!(),
-        };
 
         quote! {
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
