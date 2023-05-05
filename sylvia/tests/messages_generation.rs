@@ -48,7 +48,17 @@ impl Contract {
     }
 
     #[msg(migrate, from = 1.0, to = 1.1)]
-    pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+    pub fn migrate_1_0_to_1_1(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+        Ok(Response::new())
+    }
+
+    #[msg(migrate, from = 1.1, to = 1.2)]
+    pub fn migrate_1_1_to_1_2(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+        Ok(Response::new())
+    }
+
+    #[msg(migrate, from = 1.0, to = 1.2)]
+    pub fn migrate_1_0_to_1_2(&self, _ctx: MigrateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
