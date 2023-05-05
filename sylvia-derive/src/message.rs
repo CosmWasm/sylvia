@@ -133,14 +133,13 @@ impl<'a> MigrateMessage<'a> {
             .iter()
             .flat_map(|method| method.fields.iter().map(MsgField::name))
             .collect();
-        let parameters = methods
-            .iter()
-            .flat_map(|method| &method.fields)
-            .map(|field| {
+        let parameters = methods.iter().flat_map(|method| {
+            method.fields.iter().map(|field| {
                 let name = field.name;
                 let ty = field.ty;
                 quote! { #name : #ty}
-            });
+            })
+        });
         let result = methods[0].result;
 
         let migrate_variants: Vec<_> = methods
