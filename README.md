@@ -32,7 +32,7 @@ it can generate many helpers - utilities for multitests or even queriers.
 
 ## Using in contracts
 
-Fist you need your contract crate, which should be a library crate:
+First you need your contract crate, which should be a library crate:
 
 ```shell
 $ cargo new --lib ./my-crate
@@ -41,10 +41,10 @@ $ cargo new --lib ./my-crate
 ```
 
 To use sylvia in the contract, you need to add couple dependencies - sylvia itself,
-and additionally: `cosmwasm-schema`, `schemars` and `cosmwasm_std`.
+and additionally: `serde`, cosmwasm-schema`,`schemars`and`cosmwasm_std`.
 
 ```shell
-$ cargo add syvia cosmwasm-schema schemars cosmwasm-std
+$ cargo add sylvia cosmwasm-schema schemars cosmwasm-std serde
 ...
 ```
 
@@ -72,7 +72,7 @@ sylvia = "0.3.2"
 To build your contract as wasm you can use:
 
 ```rust
-$ targo build --target wasm32-unknown-unknown
+$ cargo build --target wasm32-unknown-unknown
 ...
 ```
 
@@ -186,15 +186,12 @@ Sylvia would add the field into the instantiation message, which now becomes thi
 
 ```rust
 struct InstantiateMsg {
-    counter: 64,
+    counter: u64,
 }
 ```
 
 What is essential - the field in the `InstantiateMsg` gets the same name as the
-function argument. Be careful using the typical Rust pattern to prefix it with
-`_` to leave it unused. Unfortunately, to properly silence the unused warning here,
-you need to add the `#[allow(unused)]` attribute before the argument or the whole
-function.
+function argument.
 
 Now let's add an execution message to the contract:
 
@@ -235,10 +232,9 @@ fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ContractExecMsg) -> 
 ```
 
 One problem you might face now is that we use the `StdResult` for our contract,
-but we often want to define the custom error type for our contracts - hopefully,
+but we often want to define the custom error type for our contracts - fortunately,
 it is very easy to do:
 
-```rust
 ```rust
 use sylvia::cw_std::ensure;
 
@@ -314,7 +310,7 @@ fn query(deps: Deps, env: Env, msg: ContractQueryMsg) -> Result<Binary, Contract
 
 ## Interfaces
 
-One of the fundamental ideas of Sylvia's framework is interfaces, allowing the
+One of the fundamental ideas of Sylvia's framework are interfaces, allowing the
 grouping of messages into their semantical groups. Let's define a Sylvia interface:
 
 ```rust
@@ -387,9 +383,11 @@ impl MyContract<'_> {
 Here are a couple of things to talk about.
 
 First, note that I defined the interface trait in its separate module with a name
-matching the trait name. This is a requirement right now - Sylvia generates all
-the messages and boilerplate in this module and will try to access them through
-this module.
+matching the trait name, but written "snake_case" instead of CamelCase. Here I have
+`group` module for the `Group` trait, but the `CrossStaking` trait should be placed
+in its own `cross_staking` module (note the underscore). This is a requirement right
+now - Sylvia generates all the messages and boilerplate in this module and will try
+to access them through this module.
 
 Then there is the `Error` type embedded in the trait - it is also needed there,
 and the trait bound here has to be at least `From<StdError>`, as Sylvia might
@@ -606,6 +604,8 @@ Because of implementation restrictions, calling methods from the contract interf
 looks slightly different:
 
 ```rust
+use contract::multitest_utils::Group;
+
 #[test]
 fn member_test() {
     let app = App::default();
@@ -620,7 +620,7 @@ fn member_test() {
         .call(owner);
 
     contract
-        .group()
+        .group_proxy()
         .add_member(member.to_owned())
         .call(owner);
 
@@ -633,7 +633,9 @@ fn member_test() {
 ```
 
 Note an additional `group_proxy()` call for executions and queries - it returns an
-extra proxy wrapper that would send the messages from a particular interface.
+extra proxy wrapper that would send the messages from a particular interface. I also
+had to add trait with group-related methods - it is named in the same way as the
+original `Group` trait, but lies in `multitest_utils` module of the contract.
 
 ## Generating schema
 
