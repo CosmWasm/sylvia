@@ -19,7 +19,7 @@ use syn::{
     Pat, PatType, ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
-/// Representation of single struct message
+/// Representation of all the migrate messages in the contract
 pub struct MigrateMessage<'a> {
     contract_type: &'a Type,
     generics: Vec<&'a GenericParam>,
