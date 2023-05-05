@@ -128,17 +128,14 @@ impl<'a> MigrateMessage<'a> {
 
         let fields = methods
             .iter()
-            .map(|method| method.fields.iter().map(MsgField::emit))
-            .flatten();
+            .flat_map(|method| method.fields.iter().map(MsgField::emit));
         let fields_names: Vec<_> = methods
             .iter()
-            .map(|method| method.fields.iter().map(MsgField::name))
-            .flatten()
+            .flat_map(|method| method.fields.iter().map(MsgField::name))
             .collect();
         let parameters = methods
             .iter()
-            .map(|method| &method.fields)
-            .flatten()
+            .flat_map(|method| &method.fields)
             .map(|field| {
                 let name = field.name;
                 let ty = field.ty;
@@ -204,13 +201,11 @@ impl<'a> MigrateMessage<'a> {
             })
             .collect::<Vec<_>>();
 
-        // println!("{:#?}", result);
         let result = match result {
             ReturnType::Type(_, ty) => ty,
             _ => unreachable!(),
         };
 
-        // TODO: Add builder for every method, so we can use it in dispatch
         quote! {
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             pub enum MigrateVariant {
@@ -238,11 +233,17 @@ impl<'a> MigrateMessage<'a> {
                     let Self { variants, #(#fields_names,)* } = self;
                     let mut ctx: #sylvia ::types::MigrateCtx = ctx.into();
 
+                    let mut resp = #sylvia ::cw_std::Response::new();
                     let results: Vec< #result > = variants.iter().map(|v| match v {
                         #(#dispatch_arms),*
                     }).collect();
-                    Ok(Response::new())
-                    // TODO: Figure out how to handle multiple Ok Responses in one return
+                    for result in results {
+                        let result = result?;
+                        resp = resp.add_events(result.events);
+                        resp = resp.add_attributes(result.attributes);
+                    }
+
+                    Ok(resp)
                 }
             }
         }

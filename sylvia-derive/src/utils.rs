@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::visit::Visit;

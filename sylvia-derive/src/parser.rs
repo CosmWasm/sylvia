@@ -1,6 +1,3 @@
-use std::iter::FilterMap;
-use std::slice::Iter;
-
 use proc_macro2::{Literal, Punct, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;

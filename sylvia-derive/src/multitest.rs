@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
@@ -11,9 +9,7 @@ use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgField;
-use crate::parser::{
-    parse_instantiate_message, parse_struct_message, ContractMessageAttr, MsgAttr, MsgType,
-};
+use crate::parser::{parse_instantiate_message, ContractMessageAttr, MsgAttr, MsgType};
 use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
