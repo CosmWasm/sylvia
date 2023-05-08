@@ -10,6 +10,15 @@ use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessag
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 
+/// Preprocessed message
+struct MessageSignature<'a> {
+    pub name: &'a Ident,
+    pub params: Vec<TokenStream>,
+    pub arguments: Vec<&'a Ident>,
+    pub msg_ty: MsgType,
+    pub return_type: TokenStream,
+}
+
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
     attributes: &'a InterfaceArgs,
