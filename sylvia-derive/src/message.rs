@@ -221,6 +221,57 @@ impl<'a> EnumMessage<'a> {
         }
     }
 
+    pub fn emit_query_helpers(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            trait_name,
+            variants,
+            ..
+        } = self;
+
+        let helper_name = Ident::new(
+            &format!(
+                "{}Querier",
+                trait_name.to_string().to_case(Case::UpperCamel)
+            ),
+            trait_name.span(),
+        );
+
+        let queries = variants.iter().map(|variant| {
+            let MsgVariant { name, fields, return_type, .. } = variant;
+
+            let attributes = fields.iter().map(|field| {
+                let name = &field.name;
+                let ty = &field.ty;
+                quote! { #name : #ty }
+            });
+            let fields_names = fields.iter().map(|field| &field.name);
+            let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+            quote! {
+                pub fn #variant_name(&self, #(#attributes),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                    let query = QueryMsg:: #variant_name (#(#fields_names),*);
+                    self.querier.query_wasm_smart(self.contract, &query)
+                }
+            }
+        });
+
+        quote! {
+            pub struct #helper_name <'a, C: #sylvia ::cw_std::CustomQuery = #sylvia ::cw_std::Empty> {
+                contract: &'a #sylvia ::cw_std::Addr,
+                querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>
+            }
+
+            impl<'a, C> #helper_name<'a, C> where C: #sylvia ::cw_std::CustomQuery {
+                pub fn new(querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>, contract: &'a #sylvia ::cw_std::Addr) -> Self {
+                    Self { querier, contract }
+                }
+
+                #(#queries)*
+            }
+        }
+    }
+
     pub fn emit(&self) -> TokenStream {
         let sylvia = crate_module();
 
@@ -294,6 +345,12 @@ impl<'a> EnumMessage<'a> {
             },
         };
 
+        let query_helpers = if msg_ty == &MsgType::Query {
+            self.emit_query_helpers()
+        } else {
+            quote! {}
+        };
+
         quote! {
             #enum_declaration
 
@@ -312,6 +369,8 @@ impl<'a> EnumMessage<'a> {
                 }
                 #(#variants_constructors)*
             }
+
+            #query_helpers
         }
     }
 }
