@@ -144,6 +144,13 @@ impl<'a> MigrateMessage<'a> {
                 quote! { #name : #ty}
             })
         });
+        let struct_fields = methods.iter().flat_map(|method| {
+            method.fields.iter().map(|field| {
+                let name = field.name;
+                let ty = field.ty;
+                quote! { pub #name : Option<#ty> }
+            })
+        });
         let result = quote! {
             Result< #sylvia ::cw_std::Response, #error >
         };
@@ -180,7 +187,7 @@ impl<'a> MigrateMessage<'a> {
                     pub fn #function_name(mut self, #(#fields),*) -> Self {
                         self.variants.push(MigrateVariant::#variant);
                         Self {
-                            #(#fields_names),*
+                            #(#fields_names: Some(#fields_names),)*
                             ..self
                         }
                     }
@@ -200,7 +207,7 @@ impl<'a> MigrateMessage<'a> {
                 let fields_names = fields.iter().map(MsgField::name);
                 quote! {
                     MigrateVariant :: #variant=> {
-                        contract.#function_name(ctx.branch().into(), #(#fields_names),*).map_err(|e| e.into())
+                        contract.#function_name(ctx.branch().into(), #(self. #fields_names .take().unwrap()),*).map_err(|e| e.into())
                     }
                 }
             })
@@ -217,12 +224,12 @@ impl<'a> MigrateMessage<'a> {
             #[serde(rename_all="snake_case")]
             pub struct MigrateMsg #generics #where_clause {
                 variants: Vec<MigrateVariant>,
-                #(pub Option<#fields>,)*
+                #(#struct_fields,)*
             }
 
             impl #generics MigrateMsg #generics #where_clause {
-                pub fn new(#(#parameters,)*) -> Self {
-                    Self { variants: vec![], #(#fields_names,)* }
+                pub fn new() -> Self {
+                    Self { variants: vec![], #(#fields_names : None,)* }
                 }
 
                 #(#builders)*
@@ -230,11 +237,10 @@ impl<'a> MigrateMessage<'a> {
                 pub fn dispatch #unused_generics(mut self, contract: &#contract_type, ctx: #ctx_type)
                     -> #result #full_where
                 {
-                    let Self { variants, #(#fields_names,)* } = self;
                     let mut ctx: #sylvia ::types::MigrateCtx = ctx.into();
 
                     let mut resp = #sylvia ::cw_std::Response::new();
-                    let results: Vec< #result > = variants.iter().map(|v| match v {
+                    let results: Vec< #result > = self.variants.iter().map(|v| match v {
                         #(#dispatch_arms),*
                     }).collect();
                     for result in results {

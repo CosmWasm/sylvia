@@ -220,9 +220,11 @@ impl<'a> MultitestHelpers<'a> {
                         let msg = ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+
                     }
                 }
             } else if msg_ty == &MsgType::Migrate {
+                // Failing due to this. Figure it out
                 quote! {
                     #[track_caller]
                     pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {

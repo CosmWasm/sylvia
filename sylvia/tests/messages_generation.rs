@@ -48,12 +48,16 @@ impl Contract {
     }
 
     #[msg(migrate, from = 1.0, to = 1.1)]
-    pub fn migrate_1_0_to_1_1(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+    pub fn migrate_1_0_to_1_1(&self, _ctx: MigrateCtx, val: u32) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[msg(migrate, from = 1.1, to = 1.2)]
-    pub fn migrate_1_1_to_1_2(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+    pub fn migrate_1_1_to_1_2(
+        &self,
+        _ctx: MigrateCtx,
+        #[allow(unused)] user: Addr,
+    ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
@@ -127,7 +131,10 @@ fn contract_messages_constructible() {
         _user: Addr::unchecked("owner"),
     };
     let _ = contract::InstantiateMsg {};
-    let _ = contract::MigrateMsg::new();
+    let migrate = contract::MigrateMsg::new();
+    let migrate = contract::MigrateMsg::new().migrate_1_0_to_1_2();
+    let _ = contract::MigrateMsg::new().migrate_1_1_to_1_2(Addr::unchecked("owner"));
+    let _ = contract::MigrateMsg::new().migrate_1_0_to_1_1(0);
 
     // Ensure no extra variants are generated
     match no_args_exec {
