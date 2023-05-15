@@ -63,6 +63,7 @@ pub struct CounterContract {
 #[contract]
 #[messages(counter as Counter)]
 impl CounterContract {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             count: Item::new("count"),
