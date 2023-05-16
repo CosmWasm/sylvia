@@ -11,6 +11,7 @@ mod input;
 mod message;
 mod multitest;
 mod parser;
+mod remote;
 mod strip_generics;
 mod strip_input;
 mod utils;

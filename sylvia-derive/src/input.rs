@@ -9,6 +9,7 @@ use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+use crate::remote::Remote;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -53,6 +54,7 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
+        let remote = Remote::new().emit();
 
         if let Some(module) = &self.attributes.module {
             quote! {
@@ -62,12 +64,17 @@ impl<'a> TraitInput<'a> {
                     #messages
 
                     #multitest_helpers
+
+                    #remote
                 }
             }
         } else {
             quote! {
                 #messages
+
                 #multitest_helpers
+
+                #remote
             }
         }
     }
@@ -148,10 +155,14 @@ impl<'a> ImplInput<'a> {
         }
 
         let messages = self.emit_messages();
+        let remote = Remote::new().emit();
+
         let code = quote! {
             #messages
 
             #multitest_helpers
+
+            #remote
         };
 
         if let Some(module) = &self.attributes.module {
