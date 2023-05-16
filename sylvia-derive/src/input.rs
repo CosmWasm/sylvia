@@ -54,7 +54,7 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::new().emit();
+        let remote = Remote::for_interface().emit();
 
         if let Some(module) = &self.attributes.module {
             quote! {
@@ -155,7 +155,7 @@ impl<'a> ImplInput<'a> {
         }
 
         let messages = self.emit_messages();
-        let remote = Remote::new().emit();
+        let remote = Remote::for_contract(self.item).emit();
 
         let code = quote! {
             #messages
