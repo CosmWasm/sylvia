@@ -41,7 +41,7 @@ $ cargo new --lib ./my-crate
 ```
 
 To use sylvia in the contract, you need to add couple dependencies - sylvia itself,
-and additionally: `serde`, cosmwasm-schema`,`schemars`and`cosmwasm_std`.
+and additionally: `serde`, cosmwasm-schema`, `schemars` and `cosmwasm_std`.
 
 ```shell
 $ cargo add sylvia cosmwasm-schema schemars cosmwasm-std serde
