@@ -81,7 +81,8 @@ impl CounterContract {
 mod tests {
     use sylvia::multitest::App;
 
-    use crate::{counter::test_utils::CounterMethods, multitest_utils::CodeId};
+    use crate::counter::test_utils::Counter;
+    use crate::multitest_utils::CodeId;
 
     #[test]
     fn call_querier() {
