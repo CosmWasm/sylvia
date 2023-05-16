@@ -7,7 +7,7 @@ use cw_multi_test::next_block;
 use cw_utils::Expiration;
 use sylvia::multitest::App;
 
-use crate::allowances::test_utils::Cw20AllowancesMethods;
+use crate::allowances::test_utils::Cw20Allowances;
 use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;

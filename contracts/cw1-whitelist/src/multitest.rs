@@ -3,11 +3,11 @@ mod test {
     use cosmwasm_std::{to_binary, WasmMsg};
 
     use crate::contract::multitest_utils::CodeId;
-    use crate::cw1::test_utils::Cw1Methods;
+    use crate::cw1::test_utils::Cw1;
     use crate::error::ContractError;
     use crate::responses::AdminListResponse;
     use crate::whitelist;
-    use crate::whitelist::test_utils::WhitelistMethods;
+    use crate::whitelist::test_utils::Whitelist;
     use assert_matches::assert_matches;
     use sylvia::multitest::App;
 
