@@ -205,7 +205,7 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
-        let messages = messages.iter().map(|msg| {
+        let message_methods = messages.iter().map(|msg| {
             let MessageSignature {
                 name,
                 params,
@@ -223,17 +223,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     }
                 }
-            } else if msg_ty == &MsgType::Migrate {
-                // Failing due to this. Figure it out
-                quote! {
-                    #[track_caller]
-                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
-                        let msg = MigrateMsg::new( #(#arguments),* );
-
-                        #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
-                    }
-                }
-            } else {
+            } else if msg_ty == &MsgType::Query{
                 quote! {
                     pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
                         let msg = QueryMsg:: #name ( #(#arguments),* );
@@ -246,6 +236,8 @@ impl<'a> MultitestHelpers<'a> {
                             .map_err(Into::into)
                     }
                 }
+            } else {
+                quote! {}
             }
         });
 
@@ -283,6 +275,18 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
+        let migrate_proxy = self.emit_migrate_proxy();
+
+        let migrate_method = if messages.iter().any(|msg| msg.msg_ty == MsgType::Migrate) {
+            quote! {
+                pub fn migrate(&self) -> MigrateProxy {
+                    MigrateProxy::new(&self.contract_addr, self.app)
+                }
+            }
+        } else {
+            quote! {}
+        };
+
         quote! {
             pub mod multitest_utils {
                 use super::*;
@@ -302,7 +306,9 @@ impl<'a> MultitestHelpers<'a> {
                         #proxy_name{ contract_addr, app }
                     }
 
-                    #(#messages)*
+                    #migrate_method
+
+                    #(#message_methods)*
 
                     #(#interfaces)*
                 }
@@ -313,7 +319,72 @@ impl<'a> MultitestHelpers<'a> {
                     }
                 }
 
+                #migrate_proxy
+
                 #contract_block
+            }
+        }
+    }
+
+    fn emit_migrate_proxy(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self { messages, .. } = self;
+
+        if messages.iter().all(|msg| msg.msg_ty != MsgType::Migrate) {
+            return quote! {};
+        }
+
+        let migrate_variants = messages.iter().filter_map(|msg| {
+            let MessageSignature {
+                name,
+                params,
+                arguments,
+                msg_ty,
+                ..
+            } = msg;
+            if msg_ty != &MsgType::Migrate {
+                return None;
+            }
+            Some(quote! {
+               #[track_caller]
+               pub fn #name (mut self, #(#params,)* ) -> Self {
+                   self.msg = self.msg.#name( #(#arguments),* );
+                   self
+               }
+            })
+        });
+
+        quote! {
+            #[must_use]
+            #[derive(Derivative)]
+            #[derivative(Debug)]
+            pub struct MigrateProxy<'a, 'app> {
+                pub contract_addr: &'a #sylvia ::cw_std::Addr,
+                #[derivative(Debug="ignore")]
+                pub app: &'app #sylvia ::multitest::App,
+                pub msg: MigrateMsg,
+            }
+
+            impl<'a, 'app> MigrateProxy<'a, 'app> {
+                pub fn new(contract_addr: &'a #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                    MigrateProxy{ contract_addr, app, msg: MigrateMsg::new() }
+                }
+
+                #(#migrate_variants)*
+
+                #[track_caller]
+                pub fn call(self, sender: &str, new_code_id: u64) -> #sylvia ::cw_std::StdResult<#sylvia ::cw_multi_test::AppResponse> {
+                    self.app
+                        .app
+                        .borrow_mut()
+                        .migrate_contract(
+                            Addr::unchecked(sender),
+                            Addr::unchecked(self.contract_addr),
+                            &self.msg,
+                            new_code_id,
+                        )
+                        .map_err(|err| err.downcast().unwrap())
+                }
             }
         }
     }

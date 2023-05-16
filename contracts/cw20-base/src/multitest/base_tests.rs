@@ -427,7 +427,11 @@ fn migrate() {
         .unwrap();
 
     // Now migrate
-    contract.migrate().call(owner, code_id.code_id()).unwrap();
+    contract
+        .migrate()
+        .migrate_1_0_to_1_1()
+        .call(owner, code_id.code_id())
+        .unwrap();
 
     // Smoke check that the contract still works.
     let resp = contract.balance(owner.to_string()).unwrap();

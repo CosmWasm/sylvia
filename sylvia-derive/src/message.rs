@@ -130,20 +130,10 @@ impl<'a> MigrateMessage<'a> {
             }
         };
 
-        let fields = methods
-            .iter()
-            .flat_map(|method| method.fields.iter().map(MsgField::emit));
         let fields_names: Vec<_> = methods
             .iter()
             .flat_map(|method| method.fields.iter().map(MsgField::name))
             .collect();
-        let parameters = methods.iter().flat_map(|method| {
-            method.fields.iter().map(|field| {
-                let name = field.name;
-                let ty = field.ty;
-                quote! { #name : #ty}
-            })
-        });
         let struct_fields = methods.iter().flat_map(|method| {
             method.fields.iter().map(|field| {
                 let name = field.name;
