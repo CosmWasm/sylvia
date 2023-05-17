@@ -18,6 +18,7 @@ pub mod some_interface {
 }
 
 #[contract]
+#[messages(some_interface as SomeInterface)]
 impl SomeContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
@@ -44,8 +45,11 @@ mod tests {
         let _ = some_interface::Remote::borrowed(&addr);
 
         // contract
-        let _ = crate::Remote::new(Addr::unchecked("some_contract"));
+        let new_remote = crate::Remote::new(Addr::unchecked("some_contract"));
         let addr = Addr::unchecked("some_contract");
-        let _ = crate::Remote::borrowed(&addr);
+        let borrowed_remote = crate::Remote::borrowed(&addr);
+
+        let _ = some_interface::Remote::from(&borrowed_remote);
+        let _ = some_interface::Remote::from(&new_remote);
     }
 }
