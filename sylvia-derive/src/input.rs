@@ -57,6 +57,7 @@ impl<'a> TraitInput<'a> {
         let remote = Remote::for_interface().emit();
 
         if let Some(module) = &self.attributes.module {
+            #[cfg(not(tarpaulin_include))]
             quote! {
                 pub mod #module {
                     use super::*;
@@ -69,6 +70,7 @@ impl<'a> TraitInput<'a> {
                 }
             }
         } else {
+            #[cfg(not(tarpaulin_include))]
             quote! {
                 #messages
 
@@ -100,6 +102,7 @@ impl<'a> TraitInput<'a> {
             self.attributes,
         );
 
+        #[cfg(not(tarpaulin_include))]
         quote! {
             #exec
 
@@ -157,6 +160,7 @@ impl<'a> ImplInput<'a> {
         let messages = self.emit_messages();
         let remote = Remote::for_contract(self.item).emit();
 
+        #[cfg(not(tarpaulin_include))]
         let code = quote! {
             #messages
 
@@ -166,6 +170,7 @@ impl<'a> ImplInput<'a> {
         };
 
         if let Some(module) = &self.attributes.module {
+            #[cfg(not(tarpaulin_include))]
             quote! {
                 pub mod #module {
                     use super::*;
@@ -188,6 +193,7 @@ impl<'a> ImplInput<'a> {
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
+        #[cfg(not(tarpaulin_include))]
         quote! {
             #instantiate
 
