@@ -1,7 +1,7 @@
 use cosmwasm_std::{Response, StdResult};
 use sylvia::{contract, types::InstantiateCtx};
 
-pub struct SomeContract {}
+pub struct SomeContract;
 
 pub mod some_interface {
     use cosmwasm_std::StdError;
@@ -22,7 +22,7 @@ pub mod some_interface {
 impl SomeContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        Self {}
+        Self
     }
 
     #[msg(instantiate)]
