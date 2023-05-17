@@ -9,6 +9,7 @@ use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+use crate::querier::Querier;
 use crate::remote::Remote;
 
 /// Preprocessed `interface` macro input
@@ -55,6 +56,7 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
         let remote = Remote::for_interface().emit();
+        let querier = Querier::for_interface(self.item, &self.generics).emit();
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
@@ -68,6 +70,8 @@ impl<'a> TraitInput<'a> {
                         #multitest_helpers
 
                         #remote
+
+                        #querier
                     }
                 }
             }
@@ -80,6 +84,8 @@ impl<'a> TraitInput<'a> {
                     #multitest_helpers
 
                     #remote
+
+                    #querier
                 }
             }
         }
@@ -165,6 +171,7 @@ impl<'a> ImplInput<'a> {
 
         let messages = self.emit_messages();
         let remote = Remote::for_contract(self.item).emit();
+        let querier = Querier::for_contract(self.item, &self.generics).emit();
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {
@@ -173,6 +180,8 @@ impl<'a> ImplInput<'a> {
             #multitest_helpers
 
             #remote
+
+            #querier
         };
 
         if let Some(module) = &self.attributes.module {

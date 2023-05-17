@@ -73,6 +73,15 @@ impl Remote {
                 }
             }
 
+            impl Remote<'_> {
+                fn querier<'a, C: #sylvia ::cw_std::CustomQuery>(&'a self, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> BoundQuerier<'a, C> {
+                    BoundQuerier {
+                        contract: &self.0,
+                        querier,
+                    }
+                }
+            }
+
             #(#from_implementations)*
         }
     }

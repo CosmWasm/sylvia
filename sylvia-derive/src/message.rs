@@ -103,7 +103,7 @@ impl<'a> StructMessage<'a> {
 
         let ctx_type = msg_attr.msg_type().emit_ctx_type();
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
-        let parameters = fields.iter().map(|field| {
+        let parameters = fields.iter().map(|field: &MsgField| {
             let name = field.name;
             let ty = field.ty;
             quote! { #name : #ty}
@@ -193,12 +193,7 @@ impl<'a> EnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(
-                            &method.sig,
-                            &mut generics_checker,
-                            name,
-                            attr,
-                        ))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
                     } else {
                         None
                     }
@@ -360,12 +355,7 @@ impl<'a> ContractEnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(
-                            &method.sig,
-                            &mut generics_checker,
-                            name,
-                            attr,
-                        ))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
                     } else {
                         None
                     }
@@ -460,13 +450,13 @@ impl<'a> ContractEnumMessage<'a> {
 
 /// Representation of whole message variant
 pub struct MsgVariant<'a> {
-    name: Ident,
-    function_name: &'a Ident,
+    pub name: Ident,
+    pub function_name: &'a Ident,
     // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
     // `MsgField<'a>`
-    fields: Vec<MsgField<'a>>,
-    return_type: TokenStream,
-    message_type: &'a Ident,
+    pub fields: Vec<MsgField<'a>>,
+    pub return_type: TokenStream,
+    pub msg_type: MsgType,
 }
 
 impl<'a> MsgVariant<'a> {
@@ -474,7 +464,6 @@ impl<'a> MsgVariant<'a> {
     pub fn new(
         sig: &'a Signature,
         generics_checker: &mut CheckGenerics,
-        message_type: &'a Ident,
         msg_attr: MsgAttr,
     ) -> MsgVariant<'a> {
         let function_name = &sig.ident;
@@ -484,6 +473,7 @@ impl<'a> MsgVariant<'a> {
             function_name.span(),
         );
         let fields = process_fields(sig, generics_checker);
+        let msg_type = msg_attr.msg_type();
 
         let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
             match resp_type {
@@ -502,7 +492,7 @@ impl<'a> MsgVariant<'a> {
             function_name,
             fields,
             return_type,
-            message_type,
+            msg_type,
         }
     }
 
@@ -512,7 +502,7 @@ impl<'a> MsgVariant<'a> {
         let fields = fields.iter().map(MsgField::emit);
         let return_type = &self.return_type;
 
-        if self.message_type == "QueryMsg" {
+        if self.msg_type == MsgType::Query {
             #[cfg(not(tarpaulin_include))]
             {
                 quote! {
@@ -648,6 +638,15 @@ impl<'a> MsgField<'a> {
                 #(#attrs)*
                 #name: #ty
             }
+        }
+    }
+
+    /// Emits message field without attributes
+    pub fn emit_without_attrs(&self) -> TokenStream {
+        let Self { name, ty, .. } = self;
+
+        quote! {
+            #name: #ty
         }
     }
 
