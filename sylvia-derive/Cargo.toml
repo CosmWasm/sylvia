@@ -1,6 +1,6 @@
 [package]
 name = "sylvia-derive"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Bartłomiej Kuras <bart.k@confio.gmbh>"]
 edition = "2021"
 description = "Framework for generating trait based CosmWasm smart contracts - derives"
@@ -18,12 +18,12 @@ proc-macro = true
 
 [dependencies]
 syn = { version = "1.0.107", features = [
-  "parsing",
-  "derive",
-  "fold",
-  "visit",
-  "full",
-  "extra-traits",
+    "parsing",
+    "derive",
+    "fold",
+    "visit",
+    "full",
+    "extra-traits",
 ] }
 quote = "1.0.23"
 proc-macro2 = "1.0.50"
