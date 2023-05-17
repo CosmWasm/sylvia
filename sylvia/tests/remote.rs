@@ -48,6 +48,7 @@ mod tests {
         let new_remote = crate::Remote::new(Addr::unchecked("some_contract"));
         let addr = Addr::unchecked("some_contract");
         let borrowed_remote = crate::Remote::borrowed(&addr);
+        assert_eq!(&Addr::unchecked("some_contract"), borrowed_remote.as_ref());
 
         let _ = some_interface::Remote::from(&borrowed_remote);
         let _ = some_interface::Remote::from(&new_remote);

@@ -69,6 +69,12 @@ impl Remote {
                 }
             }
 
+            impl<'a> AsRef<#sylvia ::cw_std::Addr> for Remote<'a> {
+                fn as_ref(&self) -> &#sylvia ::cw_std::Addr {
+                    &self.0
+                }
+            }
+
             #(#from_implementations)*
         }
     }
