@@ -13,7 +13,7 @@ pub struct Remote {
 }
 
 impl Remote {
-    pub fn for_contract<'a>(source: &'a ItemImpl) -> Self {
+    pub fn for_contract(source: &ItemImpl) -> Self {
         let interfaces: Vec<_> = source
             .attrs
             .iter()
