@@ -46,16 +46,14 @@ impl Remote {
             quote! {
                 impl<'a> From<&'a Remote<'a>> for #module ::Remote<'a> {
                     fn from(remote: &'a Remote) -> Self {
-                        Self (
-                            std::borrow::Cow::Borrowed(&remote.0)
-                        )
+                        #module ::Remote::borrowed(remote.as_ref())
                     }
                 }
             }
         });
 
         quote! {
-            pub struct Remote<'a>(pub std::borrow::Cow<'a, #sylvia ::cw_std::Addr>);
+            pub struct Remote<'a>(std::borrow::Cow<'a, #sylvia ::cw_std::Addr>);
 
             impl Remote<'static> {
                 pub fn new(addr: #sylvia ::cw_std::Addr) -> Self {
