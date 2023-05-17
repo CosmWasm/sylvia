@@ -58,25 +58,29 @@ impl<'a> TraitInput<'a> {
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
-            quote! {
-                pub mod #module {
-                    use super::*;
+            {
+                quote! {
+                    pub mod #module {
+                        use super::*;
 
+                        #messages
+
+                        #multitest_helpers
+
+                        #remote
+                    }
+                }
+            }
+        } else {
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
                     #messages
 
                     #multitest_helpers
 
                     #remote
                 }
-            }
-        } else {
-            #[cfg(not(tarpaulin_include))]
-            quote! {
-                #messages
-
-                #multitest_helpers
-
-                #remote
             }
         }
     }
@@ -103,10 +107,12 @@ impl<'a> TraitInput<'a> {
         );
 
         #[cfg(not(tarpaulin_include))]
-        quote! {
-            #exec
+        {
+            quote! {
+                #exec
 
-            #query
+                #query
+            }
         }
     }
 
@@ -171,11 +177,13 @@ impl<'a> ImplInput<'a> {
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
-            quote! {
-                pub mod #module {
-                    use super::*;
+            {
+                quote! {
+                    pub mod #module {
+                        use super::*;
 
-                    #code
+                        #code
+                    }
                 }
             }
         } else {
@@ -194,18 +202,20 @@ impl<'a> ImplInput<'a> {
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
         #[cfg(not(tarpaulin_include))]
-        quote! {
-            #instantiate
+        {
+            quote! {
+                #instantiate
 
-            #exec_impl
+                #exec_impl
 
-            #query_impl
+                #query_impl
 
-            #migrate
+                #migrate
 
-            #exec
+                #exec
 
-            #query
+                #query
+            }
         }
     }
 
