@@ -276,33 +276,28 @@ impl<'a> EnumMessage<'a> {
 
         let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
 
+        #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    quote! {
-                        #[allow(clippy::derive_partial_eq_without_eq)]
-                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
-                        #[serde(rename_all="snake_case")]
-                        pub enum #unique_enum_name #generics #where_clause {
-                            #(#variants,)*
-                        }
-                        pub type #name #generics = #unique_enum_name #generics;
+                quote! {
+                    #[allow(clippy::derive_partial_eq_without_eq)]
+                    #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                    #[serde(rename_all="snake_case")]
+                    pub enum #unique_enum_name #generics #where_clause {
+                        #(#variants,)*
                     }
+                    pub type #name #generics = #unique_enum_name #generics;
                 }
             }
             _ => {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    quote! {
-                        #[allow(clippy::derive_partial_eq_without_eq)]
-                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                        #[serde(rename_all="snake_case")]
-                        pub enum #unique_enum_name #generics #where_clause {
-                            #(#variants,)*
-                        }
-                        pub type #name #generics = #unique_enum_name #generics;
+                quote! {
+                    #[allow(clippy::derive_partial_eq_without_eq)]
+                    #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                    #[serde(rename_all="snake_case")]
+                    pub enum #unique_enum_name #generics #where_clause {
+                        #(#variants,)*
                     }
+                    pub type #name #generics = #unique_enum_name #generics;
                 }
             }
         };
@@ -415,30 +410,25 @@ impl<'a> ContractEnumMessage<'a> {
         let contract = StripGenerics.fold_type((*contract).clone());
         let ret_type = msg_ty.emit_result_type(&None, error);
 
+        #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    quote! {
+                quote! {
                         #[allow(clippy::derive_partial_eq_without_eq)]
                         #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
                         #[serde(rename_all="snake_case")]
                         pub enum #name {
                             #(#variants,)*
                         }
-                    }
                 }
             }
             _ => {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    quote! {
+                quote! {
                         #[allow(clippy::derive_partial_eq_without_eq)]
                         #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                         #[serde(rename_all="snake_case")]
                         pub enum #name {
                             #(#variants,)*
-                        }
                     }
                 }
             }
