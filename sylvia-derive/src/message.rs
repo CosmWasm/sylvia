@@ -450,13 +450,13 @@ impl<'a> ContractEnumMessage<'a> {
 
 /// Representation of whole message variant
 pub struct MsgVariant<'a> {
-    pub name: Ident,
-    pub function_name: &'a Ident,
+    name: Ident,
+    function_name: &'a Ident,
     // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
     // `MsgField<'a>`
-    pub fields: Vec<MsgField<'a>>,
-    pub return_type: TokenStream,
-    pub msg_type: MsgType,
+    fields: Vec<MsgField<'a>>,
+    return_type: TokenStream,
+    msg_type: MsgType,
 }
 
 impl<'a> MsgVariant<'a> {
@@ -583,6 +583,44 @@ impl<'a> MsgVariant<'a> {
             pub fn #method_name( #(#parameters),*) -> Self {
                 Self :: #name { #(#arguments),* }
             }
+        }
+    }
+
+    pub fn emit_querier_impl(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            name,
+            fields,
+            return_type,
+            ..
+        } = self;
+
+        let parameters = fields.iter().map(MsgField::emit_without_attrs);
+        let fields_names = fields.iter().map(MsgField::name);
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                let query = QueryMsg:: #variant_name (#(#fields_names),*);
+                self.querier.query_wasm_smart(self.contract, &query)
+            }
+        }
+    }
+
+    pub fn emit_querier_declaration(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            name,
+            fields,
+            return_type,
+            ..
+        } = self;
+
+        let parameters = fields.iter().map(MsgField::emit_without_attrs);
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
         }
     }
 }
