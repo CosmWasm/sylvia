@@ -126,24 +126,27 @@ impl<'a> StructMessage<'a> {
             }
         };
 
-        quote! {
-            #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case")]
-            pub struct #name #generics #where_clause {
-                #(pub #fields,)*
-            }
-
-            impl #generics #name #generics #where_clause {
-                pub fn new(#(#parameters,)*) -> Self {
-                    Self { #(#fields_names,)* }
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                #[serde(rename_all="snake_case")]
+                pub struct #name #generics #where_clause {
+                    #(pub #fields,)*
                 }
 
-                pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
-                    #result #full_where
-                {
-                    let Self { #(#fields_names,)* } = self;
-                    contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
+                impl #generics #name #generics #where_clause {
+                    pub fn new(#(#parameters,)*) -> Self {
+                        Self { #(#fields_names,)* }
+                    }
+
+                    pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
+                        #result #full_where
+                    {
+                        let Self { #(#fields_names,)* } = self;
+                        contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
+                    }
                 }
             }
         }
@@ -274,43 +277,56 @@ impl<'a> EnumMessage<'a> {
         let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
 
         let enum_declaration = match name.to_string().as_str() {
-            "QueryMsg" => quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
-                #[serde(rename_all="snake_case")]
-                pub enum #unique_enum_name #generics #where_clause {
-                    #(#variants,)*
-                }
-                pub type #name #generics = #unique_enum_name #generics;
-            },
-            _ => quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                #[serde(rename_all="snake_case")]
-                pub enum #unique_enum_name #generics #where_clause {
-                    #(#variants,)*
-                }
-                pub type #name #generics = #unique_enum_name #generics;
-            },
-        };
-
-        quote! {
-            #enum_declaration
-
-            impl #generics #unique_enum_name #generics #where_clause {
-                pub fn dispatch<C: #trait_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
-                    -> #dispatch_type #full_where
+            "QueryMsg" => {
+                #[cfg(not(tarpaulin_include))]
                 {
-                    use #unique_enum_name::*;
-
-                    match self {
-                        #(#match_arms,)*
+                    quote! {
+                        #[allow(clippy::derive_partial_eq_without_eq)]
+                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                        #[serde(rename_all="snake_case")]
+                        pub enum #unique_enum_name #generics #where_clause {
+                            #(#variants,)*
+                        }
+                        pub type #name #generics = #unique_enum_name #generics;
                     }
                 }
-                pub const fn messages() -> [&'static str; #msgs_cnt] {
-                    [#(#msgs,)*]
+            }
+            _ => {
+                #[cfg(not(tarpaulin_include))]
+                {
+                    quote! {
+                        #[allow(clippy::derive_partial_eq_without_eq)]
+                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                        #[serde(rename_all="snake_case")]
+                        pub enum #unique_enum_name #generics #where_clause {
+                            #(#variants,)*
+                        }
+                        pub type #name #generics = #unique_enum_name #generics;
+                    }
                 }
-                #(#variants_constructors)*
+            }
+        };
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #enum_declaration
+
+                impl #generics #unique_enum_name #generics #where_clause {
+                    pub fn dispatch<C: #trait_name #all_generics, #(#unused_generics,)*>(self, contract: &C, ctx: #ctx_type)
+                        -> #dispatch_type #full_where
+                    {
+                        use #unique_enum_name::*;
+
+                        match self {
+                            #(#match_arms,)*
+                        }
+                    }
+                    pub const fn messages() -> [&'static str; #msgs_cnt] {
+                        [#(#msgs,)*]
+                    }
+                    #(#variants_constructors)*
+                }
             }
         }
     }
@@ -400,40 +416,53 @@ impl<'a> ContractEnumMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&None, error);
 
         let enum_declaration = match name.to_string().as_str() {
-            "QueryMsg" => quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
-                #[serde(rename_all="snake_case")]
-                pub enum #name {
-                    #(#variants,)*
-                }
-            },
-            _ => quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                #[serde(rename_all="snake_case")]
-                pub enum #name {
-                    #(#variants,)*
-                }
-            },
-        };
-
-        quote! {
-            #enum_declaration
-
-            impl #name {
-                pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
-                    use #name::*;
-
-                    match self {
-                        #(#match_arms,)*
+            "QueryMsg" => {
+                #[cfg(not(tarpaulin_include))]
+                {
+                    quote! {
+                        #[allow(clippy::derive_partial_eq_without_eq)]
+                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
+                        #[serde(rename_all="snake_case")]
+                        pub enum #name {
+                            #(#variants,)*
+                        }
                     }
                 }
-                pub const fn messages() -> [&'static str; #msgs_cnt] {
-                    [#(#msgs,)*]
+            }
+            _ => {
+                #[cfg(not(tarpaulin_include))]
+                {
+                    quote! {
+                        #[allow(clippy::derive_partial_eq_without_eq)]
+                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                        #[serde(rename_all="snake_case")]
+                        pub enum #name {
+                            #(#variants,)*
+                        }
+                    }
                 }
+            }
+        };
 
-                #(#variants_constructors)*
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #enum_declaration
+
+                impl #name {
+                    pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
+                        use #name::*;
+
+                        match self {
+                            #(#match_arms,)*
+                        }
+                    }
+                    pub const fn messages() -> [&'static str; #msgs_cnt] {
+                        [#(#msgs,)*]
+                    }
+
+                    #(#variants_constructors)*
+                }
             }
         }
     }
@@ -494,16 +523,22 @@ impl<'a> MsgVariant<'a> {
         let return_type = &self.return_type;
 
         if self.message_type == "QueryMsg" {
-            quote! {
-                #[returns(#return_type)]
-                #name {
-                    #(#fields,)*
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    #[returns(#return_type)]
+                    #name {
+                        #(#fields,)*
+                    }
                 }
             }
         } else {
-            quote! {
-                #name {
-                    #(#fields,)*
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    #name {
+                        #(#fields,)*
+                    }
                 }
             }
         }
@@ -617,9 +652,12 @@ impl<'a> MsgField<'a> {
     pub fn emit(&self) -> TokenStream {
         let Self { name, ty, attrs } = self;
 
-        quote! {
-            #(#attrs)*
-            #name: #ty
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #(#attrs)*
+                #name: #ty
+            }
         }
     }
 
@@ -746,6 +784,7 @@ impl<'a> GlueMessage<'a> {
             }
         });
 
+        #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
             let msgs = &#name :: messages();
             if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
@@ -772,12 +811,15 @@ impl<'a> GlueMessage<'a> {
 
         let response_schemas = match name.to_string().as_str() {
             "QueryMsg" => {
-                quote! {
-                    #[cfg(not(target_arch = "wasm32"))]
-                    impl cosmwasm_schema::QueryResponses for #contract_name {
-                        fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
-                            let responses = [#(#response_schemas),*];
-                            responses.into_iter().flatten().collect()
+                #[cfg(not(tarpaulin_include))]
+                {
+                    quote! {
+                        #[cfg(not(target_arch = "wasm32"))]
+                        impl cosmwasm_schema::QueryResponses for #contract_name {
+                            fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
+                                let responses = [#(#response_schemas),*];
+                                responses.into_iter().flatten().collect()
+                            }
                         }
                     }
                 }
@@ -787,69 +829,72 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        quote! {
-            #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-            #[serde(rename_all="snake_case", untagged)]
-            pub enum #contract_name {
-                #(#variants,)*
-                #msg_name
-            }
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+                #[serde(rename_all="snake_case", untagged)]
+                pub enum #contract_name {
+                    #(#variants,)*
+                    #msg_name
+                }
 
-            impl #contract_name {
-                pub fn dispatch(
-                    self,
-                    contract: &#contract,
-                    ctx: #ctx_type,
-                ) -> #ret_type {
-                    const _: () = {
-                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                        #sylvia ::utils::assert_no_intersection(msgs);
-                    };
+                impl #contract_name {
+                    pub fn dispatch(
+                        self,
+                        contract: &#contract,
+                        ctx: #ctx_type,
+                    ) -> #ret_type {
+                        const _: () = {
+                            let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                            #sylvia ::utils::assert_no_intersection(msgs);
+                        };
 
-                    match self {
-                        #(#dispatch_arms,)*
-                        #dispatch_arm
+                        match self {
+                            #(#dispatch_arms,)*
+                            #dispatch_arm
+                        }
                     }
                 }
-            }
 
-            #response_schemas
+                #response_schemas
 
-            impl<'de> serde::Deserialize<'de> for #contract_name {
-                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                    where D: serde::Deserializer<'de>,
-                {
-                    use serde::de::Error;
+                impl<'de> serde::Deserialize<'de> for #contract_name {
+                    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                        where D: serde::Deserializer<'de>,
+                    {
+                        use serde::de::Error;
 
-                    let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
-                    let map = match &val {
-                        #sylvia ::serde_value::Value::Map(map) => map,
-                        _ => panic!("Expected msg to be Value variant Map. Possibly an issue with msg format.")
-                    };
-                    if map.len() != 1 {
-                        panic!("Found more or zero msgs after deserialization. Expected one.")
+                        let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
+                        let map = match &val {
+                            #sylvia ::serde_value::Value::Map(map) => map,
+                            _ => panic!("Expected msg to be Value variant Map. Possibly an issue with msg format.")
+                        };
+                        if map.len() != 1 {
+                            panic!("Found more or zero msgs after deserialization. Expected one.")
+                        }
+                        // Due to earlier size check of map this unwrap is safe
+                        let recv_msg_name = map.into_iter().next().unwrap();
+
+                        if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
+                            #(#deserialization_attempts)*
+                            #contract_deserialization_attempt
+                        }
+
+                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                        let mut err_msg = msgs.into_iter().flatten().fold(
+                            // It might be better to forward the error or serialization, but we just
+                            // deserialized it from JSON, not reason to expect failure here.
+                            format!(
+                                "Unsupported message received: {}. Messages supported by this contract: ",
+                                #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())
+                            ),
+                            |mut acc, message| acc + message + ", ",
+                        );
+                        err_msg.truncate(err_msg.len() - 2);
+                        Err(D::Error::custom(err_msg))
                     }
-                    // Due to earlier size check of map this unwrap is safe
-                    let recv_msg_name = map.into_iter().next().unwrap();
-
-                    if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
-                        #(#deserialization_attempts)*
-                        #contract_deserialization_attempt
-                    }
-
-                    let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
-                    let mut err_msg = msgs.into_iter().flatten().fold(
-                        // It might be better to forward the error or serialization, but we just
-                        // deserialized it from JSON, not reason to expect failure here.
-                        format!(
-                            "Unsupported message received: {}. Messages supported by this contract: ",
-                            #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())
-                        ),
-                        |mut acc, message| acc + message + ", ",
-                    );
-                    err_msg.truncate(err_msg.len() - 2);
-                    Err(D::Error::custom(err_msg))
                 }
             }
         }
@@ -888,34 +933,37 @@ impl EntryPoints {
         let Self { name, error } = self;
         let sylvia = crate_module();
 
-        quote! {
-            pub mod entry_points {
-                use super::*;
-                const CONTRACT: #name = #name ::new();
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub mod entry_points {
+                    use super::*;
+                    const CONTRACT: #name = #name ::new();
 
-                #[#sylvia ::cw_std::entry_point]
-                pub fn instantiate(
-                    deps: #sylvia ::cw_std::DepsMut,
-                    env: #sylvia ::cw_std::Env,
-                    info: #sylvia ::cw_std::MessageInfo,
-                    msg: InstantiateMsg,
-                ) -> Result<#sylvia ::cw_std::Response, #error> {
-                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
-                }
+                    #[#sylvia ::cw_std::entry_point]
+                    pub fn instantiate(
+                        deps: #sylvia ::cw_std::DepsMut,
+                        env: #sylvia ::cw_std::Env,
+                        info: #sylvia ::cw_std::MessageInfo,
+                        msg: InstantiateMsg,
+                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                        msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                    }
 
-                #[#sylvia ::cw_std::entry_point]
-                pub fn execute(
-                    deps: #sylvia ::cw_std::DepsMut,
-                    env: #sylvia ::cw_std::Env,
-                    info: #sylvia ::cw_std::MessageInfo,
-                    msg: ContractExecMsg,
-                ) -> Result<#sylvia ::cw_std::Response, #error> {
-                    msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
-                }
+                    #[#sylvia ::cw_std::entry_point]
+                    pub fn execute(
+                        deps: #sylvia ::cw_std::DepsMut,
+                        env: #sylvia ::cw_std::Env,
+                        info: #sylvia ::cw_std::MessageInfo,
+                        msg: ContractExecMsg,
+                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                        msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                    }
 
-                #[#sylvia ::cw_std::entry_point]
-                pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
-                    msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
+                    #[#sylvia ::cw_std::entry_point]
+                    pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
+                        msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
+                    }
                 }
             }
         }
