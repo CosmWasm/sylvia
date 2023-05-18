@@ -1,5 +1,6 @@
 use cosmwasm_std::{Response, StdResult};
-use sylvia::{contract, types::InstantiateCtx};
+use sylvia::contract;
+use sylvia::types::InstantiateCtx;
 
 pub struct SomeContract;
 

@@ -103,7 +103,7 @@ impl<'a> StructMessage<'a> {
 
         let ctx_type = msg_attr.msg_type().emit_ctx_type();
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
-        let parameters = fields.iter().map(|field: &MsgField| {
+        let parameters = fields.iter().map(|field| {
             let name = field.name;
             let ty = field.ty;
             quote! { #name : #ty}

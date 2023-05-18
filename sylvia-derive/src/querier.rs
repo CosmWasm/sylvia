@@ -2,18 +2,14 @@ use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{
-    parse::{Parse, Parser},
-    spanned::Spanned,
-    GenericParam, ImplItem, ItemImpl, ItemTrait, TraitItem,
-};
+use syn::parse::{Parse, Parser};
+use syn::spanned::Spanned;
+use syn::{GenericParam, ImplItem, ItemImpl, ItemTrait, TraitItem};
 
-use crate::{
-    check_generics::CheckGenerics,
-    crate_module,
-    message::{MsgField, MsgVariant},
-    parser::{MsgAttr, MsgType},
-};
+use crate::check_generics::CheckGenerics;
+use crate::crate_module;
+use crate::message::{MsgField, MsgVariant};
+use crate::parser::{MsgAttr, MsgType};
 
 pub struct Querier<'a> {
     variants: Vec<MsgVariant<'a>>,
