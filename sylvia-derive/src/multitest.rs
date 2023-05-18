@@ -205,6 +205,7 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
+        #[cfg(not(tarpaulin_include))]
         let messages = messages.iter().map(|msg| {
             let MessageSignature {
                 name,
@@ -214,36 +215,36 @@ impl<'a> MultitestHelpers<'a> {
                 return_type,
             } = msg;
             if msg_ty == &MsgType::Exec {
-                quote! {
-                    #[track_caller]
-                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
-                        let msg = ExecMsg:: #name ( #(#arguments),* );
+                    quote! {
+                        #[track_caller]
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
+                            let msg = ExecMsg:: #name ( #(#arguments),* );
 
-                        #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
-                    }
+                            #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+                        }
                 }
             } else if msg_ty == &MsgType::Migrate {
-                quote! {
-                    #[track_caller]
-                    pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
-                        let msg = MigrateMsg::new( #(#arguments),* );
+                    quote! {
+                        #[track_caller]
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
+                            let msg = MigrateMsg::new( #(#arguments),* );
 
-                        #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
+                            #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                     }
                 }
             } else {
-                quote! {
-                    pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = QueryMsg:: #name ( #(#arguments),* );
+                    quote! {
+                        pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                            let msg = QueryMsg:: #name ( #(#arguments),* );
 
-                        self.app
-                            .app
-                            .borrow()
-                            .wrap()
-                            .query_wasm_smart(self.contract_addr.clone(), &msg)
-                            .map_err(Into::into)
+                            self.app
+                                .app
+                                .borrow()
+                                .wrap()
+                                .query_wasm_smart(self.contract_addr.clone(), &msg)
+                                .map_err(Into::into)
+                        }
                     }
-                }
             }
         });
 
@@ -281,37 +282,40 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
-        quote! {
-            pub mod multitest_utils {
-                use super::*;
-                use #sylvia ::cw_multi_test::Executor;
-                use #sylvia ::derivative::Derivative;
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub mod multitest_utils {
+                    use super::*;
+                    use #sylvia ::cw_multi_test::Executor;
+                    use #sylvia ::derivative::Derivative;
 
-                #[derive(Derivative)]
-                #[derivative(Debug)]
-                pub struct #proxy_name <'app> {
-                    pub contract_addr: #sylvia ::cw_std::Addr,
-                    #[derivative(Debug="ignore")]
-                    pub app: &'app #sylvia ::multitest::App,
-                }
-
-                impl<'app> #proxy_name <'app> {
-                    pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        #proxy_name{ contract_addr, app }
+                    #[derive(Derivative)]
+                    #[derivative(Debug)]
+                    pub struct #proxy_name <'app> {
+                        pub contract_addr: #sylvia ::cw_std::Addr,
+                        #[derivative(Debug="ignore")]
+                        pub app: &'app #sylvia ::multitest::App,
                     }
 
-                    #(#messages)*
+                    impl<'app> #proxy_name <'app> {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                            #proxy_name{ contract_addr, app }
+                        }
 
-                    #(#interfaces)*
-                }
+                        #(#messages)*
 
-                impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
-                    fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
-                        #proxy_name::new(input.0, input.1)
+                        #(#interfaces)*
                     }
-                }
 
-                #contract_block
+                    impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
+                        fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
+                            #proxy_name::new(input.0, input.1)
+                        }
+                    }
+
+                    #contract_block
+                }
             }
         }
     }
@@ -417,16 +421,19 @@ impl<'a> MultitestHelpers<'a> {
             }
         });
 
-        quote! {
-            pub mod test_utils {
-                use super::*;
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub mod test_utils {
+                    use super::*;
 
-                pub trait #trait_name {
-                    #(#methods_declarations)*
-                }
+                    pub trait #trait_name {
+                        #(#methods_declarations)*
+                    }
 
-                impl #trait_name for #module trait_utils:: #proxy_name<'_> {
-                    #(#methods_definitions)*
+                    impl #trait_name for #module trait_utils:: #proxy_name<'_> {
+                        #(#methods_definitions)*
+                    }
                 }
             }
         }
@@ -462,82 +469,85 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
-        quote! {
-            #impl_contract
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #impl_contract
 
-            pub struct CodeId<'app> {
-                code_id: u64,
-                app: &'app #sylvia ::multitest::App,
-            }
-
-            impl<'app> CodeId<'app> {
-                pub fn store_code(app: &'app #sylvia ::multitest::App) -> Self {
-                    let code_id = app
-                        .app
-                        .borrow_mut()
-                        .store_code(Box::new(#contract_name ::new()));
-                    Self { code_id, app }
+                pub struct CodeId<'app> {
+                    code_id: u64,
+                    app: &'app #sylvia ::multitest::App,
                 }
 
-                pub fn code_id(&self) -> u64 {
-                    self.code_id
-                }
+                impl<'app> CodeId<'app> {
+                    pub fn store_code(app: &'app #sylvia ::multitest::App) -> Self {
+                        let code_id = app
+                            .app
+                            .borrow_mut()
+                            .store_code(Box::new(#contract_name ::new()));
+                        Self { code_id, app }
+                    }
 
-                pub fn instantiate(
-                    &self, #(#fields,)*
-                ) -> InstantiateProxy<'_, 'app> {
-                    let msg = InstantiateMsg {#(#fields_names,)*};
-                    InstantiateProxy {
-                        code_id: self,
-                        funds: &[],
-                        label: "Contract",
-                        admin: None,
-                        msg,
+                    pub fn code_id(&self) -> u64 {
+                        self.code_id
+                    }
+
+                    pub fn instantiate(
+                        &self, #(#fields,)*
+                    ) -> InstantiateProxy<'_, 'app> {
+                        let msg = InstantiateMsg {#(#fields_names,)*};
+                        InstantiateProxy {
+                            code_id: self,
+                            funds: &[],
+                            label: "Contract",
+                            admin: None,
+                            msg,
+                        }
                     }
                 }
-            }
 
-            pub struct InstantiateProxy<'a, 'app> {
-                code_id: &'a CodeId <'app>,
-                funds: &'a [#sylvia ::cw_std::Coin],
-                label: &'a str,
-                admin: Option<String>,
-                msg: InstantiateMsg,
-            }
-
-            impl<'a, 'app> InstantiateProxy<'a, 'app> {
-                pub fn with_funds(self, funds: &'a [#sylvia ::cw_std::Coin]) -> Self {
-                    Self { funds, ..self }
+                pub struct InstantiateProxy<'a, 'app> {
+                    code_id: &'a CodeId <'app>,
+                    funds: &'a [#sylvia ::cw_std::Coin],
+                    label: &'a str,
+                    admin: Option<String>,
+                    msg: InstantiateMsg,
                 }
 
-                pub fn with_label(self, label: &'a str) -> Self {
-                    Self { label, ..self }
-                }
+                impl<'a, 'app> InstantiateProxy<'a, 'app> {
+                    pub fn with_funds(self, funds: &'a [#sylvia ::cw_std::Coin]) -> Self {
+                        Self { funds, ..self }
+                    }
 
-                pub fn with_admin<'s>(self, admin: impl Into<Option<&'s str>>) -> Self {
-                    let admin = admin.into().map(str::to_owned);
-                    Self { admin, ..self }
-                }
+                    pub fn with_label(self, label: &'a str) -> Self {
+                        Self { label, ..self }
+                    }
 
-                #[track_caller]
-                pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
-                    self.code_id
-                        .app
-                        .app
-                        .borrow_mut()
-                        .instantiate_contract(
-                            self.code_id.code_id,
-                            #sylvia ::cw_std::Addr::unchecked(sender),
-                            &self.msg,
-                            self.funds,
-                            self.label,
-                            self.admin,
-                        )
-                        .map_err(|err| err.downcast().unwrap())
-                        .map(|addr| #proxy_name {
-                            contract_addr: addr,
-                            app: self.code_id.app,
-                        })
+                    pub fn with_admin<'s>(self, admin: impl Into<Option<&'s str>>) -> Self {
+                        let admin = admin.into().map(str::to_owned);
+                        Self { admin, ..self }
+                    }
+
+                    #[track_caller]
+                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
+                        self.code_id
+                            .app
+                            .app
+                            .borrow_mut()
+                            .instantiate_contract(
+                                self.code_id.code_id,
+                                #sylvia ::cw_std::Addr::unchecked(sender),
+                                &self.msg,
+                                self.funds,
+                                self.label,
+                                self.admin,
+                            )
+                            .map_err(|err| err.downcast().unwrap())
+                            .map(|addr| #proxy_name {
+                                contract_addr: addr,
+                                app: self.code_id.app,
+                            })
+                    }
                 }
             }
         }
@@ -559,68 +569,71 @@ impl<'a> MultitestHelpers<'a> {
                 #sylvia ::anyhow::bail!("migrate not implemented for contract")
             }
         };
-        quote! {
-            impl #sylvia ::cw_multi_test::Contract<#sylvia ::cw_std::Empty> for #contract {
-                fn execute(
-                    &self,
-                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                    env: #sylvia ::cw_std::Env,
-                    info: #sylvia ::cw_std::MessageInfo,
-                    msg: Vec<u8>,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                    #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
-                        .dispatch(self, (deps, env, info))
-                        .map_err(Into::into)
-                }
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                impl #sylvia ::cw_multi_test::Contract<#sylvia ::cw_std::Empty> for #contract {
+                    fn execute(
+                        &self,
+                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        info: #sylvia ::cw_std::MessageInfo,
+                        msg: Vec<u8>,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                        #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
+                            .dispatch(self, (deps, env, info))
+                            .map_err(Into::into)
+                    }
 
-                fn instantiate(
-                    &self,
-                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                    env: #sylvia ::cw_std::Env,
-                    info: #sylvia ::cw_std::MessageInfo,
-                    msg: Vec<u8>,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                    #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
-                        .dispatch(self, (deps, env, info))
-                        .map_err(Into::into)
-                }
+                    fn instantiate(
+                        &self,
+                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        info: #sylvia ::cw_std::MessageInfo,
+                        msg: Vec<u8>,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                        #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
+                            .dispatch(self, (deps, env, info))
+                            .map_err(Into::into)
+                    }
 
-                fn query(
-                    &self,
-                    deps: #sylvia ::cw_std::Deps<#sylvia ::cw_std::Empty>,
-                    env: #sylvia ::cw_std::Env,
-                    msg: Vec<u8>,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
-                    #sylvia ::cw_std::from_slice::<ContractQueryMsg>(&msg)?
-                        .dispatch(self, (deps, env))
-                        .map_err(Into::into)
-                }
+                    fn query(
+                        &self,
+                        deps: #sylvia ::cw_std::Deps<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        msg: Vec<u8>,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
+                        #sylvia ::cw_std::from_slice::<ContractQueryMsg>(&msg)?
+                            .dispatch(self, (deps, env))
+                            .map_err(Into::into)
+                    }
 
-                fn sudo(
-                    &self,
-                    _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                    _env: #sylvia ::cw_std::Env,
-                    _msg: Vec<u8>,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                    #sylvia ::anyhow::bail!("sudo not implemented for contract")
-                }
+                    fn sudo(
+                        &self,
+                        _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        _env: #sylvia ::cw_std::Env,
+                        _msg: Vec<u8>,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                        #sylvia ::anyhow::bail!("sudo not implemented for contract")
+                    }
 
-                fn reply(
-                    &self,
-                    _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                    _env: #sylvia ::cw_std::Env,
-                    _msg: #sylvia ::cw_std::Reply,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                    #sylvia ::anyhow::bail!("reply not implemented for contract")
-                }
+                    fn reply(
+                        &self,
+                        _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        _env: #sylvia ::cw_std::Env,
+                        _msg: #sylvia ::cw_std::Reply,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                        #sylvia ::anyhow::bail!("reply not implemented for contract")
+                    }
 
-                fn migrate(
-                    &self,
-                    deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                    env: #sylvia ::cw_std::Env,
-                    msg: Vec<u8>,
-                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                    #migrate_body
+                    fn migrate(
+                        &self,
+                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        msg: Vec<u8>,
+                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                        #migrate_body
+                    }
                 }
             }
         }
@@ -643,20 +656,23 @@ impl<'a> TraitMultitestHelpers<'a> {
         let sylvia = crate_module();
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
-        quote! {
-            pub mod trait_utils {
-                pub struct #proxy_name <'app> {
-                    pub contract_addr: #sylvia ::cw_std::Addr,
-                    pub app: &'app #sylvia ::multitest::App,
-                }
-                impl<'app> #proxy_name <'app> {
-                    pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
-                        #proxy_name { contract_addr, app }
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub mod trait_utils {
+                    pub struct #proxy_name <'app> {
+                        pub contract_addr: #sylvia ::cw_std::Addr,
+                        pub app: &'app #sylvia ::multitest::App,
                     }
-                }
-                impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
-                    fn into(self) -> #sylvia ::cw_std::Addr {
-                        self.contract_addr
+                    impl<'app> #proxy_name <'app> {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                            #proxy_name { contract_addr, app }
+                        }
+                    }
+                    impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
+                        fn into(self) -> #sylvia ::cw_std::Addr {
+                            self.contract_addr
+                        }
                     }
                 }
             }
