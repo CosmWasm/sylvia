@@ -9,6 +9,7 @@ use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+use crate::remote::Remote;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -53,21 +54,33 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
+        let remote = Remote::for_interface().emit();
 
         if let Some(module) = &self.attributes.module {
-            quote! {
-                pub mod #module {
-                    use super::*;
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    pub mod #module {
+                        use super::*;
 
-                    #messages
+                        #messages
 
-                    #multitest_helpers
+                        #multitest_helpers
+
+                        #remote
+                    }
                 }
             }
         } else {
-            quote! {
-                #messages
-                #multitest_helpers
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    #messages
+
+                    #multitest_helpers
+
+                    #remote
+                }
             }
         }
     }
@@ -93,10 +106,13 @@ impl<'a> TraitInput<'a> {
             self.attributes,
         );
 
-        quote! {
-            #exec
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #exec
 
-            #query
+                #query
+            }
         }
     }
 
@@ -148,18 +164,26 @@ impl<'a> ImplInput<'a> {
         }
 
         let messages = self.emit_messages();
+        let remote = Remote::for_contract(self.item).emit();
+
+        #[cfg(not(tarpaulin_include))]
         let code = quote! {
             #messages
 
             #multitest_helpers
+
+            #remote
         };
 
         if let Some(module) = &self.attributes.module {
-            quote! {
-                pub mod #module {
-                    use super::*;
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    pub mod #module {
+                        use super::*;
 
-                    #code
+                        #code
+                    }
                 }
             }
         } else {
@@ -177,18 +201,21 @@ impl<'a> ImplInput<'a> {
         let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
-        quote! {
-            #instantiate
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #instantiate
 
-            #exec_impl
+                #exec_impl
 
-            #query_impl
+                #query_impl
 
-            #migrate
+                #migrate
 
-            #exec
+                #exec
 
-            #query
+                #query
+            }
         }
     }
 
