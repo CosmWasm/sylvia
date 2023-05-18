@@ -595,7 +595,7 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let parameters = fields.iter().map(MsgField::emit_without_attrs);
+        let parameters = fields.iter().map(MsgField::emit_method_field);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -616,7 +616,7 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let parameters = fields.iter().map(MsgField::emit_without_attrs);
+        let parameters = fields.iter().map(MsgField::emit_method_field);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         quote! {
@@ -679,8 +679,8 @@ impl<'a> MsgField<'a> {
         }
     }
 
-    /// Emits message field without attributes
-    pub fn emit_without_attrs(&self) -> TokenStream {
+    /// Emits method field
+    pub fn emit_method_field(&self) -> TokenStream {
         let Self { name, ty, .. } = self;
 
         quote! {
