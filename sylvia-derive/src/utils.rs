@@ -10,18 +10,18 @@ use syn::{
 use crate::check_generics::CheckGenerics;
 use crate::message::MsgField;
 
-pub type MethodDataIterator<'a> =
+pub type ItemsIterator<'a> =
     Box<dyn Iterator<Item = (&'a Vec<Attribute>, &'a Signature, Span)> + 'a>;
 
 /// Trait for extracting attributes and signature of the methods from `ItemImpl` and `ItemTrait`
 /// In most cases these two parameters are being used for preprocessing
 /// so to unify the logic we can use this trait
 pub trait Items<'a> {
-    fn items(&'a self) -> MethodDataIterator;
+    fn items(&'a self) -> ItemsIterator;
 }
 
 impl<'a> Items<'a> for ItemImpl {
-    fn items(&'a self) -> MethodDataIterator {
+    fn items(&'a self) -> ItemsIterator {
         Box::new(self.items.iter().filter_map(|item| match item {
             ImplItem::Method(method) => Some((&method.attrs, &method.sig, method.span())),
             _ => None,
@@ -30,7 +30,7 @@ impl<'a> Items<'a> for ItemImpl {
 }
 
 impl<'a> Items<'a> for ItemTrait {
-    fn items(&'a self) -> MethodDataIterator {
+    fn items(&'a self) -> ItemsIterator {
         Box::new(self.items.iter().filter_map(|item| match item {
             TraitItem::Method(method) => Some((&method.attrs, &method.sig, method.span())),
             _ => None,

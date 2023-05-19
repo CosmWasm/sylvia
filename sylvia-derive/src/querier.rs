@@ -8,14 +8,14 @@ use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgVariant;
 use crate::parser::{MsgAttr, MsgType};
-use crate::utils::MethodDataIterator;
+use crate::utils::ItemsIterator;
 
 pub struct Querier<'a> {
     variants: Vec<MsgVariant<'a>>,
 }
 
 impl<'a> Querier<'a> {
-    pub fn new(source: MethodDataIterator<'a>, generics: &[&'a GenericParam]) -> Self {
+    pub fn new(source: ItemsIterator<'a>, generics: &[&'a GenericParam]) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
 
         let variants: Vec<_> = source

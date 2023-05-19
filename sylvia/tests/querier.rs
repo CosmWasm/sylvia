@@ -32,7 +32,6 @@ pub mod counter {
     }
 
     #[contract]
-    #[messages(super::counter as Counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
