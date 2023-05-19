@@ -56,7 +56,7 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::for_interface().emit();
+        let remote = Remote::new(&[]).emit();
         let querier = Querier::new(self.item.items(), &self.generics).emit();
 
         if let Some(module) = &self.attributes.module {
@@ -171,7 +171,7 @@ impl<'a> ImplInput<'a> {
         }
 
         let messages = self.emit_messages();
-        let remote = Remote::for_contract(self.item).emit();
+        let remote = Remote::new(&self.item.attrs).emit();
         let querier = Querier::new(self.item.items(), &self.generics).emit();
 
         #[cfg(not(tarpaulin_include))]
