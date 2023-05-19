@@ -1,18 +1,21 @@
-use cosmwasm_std::{Addr, Response, StdError, StdResult};
+use cosmwasm_std::{Addr, Response, StdResult};
 use cw_storage_plus::Item;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
-use sylvia::{contract, interface};
+use sylvia::contract;
+use sylvia::types::InstantiateCtx;
 
-#[derive(
-    Serialize, Deserialize, Clone, PartialEq, Eq, sylvia::schemars::JsonSchema, Debug, Default,
-)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
 pub struct CountResponse {
     pub count: u64,
 }
 
 pub mod counter {
-    use super::*;
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
+
+    use crate::CountResponse;
 
     #[interface]
     pub trait Counter {
@@ -22,15 +25,15 @@ pub mod counter {
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse>;
 
         #[msg(exec)]
-        fn copy_count(&self, ctx: ExecCtx, contract_addr: Addr) -> StdResult<Response>;
+        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response>;
 
         #[msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response>;
     }
 
     #[contract]
-    #[messages(counter as Counter)]
-    impl Counter for CounterContract {
+    #[messages(super::counter as Counter)]
+    impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
         #[msg(query)]
@@ -46,40 +49,44 @@ pub mod counter {
         }
 
         #[msg(exec)]
-        fn copy_count(&self, ctx: ExecCtx, contract_addr: Addr) -> StdResult<Response> {
-            let other_count = counter::Remote::new(contract_addr)
-                .querier(&ctx.deps.querier)
-                .count()?
-                .count;
+        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
+            let remote = self.remote.load(ctx.deps.storage)?;
+            let remote = Remote::from(&remote);
+            let other_count = remote.querier(&ctx.deps.querier).count()?.count;
             self.count.save(ctx.deps.storage, &other_count)?;
             Ok(Response::new())
         }
     }
 }
 
-pub struct CounterContract {
+pub struct CounterContract<'a> {
     pub(crate) count: Item<'static, u64>,
+    pub(crate) remote: Item<'static, Remote<'a>>,
 }
 
 #[contract]
 #[messages(counter as Counter)]
-impl CounterContract {
+impl CounterContract<'_> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             count: Item::new("count"),
+            remote: Item::new("remote"),
         }
     }
 
     #[msg(instantiate)]
-    fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
+    fn instantiate(&self, ctx: InstantiateCtx, remote_addr: Addr) -> StdResult<Response> {
         self.count.save(ctx.deps.storage, &0)?;
+        self.remote
+            .save(ctx.deps.storage, &Remote::new(remote_addr))?;
         Ok(Response::new())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use cosmwasm_std::Addr;
     use sylvia::multitest::App;
 
     use crate::counter::test_utils::Counter;
@@ -93,13 +100,13 @@ mod tests {
         let owner = "owner";
 
         let first_contract = code_id
-            .instantiate()
+            .instantiate(Addr::unchecked("remote"))
             .with_label("First Counter")
             .call(owner)
             .unwrap();
 
         let second_contract = code_id
-            .instantiate()
+            .instantiate(first_contract.contract_addr.clone())
             .with_label("Second Counter")
             .call(owner)
             .unwrap();
@@ -115,7 +122,7 @@ mod tests {
 
         second_contract
             .counter_proxy()
-            .copy_count(first_contract.contract_addr)
+            .copy_count()
             .call(owner)
             .unwrap();
 
