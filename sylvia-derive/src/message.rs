@@ -4,7 +4,7 @@ use crate::parser::{
     parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
-use crate::utils::{extract_return_type, filter_wheres, process_fields};
+use crate::utils::{extract_return_type, filter_wheres, process_fields, ItemsIterator};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -621,6 +621,61 @@ impl<'a> MsgVariant<'a> {
 
         quote! {
             fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
+        }
+    }
+}
+
+pub struct MsgVariants<'a>(Vec<MsgVariant<'a>>);
+
+impl<'a> MsgVariants<'a> {
+    pub fn new(source: ItemsIterator<'a>, generics: &[&'a GenericParam]) -> Self {
+        let mut generics_checker = CheckGenerics::new(generics);
+
+        let variants: Vec<_> = source
+            .filter_map(|(attrs, sig, span)| {
+                let msg_attr = attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                    Ok(attr) => attr,
+                    Err(err) => {
+                        emit_error!(span, err);
+                        return None;
+                    }
+                };
+
+                Some(MsgVariant::new(sig, &mut generics_checker, attr))
+            })
+            .collect();
+        Self(variants)
+    }
+
+    pub fn emit_querier(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let variants = &self.0;
+
+        let methods_impl = variants
+            .iter()
+            .filter(|variant| variant.msg_type == MsgType::Query)
+            .map(MsgVariant::emit_querier_impl);
+
+        let methods_declaration = variants
+            .iter()
+            .filter(|variant| variant.msg_type == MsgType::Query)
+            .map(MsgVariant::emit_querier_declaration);
+
+        quote! {
+            pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery> {
+                contract: &'a #sylvia ::cw_std::Addr,
+                querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
+            }
+
+            impl <'a, C: #sylvia ::cw_std::CustomQuery> Querier for BoundQuerier<'a, C> {
+                #(#methods_impl)*
+            }
+
+
+            pub trait Querier {
+                #(#methods_declaration)*
+            }
         }
     }
 }

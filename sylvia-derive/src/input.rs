@@ -6,10 +6,9 @@ use syn::spanned::Spanned;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
 use crate::crate_module;
-use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
-use crate::querier::Querier;
 use crate::remote::Remote;
 use crate::utils::Items;
 
@@ -57,7 +56,7 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
         let remote = Remote::new(&[]).emit();
-        let querier = Querier::new(self.item.items(), &self.generics).emit();
+        let querier = MsgVariants::new(self.item.items(), &self.generics).emit_querier();
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
@@ -172,7 +171,7 @@ impl<'a> ImplInput<'a> {
 
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
-        let querier = Querier::new(self.item.items(), &self.generics).emit();
+        let querier = MsgVariants::new(self.item.items(), &self.generics).emit_querier();
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {
