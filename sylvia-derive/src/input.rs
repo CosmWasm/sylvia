@@ -11,6 +11,7 @@ use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 use crate::querier::Querier;
 use crate::remote::Remote;
+use crate::utils::Items;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -56,7 +57,7 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
         let remote = Remote::for_interface().emit();
-        let querier = Querier::for_interface(self.item, &self.generics).emit();
+        let querier = Querier::new(self.item.items(), &self.generics).emit();
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
@@ -171,7 +172,7 @@ impl<'a> ImplInput<'a> {
 
         let messages = self.emit_messages();
         let remote = Remote::for_contract(self.item).emit();
-        let querier = Querier::for_contract(self.item, &self.generics).emit();
+        let querier = Querier::new(self.item.items(), &self.generics).emit();
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {

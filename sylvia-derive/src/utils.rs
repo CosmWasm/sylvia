@@ -1,13 +1,42 @@
+use proc_macro2::Span;
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    FnArg, GenericArgument, GenericParam, PathArguments, PathSegment, ReturnType, Signature, Type,
-    WhereClause, WherePredicate,
+    Attribute, FnArg, GenericArgument, GenericParam, ImplItem, ItemImpl, ItemTrait, PathArguments,
+    PathSegment, ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 use crate::check_generics::CheckGenerics;
 use crate::message::MsgField;
+
+pub type MethodDataIterator<'a> =
+    Box<dyn Iterator<Item = (&'a Vec<Attribute>, &'a Signature, Span)> + 'a>;
+
+/// Trait for extracting attributes and signature of the methods from `ItemImpl` and `ItemTrait`
+/// In most cases these two parameters are being used for preprocessing
+/// so to unify the logic we can use this trait
+pub trait Items<'a> {
+    fn items(&'a self) -> MethodDataIterator;
+}
+
+impl<'a> Items<'a> for ItemImpl {
+    fn items(&'a self) -> MethodDataIterator {
+        Box::new(self.items.iter().filter_map(|item| match item {
+            ImplItem::Method(method) => Some((&method.attrs, &method.sig, method.span())),
+            _ => None,
+        }))
+    }
+}
+
+impl<'a> Items<'a> for ItemTrait {
+    fn items(&'a self) -> MethodDataIterator {
+        Box::new(self.items.iter().filter_map(|item| match item {
+            TraitItem::Method(method) => Some((&method.attrs, &method.sig, method.span())),
+            _ => None,
+        }))
+    }
+}
 
 pub fn filter_wheres<'a>(
     clause: &'a Option<WhereClause>,

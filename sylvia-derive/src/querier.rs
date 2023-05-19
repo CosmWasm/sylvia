@@ -2,70 +2,38 @@ use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
-use syn::spanned::Spanned;
-use syn::{GenericParam, ImplItem, ItemImpl, ItemTrait, TraitItem};
+use syn::GenericParam;
 
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgVariant;
 use crate::parser::{MsgAttr, MsgType};
+use crate::utils::MethodDataIterator;
 
 pub struct Querier<'a> {
     variants: Vec<MsgVariant<'a>>,
 }
 
 impl<'a> Querier<'a> {
-    pub fn for_contract(source: &'a ItemImpl, generics: &[&'a GenericParam]) -> Self {
+    pub fn new(source: MethodDataIterator<'a>, generics: &[&'a GenericParam]) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
+
         let variants: Vec<_> = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                ImplItem::Method(method) => {
-                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                        Ok(attr) => attr,
-                        Err(err) => {
-                            emit_error!(method.span(), err);
-                            return None;
-                        }
-                    };
-
-                    if attr == MsgType::Query {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
-                    } else {
-                        None
+            .filter_map(|(attrs, sig, span)| {
+                let msg_attr = attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                    Ok(attr) => attr,
+                    Err(err) => {
+                        emit_error!(span, err);
+                        return None;
                     }
-                }
-                _ => None,
-            })
-            .collect();
-        Self { variants }
-    }
+                };
 
-    pub fn for_interface(source: &'a ItemTrait, generics: &[&'a GenericParam]) -> Self {
-        let mut generics_checker = CheckGenerics::new(generics);
-        let variants: Vec<_> = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                TraitItem::Method(method) => {
-                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                        Ok(attr) => attr,
-                        Err(err) => {
-                            emit_error!(method.span(), err);
-                            return None;
-                        }
-                    };
-
-                    if attr == MsgType::Query {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
-                    } else {
-                        None
-                    }
+                if attr == MsgType::Query {
+                    Some(MsgVariant::new(sig, &mut generics_checker, attr))
+                } else {
+                    None
                 }
-                _ => None,
             })
             .collect();
         Self { variants }
