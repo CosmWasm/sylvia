@@ -59,8 +59,8 @@ pub mod counter {
 }
 
 pub struct CounterContract<'a> {
-    pub(crate) count: Item<'static, u64>,
-    pub(crate) remote: Item<'static, Remote<'a>>,
+    pub count: Item<'static, u64>,
+    pub remote: Item<'static, Remote<'a>>,
 }
 
 #[contract]
