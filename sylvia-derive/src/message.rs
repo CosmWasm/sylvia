@@ -4,7 +4,7 @@ use crate::parser::{
     parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
-use crate::utils::{extract_return_type, filter_wheres, process_fields, ItemsIterator};
+use crate::utils::{extract_return_type, filter_wheres, process_fields, VariantDescs};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -635,21 +635,25 @@ impl<'a> MsgVariant<'a> {
 pub struct MsgVariants<'a>(Vec<MsgVariant<'a>>);
 
 impl<'a> MsgVariants<'a> {
-    pub fn new(source: ItemsIterator<'a>, generics: &[&'a GenericParam]) -> Self {
+    pub fn new(source: VariantDescs<'a>, generics: &[&'a GenericParam]) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
 
         let variants: Vec<_> = source
-            .filter_map(|(attrs, sig, span)| {
-                let msg_attr = attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
+            .filter_map(|variant_desc| {
+                let msg_attr = variant_desc.attr_msg()?;
                 let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
                     Ok(attr) => attr,
                     Err(err) => {
-                        emit_error!(span, err);
+                        emit_error!(variant_desc.span(), err);
                         return None;
                     }
                 };
 
-                Some(MsgVariant::new(sig, &mut generics_checker, attr))
+                Some(MsgVariant::new(
+                    variant_desc.into_sig(),
+                    &mut generics_checker,
+                    attr,
+                ))
             })
             .collect();
         Self(variants)
