@@ -1,10 +1,11 @@
+use crate::as_variant_descs::VariantDescs;
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
     parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
-use crate::utils::{extract_return_type, filter_wheres, process_fields, VariantDescs};
+use crate::utils::{extract_return_type, filter_wheres, process_fields};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;

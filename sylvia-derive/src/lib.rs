@@ -6,6 +6,7 @@ use quote::quote;
 use syn::fold::Fold;
 use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
+mod as_variant_descs;
 pub(crate) mod check_generics;
 mod input;
 mod message;

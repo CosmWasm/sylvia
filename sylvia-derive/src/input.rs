@@ -5,12 +5,12 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
+use crate::as_variant_descs::AsVariantDescs;
 use crate::crate_module;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 use crate::remote::Remote;
-use crate::utils::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
