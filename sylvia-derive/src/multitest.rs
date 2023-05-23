@@ -669,6 +669,7 @@ impl<'a> TraitMultitestHelpers<'a> {
                             #proxy_name { contract_addr, app }
                         }
                     }
+                    #[allow(clippy::from_over_into)]
                     impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
                         fn into(self) -> #sylvia ::cw_std::Addr {
                             self.contract_addr
