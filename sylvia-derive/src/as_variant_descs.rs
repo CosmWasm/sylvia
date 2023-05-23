@@ -3,7 +3,7 @@ use syn::spanned::Spanned;
 use syn::{Attribute, ImplItem, ItemImpl, ItemTrait, Signature, TraitItem};
 
 pub struct VariantDesc<'a> {
-    attrs: &'a Vec<Attribute>,
+    attrs: &'a [Attribute],
     sig: &'a Signature,
     span: Span,
 }
@@ -33,14 +33,18 @@ pub type VariantDescs<'a> = Box<dyn Iterator<Item = VariantDesc<'a>> + 'a>;
 /// Trait for extracting attributes and signature of the methods from `ItemImpl` and `ItemTrait`
 /// In most cases these two parameters are being used for preprocessing
 /// so to unify the logic we can use this trait
-pub trait AsVariantDescs<'a> {
-    type Iter: Iterator<Item = VariantDesc<'a>>;
-    fn as_variants(&'a self) -> Self::Iter;
+pub trait AsVariantDescs {
+    type Iter<'a>: Iterator<Item = VariantDesc<'a>>
+    where
+        Self: 'a;
+
+    fn as_variants(&self) -> Self::Iter<'_>;
 }
 
-impl<'a> AsVariantDescs<'a> for ItemImpl {
-    type Iter = VariantDescs<'a>;
-    fn as_variants(&'a self) -> Self::Iter {
+impl AsVariantDescs for ItemImpl {
+    type Iter<'a> = VariantDescs<'a>;
+
+    fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
             ImplItem::Method(method) => {
                 Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
@@ -50,9 +54,10 @@ impl<'a> AsVariantDescs<'a> for ItemImpl {
     }
 }
 
-impl<'a> AsVariantDescs<'a> for ItemTrait {
-    type Iter = VariantDescs<'a>;
-    fn as_variants(&'a self) -> Self::Iter {
+impl AsVariantDescs for ItemTrait {
+    type Iter<'a> = VariantDescs<'a>;
+
+    fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
             TraitItem::Method(method) => {
                 Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
