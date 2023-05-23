@@ -1,5 +1,10 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo};
 
+pub struct ReplyCtx<'a> {
+    pub deps: DepsMut<'a>,
+    pub env: Env,
+}
+
 pub struct MigrateCtx<'a> {
     pub deps: DepsMut<'a>,
     pub env: Env,
@@ -25,6 +30,12 @@ impl ExecCtx<'_> {
             env: self.env.clone(),
             info: self.info.clone(),
         }
+    }
+}
+
+impl<'a> From<(DepsMut<'a>, Env)> for ReplyCtx<'a> {
+    fn from((deps, env): (DepsMut<'a>, Env)) -> Self {
+        Self { deps, env }
     }
 }
 

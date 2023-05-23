@@ -26,6 +26,7 @@ pub struct MultitestHelpers<'a> {
     contract: &'a Type,
     is_trait: bool,
     is_migrate: bool,
+    reply: Option<Ident>,
     source: &'a ItemImpl,
     generics: &'a [&'a GenericParam],
     contract_name: &'a Ident,
@@ -59,6 +60,7 @@ impl<'a> MultitestHelpers<'a> {
         generics: &'a [&'a GenericParam],
     ) -> Self {
         let mut is_migrate = false;
+        let mut reply = None;
         let sylvia = crate_module();
 
         let messages: Vec<_> = source
@@ -78,9 +80,13 @@ impl<'a> MultitestHelpers<'a> {
 
                     if msg_ty == MsgType::Migrate {
                         is_migrate = true;
+                    } else if msg_ty == MsgType::Reply {
+                        reply = Some(method.sig.ident.clone());
+                        return None;
                     } else if msg_ty != MsgType::Query && msg_ty != MsgType::Exec {
                         return None;
                     }
+
                     let sig = &method.sig;
                     let return_type = if let MsgAttr::Query { resp_type } = attr {
                         match resp_type {
@@ -183,6 +189,7 @@ impl<'a> MultitestHelpers<'a> {
             contract,
             is_trait,
             is_migrate,
+            reply,
             source,
             generics,
             contract_name,
@@ -557,7 +564,6 @@ impl<'a> MultitestHelpers<'a> {
         let contract = &self.contract;
         let sylvia = crate_module();
 
-        // MigrateMsg is not generated all the time in contrary to Exec, Query and Instantiate.
         let migrate_body = if self.is_migrate {
             quote! {
                 #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
@@ -569,6 +575,17 @@ impl<'a> MultitestHelpers<'a> {
                 #sylvia ::anyhow::bail!("migrate not implemented for contract")
             }
         };
+
+        let reply = if let Some(reply) = self.reply.as_ref() {
+            quote! {
+                self. #reply((deps, env).into(), msg).map_err(Into::into)
+            }
+        } else {
+            quote! {
+                #sylvia ::anyhow::bail!("reply not implemented for contract")
+            }
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -619,11 +636,11 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn reply(
                         &self,
-                        _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                        _env: #sylvia ::cw_std::Env,
-                        _msg: #sylvia ::cw_std::Reply,
+                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        msg: #sylvia ::cw_std::Reply,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
-                        #sylvia ::anyhow::bail!("reply not implemented for contract")
+                        #reply
                     }
 
                     fn migrate(
