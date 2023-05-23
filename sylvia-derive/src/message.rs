@@ -1,4 +1,3 @@
-use crate::as_variant_descs::VariantDescs;
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
@@ -6,6 +5,7 @@ use crate::parser::{
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
+use crate::variant_descs::VariantDescs;
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
