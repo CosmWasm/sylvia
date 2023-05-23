@@ -56,7 +56,8 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
         let remote = Remote::new(&[]).emit();
-        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
+        let querier = MsgVariants::new(self.item.as_variants(), &self.generics)
+            .emit_querier(&self.item.attrs);
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
@@ -171,7 +172,8 @@ impl<'a> ImplInput<'a> {
 
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
-        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
+        let querier = MsgVariants::new(self.item.as_variants(), &self.generics)
+            .emit_querier(&self.item.attrs);
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {
