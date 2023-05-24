@@ -5,6 +5,7 @@ use crate::parser::{
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
+use crate::variant_descs::VariantDescs;
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -193,12 +194,7 @@ impl<'a> EnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(
-                            &method.sig,
-                            &mut generics_checker,
-                            name,
-                            attr,
-                        ))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
                     } else {
                         None
                     }
@@ -360,12 +356,7 @@ impl<'a> ContractEnumMessage<'a> {
                     };
 
                     if attr == ty {
-                        Some(MsgVariant::new(
-                            &method.sig,
-                            &mut generics_checker,
-                            name,
-                            attr,
-                        ))
+                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
                     } else {
                         None
                     }
@@ -466,7 +457,7 @@ pub struct MsgVariant<'a> {
     // `MsgField<'a>`
     fields: Vec<MsgField<'a>>,
     return_type: TokenStream,
-    message_type: &'a Ident,
+    msg_type: MsgType,
 }
 
 impl<'a> MsgVariant<'a> {
@@ -474,7 +465,6 @@ impl<'a> MsgVariant<'a> {
     pub fn new(
         sig: &'a Signature,
         generics_checker: &mut CheckGenerics,
-        message_type: &'a Ident,
         msg_attr: MsgAttr,
     ) -> MsgVariant<'a> {
         let function_name = &sig.ident;
@@ -484,6 +474,7 @@ impl<'a> MsgVariant<'a> {
             function_name.span(),
         );
         let fields = process_fields(sig, generics_checker);
+        let msg_type = msg_attr.msg_type();
 
         let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
             match resp_type {
@@ -502,7 +493,7 @@ impl<'a> MsgVariant<'a> {
             function_name,
             fields,
             return_type,
-            message_type,
+            msg_type,
         }
     }
 
@@ -512,7 +503,7 @@ impl<'a> MsgVariant<'a> {
         let fields = fields.iter().map(MsgField::emit);
         let return_type = &self.return_type;
 
-        if self.message_type == "QueryMsg" {
+        if self.msg_type == MsgType::Query {
             #[cfg(not(tarpaulin_include))]
             {
                 quote! {
@@ -557,6 +548,7 @@ impl<'a> MsgVariant<'a> {
             .zip(args.clone())
             .map(|(field, num_field)| quote!(#field : #num_field));
 
+        #[cfg(not(tarpaulin_include))]
         match msg_attr {
             Exec => quote! {
                 #name {
@@ -592,6 +584,112 @@ impl<'a> MsgVariant<'a> {
         quote! {
             pub fn #method_name( #(#parameters),*) -> Self {
                 Self :: #name { #(#arguments),* }
+            }
+        }
+    }
+
+    pub fn emit_querier_impl(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            name,
+            fields,
+            return_type,
+            ..
+        } = self;
+
+        let parameters = fields.iter().map(MsgField::emit_method_field);
+        let fields_names = fields.iter().map(MsgField::name);
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                    let query = QueryMsg:: #variant_name (#(#fields_names),*);
+                    self.querier.query_wasm_smart(self.contract, &query)
+                }
+            }
+        }
+    }
+
+    pub fn emit_querier_declaration(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            name,
+            fields,
+            return_type,
+            ..
+        } = self;
+
+        let parameters = fields.iter().map(MsgField::emit_method_field);
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
+            }
+        }
+    }
+}
+
+pub struct MsgVariants<'a>(Vec<MsgVariant<'a>>);
+
+impl<'a> MsgVariants<'a> {
+    pub fn new(source: VariantDescs<'a>, generics: &[&'a GenericParam]) -> Self {
+        let mut generics_checker = CheckGenerics::new(generics);
+
+        let variants: Vec<_> = source
+            .filter_map(|variant_desc| {
+                let msg_attr = variant_desc.attr_msg()?;
+                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                    Ok(attr) => attr,
+                    Err(err) => {
+                        emit_error!(variant_desc.span(), err);
+                        return None;
+                    }
+                };
+
+                Some(MsgVariant::new(
+                    variant_desc.into_sig(),
+                    &mut generics_checker,
+                    attr,
+                ))
+            })
+            .collect();
+        Self(variants)
+    }
+
+    pub fn emit_querier(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let variants = &self.0;
+
+        let methods_impl = variants
+            .iter()
+            .filter(|variant| variant.msg_type == MsgType::Query)
+            .map(MsgVariant::emit_querier_impl);
+
+        let methods_declaration = variants
+            .iter()
+            .filter(|variant| variant.msg_type == MsgType::Query)
+            .map(MsgVariant::emit_querier_declaration);
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery> {
+                    contract: &'a #sylvia ::cw_std::Addr,
+                    querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
+                }
+
+                impl <'a, C: #sylvia ::cw_std::CustomQuery> Querier for BoundQuerier<'a, C> {
+                    #(#methods_impl)*
+                }
+
+
+                pub trait Querier {
+                    #(#methods_declaration)*
+                }
             }
         }
     }
@@ -646,6 +744,18 @@ impl<'a> MsgField<'a> {
         {
             quote! {
                 #(#attrs)*
+                #name: #ty
+            }
+        }
+    }
+
+    /// Emits method field
+    pub fn emit_method_field(&self) -> TokenStream {
+        let Self { name, ty, .. } = self;
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
                 #name: #ty
             }
         }
@@ -758,11 +868,13 @@ impl<'a> GlueMessage<'a> {
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
+        #[cfg(not(tarpaulin_include))]
         let deserialization_attempts = interfaces.iter().map(|interface| {
             let ContractMessageAttr {
                 module, variant, ..
             } = interface;
             let enum_name = GlueMessage::merge_module_with_name(module, name);
+
             quote! {
                 let msgs = &#module :: #enum_name ::messages();
                 if msgs.into_iter().any(|msg| msg == &recv_msg_name) {

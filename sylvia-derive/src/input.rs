@@ -6,10 +6,11 @@ use syn::spanned::Spanned;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
 use crate::crate_module;
-use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, StructMessage};
+use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
 use crate::remote::Remote;
+use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
@@ -54,7 +55,8 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::for_interface().emit();
+        let remote = Remote::new(&[]).emit();
+        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
 
         if let Some(module) = &self.attributes.module {
             #[cfg(not(tarpaulin_include))]
@@ -68,6 +70,8 @@ impl<'a> TraitInput<'a> {
                         #multitest_helpers
 
                         #remote
+
+                        #querier
                     }
                 }
             }
@@ -80,6 +84,8 @@ impl<'a> TraitInput<'a> {
                     #multitest_helpers
 
                     #remote
+
+                    #querier
                 }
             }
         }
@@ -164,7 +170,8 @@ impl<'a> ImplInput<'a> {
         }
 
         let messages = self.emit_messages();
-        let remote = Remote::for_contract(self.item).emit();
+        let remote = Remote::new(&self.item.attrs).emit();
+        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {
@@ -173,6 +180,8 @@ impl<'a> ImplInput<'a> {
             #multitest_helpers
 
             #remote
+
+            #querier
         };
 
         if let Some(module) = &self.attributes.module {

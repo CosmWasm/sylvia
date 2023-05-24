@@ -15,6 +15,7 @@ mod remote;
 mod strip_generics;
 mod strip_input;
 mod utils;
+mod variant_descs;
 
 use strip_input::StripInput;
 

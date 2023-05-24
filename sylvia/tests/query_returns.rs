@@ -1,5 +1,7 @@
 use cosmwasm_std::{Response, StdError, StdResult};
 
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use sylvia::types::{InstantiateCtx, QueryCtx};
 use sylvia::{contract, interface};
 use thiserror::Error;
@@ -10,9 +12,7 @@ pub enum ContractError {
     Std(#[from] StdError),
 }
 
-#[derive(
-    serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
-)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct QueryResponse;
 
 type QueryResult<E> = Result<QueryResponse, E>;

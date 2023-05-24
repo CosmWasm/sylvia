@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::ItemImpl;
+use syn::Attribute;
 
 use crate::crate_module;
 use crate::parser::ContractMessageAttr;
@@ -13,9 +13,8 @@ pub struct Remote {
 }
 
 impl Remote {
-    pub fn for_contract(source: &ItemImpl) -> Self {
-        let interfaces: Vec<_> = source
-            .attrs
+    pub fn new(attrs: &[Attribute]) -> Self {
+        let interfaces: Vec<_> = attrs
             .iter()
             .filter(|attr| attr.path.is_ident("messages"))
             .filter_map(|attr| {
@@ -31,10 +30,6 @@ impl Remote {
             })
             .collect();
         Self { interfaces }
-    }
-
-    pub fn for_interface() -> Self {
-        Self { interfaces: vec![] }
     }
 
     pub fn emit(&self) -> TokenStream {
@@ -53,6 +48,7 @@ impl Remote {
         });
 
         quote! {
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize)]
             pub struct Remote<'a>(std::borrow::Cow<'a, #sylvia ::cw_std::Addr>);
 
             impl Remote<'static> {
@@ -70,6 +66,15 @@ impl Remote {
             impl<'a> AsRef<#sylvia ::cw_std::Addr> for Remote<'a> {
                 fn as_ref(&self) -> &#sylvia ::cw_std::Addr {
                     &self.0
+                }
+            }
+
+            impl Remote<'_> {
+                fn querier<'a, C: #sylvia ::cw_std::CustomQuery>(&'a self, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> BoundQuerier<'a, C> {
+                    BoundQuerier {
+                        contract: &self.0,
+                        querier,
+                    }
                 }
             }
 
