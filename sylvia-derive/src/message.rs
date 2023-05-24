@@ -985,10 +985,10 @@ impl<'a> GlueMessage<'a> {
                         let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
                         let map = match &val {
                             #sylvia ::serde_value::Value::Map(map) => map,
-                            _ => panic!("Expected msg to be Value variant Map. Possibly an issue with msg format.")
+                            _ => return Err(D::Error::custom("Wrong message format!"))
                         };
                         if map.len() != 1 {
-                            panic!("Found more or zero msgs after deserialization. Expected one.")
+                            return Err(D::Error::custom(format!("Expected exactly one message. Received {}", map.len())))
                         }
                         // Due to earlier size check of map this unwrap is safe
                         let recv_msg_name = map.into_iter().next().unwrap();
