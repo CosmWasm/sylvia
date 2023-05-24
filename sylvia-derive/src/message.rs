@@ -660,38 +660,7 @@ impl<'a> MsgVariants<'a> {
         Self(variants)
     }
 
-    pub fn emit_from_impls(&self, attrs: &'a [Attribute]) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
-        let from_impls: Vec<_> = attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => interface,
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .map(|interface| {
-                let ContractMessageAttr { module, .. } = interface;
-                quote! {
-                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::BoundQuerier<'a, C> {
-                        fn from(querier: &'a BoundQuerier<'a, C>) -> Self {
-                            Self::new(querier.contract(),  querier.querier())
-                        }
-                    }
-                }
-            })
-            .collect();
-        from_impls
-    }
-
-    pub fn emit_querier(&self, attrs: &'a [Attribute]) -> TokenStream {
+    pub fn emit_querier(&self) -> TokenStream {
         let sylvia = crate_module();
         let variants = &self.0;
 
@@ -704,8 +673,6 @@ impl<'a> MsgVariants<'a> {
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
             .map(MsgVariant::emit_querier_declaration);
-
-        let from_impls = self.emit_from_impls(attrs);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -741,8 +708,6 @@ impl<'a> MsgVariants<'a> {
                 pub trait Querier {
                     #(#methods_declaration)*
                 }
-
-                #(#from_impls)*
             }
         }
     }
