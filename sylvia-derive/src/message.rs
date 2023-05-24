@@ -1067,7 +1067,7 @@ impl EntryPoints {
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
                     ) -> Result<#sylvia ::cw_std::Response, #error> {
-                        CONTRACT. #reply((deps, env).into(), msg).map_err(Into::into)
+                        #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
                     }
                 },
                 None => quote! {},
@@ -1076,7 +1076,6 @@ impl EntryPoints {
             quote! {
                 pub mod entry_points {
                     use super::*;
-                    const CONTRACT: #name = #name ::new();
 
                     #[#sylvia ::cw_std::entry_point]
                     pub fn instantiate(
@@ -1085,7 +1084,7 @@ impl EntryPoints {
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: InstantiateMsg,
                     ) -> Result<#sylvia ::cw_std::Response, #error> {
-                        msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                        msg.dispatch(&#name ::new() , (deps, env, info)).map_err(Into::into)
                     }
 
                     #[#sylvia ::cw_std::entry_point]
@@ -1095,12 +1094,12 @@ impl EntryPoints {
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: ContractExecMsg,
                     ) -> Result<#sylvia ::cw_std::Response, #error> {
-                        msg.dispatch(&CONTRACT, (deps, env, info)).map_err(Into::into)
+                        msg.dispatch(&#name ::new(), (deps, env, info)).map_err(Into::into)
                     }
 
                     #[#sylvia ::cw_std::entry_point]
                     pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
-                        msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
+                        msg.dispatch(&#name ::new(), (deps, env)).map_err(Into::into)
                     }
 
                     #reply

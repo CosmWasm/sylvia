@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[0.4.2] - 2023-05-24
+## \[0.4.2\] - 2023-05-24
 
 - Added support of `#[msg(reply)]` defining handler for reply messages,
   currently only in the form of
@@ -13,6 +13,8 @@ and this project adheres to
   handler
 - Added generation of reply implementation forwarding to `#[msg(reply)]`
   handler in multitest helpers
+- Removed requirement for `const fn new()` method for `contract` macro call.
+  `fn new()` method is still required.
 
 ## \[0.4.1\] - 2023-05-23
 
