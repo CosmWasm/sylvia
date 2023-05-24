@@ -6,6 +6,7 @@ use syn::spanned::Spanned;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
 
 use crate::crate_module;
+use crate::interfaces::Interfaces;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
@@ -172,6 +173,7 @@ impl<'a> ImplInput<'a> {
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
         let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
+        let querier_from_impl = Interfaces::new(self.item).emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
         let code = quote! {
@@ -182,6 +184,8 @@ impl<'a> ImplInput<'a> {
             #remote
 
             #querier
+
+            #(#querier_from_impl)*
         };
 
         if let Some(module) = &self.attributes.module {

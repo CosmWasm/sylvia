@@ -682,6 +682,20 @@ impl<'a> MsgVariants<'a> {
                     querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
                 }
 
+                impl<'a, C: #sylvia ::cw_std::CustomQuery> BoundQuerier<'a, C> {
+                    pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
+                        self.querier
+                    }
+
+                    pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
+                        self.contract
+                    }
+
+                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
+                        Self {contract, querier}
+                    }
+                }
+
                 impl <'a, C: #sylvia ::cw_std::CustomQuery> Querier for BoundQuerier<'a, C> {
                     #(#methods_impl)*
                 }
