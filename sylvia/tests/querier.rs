@@ -102,11 +102,34 @@ impl CounterContract<'_> {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::Addr;
+
+    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{Addr, Empty, QuerierWrapper};
     use sylvia::multitest::App;
 
     use crate::counter::test_utils::Counter;
     use crate::multitest_utils::CodeId;
+
+    #[test]
+    fn querier_generation() {
+        let deps = mock_dependencies();
+        let querier_wrapper = QuerierWrapper::<Empty>::new(&deps.querier);
+        let remote_addr = Addr::unchecked("remote");
+
+        // Remote generation
+        let remote = super::counter::Remote::new(remote_addr.clone());
+        let _: super::counter::BoundQuerier<_> = remote.querier(&querier_wrapper);
+        let remote = super::Remote::new(remote_addr.clone());
+        let _: super::BoundQuerier<_> = remote.querier(&querier_wrapper);
+
+        // Querier generation
+        let querier = super::counter::BoundQuerier::new(&remote_addr, &querier_wrapper);
+        let _: super::counter::BoundQuerier<_> = querier.borrowed(&querier_wrapper);
+        let querier = super::BoundQuerier::new(&remote_addr, &querier_wrapper);
+        let _: super::BoundQuerier<_> = querier.borrowed(&querier_wrapper);
+
+        let _ = super::counter::BoundQuerier::from(&querier);
+    }
 
     #[test]
     fn call_querier() {
