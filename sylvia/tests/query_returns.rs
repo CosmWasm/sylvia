@@ -2,8 +2,8 @@ use cosmwasm_std::{Response, StdError, StdResult};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::contract;
 use sylvia::types::{InstantiateCtx, QueryCtx};
-use sylvia::{contract, interface};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -17,12 +17,19 @@ pub struct QueryResponse;
 
 type QueryResult<E> = Result<QueryResponse, E>;
 
-#[interface(module=msg)]
-pub trait Interface {
-    type Error: From<StdError>;
+mod msg {
+    use cosmwasm_std::StdError;
+    use sylvia::{interface, types::QueryCtx};
 
-    #[msg(query, resp=QueryResponse)]
-    fn query(&self, ctx: QueryCtx, #[serde(default)] name: String) -> QueryResult<Self::Error>;
+    use crate::{QueryResponse, QueryResult};
+
+    #[interface(module=msg)]
+    pub trait Interface {
+        type Error: From<StdError>;
+
+        #[msg(query, resp=QueryResponse)]
+        fn query(&self, ctx: QueryCtx, #[serde(default)] name: String) -> QueryResult<Self::Error>;
+    }
 }
 
 pub struct SomeContract {}

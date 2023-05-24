@@ -59,35 +59,16 @@ impl<'a> TraitInput<'a> {
         let remote = Remote::new(&[]).emit();
         let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
 
-        if let Some(module) = &self.attributes.module {
-            #[cfg(not(tarpaulin_include))]
-            {
-                quote! {
-                    pub mod #module {
-                        use super::*;
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #messages
 
-                        #messages
+                #multitest_helpers
 
-                        #multitest_helpers
+                #remote
 
-                        #remote
-
-                        #querier
-                    }
-                }
-            }
-        } else {
-            #[cfg(not(tarpaulin_include))]
-            {
-                quote! {
-                    #messages
-
-                    #multitest_helpers
-
-                    #remote
-
-                    #querier
-                }
+                #querier
             }
         }
     }
@@ -176,31 +157,18 @@ impl<'a> ImplInput<'a> {
         let querier_from_impl = Interfaces::new(self.item).emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
-        let code = quote! {
-            #messages
+        {
+            quote! {
+                #messages
 
-            #multitest_helpers
+                #multitest_helpers
 
-            #remote
+                #remote
 
-            #querier
+                #querier
 
-            #(#querier_from_impl)*
-        };
-
-        if let Some(module) = &self.attributes.module {
-            #[cfg(not(tarpaulin_include))]
-            {
-                quote! {
-                    pub mod #module {
-                        use super::*;
-
-                        #code
-                    }
-                }
+                #(#querier_from_impl)*
             }
-        } else {
-            code
         }
     }
 
