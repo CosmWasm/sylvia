@@ -29,6 +29,9 @@ pub mod counter {
 
         #[msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response>;
+
+        #[msg(exec)]
+        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
 
     #[contract]
@@ -50,9 +53,23 @@ pub mod counter {
         #[msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let remote = Remote::from(&remote);
-            let other_count = remote.querier(&ctx.deps.querier).count()?.count;
+            let querier = remote.querier(&ctx.deps.querier);
+            let other_count = BoundQuerier::from(&querier).count()?.count;
             self.count.save(ctx.deps.storage, &other_count)?;
+            Ok(Response::new())
+        }
+
+        #[msg(exec)]
+        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
+            let remote = self.remote.load(ctx.deps.storage)?;
+            let other_count = BoundQuerier::new(&remote.0, &ctx.deps.querier)
+                .count()?
+                .count;
+            self.count.update(ctx.deps.storage, |count| {
+                let count = count.saturating_sub(other_count);
+                Ok::<_, StdError>(count)
+            })?;
+
             Ok(Response::new())
         }
     }
@@ -127,5 +144,14 @@ mod tests {
 
         let resp = second_contract.counter_proxy().count().unwrap();
         assert_eq!(resp.count, 42);
+
+        second_contract
+            .counter_proxy()
+            .decrease_by_count()
+            .call(owner)
+            .unwrap();
+
+        let resp = second_contract.counter_proxy().count().unwrap();
+        assert_eq!(resp.count, 0);
     }
 }
