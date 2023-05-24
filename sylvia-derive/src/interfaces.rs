@@ -44,7 +44,7 @@ impl Interfaces {
                 quote! {
                     impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::BoundQuerier<'a, C> {
                         fn from(querier: &'a BoundQuerier<'a, C>) -> Self {
-                            Self::new(querier.contract(),  querier.querier())
+                            Self::borrowed(querier.contract(),  querier.querier())
                         }
                     }
                 }

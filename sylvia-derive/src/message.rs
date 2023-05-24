@@ -691,12 +691,8 @@ impl<'a> MsgVariants<'a> {
                         self.contract
                     }
 
-                    pub fn new(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
+                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
                         Self {contract, querier}
-                    }
-
-                    pub fn borrowed(&self, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
-                        Self::new(self.contract, querier)
                     }
                 }
 

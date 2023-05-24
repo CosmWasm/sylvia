@@ -62,7 +62,7 @@ pub mod counter {
         #[msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let other_count = BoundQuerier::new(&remote.0, &ctx.deps.querier)
+            let other_count = BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
                 .count()?
                 .count;
             self.count.update(ctx.deps.storage, |count| {
@@ -123,10 +123,8 @@ mod tests {
         let _: super::BoundQuerier<_> = remote.querier(&querier_wrapper);
 
         // Querier generation
-        let querier = super::counter::BoundQuerier::new(&remote_addr, &querier_wrapper);
-        let _: super::counter::BoundQuerier<_> = querier.borrowed(&querier_wrapper);
-        let querier = super::BoundQuerier::new(&remote_addr, &querier_wrapper);
-        let _: super::BoundQuerier<_> = querier.borrowed(&querier_wrapper);
+        let _ = super::counter::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
+        let querier = super::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
 
         let _ = super::counter::BoundQuerier::from(&querier);
     }
