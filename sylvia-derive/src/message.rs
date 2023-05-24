@@ -5,7 +5,7 @@ use crate::parser::{
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
-use crate::variant_descs::VariantDescs;
+use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -1043,28 +1043,12 @@ impl EntryPoints {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        let reply = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                ImplItem::Method(method) => Some(method),
-                _ => None,
-            })
-            .find(|method| {
-                method.attrs.iter().any(|attr| {
-                    if !attr.path.is_ident("msg") {
-                        return false;
-                    }
-
-                    let attr = match MsgAttr::parse.parse2(attr.tokens.clone()) {
-                        Ok(attr) => attr,
-                        Err(_) => return false,
-                    };
-
-                    attr == MsgType::Reply
-                })
-            })
-            .map(|method| method.sig.ident.clone());
+        let generics: Vec<_> = source.generics.params.iter().collect();
+        let reply = MsgVariants::new(source.as_variants(), &generics)
+            .0
+            .into_iter()
+            .find(|variant| variant.msg_type == MsgType::Reply)
+            .map(|variant| variant.function_name.clone());
 
         Self { name, error, reply }
     }

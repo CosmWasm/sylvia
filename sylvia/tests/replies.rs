@@ -7,7 +7,7 @@ mod noop_contract {
 
     use sylvia::cw_std::{Response, StdResult};
 
-    struct NoopContract;
+    pub struct NoopContract;
 
     #[cfg(not(tarpaulin_include))]
     #[contract]
