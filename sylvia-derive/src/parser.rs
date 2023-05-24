@@ -109,14 +109,11 @@ impl MsgType {
             Exec | Instantiate => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
             },
-            Migrate => quote! {
+            Migrate | Reply => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
             },
             Query => quote! {
                 (#sylvia ::cw_std::Deps, #sylvia ::cw_std::Env)
-            },
-            Reply => quote! {
-                (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
             },
         }
     }

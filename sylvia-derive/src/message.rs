@@ -561,7 +561,7 @@ impl<'a> MsgVariant<'a> {
                 } => cosmwasm_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
             Instantiate | Migrate | Reply => {
-                emit_error!(name.span(), "Instantiation and Migrate messages not supported on traits, they should be defined on contracts directly");
+                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }
