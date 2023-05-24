@@ -87,6 +87,7 @@ pub enum MsgType {
     Query,
     Instantiate,
     Migrate,
+    Reply,
 }
 
 /// `#[msg(...)]` attribute for `interface` macro
@@ -95,6 +96,7 @@ pub enum MsgAttr {
     Query { resp_type: Option<Ident> },
     Instantiate { name: Ident },
     Migrate { name: Ident },
+    Reply,
 }
 
 impl MsgType {
@@ -107,7 +109,7 @@ impl MsgType {
             Exec | Instantiate => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
             },
-            Migrate => quote! {
+            Migrate | Reply => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
             },
             Query => quote! {
@@ -123,12 +125,15 @@ impl MsgType {
         let sylvia = crate_module();
 
         match (self, msg_type) {
-            (Exec, Some(msg_type)) | (Instantiate, Some(msg_type)) | (Migrate, Some(msg_type)) => {
+            (Exec, Some(msg_type))
+            | (Instantiate, Some(msg_type))
+            | (Migrate, Some(msg_type))
+            | (Reply, Some(msg_type)) => {
                 quote! {
                     std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
                 }
             }
-            (Exec, None) | (Instantiate, None) | (Migrate, None) => quote! {
+            (Exec, None) | (Instantiate, None) | (Migrate, None) | (Reply, None) => quote! {
                 std::result::Result<#sylvia ::cw_std::Response, #err_type>
             },
 
@@ -166,6 +171,7 @@ impl MsgAttr {
             Query { .. } => MsgType::Query,
             Instantiate { .. } => MsgType::Instantiate,
             Migrate { .. } => MsgType::Migrate,
+            Reply => MsgType::Reply,
         }
     }
 }
@@ -186,6 +192,8 @@ impl Parse for MsgAttr {
         } else if ty == "migrate" {
             let name = Ident::new("MigrateMsg", content.span());
             Ok(Self::Migrate { name })
+        } else if ty == "reply" {
+            Ok(Self::Reply)
         } else {
             Err(Error::new(
                 ty.span(),

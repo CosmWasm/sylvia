@@ -1,5 +1,7 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo};
 
+pub type ReplyCtx<'a> = MigrateCtx<'a>;
+
 pub struct MigrateCtx<'a> {
     pub deps: DepsMut<'a>,
     pub env: Env,

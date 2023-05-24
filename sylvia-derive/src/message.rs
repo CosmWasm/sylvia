@@ -5,7 +5,7 @@ use crate::parser::{
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
-use crate::variant_descs::VariantDescs;
+use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
@@ -560,8 +560,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => cosmwasm_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate | Migrate => {
-                emit_error!(name.span(), "Instantiation and Migrate messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate | Reply => {
+                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }
@@ -1020,6 +1020,7 @@ impl<'a> GlueMessage<'a> {
 pub struct EntryPoints {
     name: Type,
     error: Type,
+    reply: Option<Ident>,
 }
 
 impl EntryPoints {
@@ -1042,15 +1043,36 @@ impl EntryPoints {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        Self { name, error }
+        let generics: Vec<_> = source.generics.params.iter().collect();
+        let reply = MsgVariants::new(source.as_variants(), &generics)
+            .0
+            .into_iter()
+            .find(|variant| variant.msg_type == MsgType::Reply)
+            .map(|variant| variant.function_name.clone());
+
+        Self { name, error, reply }
     }
 
     pub fn emit(&self) -> TokenStream {
-        let Self { name, error } = self;
+        let Self { name, error, reply } = self;
         let sylvia = crate_module();
 
         #[cfg(not(tarpaulin_include))]
         {
+            let reply = match reply {
+                Some(reply) => quote! {
+                    #[#sylvia ::cw_std::entry_point]
+                    pub fn reply(
+                        deps: #sylvia ::cw_std::DepsMut,
+                        env: #sylvia ::cw_std::Env,
+                        msg: #sylvia ::cw_std::Reply,
+                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                        CONTRACT. #reply((deps, env).into(), msg).map_err(Into::into)
+                    }
+                },
+                None => quote! {},
+            };
+
             quote! {
                 pub mod entry_points {
                     use super::*;
@@ -1080,6 +1102,8 @@ impl EntryPoints {
                     pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
                         msg.dispatch(&CONTRACT, (deps, env)).map_err(Into::into)
                     }
+
+                    #reply
                 }
             }
         }

@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[0.4.2] - Unreleased
+
+- Added support of `#[msg(reply)]` defining handler for reply messages,
+  currently only in the form of
+  `fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> Result<Response, Err>`
+- Added generation of reply entrypoint forwarding to the `#[msg(reply)]`
+  handler
+- Added generation of reply implementation forwarding to `#[msg(reply)]`
+  handler in multitest helpers
+
 ## \[0.4.1\] - 2023-05-23
 
 - Lint fix
