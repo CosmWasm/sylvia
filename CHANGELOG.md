@@ -6,13 +6,13 @@ and this project adheres to
 
 ## \[0.4.2] - Unreleased
 
-- Added support of `#[msg(reply)]` defininfg handler for reply messages,
+- Added support of `#[msg(reply)]` defining handler for reply messages,
   currently only in the form of
   `fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> Result<Response, Err>`
 - Added generation of reply entrypoint forwarding to the `#[msg(reply)]`
   handler
 - Added generation of reply implementation forwarding to `#[msg(reply)]`
-  handler
+  handler in multitest helpers
 
 ## \[0.4.1\] - 2023-05-23
 
