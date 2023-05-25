@@ -17,7 +17,7 @@ use crate::responses::Cw20ReceiveMsg;
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-#[contract]
+#[contract(module=crate::contract)]
 #[messages(cw20_allowances as Cw20Allowances)]
 impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;

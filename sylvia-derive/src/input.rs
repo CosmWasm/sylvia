@@ -140,21 +140,31 @@ impl<'a> ImplInput<'a> {
 
     pub fn process(&self) -> TokenStream {
         let is_trait = self.item.trait_.is_some();
-
         let multitest_helpers = if cfg!(feature = "mt") {
             MultitestHelpers::new(self.item, is_trait, &self.error, &self.generics).emit()
         } else {
             quote! {}
         };
 
+        let interfaces = Interfaces::new(self.item);
+        let querier = MsgVariants::new(self.item.as_variants(), &self.generics);
+
         if is_trait {
-            return multitest_helpers;
+            let contract_module = &self.attributes.module;
+            let trait_querier_impl_for_contract = querier
+                .emit_trait_querier_impl_for_contract(interfaces.interfaces(), contract_module);
+
+            return quote! {
+                #multitest_helpers
+
+                #trait_querier_impl_for_contract
+            };
         }
 
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
-        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
-        let querier_from_impl = Interfaces::new(self.item).emit_querier_from_impl();
+        let querier = querier.emit_querier();
+        let querier_from_impl = interfaces.emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
         {

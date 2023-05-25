@@ -20,7 +20,7 @@ pub trait Whitelist {
     fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
 }
 
-#[contract]
+#[contract(module=crate::contract)]
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 

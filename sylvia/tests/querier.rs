@@ -34,7 +34,7 @@ pub mod counter {
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
 
-    #[contract]
+    #[contract(module=super)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 

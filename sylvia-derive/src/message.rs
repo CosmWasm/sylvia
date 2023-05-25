@@ -15,7 +15,7 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType,
+    parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path,
     ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
@@ -588,7 +588,7 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_impl(&self) -> TokenStream {
+    pub fn emit_querier_impl(&self, trait_module: Option<&Path>) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
@@ -597,6 +597,11 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
+        let trait_module = if let Some(trait_module) = trait_module {
+            quote! {#trait_module :: }
+        } else {
+            quote! {}
+        };
         let parameters = fields.iter().map(MsgField::emit_method_field);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
@@ -605,8 +610,8 @@ impl<'a> MsgVariant<'a> {
         {
             quote! {
                 fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                    let query = QueryMsg:: #variant_name (#(#fields_names),*);
-                    self.querier.query_wasm_smart(self.contract, &query)
+                    let query = #trait_module QueryMsg :: #variant_name (#(#fields_names),*);
+                    self.querier().query_wasm_smart(self.contract(), &query)
                 }
             }
         }
@@ -667,7 +672,7 @@ impl<'a> MsgVariants<'a> {
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(MsgVariant::emit_querier_impl);
+            .map(|variant| variant.emit_querier_impl(None));
 
         let methods_declaration = variants
             .iter()
@@ -703,6 +708,45 @@ impl<'a> MsgVariants<'a> {
 
                 pub trait Querier {
                     #(#methods_declaration)*
+                }
+            }
+        }
+    }
+
+    pub fn emit_trait_querier_impl_for_contract(
+        &self,
+        interfaces: &[ContractMessageAttr],
+        contract_module: &Option<Path>,
+    ) -> TokenStream {
+        let sylvia = crate_module();
+        let variants = &self.0;
+
+        let bound_querier = if let Some(module) = contract_module {
+            quote! { #module ::BoundQuerier }
+        } else {
+            quote! { BoundQuerier }
+        };
+
+        let trait_module = if interfaces.len() == 1 {
+            Some(&interfaces[0].module)
+        } else {
+            None
+        };
+
+        let querier = trait_module
+            .map(|module| quote! { #module :: Querier })
+            .unwrap_or_else(|| quote! { Querier });
+
+        let methods_impl = variants
+            .iter()
+            .filter(|variant| variant.msg_type == MsgType::Query)
+            .map(|variant| variant.emit_querier_impl(trait_module));
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery> #querier for #bound_querier <'a, C> {
+                    #(#methods_impl)*
                 }
             }
         }

@@ -9,7 +9,7 @@ use crate::error::ContractError;
 
 // This can be skipped by tarpaulin as it's covered in cw1-whitelist
 #[cfg(not(tarpaulin_include))]
-#[contract]
+#[contract(module=crate::contract)]
 #[messages(whitelist as Whitelist)]
 impl Whitelist for Cw1SubkeysContract<'_> {
     type Error = ContractError;

@@ -34,6 +34,10 @@ impl Interfaces {
         Self { interfaces }
     }
 
+    pub fn interfaces(&self) -> &[ContractMessageAttr] {
+        &self.interfaces
+    }
+
     pub fn emit_querier_from_impl(&self) -> Vec<TokenStream> {
         let sylvia = crate_module();
 

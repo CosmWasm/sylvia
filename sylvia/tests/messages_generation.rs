@@ -51,6 +51,7 @@ mod contract {
     #[contract]
     impl Contract {
         #[allow(clippy::new_without_default)]
+        #[allow(dead_code)]
         pub fn new() -> Self {
             Self {}
         }
