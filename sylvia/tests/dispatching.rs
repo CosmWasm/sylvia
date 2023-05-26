@@ -101,6 +101,7 @@ impl Interface for Contract {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 #[contract]
 #[messages(interface as Interface)]
 impl Contract {

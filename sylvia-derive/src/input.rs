@@ -152,6 +152,7 @@ impl<'a> ImplInput<'a> {
         if is_trait {
             let querier_bound_for_impl = self.emit_querier_for_bound_impl(&interfaces, variants);
 
+            #[cfg(not(tarpaulin_include))]
             return quote! {
                 #multitest_helpers
 
