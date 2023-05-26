@@ -429,6 +429,56 @@ for this interface (it would be used in generated code to provide proper enum va
 The impl-block with trait implementation also contains the `#[messages]` attribute,
 but only one - the one with info about the trait being implemented.
 
+## Macro attributes
+
+`Sylvia` work with multiple attributes. I will explain here how and when to use which of them.
+
+```rust
+#[contract(module=contract_module::inner_module)]
+impl Interface for MyContract {
+...
+}
+```
+
+`module` is meant to be used when implementing interface on the contract. It's purpose
+is to inform `sylvia` where is the contract defined. If the contract is implemented in the same
+scope this attribute can and should be omitted. 
+
+```rust
+#[entry_point]
+#[contract]
+#[error(ContractError)]
+impl MyContarct {
+...
+}
+```
+
+`error` is used by both `contract` and `entry_point` macros. It is neccessary in case a custom
+error is being used by your contract. If omitted generated code will use `StdError`. 
+
+```rust
+#[contract]
+#[messages(interface as Interface)]
+impl MyContarct {
+...
+}
+
+#[contract]
+#[messages(interface as Interface)]
+impl Interface for MyContarct {
+...
+}
+```
+
+`messages` is the attribute for the `contract` macro. We can use it both when implementing contract
+and when implementing an interface on a contract.
+In case of the implementation of a trait it is only needed if the trait is defined in different
+module. Otherwise it should be omitted.
+For the contract implementation it is mandatory for the functionality of an implemented trait 
+to be part of a contract logic.
+For the second usage in example there should be at most one `messages` attribute used.
+In case of the first usage there can be multiple `messages` attributes used.
+
 ## Usage in external crates
 
 What is important is the possibility of using generated code in the external code.
