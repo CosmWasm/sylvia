@@ -147,23 +147,21 @@ impl<'a> ImplInput<'a> {
         };
 
         let interfaces = Interfaces::new(self.item);
-        let querier = MsgVariants::new(self.item.as_variants(), &self.generics);
+        let variants = MsgVariants::new(self.item.as_variants(), &self.generics);
 
         if is_trait {
-            let contract_module = &self.attributes.module;
-            let trait_querier_impl_for_contract = querier
-                .emit_trait_querier_impl_for_contract(interfaces.interfaces(), contract_module);
+            let querier_bound_for_impl = self.emit_querier_for_bound_impl(&interfaces, variants);
 
             return quote! {
                 #multitest_helpers
 
-                #trait_querier_impl_for_contract
+                #querier_bound_for_impl
             };
         }
 
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
-        let querier = querier.emit_querier();
+        let querier = variants.emit_querier();
         let querier_from_impl = interfaces.emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
@@ -220,5 +218,29 @@ impl<'a> ImplInput<'a> {
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
         GlueMessage::new(name, self.item, msg_ty, &self.error).emit()
+    }
+
+    fn emit_querier_for_bound_impl(
+        &self,
+        interfaces: &Interfaces,
+        variants: MsgVariants<'a>,
+    ) -> TokenStream {
+        let trait_module = interfaces
+            .interfaces()
+            .first()
+            .map(|interface| {
+                let module = &interface.module;
+                quote! { #module ::}
+            })
+            .unwrap_or_else(|| quote! {});
+
+        let contract_module = self
+            .attributes
+            .module
+            .as_ref()
+            .map(|module| quote! {#module ::})
+            .unwrap_or_else(|| quote! {});
+
+        variants.emit_querier_for_bound_impl(&trait_module, &contract_module)
     }
 }
