@@ -1,81 +1,96 @@
-use cosmwasm_std::{Addr, Decimal, Response, StdError, StdResult};
-
-use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
-use sylvia::{contract, interface};
+use cosmwasm_std::{Addr, Decimal};
 
 #[derive(
     serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
 )]
 pub struct QueryResult;
 
-#[interface(module=interface)]
-pub trait Interface {
-    type Error: From<StdError>;
+mod interface {
+    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use sylvia::{
+        interface,
+        types::{ExecCtx, QueryCtx},
+    };
 
-    #[msg(exec)]
-    fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+    use crate::QueryResult;
 
-    #[msg(exec)]
-    fn argumented_execution(
-        &self,
-        ctx: ExecCtx,
-        addr: Addr,
-        coef: Decimal,
-        #[serde(default)] desc: String,
-    ) -> Result<Response, Self::Error>;
+    #[interface]
+    pub trait Interface {
+        type Error: From<StdError>;
 
-    #[msg(query)]
-    fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;
+        #[msg(exec)]
+        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
-    fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResult, Self::Error>;
+        #[msg(exec)]
+        fn argumented_execution(
+            &self,
+            ctx: ExecCtx,
+            addr: Addr,
+            coef: Decimal,
+            #[serde(default)] desc: String,
+        ) -> Result<Response, Self::Error>;
+
+        #[msg(query)]
+        fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;
+
+        #[msg(query)]
+        fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResult, Self::Error>;
+    }
 }
 
-pub struct Contract {}
+mod contract {
+    use cosmwasm_std::{Addr, Response, StdResult};
+    use sylvia::contract;
+    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 
-#[cfg(not(tarpaulin_include))]
-// Ignoring coverage of test implementation
-#[contract(module=contract)]
-impl Contract {
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self {}
-    }
+    use crate::QueryResult;
 
-    #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
-        Ok(Response::new())
-    }
+    pub struct Contract {}
 
-    #[msg(migrate)]
-    pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
-        Ok(Response::new())
-    }
+    #[cfg(not(tarpaulin_include))]
+    #[contract]
+    impl Contract {
+        #[allow(clippy::new_without_default)]
+        #[allow(dead_code)]
+        pub fn new() -> Self {
+            Self {}
+        }
 
-    #[msg(exec)]
-    fn no_args_execution(&self, _ctx: ExecCtx) -> StdResult<Response> {
-        Ok(Response::new())
-    }
+        #[msg(instantiate)]
+        pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
 
-    #[msg(exec)]
-    fn argumented_execution(
-        &self,
-        _ctx: ExecCtx,
-        _addr: Addr,
-        #[serde(default)] _coef: Decimal,
-        #[serde(default)] _desc: String,
-    ) -> StdResult<Response> {
-        Ok(Response::new())
-    }
+        #[msg(migrate)]
+        pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
 
-    #[msg(query)]
-    fn no_args_query(&self, _ctx: QueryCtx) -> StdResult<QueryResult> {
-        Ok(QueryResult {})
-    }
+        #[msg(exec)]
+        fn no_args_execution(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
 
-    #[msg(query)]
-    fn argumented_query(&self, _ctx: QueryCtx, _user: Addr) -> StdResult<QueryResult> {
-        Ok(QueryResult {})
+        #[msg(exec)]
+        fn argumented_execution(
+            &self,
+            _ctx: ExecCtx,
+            _addr: cosmwasm_std::Addr,
+            #[serde(default)] _coef: cosmwasm_std::Decimal,
+            #[serde(default)] _desc: String,
+        ) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[msg(query)]
+        fn no_args_query(&self, _ctx: QueryCtx) -> StdResult<QueryResult> {
+            Ok(QueryResult {})
+        }
+
+        #[msg(query)]
+        fn argumented_query(&self, _ctx: QueryCtx, _user: Addr) -> StdResult<QueryResult> {
+            Ok(QueryResult {})
+        }
     }
 }
 

@@ -6,7 +6,7 @@ use cw20_minting::Cw20Minting;
 use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
-#[contract]
+#[contract(module=crate::contract)]
 #[messages(cw20_minting as Cw20Minting)]
 impl Cw20Minting for Cw20Base<'_> {
     type Error = ContractError;

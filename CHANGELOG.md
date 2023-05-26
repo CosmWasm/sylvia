@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- New `BoundQuerier` and `Remote` types are generated. Their goal is to make
+  querying other contracts more intuitive.
+- `module` attr for `contract` macro no longer wraps generated code in scope.
+  As from now it will be used to provide path to contract implementation.
+
 ## \[0.4.2\] - 2023-05-24
 
 - Added support of `#[msg(reply)]` defining handler for reply messages,
