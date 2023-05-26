@@ -246,19 +246,9 @@ impl<'a> ImplInput<'a> {
         let trait_module = interfaces
             .interfaces()
             .first()
-            .map(|interface| {
-                let module = &interface.module;
-                quote! { #module ::}
-            })
-            .unwrap_or_else(|| quote! {});
+            .map(|interface| &interface.module);
+        let contract_module = self.attributes.module.as_ref();
 
-        let contract_module = self
-            .attributes
-            .module
-            .as_ref()
-            .map(|module| quote! {#module ::})
-            .unwrap_or_else(|| quote! {});
-
-        variants.emit_querier_for_bound_impl(&trait_module, &contract_module)
+        variants.emit_querier_for_bound_impl(trait_module, contract_module)
     }
 }
