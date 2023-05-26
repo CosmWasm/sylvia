@@ -149,17 +149,34 @@ impl<'a> ImplInput<'a> {
         let interfaces = Interfaces::new(self.item);
         let variants = MsgVariants::new(self.item.as_variants(), &self.generics);
 
-        if is_trait {
-            let querier_bound_for_impl = self.emit_querier_for_bound_impl(&interfaces, variants);
-
-            #[cfg(not(tarpaulin_include))]
-            return quote! {
-                #multitest_helpers
-
-                #querier_bound_for_impl
-            };
+        match is_trait {
+            true => self.process_interface(&interfaces, variants, multitest_helpers),
+            false => self.process_contract(&interfaces, variants, multitest_helpers),
         }
+    }
 
+    fn process_interface(
+        &self,
+        interfaces: &Interfaces,
+        variants: MsgVariants<'a>,
+        multitest_helpers: TokenStream,
+    ) -> TokenStream {
+        let querier_bound_for_impl = self.emit_querier_for_bound_impl(interfaces, variants);
+
+        #[cfg(not(tarpaulin_include))]
+        quote! {
+            #multitest_helpers
+
+            #querier_bound_for_impl
+        }
+    }
+
+    fn process_contract(
+        &self,
+        interfaces: &Interfaces,
+        variants: MsgVariants<'a>,
+        multitest_helpers: TokenStream,
+    ) -> TokenStream {
         let messages = self.emit_messages();
         let remote = Remote::new(&self.item.attrs).emit();
         let querier = variants.emit_querier();
