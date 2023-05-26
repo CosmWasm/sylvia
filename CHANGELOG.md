@@ -8,6 +8,8 @@ and this project adheres to
 
 - New `BoundQuerier` and `Remote` types are generated. Their goal is to make
   querying other contracts more intuitive.
+- `module` attr for `contract` macro no longer wraps generated code in scope.
+  As from now it will be used to provide path to contract implementation.
 
 ## \[0.4.2\] - 2023-05-24
 
