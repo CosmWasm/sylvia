@@ -10,10 +10,8 @@ use sylvia::types::{ExecCtx, QueryCtx};
 
 mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
-    use sylvia::{
-        interface,
-        types::{ExecCtx, QueryCtx},
-    };
+    use sylvia::interface;
+    use sylvia::types::{ExecCtx, QueryCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
