@@ -2,7 +2,7 @@
 
 This guide explains what is needed to upgrade contracts when migrating over major releases of `sylvia`. Note that you can also view the [complete CHANGELOG](https://github.com/CosmWasm/sylvia/blob/main/CHANGELOG.md) to understand the differences.
 
-## 0.4.2 -> Unreleased
+## 0.4.2 -> 0.5.0
 
 - `module` attr for macro contract should now point to your contract implemntation
 
