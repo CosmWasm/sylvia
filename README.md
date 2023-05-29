@@ -421,7 +421,7 @@ scope this attribute can and should be omitted.
 #[entry_point]
 #[contract]
 #[error(ContractError)]
-impl MyContarct {
+impl MyContract {
 ...
 }
 ```
@@ -432,25 +432,35 @@ error is being used by your contract. If omitted generated code will use `StdErr
 ```rust
 #[contract]
 #[messages(interface as Interface)]
-impl MyContarct {
+impl MyContract {
 ...
 }
 
 #[contract]
 #[messages(interface as Interface)]
-impl Interface for MyContarct {
+impl Interface for MyContract {
 ...
 }
 ```
 
 `messages` is the attribute for the `contract` macro. We can use it both when implementing contract
-and when implementing an interface on a contract.
+and when implementing an interface on a contract. It's purpose is to point sylvia to what interface
+is being implemented and how module in which it is defined is called.
+
 In case of the implementation of a trait it is only needed if the trait is defined in different
 module. Otherwise it should be omitted.
 For the contract implementation it is mandatory for the functionality of an implemented trait
 to be part of a contract logic.
 For the interface implementation there should be at most one `messages` attribute used.
 In case of the contract implementation there can be multiple `messages` attributes used.
+
+## Single module per macro
+
+Generated items and namespaces may overlap and it is suggested to split all macro calls
+into separate modules.
+This could also improve the project readability as it would end up split between semantical parts
+and save maintainers from possible adjustment in case of new features being introduced in the
+future.
 
 ## Usage in external crates
 
@@ -812,3 +822,8 @@ features for you. Here is a rough roadmap for the incoming months:
 - Better tooling support - The biggest issue of Sylvia is that code it generates
   is not trivial, and not all the tooling handles it well. We are working on improving
   user experience in that regard.
+
+## Troubleshooting
+
+- Missing messages from interface on your contract - You may be missing
+  `messages(interface as Interface)` attribute.
