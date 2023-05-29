@@ -41,7 +41,7 @@ $ cargo new --lib ./my-crate
 ```
 
 To use sylvia in the contract, you need to add couple dependencies - sylvia itself,
-and additionally: `serde`, cosmwasm-schema`, `schemars` and `cosmwasm_std`.
+and additionally: `serde`, `cosmwasm-schema`, `schemars` and `cosmwasm_std`.
 
 ```shell
 $ cargo add sylvia cosmwasm-schema schemars cosmwasm-std serde
@@ -88,13 +88,13 @@ The next step is to create an instantiation message for the contract we have:
 
 ```rust
 use sylvia::contract;
-use sylvia::types::ExecCtx;
+use sylvia::types::InstantiateCtx;
 use sylvia::cw_std::{StdResult, Response};
 
 #[contract]
 impl MyContract {
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: ExecCtx) -> StdResult<Response> {
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 }
@@ -109,15 +109,42 @@ struct InstantiateMsg {}
 
 There are no fields there at this point, but they will be when we need them.
 
-For now, we need this message to create a contract instantiate entry point for CosmWasm:
+For now, we need this message to create a contract instantiate entry point for CosmWasm.
+We can achieve it using another macro `entry_point`
 
 ```rust
-use sylvia::cw_std::{entry_point, DepsMut, Env, MessageInfo};
+use sylvia::{contract, entry_points;
+use sylvia::types::InstantiateCtx;
+use sylvia::cw_std::{StdResult, Response};
 
-#[entry_point]
-fn instantiate(deps: DepsMut, env: Env, info: MessageInfo, msg: InstantiateMsg) -> StdResult<Response> {
-    msg.dispatch(&MyContract, (deps, env, info))
+#[entry_points]
+#[contract]
+impl MyContract {
+    #[msg(instantiate)]
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+        Ok(Response::new())
+    }
 }
+```
+
+This will generate for us `instantiate`, `execute` and `query` entry points.
+Inside they will call `dispatch` on the msg received and run proper logic defined for the sent
+variant of the message.
+
+```rust
+pub mod entry_points {
+    use super::*;
+
+    #[sylvia::cw_std::entry_point]
+    pub fn instantiate(
+        deps: sylvia::cw_std::DepsMut,
+        env: sylvia::cw_std::Env,
+        info: sylvia::cw_std::MessageInfo,
+        msg: InstantiateMsg,
+    ) -> Result<sylvia::cw_std::Response, StdError> {
+        msg.dispatch(&MyContract::new(), (deps, env, info))
+            .map_err(Into::into)
+    }
 ```
 
 Now we would like to do something useful in the contract instantiation. Let's
@@ -131,27 +158,21 @@ struct MyContract<'a> {
     pub counter: Item<'a, u64>,
 }
 
+#[entry_points]
 #[contract]
 impl MyContract<'_> {
-    pub const fn new() -> MyContract<'static> {
-        MyContract {
+    pub fn new() -> Self {
+        Self {
             counter: Item::new("counter")
         }
     }
 
     #[msg(instantiate)]
-    pub fn instantiate(&self, ctx: ExecCtx) -> StdResult<Response> {
+    pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
         self.counter.save(ctx.deps.storage, &0)?;
 
         Ok(Response::new())
     }
-}
-
-const CONTRACT: MyContract = MyContract::new();
-
-#[entry_point]
-fn instantiate(deps: DepsMut, env: Env, info: MessageInfo, msg: InstantiateMsg) -> StdResult<Response> {
-    msg.dispatch(&CONTRACT, (deps, env, info))
 }
 ```
 
@@ -163,18 +184,13 @@ find it more convenient to introduce this "proxy" lifetime passing everywhere. I
 eliminate it in the `new` constructor, where I create the storage-plus accessors
 giving them proper keys.
 
-Note that I make the contract constructor const - it is possible as all my storage
-accessors are const, allowing me to create a single global contract to access entry
-points. Still, creating a contract on the entry point itself is possible - it is
-just a matter of taste.
-
 Now let's pass the initial counter state as a function argument:
 
 ```rust
 #[contract]
 impl MyContract<'_> {
     #[msg(instantiate)]
-    pub fn instantiate(&self, ctx: ExecCtx, counter: u64) -> StdResult<Response> {
+    pub fn instantiate(&self, ctx: InstantiateCtx, counter: u64) -> StdResult<Response> {
         self.counter.save(ctx.deps.storage, &counter)?;
 
         Ok(Response::new())
@@ -221,15 +237,9 @@ enum ContractExecMsg {
 
 The `ExecMsg` is the primary one you may use to send messages to the contract.
 The `ContractExecMsg` is only an additional abstraction layer that would matter
-later when we define traits for our contract. For now, we just need to use it in
-the entry point:
-
-```rust
-#[entry_point]
-fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ContractExecMsg) -> StdResult<Response> {
-    msg.dispatch(&CONTRACT, (deps, env, info))
-}
-```
+later when we define traits for our contract.
+Thanks to `entry_point` macro it is already being used in the generated entry point and we don't
+have to do it manually.
 
 One problem you might face now is that we use the `StdResult` for our contract,
 but we often want to define the custom error type for our contracts - fortunately,
@@ -238,7 +248,8 @@ it is very easy to do:
 ```rust
 use sylvia::cw_std::ensure;
 
-#[contract(error=ContractError)]
+#[contract]
+#[error(ContractError)]
 impl MyContract<'_> {
     #[msg(exec)]
     pub fn increment(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
@@ -253,20 +264,8 @@ impl MyContract<'_> {
 ```
 
 ContractError here is any error type you define for the contract - most typically
-with the [thiserror](https://docs.rs/thiserror/1.0.40/thiserror/) crate. We also
-need to update the error type in an entry points:
-
-```rust
-#[entry_point]
-fn instantiate(deps: DepsMut, env: Env, info: MessageInfo, msg: InstantiateMsg) -> Result<Response, ContractError> {
-    msg.dispatch(&CONTRACT, (deps, env, info))
-}
-
-#[entry_point]
-fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ContractExecMsg) -> Result<Response, ContractError> {
-    msg.dispatch(&CONTRACT, (deps, env, info))
-}
-```
+with the [thiserror](https://docs.rs/thiserror/1.0.40/thiserror/) crate.
+The error type in an entry points will be updated automatically.
 
 Finally, let's take a look at defining the query message:
 
@@ -279,7 +278,8 @@ pub struct CounterResp {
     pub counter: u64,
 }
 
-#[contract(error=ContractError)]
+#[contract]
+#[error(ContractError)]
 impl MyContract<'_> {
     #[msg(query)]
     pub fn counter(&self, ctx: QueryCtx) -> StdResult<CounterResp> {
@@ -297,16 +297,8 @@ result type has to implement `Into<ContractError>`, where `ContractError` is a c
 error type - it will all be commonized in the generated dispatching function (so
 entry points have to return `ContractError` as its error variant).
 
-Messages equivalent to execution messages are generated. Let's create an entry point:
-
-```rust
-use sylvia::cw_std::{Deps, Binary};
-
-#[entry_point]
-fn query(deps: Deps, env: Env, msg: ContractQueryMsg) -> Result<Binary, ContractError> {
-    msg.dispatch(&CONTRACT, (deps, env))
-}
-```
+Messages equivalent to execution messages are generated.
+Again entry point is already generated like in case of execute and instantiate.
 
 ## Interfaces
 
@@ -357,7 +349,7 @@ impl group::Group for MyContract<'_> {
 
     #[msg(exec)]
     fn add_member(&self, ctx: ExecCtx, member: String) -> Result<Response, ContractError> {
-        let member = ctx.deps.api.addr_validate(member)?;
+        let member = ctx.deps.api.addr_validate(&member)?;
         self.members.save(ctx.deps.storage, &member, &Empty {})?;
         Ok(Response::new())
     }
@@ -400,7 +392,7 @@ function signature - they must be the same for the trait and later implementatio
 Finally, every implementation block has an additional
 `#[messages(module as Identifier)]` attribute. Sylvia needs it to generate the dispatching
 properly - there is the limitation that every macro has access only to its local
-item. In particular - we cannot see all traits implemented by a type and their
+scope. In particular - we cannot see all traits implemented by a type and their
 implementation from the `#[contract]` crate.
 
 To solve this issue, we put this `#[messages(...)]` attribute pointing to Sylvia
@@ -409,6 +401,66 @@ for this interface (it would be used in generated code to provide proper enum va
 
 The impl-block with trait implementation also contains the `#[messages]` attribute,
 but only one - the one with info about the trait being implemented.
+
+## Macro attributes
+
+`Sylvia` work with multiple attributes. I will explain here how and when to use which of them.
+
+```rust
+#[contract(module=contract_module::inner_module)]
+impl Interface for MyContract {
+...
+}
+```
+
+`module` is meant to be used when implementing interface on the contract. It's purpose
+is to inform `sylvia` where is the contract defined. If the contract is implemented in the same
+scope this attribute can and should be omitted.
+
+```rust
+#[entry_point]
+#[contract]
+#[error(ContractError)]
+impl MyContract {
+...
+}
+```
+
+`error` is used by both `contract` and `entry_point` macros. It is neccessary in case a custom
+error is being used by your contract. If omitted generated code will use `StdError`.
+
+```rust
+#[contract]
+#[messages(interface as Interface)]
+impl MyContract {
+...
+}
+
+#[contract]
+#[messages(interface as Interface)]
+impl Interface for MyContract {
+...
+}
+```
+
+`messages` is the attribute for the `contract` macro. We can use it both when implementing contract
+and when implementing an interface on a contract. It's purpose is to point sylvia to what interface
+is being implemented and how module in which it is defined is called.
+
+In case of the implementation of a trait it is only needed if the trait is defined in different
+module. Otherwise it should be omitted.
+For the contract implementation it is mandatory for the functionality of an implemented trait
+to be part of a contract logic.
+For the interface implementation there should be at most one `messages` attribute used.
+In case of the contract implementation there can be multiple `messages` attributes used.
+
+## Single module per macro
+
+Generated items and namespaces may overlap and it is suggested to split all macro calls
+into separate modules.
+This could also improve the project readability as it would end up split between semantical parts
+and save maintainers from possible adjustment in case of new features being introduced in the
+future.
 
 ## Usage in external crates
 
@@ -430,7 +482,7 @@ modules. To send messages to the contract, we can just use them:
 use sylvia::cw_std::{WasmMsg, to_binary};
 
 fn some_handler(my_contract_addr: String) -> StdResult<Response> {
-    let msg = my_contract_crate::Execute::Increment {};
+    let msg = my_contract_crate::ExecMsg::Increment {};
     let msg = WasmMsg::ExecMsg {
         contract_addr: my_contract_addr,
         msg: to_binary(&msg)?,
@@ -459,6 +511,93 @@ with `ExecMsg/QueryMsg` - the former is generated only for contract, not for int
 and is not meant to use to send messages to the contract - their purpose is for proper
 messages dispatching only, and should not be used besides the entry points.
 
+## Query helpers
+
+To make querying more user friendly `Sylvia` generates `BoundQuerier` and `Remote` helpers.
+The latter is meant to store the address of some remote contract. It's generated implementation
+looks like this:
+
+```rust
+#[derive(sylvia::serde::Serialize, sylvia::serde::Deserialize)]
+pub struct Remote<'a>(std::borrow::Cow<'a, sylvia::cw_std::Addr>);
+
+impl Remote<'_> {
+    pub fn querier<'a, C: sylvia::cw_std::CustomQuery>(
+        &'a self,
+        querier: &'a sylvia::cw_std::QuerierWrapper<'a, C>,
+    ) -> BoundQuerier<'a, C> {
+        BoundQuerier {
+            contract: &self.0,
+            querier,
+        }
+    }
+}
+```
+
+It has a single method implemented called querier which returns the `BoundQuerier` for the stored
+address.
+
+```rust
+
+pub struct BoundQuerier<'a, C: sylvia::cw_std::CustomQuery> {
+    contract: &'a sylvia::cw_std::Addr,
+    querier: &'a sylvia::cw_std::QuerierWrapper<'a, C>,
+}
+
+impl<'a, C: sylvia::cw_std::CustomQuery> Querier for BoundQuerier<'a, C> {
+    fn counter(&self) -> Result<CounterResp, sylvia::cw_std::StdError> {
+        let query = QueryMsg::counter();
+        self.querier.query_wasm_smart(self.contract, &query)
+    }
+}
+
+pub trait Querier {
+    fn counter(&self) -> Result<CounterResp, sylvia::cw_std::StdError>;
+}
+```
+
+For each query method in the contract `Sylvia` will implement via generated `Querier` trait
+method for more user friendly querying.
+
+Let's modify the query from the previous paragraph. Currently it will look as follows:
+
+```rust
+let is_member = Remote::new(remote_addr)
+    .querier(&ctx.deps.querier)
+    .is_member(addr)?;
+```
+
+Your contract might be implemented such it will be communicating with some other contract regularly.
+In such case you might want to store it as a field in your Contract:
+
+```rust
+pub struct MyContract<'a> {
+    counter: Item<'a, u64>,
+    members: Map<'a, &'a Addr, Empty>,
+    // Added
+    remote: Item<'a, Remote<'static>>,
+}
+
+#[msg(exec)]
+pub fn evaluate_member(&self, ctx: ExecCtx, ...) -> StdResult<Response> {
+    let is_member = self
+        .remote
+        .load(ctx.deps.storage)?
+        .querier(&ctx.deps.querier)
+        .is_member(addr)?;
+}
+```
+
+`Remote` and `BoundQuerier` types are also generated for the interfaces and you can use them too.
+Also using the implemented `From` trait you can convert from `contract::BoundQuerier` to
+`interface::BoundQuerier`.
+
+```rust
+let remote = self.remote.load(ctx.deps.storage)?;
+let querier = remote.querier(&ctx.deps.querier);
+let other_count = BoundQuerier::from(&querier).count()?.count;
+```
+
 ## Using not implemented entry points
 
 Sylvia is not yet implementing all the possible CosmWasm entry points, and even
@@ -470,7 +609,9 @@ see how to implement replies for messages:
 ```rust
 use sylvia::cw_std::{DepsMut, Env, Reply, Response};
 
-#[contract(error = ContractError)]
+#[contract]
+#[entry_point]
+#[error(ContractError)]
 #[messages(group as Group)]
 impl MyContract<'_> {
     fn reply(&self, deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
@@ -481,7 +622,7 @@ impl MyContract<'_> {
 
 #[entry_point]
 fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
-    CONTRACT.reply(deps, env, reply)
+    &MyContract::new().reply(deps, env, reply)
 }
 ```
 
@@ -525,7 +666,7 @@ thiserror = "1.0.40"
 sylvia = { path = "0.3.2", features = ["mt"] }
 ```
 
-There would obviously be more dependencies - most probably `cw-strorage-plus`,
+There would obviously be more dependencies - most probably `cw-storage-plus`,
 but this is just to show how I enable the `mt` flag. With that, we can use mt
 utils in the contract:
 
@@ -667,19 +808,22 @@ implementation.
 Sylvia is in the adoption stage right now, but we are still working on more and more
 features for you. Here is a rough roadmap for the incoming months:
 
-* Entry points generation - You will no longer need to write the entry points boilerplate
-  yourself! Sylvia can do it for you.
-* Queriers helpers - As queries are not using any actor-model flow, we want to be
-  able just to query the contract with some nice helpers - and we will. Querying
-  external contracts would be as simple as calling them in multi-tests!
-* Replies - Sylvia still needs support for essential CosmWasm messages, which are
+- CustomMsg and CustomQuery support - Currently in progress
+- Sudo support - Although you can define your own sudo entry point it is currently
+  not supported in generated multitest helpers.
+- Replies - Sylvia still needs support for essential CosmWasm messages, which are
   replies. We want to make them smart, so expressing the correlation between send
   message end executed handler is more direct and not hidden in the reply dispatcher.
-* Migrations - Another important message we don't support, but the reason is similar
+- Migrations - Another important message we don't support, but the reason is similar
   to replies - we want them to be smart. We want to give you a nice way to provide
   upgrading Api for your contract, which would take care of its versioning.
-* IBC - we want to give you a nice IBC Api too! However, expect it to be a
+- IBC - we want to give you a nice IBC Api too! However, expect it to be a
   while - we must first understand the best patterns here.
-* Better tooling support - The biggest issue of Sylvia is that code it generates
+- Better tooling support - The biggest issue of Sylvia is that code it generates
   is not trivial, and not all the tooling handles it well. We are working on improving
   user experience in that regard.
+
+## Troubleshooting
+
+- Missing messages from interface on your contract - You may be missing
+  `messages(interface as Interface)` attribute.
