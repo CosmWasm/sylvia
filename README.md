@@ -238,22 +238,8 @@ enum ContractExecMsg {
 The `ExecMsg` is the primary one you may use to send messages to the contract.
 The `ContractExecMsg` is only an additional abstraction layer that would matter
 later when we define traits for our contract.
-Thanks to `entry_point` macro it is already being used in the generated entry point:
-
-```rust
-pub mod entry_points {
-    #[sylvia::cw_std::entry_point]
-    pub fn execute(
-        deps: sylvia::cw_std::DepsMut,
-        env: sylvia::cw_std::Env,
-        info: sylvia::cw_std::MessageInfo,
-        msg: ContractExecMsg,
-    ) -> Result<sylvia::cw_std::Response, StdError> {
-        msg.dispatch(&MyContract::new(), (deps, env, info))
-            .map_err(Into::into)
-    }
-}
-```
+Thanks to `entry_point` macro it is already being used in the generated entry point and we don't
+have to do it manually.
 
 One problem you might face now is that we use the `StdResult` for our contract,
 but we often want to define the custom error type for our contracts - fortunately,
@@ -312,20 +298,7 @@ error type - it will all be commonized in the generated dispatching function (so
 entry points have to return `ContractError` as its error variant).
 
 Messages equivalent to execution messages are generated.
-Again entry point is already generated and ready to be used:
-
-```rust
-pub mod entry_points {
-    #[entry_points]
-    pub fn query(
-        deps: sylvia::cw_std::Deps,
-        env: sylvia::cw_std::Env,
-        msg: ContractQueryMsg,
-    ) -> Result<sylvia::cw_std::Binary, sylvia::cw_std::StdError> {
-        msg.dispatch(&MyContract::new(), (deps, env)).map_err(Into::into)
-    }
-}
-```
+Again entry point is already generated like in case of execute and instantiate.
 
 ## Interfaces
 
@@ -442,7 +415,7 @@ impl Interface for MyContract {
 
 `module` is meant to be used when implementing interface on the contract. It's purpose
 is to inform `sylvia` where is the contract defined. If the contract is implemented in the same
-scope this attribute can and should be omitted. 
+scope this attribute can and should be omitted.
 
 ```rust
 #[entry_point]
@@ -454,7 +427,7 @@ impl MyContarct {
 ```
 
 `error` is used by both `contract` and `entry_point` macros. It is neccessary in case a custom
-error is being used by your contract. If omitted generated code will use `StdError`. 
+error is being used by your contract. If omitted generated code will use `StdError`.
 
 ```rust
 #[contract]
@@ -474,10 +447,10 @@ impl Interface for MyContarct {
 and when implementing an interface on a contract.
 In case of the implementation of a trait it is only needed if the trait is defined in different
 module. Otherwise it should be omitted.
-For the contract implementation it is mandatory for the functionality of an implemented trait 
+For the contract implementation it is mandatory for the functionality of an implemented trait
 to be part of a contract logic.
-For the second usage in example there should be at most one `messages` attribute used.
-In case of the first usage there can be multiple `messages` attributes used.
+For the interface implementation there should be at most one `messages` attribute used.
+In case of the contract implementation there can be multiple `messages` attributes used.
 
 ## Usage in external crates
 
@@ -592,7 +565,7 @@ pub struct MyContract<'a> {
     counter: Item<'a, u64>,
     members: Map<'a, &'a Addr, Empty>,
     // Added
-    remote: Item<'a, Remote<'a>>,
+    remote: Item<'a, Remote<'static>>,
 }
 
 #[msg(exec)]
