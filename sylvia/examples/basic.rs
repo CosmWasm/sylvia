@@ -1,8 +1,8 @@
 use anyhow::Error;
-use cosmwasm_std::{Addr, Response, StdError};
+use cosmwasm_std::{Addr, Response};
 use cw_storage_plus::{Item, Map};
-use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
-use sylvia::{contract, interface};
+use sylvia::contract;
+use sylvia::types::InstantiateCtx;
 
 #[derive(
     sylvia::serde::Serialize,
@@ -32,7 +32,12 @@ pub struct MemberResp {
 }
 
 mod group {
-    use super::*;
+    use anyhow::Error;
+    use cosmwasm_std::{Response, StdError};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
+
+    use crate::{GroupContract, Member, MemberResp};
 
     #[interface]
     pub trait Group {
@@ -57,7 +62,7 @@ mod group {
         fn member(&self, ctx: QueryCtx, addr: String) -> Result<MemberResp, Self::Error>;
     }
 
-    #[contract]
+    #[contract(module=super)]
     impl Group for GroupContract {
         type Error = Error;
 
@@ -98,7 +103,7 @@ impl Default for GroupContract {
     }
 }
 
-#[contract(module=contract)]
+#[contract]
 #[error(Error)]
 #[messages(group as Group)]
 impl GroupContract {

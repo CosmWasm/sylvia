@@ -34,7 +34,7 @@ pub mod counter {
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
 
-    #[contract]
+    #[contract(module=super)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
@@ -52,9 +52,13 @@ pub mod counter {
 
         #[msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
-            let remote = self.remote.load(ctx.deps.storage)?;
-            let querier = remote.querier(&ctx.deps.querier);
-            let other_count = BoundQuerier::from(&querier).count()?.count;
+            let other_count = self
+                .remote
+                .load(ctx.deps.storage)?
+                .querier(&ctx.deps.querier)
+                .count()?
+                .count;
+
             self.count.save(ctx.deps.storage, &other_count)?;
             Ok(Response::new())
         }

@@ -18,7 +18,7 @@ pub trait Receiver {
     ) -> Result<Response, Self::Error>;
 }
 
-#[contract]
+#[contract(module=crate::multitest::receiver_contract)]
 impl Receiver for ReceiverContract {
     type Error = StdError;
 

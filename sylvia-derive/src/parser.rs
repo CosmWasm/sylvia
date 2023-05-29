@@ -20,7 +20,7 @@ pub struct InterfaceArgs {
 /// Parser arguments for `contract` macro
 pub struct ContractArgs {
     /// Module name wrapping generated messages, by default no additional module is created
-    pub module: Option<Ident>,
+    pub module: Option<Path>,
 }
 
 impl Parse for InterfaceArgs {

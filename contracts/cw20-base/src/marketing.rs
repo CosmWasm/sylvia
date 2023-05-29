@@ -7,7 +7,7 @@ use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
 use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
-#[contract]
+#[contract(module=crate::contract)]
 #[messages(cw20_marketing as Cw20Marketing)]
 impl Cw20Marketing for Cw20Base<'_> {
     type Error = ContractError;
