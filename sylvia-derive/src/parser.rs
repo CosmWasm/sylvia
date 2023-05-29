@@ -124,20 +124,19 @@ impl MsgType {
 
         let sylvia = crate_module();
 
-        match (self, msg_type) {
-            (Exec, Some(msg_type))
-            | (Instantiate, Some(msg_type))
-            | (Migrate, Some(msg_type))
-            | (Reply, Some(msg_type)) => {
+        #[cfg(not(tarpaulin_include))]
+        let response_type = msg_type
+            .as_ref()
+            .map(|ty| quote! { #sylvia ::cw_std::Response< #ty > })
+            .unwrap_or_else(|| quote! { #sylvia ::cw_std::Response });
+
+        match self {
+            Exec | Instantiate | Migrate | Reply => {
                 quote! {
-                    std::result::Result<#sylvia ::cw_std::Response<#msg_type>, #err_type>
+                    std::result::Result<#response_type, #err_type>
                 }
             }
-            (Exec, None) | (Instantiate, None) | (Migrate, None) | (Reply, None) => quote! {
-                std::result::Result<#sylvia ::cw_std::Response, #err_type>
-            },
-
-            (Query, _) => quote! {
+            Query => quote! {
                 std::result::Result<#sylvia ::cw_std::Binary, #err_type>
             },
         }
