@@ -123,15 +123,17 @@ impl MsgType {
         use MsgType::*;
 
         let sylvia = crate_module();
-        let msg_type = msg_type
+
+        #[cfg(not(tarpaulin_include))]
+        let response_type = msg_type
             .as_ref()
-            .map(|ty| quote! { < #ty > })
-            .unwrap_or_else(|| quote! {});
+            .map(|ty| quote! { #sylvia ::cw_std::Response< #ty > })
+            .unwrap_or_else(|| quote! { #sylvia ::cw_std::Response });
 
         match self {
             Exec | Instantiate | Migrate | Reply => {
                 quote! {
-                    std::result::Result<#sylvia ::cw_std::Response #msg_type, #err_type>
+                    std::result::Result<#response_type, #err_type>
                 }
             }
             Query => quote! {
