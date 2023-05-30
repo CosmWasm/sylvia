@@ -12,12 +12,8 @@ categories = ["api-bindings", "wasm"]
 
 [features]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow", "dep:derivative"]
-stargate = [
-    "cosmwasm-std/stargate",
-    "dep:cw-multi-test",
-    "cw-multi-test/stargate",
-]
-staking = ["cosmwasm-std/staking", "dep:cw-multi-test", "cw-multi-test/staking"]
+stargate = ["cosmwasm-std/stargate", "cw-multi-test?/stargate"]
+staking = ["cosmwasm-std/staking", "cw-multi-test?/staking"]
 
 [dependencies]
 sylvia-derive = { version = "0.5.0", path = "../sylvia-derive" }
