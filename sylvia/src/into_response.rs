@@ -24,10 +24,10 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             CosmosMsg::Stargate { type_url, value } => CosmosMsg::Stargate { type_url, value },
             #[cfg(feature = "stargate")]
             CosmosMsg::Gov(msg) => CosmosMsg::Gov(msg),
-            _ => Err(StdError::generic_err(format!(
+            _ => return Err(StdError::generic_err(format!(
                 "Unknown message variant: {:?}. Please make sure you are using up-to-date Sylvia version, and if so please issue this bug on the Sylvia repository.",
                 self
-            )))?,
+            ))),
         };
 
         Ok(SubMsg {
@@ -45,11 +45,11 @@ pub trait IntoResponse<T> {
 
 impl<T> IntoResponse<T> for Response<Empty> {
     fn into_response(self) -> StdResult<Response<T>> {
-        let messages = self
+        let messages: Vec<_> = self
             .messages
             .into_iter()
             .map(|msg| msg.into_msg())
-            .collect::<StdResult<Vec<_>>>()?;
+            .collect::<StdResult<_>>()?;
         let mut resp = Response::new()
             .add_submessages(messages.into_iter())
             .add_events(self.events)
