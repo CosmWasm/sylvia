@@ -25,7 +25,7 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             #[cfg(feature = "stargate")]
             CosmosMsg::Gov(msg) => CosmosMsg::Gov(msg),
             _ => Err(StdError::generic_err(format!(
-                "Unknown message variant: {:?}",
+                "Unknown message variant: {:?}. Please make sure you are using up-to-date Sylvia version, and if so please issue this bug on the Sylvia repository.",
                 self
             )))?,
         };
