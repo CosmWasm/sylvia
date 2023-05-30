@@ -12,6 +12,7 @@ categories = ["api-bindings", "wasm"]
 
 [features]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow", "dep:derivative"]
+stargate = []
 
 [dependencies]
 sylvia-derive = { version = "0.5.0", path = "../sylvia-derive" }

@@ -16,7 +16,9 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             CosmosMsg::Custom(_) => Err(StdError::generic_err(
                 "Custom Empty message should not be sent",
             ))?,
+            #[cfg(feature = "stargate")]
             CosmosMsg::Ibc(ibc) => CosmosMsg::Ibc(ibc),
+            #[cfg(feature = "stargate")]
             CosmosMsg::Stargate { type_url, value } => CosmosMsg::Stargate { type_url, value },
             _ => Err(StdError::generic_err(format!(
                 "Unknown message variant: {:?}",
