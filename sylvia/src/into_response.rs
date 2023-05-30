@@ -11,7 +11,9 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
         let msg = match self.msg {
             CosmosMsg::Wasm(wasm) => CosmosMsg::Wasm(wasm),
             CosmosMsg::Bank(bank) => CosmosMsg::Bank(bank),
+            #[cfg(feature = "staking")]
             CosmosMsg::Staking(staking) => CosmosMsg::Staking(staking),
+            #[cfg(feature = "staking")]
             CosmosMsg::Distribution(distribution) => CosmosMsg::Distribution(distribution),
             CosmosMsg::Custom(_) => Err(StdError::generic_err(
                 "Custom Empty message should not be sent",
@@ -20,6 +22,8 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             CosmosMsg::Ibc(ibc) => CosmosMsg::Ibc(ibc),
             #[cfg(feature = "stargate")]
             CosmosMsg::Stargate { type_url, value } => CosmosMsg::Stargate { type_url, value },
+            #[cfg(feature = "stargate")]
+            CosmosMsg::Gov(msg) => CosmosMsg::Gov(msg),
             _ => Err(StdError::generic_err(format!(
                 "Unknown message variant: {:?}",
                 self
