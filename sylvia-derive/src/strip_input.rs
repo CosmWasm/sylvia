@@ -57,7 +57,11 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !(attr.path.is_ident("messages") || attr.path.is_ident("error")))
+            .filter(|attr| {
+                !(attr.path.is_ident("messages")
+                    || attr.path.is_ident("error")
+                    || (attr.path.segments.len() == 2 && attr.path.segments[0].ident == "sv"))
+            })
             .collect();
 
         fold::fold_item_impl(self, ItemImpl { attrs, ..i })

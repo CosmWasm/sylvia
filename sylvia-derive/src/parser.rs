@@ -3,7 +3,9 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
-use syn::{parenthesized, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token, Type};
+use syn::{
+    parenthesized, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token, Type,
+};
 
 use crate::crate_module;
 
@@ -341,4 +343,90 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
         );
     }
     Some((method, msg_attr))
+}
+
+#[derive(Debug)]
+pub struct Custom {
+    _msg: Option<Path>,
+    _query: Option<Path>,
+}
+
+impl Custom {
+    pub fn new(source: &ItemImpl) -> Self {
+        let custom: Vec<_> = source
+            .attrs
+            .iter()
+            .filter(|attr| is_sylvia_attribute(attr, "custom"))
+            .filter_map(|attr| {
+                let custom = match Custom::parse.parse2(attr.tokens.clone()) {
+                    Ok(custom) => custom,
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        return None;
+                    }
+                };
+
+                Some(custom)
+            })
+            .collect();
+
+        match custom.len() {
+            0 => Self {
+                _msg: None,
+                _query: None,
+            },
+            1 => custom.into_iter().next().unwrap(),
+            _ => {
+                emit_error!(
+                    source.span(),
+                    "More than one `custom` attribute defined. It should be only one"
+                );
+                Self {
+                    _msg: None,
+                    _query: None,
+                }
+            }
+        }
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
+impl Parse for Custom {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let content;
+        parenthesized!(content in input);
+        let mut msg = None;
+        let mut query = None;
+
+        while !content.is_empty() {
+            let ty: Ident = content.parse()?;
+            let _: Token![=] = content.parse()?;
+            if ty == "msg" {
+                msg = Some(content.parse()?)
+            } else if ty == "query" {
+                query = Some(content.parse()?)
+            } else {
+                return Err(Error::new(
+                    ty.span(),
+                    "Invalid custom type. Expected msg or query",
+                ));
+            };
+            if !content.peek(Token![,]) {
+                break;
+            }
+            let _: Token![,] = content.parse()?;
+        }
+
+        Ok(Self {
+            _msg: msg,
+            _query: query,
+        })
+    }
+}
+
+pub fn is_sylvia_attribute(attr: &&Attribute, attr_name: &str) -> bool {
+    attr.path.segments.len() == 2
+        && attr.path.segments[0].ident == "sv"
+        && attr.path.segments[1].ident == attr_name
 }

@@ -9,7 +9,7 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
-use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+use crate::parser::{ContractArgs, ContractErrorAttr, Custom, InterfaceArgs, MsgType};
 use crate::remote::Remote;
 use crate::variant_descs::AsVariantDescs;
 
@@ -148,6 +148,7 @@ impl<'a> ImplInput<'a> {
 
         let interfaces = Interfaces::new(self.item);
         let variants = MsgVariants::new(self.item.as_variants(), &self.generics);
+        let _ = Custom::new(self.item);
 
         match is_trait {
             true => self.process_interface(&interfaces, variants, multitest_helpers),
