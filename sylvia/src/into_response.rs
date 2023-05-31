@@ -8,6 +8,7 @@ pub trait IntoMsg<C> {
 /// `SubMsg<Empty>` can be made into any `SubMsg<C>`
 impl<C> IntoMsg<C> for SubMsg<Empty> {
     fn into_msg(self) -> StdResult<SubMsg<C>> {
+        #[cfg(not(tarpaulin_include))]
         let msg = match self.msg {
             CosmosMsg::Wasm(wasm) => CosmosMsg::Wasm(wasm),
             CosmosMsg::Bank(bank) => CosmosMsg::Bank(bank),
@@ -62,7 +63,7 @@ impl<T> IntoResponse<T> for Response<Empty> {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{CosmosMsg, CustomMsg, Empty, Response, StdError};
+    use cosmwasm_std::{BankMsg, CosmosMsg, CustomMsg, Empty, Response, StdError};
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
@@ -76,7 +77,13 @@ mod tests {
     #[test]
     fn into_custom() {
         let resp = Response::<Empty>::default();
+        let _: Response<MyMsg> = resp.into_response().unwrap();
 
+        let mut resp = Response::<Empty>::default();
+        resp = resp.add_message(CosmosMsg::Bank(BankMsg::Send {
+            to_address: "some_address".to_owned(),
+            amount: vec![],
+        }));
         let _: Response<MyMsg> = resp.into_response().unwrap();
     }
 
