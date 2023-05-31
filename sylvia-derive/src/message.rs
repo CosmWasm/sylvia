@@ -1,7 +1,8 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
-    parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
+    parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, InterfaceArgs, MsgAttr,
+    MsgType,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -1054,12 +1055,14 @@ pub struct EntryPoints {
     name: Type,
     error: Type,
     reply: Option<Ident>,
+    custom: Custom,
 }
 
 impl EntryPoints {
     pub fn new(source: &ItemImpl) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
+        let custom = Custom::new(source);
 
         let error = source
             .attrs
@@ -1083,12 +1086,25 @@ impl EntryPoints {
             .find(|variant| variant.msg_type == MsgType::Reply)
             .map(|variant| variant.function_name.clone());
 
-        Self { name, error, reply }
+        Self {
+            name,
+            error,
+            reply,
+            custom,
+        }
     }
 
     pub fn emit(&self) -> TokenStream {
-        let Self { name, error, reply } = self;
+        let Self {
+            name,
+            error,
+            reply,
+            custom,
+        } = self;
         let sylvia = crate_module();
+        let resp = custom.emit_response();
+        let _ = custom.emit_deps();
+        let _ = custom.emit_deps_mut();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1099,7 +1115,7 @@ impl EntryPoints {
                         deps: #sylvia ::cw_std::DepsMut,
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp, #error> {
                         #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
                     }
                 },
@@ -1116,7 +1132,7 @@ impl EntryPoints {
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: InstantiateMsg,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp, #error> {
                         msg.dispatch(&#name ::new() , (deps, env, info)).map_err(Into::into)
                     }
 
@@ -1126,7 +1142,7 @@ impl EntryPoints {
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: ContractExecMsg,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp, #error> {
                         msg.dispatch(&#name ::new(), (deps, env, info)).map_err(Into::into)
                     }
 

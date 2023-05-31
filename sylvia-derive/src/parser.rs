@@ -347,8 +347,8 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
 }
 
 pub struct Custom {
-    _msg: Path,
-    _query: Path,
+    msg: Path,
+    query: Path,
 }
 
 impl Default for Custom {
@@ -356,8 +356,8 @@ impl Default for Custom {
         let sylvia = crate_module();
 
         Self {
-            _msg: parse_quote!(#sylvia ::cw_std::Empty),
-            _query: parse_quote!(#sylvia ::cw_std::Empty),
+            msg: parse_quote!(#sylvia ::cw_std::Empty),
+            query: parse_quote!(#sylvia ::cw_std::Empty),
         }
     }
 }
@@ -396,6 +396,36 @@ impl Custom {
             }
         }
     }
+
+    pub fn emit_response(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let msg = &self.msg;
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! { #sylvia ::cw_std::Response< #msg > }
+        }
+    }
+
+    pub fn emit_deps(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let query = &self.query;
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! { #sylvia ::cw_std::Deps< #query > }
+        }
+    }
+
+    pub fn emit_deps_mut(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let query = &self.query;
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! { #sylvia ::cw_std::DepsMut< #query > }
+        }
+    }
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -410,9 +440,9 @@ impl Parse for Custom {
             let ty: Ident = content.parse()?;
             let _: Token![=] = content.parse()?;
             if ty == "msg" {
-                custom._msg = content.parse()?
+                custom.msg = content.parse()?
             } else if ty == "query" {
-                custom._query = content.parse()?
+                custom.query = content.parse()?
             } else {
                 return Err(Error::new(
                     ty.span(),

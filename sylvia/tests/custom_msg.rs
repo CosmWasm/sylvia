@@ -1,8 +1,8 @@
 use cosmwasm_std::{CustomMsg, CustomQuery, Response, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::contract;
 use sylvia::types::InstantiateCtx;
+use sylvia::{contract, entry_points};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
 struct MyMsg;
@@ -16,6 +16,7 @@ impl CustomQuery for MyMsg {}
 
 pub struct MyContract;
 
+#[entry_points]
 #[contract]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
@@ -26,6 +27,11 @@ impl MyContract {
 
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+        Ok(Response::default())
+    }
+
+    #[msg(exec)]
+    pub fn some_exec(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::default())
     }
 }
