@@ -31,6 +31,8 @@ pub struct StructMessage<'a> {
     full_where: Option<&'a WhereClause>,
     result: &'a ReturnType,
     msg_attr: MsgAttr,
+    custom: &'a Custom,
+    error: &'a Type,
 }
 
 impl<'a> StructMessage<'a> {
@@ -39,6 +41,8 @@ impl<'a> StructMessage<'a> {
         source: &'a ItemImpl,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
+        custom: &'a Custom,
+        error: &'a Type,
     ) -> Option<StructMessage<'a>> {
         let mut generics_checker = CheckGenerics::new(generics);
 
@@ -64,6 +68,8 @@ impl<'a> StructMessage<'a> {
             full_where: source.generics.where_clause.as_ref(),
             result: &method.sig.output,
             msg_attr,
+            custom,
+            error,
         })
     }
 
@@ -93,6 +99,8 @@ impl<'a> StructMessage<'a> {
             full_where,
             result,
             msg_attr,
+            custom,
+            error,
         } = self;
 
         let where_clause = if !wheres.is_empty() {
@@ -104,6 +112,9 @@ impl<'a> StructMessage<'a> {
         };
 
         let ctx_type = msg_attr.msg_type().emit_ctx_type();
+        let result = msg_attr
+            .msg_type()
+            .emit_result_type(custom.emit_response(), error);
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
         let parameters = fields.iter().map(|field| {
             let name = field.name;
@@ -144,7 +155,7 @@ impl<'a> StructMessage<'a> {
                     }
 
                     pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
-                        #result #full_where
+                        -> #result #full_where
                     {
                         let Self { #(#fields_names,)* } = self;
                         contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
@@ -166,7 +177,7 @@ pub struct EnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    args: &'a InterfaceArgs,
+    custom: &'a Custom,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -175,7 +186,7 @@ impl<'a> EnumMessage<'a> {
         source: &'a ItemTrait,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
-        args: &'a InterfaceArgs,
+        custom: &'a Custom,
     ) -> Self {
         let trait_name = &source.ident;
 
@@ -217,7 +228,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
-            args,
+            custom,
         }
     }
 
@@ -234,7 +245,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where,
             msg_ty,
-            args,
+            custom,
         } = self;
 
         let match_arms = variants
@@ -257,7 +268,8 @@ impl<'a> EnumMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let dispatch_type = msg_ty.emit_result_type(&args.msg_type, &parse_quote!(C::Error));
+        let dispatch_type =
+            msg_ty.emit_result_type(custom.emit_response(), &parse_quote!(C::Error));
 
         let all_generics = if all_generics.is_empty() {
             quote! {}
@@ -331,6 +343,7 @@ pub struct ContractEnumMessage<'a> {
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a Type,
+    custom: &'a Custom,
 }
 
 impl<'a> ContractEnumMessage<'a> {
@@ -340,6 +353,7 @@ impl<'a> ContractEnumMessage<'a> {
         ty: MsgType,
         generics: &'a [&'a GenericParam],
         error: &'a Type,
+        custom: &'a Custom,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
         let variants: Vec<_> = source
@@ -372,6 +386,7 @@ impl<'a> ContractEnumMessage<'a> {
             msg_ty: ty,
             contract: &source.self_ty,
             error,
+            custom,
         }
     }
 
@@ -384,6 +399,7 @@ impl<'a> ContractEnumMessage<'a> {
             msg_ty,
             contract,
             error,
+            custom,
         } = self;
 
         let match_arms = variants
@@ -400,7 +416,7 @@ impl<'a> ContractEnumMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type();
         let contract = StripGenerics.fold_type((*contract).clone());
-        let ret_type = msg_ty.emit_result_type(&None, error);
+        let ret_type = msg_ty.emit_result_type(custom.emit_response(), error);
 
         #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
@@ -822,6 +838,7 @@ pub struct GlueMessage<'a> {
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a Type,
+    custom: &'a Custom,
 }
 
 impl<'a> GlueMessage<'a> {
@@ -836,7 +853,13 @@ impl<'a> GlueMessage<'a> {
         syn::Ident::new(&format!("{}{}", module_name, name), name.span())
     }
 
-    pub fn new(name: &'a Ident, source: &'a ItemImpl, msg_ty: MsgType, error: &'a Type) -> Self {
+    pub fn new(
+        name: &'a Ident,
+        source: &'a ItemImpl,
+        msg_ty: MsgType,
+        error: &'a Type,
+        custom: &'a Custom,
+    ) -> Self {
         let interfaces: Vec<_> = source
             .attrs
             .iter()
@@ -860,6 +883,7 @@ impl<'a> GlueMessage<'a> {
             contract: &source.self_ty,
             msg_ty,
             error,
+            custom,
         }
     }
 
@@ -872,6 +896,7 @@ impl<'a> GlueMessage<'a> {
             contract,
             msg_ty,
             error,
+            custom,
         } = self;
         let contract = StripGenerics.fold_type((*contract).clone());
         let contract_name = Ident::new(&format!("Contract{}", name), name.span());
@@ -946,7 +971,7 @@ impl<'a> GlueMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let ret_type = msg_ty.emit_result_type(&None, error);
+        let ret_type = msg_ty.emit_result_type(custom.emit_response(), error);
 
         let mut response_schemas: Vec<TokenStream> = interfaces
             .iter()
@@ -1062,7 +1087,7 @@ impl EntryPoints {
     pub fn new(source: &ItemImpl) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
-        let custom = Custom::new(source);
+        let custom = Custom::new(&source.attrs, source.span());
 
         let error = source
             .attrs

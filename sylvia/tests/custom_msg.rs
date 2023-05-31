@@ -26,13 +26,13 @@ impl MyContract {
     }
 
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
-        Ok(Response::default())
+    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response<MyMsg>> {
+        Ok(Response::<MyMsg>::default())
     }
 
     #[msg(exec)]
-    pub fn some_exec(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
-        Ok(Response::default())
+    pub fn some_exec(&self, _ctx: InstantiateCtx) -> StdResult<Response<MyMsg>> {
+        Ok(Response::<MyMsg>::default())
     }
 }
 

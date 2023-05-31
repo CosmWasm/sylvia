@@ -9,7 +9,7 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
-use crate::parser::{ContractArgs, ContractErrorAttr, InterfaceArgs, MsgType};
+use crate::parser::{ContractArgs, ContractErrorAttr, Custom, InterfaceArgs, MsgType};
 use crate::remote::Remote;
 use crate::variant_descs::AsVariantDescs;
 
@@ -18,6 +18,7 @@ pub struct TraitInput<'a> {
     attributes: &'a InterfaceArgs,
     item: &'a ItemTrait,
     generics: Vec<&'a GenericParam>,
+    custom: Custom,
 }
 
 /// Preprocessed `contract` macro input for non-trait impl block
@@ -26,6 +27,7 @@ pub struct ImplInput<'a> {
     error: Type,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
+    custom: Custom,
 }
 
 impl<'a> TraitInput<'a> {
@@ -46,10 +48,13 @@ impl<'a> TraitInput<'a> {
             );
         }
 
+        let custom = Custom::new(&item.attrs, item.span());
+
         Self {
             attributes,
             item,
             generics,
+            custom,
         }
     }
 
@@ -83,16 +88,8 @@ impl<'a> TraitInput<'a> {
     }
 
     fn emit_messages(&self) -> TokenStream {
-        let exec = self.emit_msg(
-            &Ident::new("ExecMsg", Span::mixed_site()),
-            MsgType::Exec,
-            self.attributes,
-        );
-        let query = self.emit_msg(
-            &Ident::new("QueryMsg", Span::mixed_site()),
-            MsgType::Query,
-            self.attributes,
-        );
+        let exec = self.emit_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
+        let query = self.emit_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -104,8 +101,8 @@ impl<'a> TraitInput<'a> {
         }
     }
 
-    fn emit_msg(&self, name: &Ident, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
-        EnumMessage::new(name, self.item, msg_ty, &self.generics, args).emit()
+    fn emit_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
+        EnumMessage::new(name, self.item, msg_ty, &self.generics, &self.custom).emit()
     }
 }
 
@@ -114,6 +111,7 @@ impl<'a> ImplInput<'a> {
         let sylvia = crate_module();
 
         let generics = item.generics.params.iter().collect();
+        let custom = Custom::new(&item.attrs, item.span());
 
         let error = item
             .attrs
@@ -135,6 +133,7 @@ impl<'a> ImplInput<'a> {
             item,
             generics,
             error,
+            custom,
         }
     }
 
@@ -227,15 +226,24 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
-        StructMessage::new(self.item, msg_ty, &self.generics).map_or(quote! {}, |msg| msg.emit())
+        StructMessage::new(self.item, msg_ty, &self.generics, &self.custom, &self.error)
+            .map_or(quote! {}, |msg| msg.emit())
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, &self.error).emit()
+        ContractEnumMessage::new(
+            name,
+            self.item,
+            msg_ty,
+            &self.generics,
+            &self.error,
+            &self.custom,
+        )
+        .emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        GlueMessage::new(name, self.item, msg_ty, &self.error).emit()
+        GlueMessage::new(name, self.item, msg_ty, &self.error, &self.custom).emit()
     }
 
     fn emit_querier_for_bound_impl(
