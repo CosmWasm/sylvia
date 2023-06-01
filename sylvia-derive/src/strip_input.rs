@@ -2,6 +2,8 @@ use syn::fold::{self, Fold};
 use syn::punctuated::Punctuated;
 use syn::{FnArg, ImplItemMethod, ItemImpl, PatType, Receiver, Signature, Token, TraitItemMethod};
 
+use crate::parser::sylvia_attribute;
+
 /// Utility for stripping all attributes from input before it is emitted
 pub struct StripInput;
 
@@ -60,7 +62,7 @@ impl Fold for StripInput {
             .filter(|attr| {
                 !(attr.path.is_ident("messages")
                     || attr.path.is_ident("error")
-                    || (attr.path.segments.len() == 2 && attr.path.segments[0].ident == "sv"))
+                    || sylvia_attribute(attr).is_some())
             })
             .collect();
 

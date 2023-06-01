@@ -367,7 +367,10 @@ impl Custom {
         let custom: Vec<_> = source
             .attrs
             .iter()
-            .filter(|attr| is_sylvia_attribute(attr, "custom"))
+            .filter(|attr| match sylvia_attribute(attr) {
+                Some(attr) => attr == "custom",
+                None => false,
+            })
             .filter_map(|attr| {
                 let custom = match Custom::parse.parse2(attr.tokens.clone()) {
                     Ok(custom) => custom,
@@ -426,8 +429,10 @@ impl Parse for Custom {
     }
 }
 
-pub fn is_sylvia_attribute(attr: &&Attribute, attr_name: &str) -> bool {
-    attr.path.segments.len() == 2
-        && attr.path.segments[0].ident == "sv"
-        && attr.path.segments[1].ident == attr_name
+pub fn sylvia_attribute(attr: &Attribute) -> Option<&Ident> {
+    if attr.path.segments.len() == 2 && attr.path.segments[0].ident == "sv" {
+        Some(&attr.path.segments[1].ident)
+    } else {
+        None
+    }
 }
