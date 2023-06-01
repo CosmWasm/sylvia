@@ -390,14 +390,10 @@ impl Custom {
         }
     }
 
-    pub fn emit_msg(&self) -> TokenStream {
+    pub fn msg(&self) -> &Path {
         let sylvia = crate_module();
 
-        #[cfg(not(tarpaulin_include))]
-        self.msg
-            .as_ref()
-            .map(|msg| quote! { #msg })
-            .unwrap_or_else(|| quote! { #sylvia ::cw_std::Empty })
+        &self.msg
     }
 
     pub fn emit_response(&self) -> TokenStream {
