@@ -15,10 +15,10 @@ struct MyQuery;
 impl CustomQuery for MyMsg {}
 
 pub struct MyContract;
-
+// , query=MyQuery
 #[entry_points]
 #[contract]
-#[sv::custom(msg=MyMsg, query=MyQuery)]
+#[sv::custom(msg=MyMsg)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {

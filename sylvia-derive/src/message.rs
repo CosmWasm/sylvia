@@ -831,7 +831,6 @@ impl<'a> MsgField<'a> {
 }
 
 /// Glue message is the message composing Exec/Query messages from several traits
-#[derive(Debug)]
 pub struct GlueMessage<'a> {
     interfaces: Vec<ContractMessageAttr>,
     name: &'a Ident,

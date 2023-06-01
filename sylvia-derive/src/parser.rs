@@ -340,7 +340,6 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
     Some((method, msg_attr))
 }
 
-#[derive(Debug)]
 pub struct Custom {
     msg: Path,
     query: Path,
@@ -389,6 +388,16 @@ impl Custom {
                 Self::default()
             }
         }
+    }
+
+    pub fn emit_msg(&self) -> TokenStream {
+        let sylvia = crate_module();
+
+        #[cfg(not(tarpaulin_include))]
+        self.msg
+            .as_ref()
+            .map(|msg| quote! { #msg })
+            .unwrap_or_else(|| quote! { #sylvia ::cw_std::Empty })
     }
 
     pub fn emit_response(&self) -> TokenStream {

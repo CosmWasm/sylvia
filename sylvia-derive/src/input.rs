@@ -140,7 +140,14 @@ impl<'a> ImplInput<'a> {
     pub fn process(&self) -> TokenStream {
         let is_trait = self.item.trait_.is_some();
         let multitest_helpers = if cfg!(feature = "mt") {
-            MultitestHelpers::new(self.item, is_trait, &self.error, &self.generics).emit()
+            MultitestHelpers::new(
+                self.item,
+                is_trait,
+                &self.error,
+                &self.generics,
+                &self.custom,
+            )
+            .emit()
         } else {
             quote! {}
         };

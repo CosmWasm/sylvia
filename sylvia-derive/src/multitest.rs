@@ -9,7 +9,7 @@ use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgField;
-use crate::parser::{parse_struct_message, ContractMessageAttr, MsgAttr, MsgType};
+use crate::parser::{parse_struct_message, ContractMessageAttr, Custom, MsgAttr, MsgType};
 use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
@@ -31,6 +31,7 @@ pub struct MultitestHelpers<'a> {
     generics: &'a [&'a GenericParam],
     contract_name: &'a Ident,
     proxy_name: Ident,
+    custom: &'a Custom,
 }
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -58,6 +59,7 @@ impl<'a> MultitestHelpers<'a> {
         is_trait: bool,
         contract_error: &'a Type,
         generics: &'a [&'a GenericParam],
+        custom: &'a Custom,
     ) -> Self {
         let mut is_migrate = false;
         let mut reply = None;
@@ -194,6 +196,7 @@ impl<'a> MultitestHelpers<'a> {
             generics,
             contract_name,
             proxy_name,
+            custom,
         }
     }
 
@@ -561,7 +564,9 @@ impl<'a> MultitestHelpers<'a> {
     }
 
     fn generate_impl_contract(&self) -> TokenStream {
-        let contract = &self.contract;
+        let Self {
+            contract, custom, ..
+        } = self;
         let sylvia = crate_module();
 
         let migrate_body = if self.is_migrate {
@@ -586,17 +591,20 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
 
+        let response_type = custom.emit_response();
+        let custom_msg = custom.emit_msg();
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                impl #sylvia ::cw_multi_test::Contract<#sylvia ::cw_std::Empty> for #contract {
+                impl #sylvia ::cw_multi_test::Contract< #custom_msg > for #contract {
                     fn execute(
                         &self,
                         deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    ) -> #sylvia ::anyhow::Result< #response_type > {
                         #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
                             .dispatch(self, (deps, env, info))
                             .map_err(Into::into)
@@ -608,7 +616,7 @@ impl<'a> MultitestHelpers<'a> {
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    ) -> #sylvia ::anyhow::Result< #response_type > {
                         #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
                             .dispatch(self, (deps, env, info))
                             .map_err(Into::into)
@@ -630,7 +638,7 @@ impl<'a> MultitestHelpers<'a> {
                         _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
                         _env: #sylvia ::cw_std::Env,
                         _msg: Vec<u8>,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    ) -> #sylvia ::anyhow::Result< #response_type > {
                         #sylvia ::anyhow::bail!("sudo not implemented for contract")
                     }
 
@@ -639,7 +647,7 @@ impl<'a> MultitestHelpers<'a> {
                         deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    ) -> #sylvia ::anyhow::Result< #response_type > {
                         #reply
                     }
 
@@ -648,7 +656,7 @@ impl<'a> MultitestHelpers<'a> {
                         deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
                         env: #sylvia ::cw_std::Env,
                         msg: Vec<u8>,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#sylvia ::cw_std::Empty>> {
+                    ) -> #sylvia ::anyhow::Result< #response_type > {
                         #migrate_body
                     }
                 }
