@@ -4,7 +4,8 @@ use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token, Type,
+    parenthesized, parse_quote, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result,
+    Token, Type,
 };
 
 use crate::crate_module;
@@ -345,10 +346,20 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
     Some((method, msg_attr))
 }
 
-#[derive(Debug)]
 pub struct Custom {
-    _msg: Option<Path>,
-    _query: Option<Path>,
+    _msg: Path,
+    _query: Path,
+}
+
+impl Default for Custom {
+    fn default() -> Self {
+        let sylvia = crate_module();
+
+        Self {
+            _msg: parse_quote!(#sylvia ::cw_std::Empty),
+            _query: parse_quote!(#sylvia ::cw_std::Empty),
+        }
+    }
 }
 
 impl Custom {
@@ -371,20 +382,14 @@ impl Custom {
             .collect();
 
         match custom.len() {
-            0 => Self {
-                _msg: None,
-                _query: None,
-            },
+            0 => Self::default(),
             1 => custom.into_iter().next().unwrap(),
             _ => {
                 emit_error!(
                     source.span(),
                     "More than one `custom` attribute defined. It should be only one"
                 );
-                Self {
-                    _msg: None,
-                    _query: None,
-                }
+                Self::default()
             }
         }
     }
@@ -396,16 +401,15 @@ impl Parse for Custom {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
         parenthesized!(content in input);
-        let mut msg = None;
-        let mut query = None;
+        let mut custom = Self::default();
 
         while !content.is_empty() {
             let ty: Ident = content.parse()?;
             let _: Token![=] = content.parse()?;
             if ty == "msg" {
-                msg = Some(content.parse()?)
+                custom._msg = content.parse()?
             } else if ty == "query" {
-                query = Some(content.parse()?)
+                custom._query = content.parse()?
             } else {
                 return Err(Error::new(
                     ty.span(),
@@ -418,10 +422,7 @@ impl Parse for Custom {
             let _: Token![,] = content.parse()?;
         }
 
-        Ok(Self {
-            _msg: msg,
-            _query: query,
-        })
+        Ok(custom)
     }
 }
 
