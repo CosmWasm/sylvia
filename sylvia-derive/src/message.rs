@@ -1,8 +1,7 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
-    parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, InterfaceArgs, MsgAttr,
-    MsgType,
+    parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};

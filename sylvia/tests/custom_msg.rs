@@ -5,17 +5,17 @@ use sylvia::types::InstantiateCtx;
 use sylvia::{contract, entry_points};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
-struct MyMsg;
+pub struct MyMsg;
 
 impl CustomMsg for MyMsg {}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
-struct MyQuery;
+pub struct MyQuery;
 
 impl CustomQuery for MyMsg {}
 
 pub struct MyContract;
-// , query=MyQuery
+
 #[entry_points]
 #[contract]
 #[sv::custom(msg=MyMsg)]
