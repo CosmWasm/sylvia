@@ -1,13 +1,51 @@
 use std::cell::{Ref, RefCell, RefMut};
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use cosmwasm_std::{Addr, BlockInfo, Coin};
-use cw_multi_test::Executor;
+use cosmwasm_std::{
+    Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
+};
+use cw_multi_test::{
+    AppBuilder, BankKeeper, DistributionKeeper, Executor, FailingModule, Router, StakeKeeper,
+    WasmKeeper,
+};
+use schemars::JsonSchema;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-#[derive(Default)]
-pub struct App {
-    pub app: RefCell<cw_multi_test::App>,
+pub struct App<ExecC = Empty, QueryC = Empty> {
+    pub app: RefCell<cw_multi_test::BasicApp<ExecC, QueryC>>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new(cw_multi_test::BasicApp::default())
+    }
+}
+
+/// Creates new default `App` implementation working with customized exec and query messages.
+/// Outside of `App` implementation to make type elision better.
+pub fn custom_app<ExecC, QueryC, F>(init_fn: F) -> App<ExecC, QueryC>
+where
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
+    F: FnOnce(
+        &mut Router<
+            BankKeeper,
+            FailingModule<ExecC, QueryC, Empty>,
+            WasmKeeper<ExecC, QueryC>,
+            StakeKeeper,
+            DistributionKeeper,
+            FailingModule<IbcMsg, IbcQuery, Empty>,
+            FailingModule<GovMsg, Empty, Empty>,
+        >,
+        &dyn Api,
+        &mut dyn Storage,
+    ),
+{
+    App {
+        app: RefCell::new(AppBuilder::new_custom().build(init_fn)),
+    }
 }
 
 impl App {
@@ -39,24 +77,28 @@ impl App {
 }
 
 #[must_use]
-pub struct ExecProxy<'a, 'app, Error, Msg>
+pub struct ExecProxy<'a, 'app, Error, Msg, ExecC = Empty, QueryC = Empty>
 where
     Msg: Serialize + std::fmt::Debug,
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
 {
     funds: &'a [Coin],
     contract_addr: &'a Addr,
     msg: Msg,
-    app: &'app App,
+    app: &'app App<ExecC, QueryC>,
     phantom: PhantomData<Error>,
 }
 
-impl<'a, 'app, Error, Msg> ExecProxy<'a, 'app, Error, Msg>
+impl<'a, 'app, Error, Msg, ExecC, QueryC> ExecProxy<'a, 'app, Error, Msg, ExecC, QueryC>
 where
     Msg: Serialize + std::fmt::Debug,
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<ExecC, QueryC>) -> Self {
         Self {
             funds: &[],
             contract_addr,
@@ -85,23 +127,27 @@ where
 }
 
 #[must_use]
-pub struct MigrateProxy<'a, 'app, Error, Msg>
+pub struct MigrateProxy<'a, 'app, Error, Msg, ExecC = Empty, QueryC = Empty>
 where
     Msg: Serialize + std::fmt::Debug,
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
 {
     contract_addr: &'a Addr,
     msg: Msg,
-    app: &'app App,
+    app: &'app App<ExecC, QueryC>,
     phantom: PhantomData<Error>,
 }
 
-impl<'a, 'app, Error, Msg> MigrateProxy<'a, 'app, Error, Msg>
+impl<'a, 'app, Error, Msg, ExecC, QueryC> MigrateProxy<'a, 'app, Error, Msg, ExecC, QueryC>
 where
     Msg: Serialize + std::fmt::Debug,
     Error: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<ExecC, QueryC>) -> Self {
         Self {
             contract_addr,
             msg,
