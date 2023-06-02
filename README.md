@@ -454,6 +454,23 @@ to be part of a contract logic.
 For the interface implementation there should be at most one `messages` attribute used.
 In case of the contract implementation there can be multiple `messages` attributes used.
 
+```rust
+struct MyMsg;
+impl CustomMsg for MyMsg {}
+
+struct MyQuery;
+impl CustomQuery for MyMsg {}
+
+#[contract]
+#[sv::custom(msg=MyMsg, query=MyQuery)]
+impl MyContract {
+...
+}
+```
+
+`sv::custom` allows to define CustomMsg and CustomQuery for the contract. By default generated code
+will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
+
 ## Single module per macro
 
 Generated items and namespaces may overlap and it is suggested to split all macro calls

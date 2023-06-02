@@ -3,7 +3,10 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
-use syn::{parenthesized, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result, Token, Type};
+use syn::{
+    parenthesized, parse_quote, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result,
+    Token, Type,
+};
 
 use crate::crate_module;
 
@@ -341,4 +344,95 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
         );
     }
     Some((method, msg_attr))
+}
+
+pub struct Custom {
+    _msg: Path,
+    _query: Path,
+}
+
+impl Default for Custom {
+    fn default() -> Self {
+        let sylvia = crate_module();
+
+        Self {
+            _msg: parse_quote!(#sylvia ::cw_std::Empty),
+            _query: parse_quote!(#sylvia ::cw_std::Empty),
+        }
+    }
+}
+
+impl Custom {
+    pub fn new(source: &ItemImpl) -> Self {
+        let custom: Vec<_> = source
+            .attrs
+            .iter()
+            .filter(|attr| match sylvia_attribute(attr) {
+                Some(attr) => attr == "custom",
+                None => false,
+            })
+            .filter_map(|attr| {
+                let custom = match Custom::parse.parse2(attr.tokens.clone()) {
+                    Ok(custom) => custom,
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        return None;
+                    }
+                };
+
+                Some(custom)
+            })
+            .collect();
+
+        match custom.len() {
+            0 => Self::default(),
+            1 => custom.into_iter().next().unwrap(),
+            _ => {
+                emit_error!(
+                    source.span(),
+                    "More than one `custom` attribute defined. It should be only one"
+                );
+                Self::default()
+            }
+        }
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
+impl Parse for Custom {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let content;
+        parenthesized!(content in input);
+        let mut custom = Self::default();
+
+        while !content.is_empty() {
+            let ty: Ident = content.parse()?;
+            let _: Token![=] = content.parse()?;
+            if ty == "msg" {
+                custom._msg = content.parse()?
+            } else if ty == "query" {
+                custom._query = content.parse()?
+            } else {
+                return Err(Error::new(
+                    ty.span(),
+                    "Invalid custom type. Expected msg or query",
+                ));
+            };
+            if !content.peek(Token![,]) {
+                break;
+            }
+            let _: Token![,] = content.parse()?;
+        }
+
+        Ok(custom)
+    }
+}
+
+pub fn sylvia_attribute(attr: &Attribute) -> Option<&Ident> {
+    if attr.path.segments.len() == 2 && attr.path.segments[0].ident == "sv" {
+        Some(&attr.path.segments[1].ident)
+    } else {
+        None
+    }
 }
