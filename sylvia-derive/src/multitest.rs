@@ -216,7 +216,7 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
-        let custom_msg = custom.emit_msg();
+        let custom_msg = custom.msg();
 
         #[cfg(not(tarpaulin_include))]
         let messages = messages.iter().map(|msg| {
@@ -295,7 +295,7 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
-        let custom_msg = custom.emit_msg();
+        let custom_msg = custom.msg();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -484,7 +484,7 @@ impl<'a> MultitestHelpers<'a> {
         let fields = instantiate_fields.iter().map(MsgField::emit);
 
         let impl_contract = self.generate_impl_contract();
-        let custom_msg = custom.emit_msg();
+        let custom_msg = custom.msg();
 
         // <#sylvia ::cw_multi_test::BankKeeper, #sylvia ::cw_std::testing::MockApi, #sylvia ::cw_std::testing::MockStorage>
         #[cfg(not(tarpaulin_include))]

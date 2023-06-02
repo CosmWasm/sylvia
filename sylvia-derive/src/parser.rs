@@ -391,8 +391,6 @@ impl Custom {
     }
 
     pub fn msg(&self) -> &Path {
-        let sylvia = crate_module();
-
         &self.msg
     }
 
