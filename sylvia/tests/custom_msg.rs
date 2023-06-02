@@ -30,12 +30,12 @@ impl MyContract {
 
     #[msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response<MyMsg>> {
-        Ok(Response::<MyMsg>::default())
+        Ok(Response::new())
     }
 
     #[msg(exec)]
     pub fn some_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
-        Ok(Response::<MyMsg>::default())
+        Ok(Response::default())
     }
 
     #[msg(query)]

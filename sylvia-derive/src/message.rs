@@ -16,7 +16,7 @@ use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
     parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path,
-    ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
+    Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -28,7 +28,6 @@ pub struct StructMessage<'a> {
     unused_generics: Vec<&'a GenericParam>,
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
-    result: &'a ReturnType,
     msg_attr: MsgAttr,
     custom: &'a Custom,
     error: &'a Type,
@@ -65,7 +64,6 @@ impl<'a> StructMessage<'a> {
             unused_generics,
             wheres,
             full_where: source.generics.where_clause.as_ref(),
-            result: &method.sig.output,
             msg_attr,
             custom,
             error,
@@ -96,10 +94,10 @@ impl<'a> StructMessage<'a> {
             unused_generics,
             wheres,
             full_where,
-            result,
             msg_attr,
             custom,
             error,
+            ..
         } = self;
 
         let where_clause = if !wheres.is_empty() {

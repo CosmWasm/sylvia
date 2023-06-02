@@ -15,7 +15,7 @@ use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
-    attributes: &'a InterfaceArgs,
+    _attributes: &'a InterfaceArgs,
     item: &'a ItemTrait,
     generics: Vec<&'a GenericParam>,
     custom: Custom,
@@ -51,7 +51,7 @@ impl<'a> TraitInput<'a> {
         let custom = Custom::new(&item.attrs, item.span());
 
         Self {
-            attributes,
+            _attributes: attributes,
             item,
             generics,
             custom,

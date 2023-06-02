@@ -295,7 +295,6 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
-        let response_type = custom.emit_response();
         let custom_msg = custom.emit_msg();
 
         #[cfg(not(tarpaulin_include))]
