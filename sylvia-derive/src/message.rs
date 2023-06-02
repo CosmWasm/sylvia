@@ -1124,8 +1124,6 @@ impl EntryPoints {
         } = self;
         let sylvia = crate_module();
         let resp = custom.emit_response();
-        let _ = custom.emit_deps();
-        let _ = custom.emit_deps_mut();
 
         #[cfg(not(tarpaulin_include))]
         {

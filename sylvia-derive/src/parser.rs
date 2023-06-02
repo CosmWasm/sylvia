@@ -404,6 +404,7 @@ impl Custom {
         }
     }
 
+    #[allow(dead_code)]
     pub fn emit_deps(&self) -> TokenStream {
         let sylvia = crate_module();
         let query = &self.query;
@@ -414,6 +415,7 @@ impl Custom {
         }
     }
 
+    #[allow(dead_code)]
     pub fn emit_deps_mut(&self) -> TokenStream {
         let sylvia = crate_module();
         let query = &self.query;
