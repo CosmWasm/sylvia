@@ -13,6 +13,7 @@ use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
+/// Type alias for default build `App` to make its storing simpler in typical scenario
 pub type BasicApp<ExecC = Empty, QueryC = Empty> = App<
     BankKeeper,
     MockApi,
@@ -49,35 +50,34 @@ impl Default for App {
     }
 }
 
-/// Creates new default `App` implementation working with customized exec and query messages.
-/// Outside of `App` implementation to make type elision better.
-pub fn custom_app<ExecC, QueryC, F>(init_fn: F) -> BasicApp<ExecC, QueryC>
-where
-    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
-    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
-    F: FnOnce(
-        &mut Router<
-            BankKeeper,
-            FailingModule<ExecC, QueryC, Empty>,
-            WasmKeeper<ExecC, QueryC>,
-            StakeKeeper,
-            DistributionKeeper,
-            FailingModule<IbcMsg, IbcQuery, Empty>,
-            FailingModule<GovMsg, Empty, Empty>,
-        >,
-        &dyn Api,
-        &mut dyn Storage,
-    ),
-{
-    App {
-        app: RefCell::new(cw_multi_test::custom_app(init_fn)),
-    }
-}
-
 impl App {
     pub fn new(app: cw_multi_test::App) -> Self {
         Self {
             app: RefCell::new(app),
+        }
+    }
+
+    /// Creates new default `App` implementation working with customized exec and query messages.
+    pub fn custom<ExecC, QueryC, F>(init_fn: F) -> BasicApp<ExecC, QueryC>
+    where
+        ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+        QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
+        F: FnOnce(
+            &mut Router<
+                BankKeeper,
+                FailingModule<ExecC, QueryC, Empty>,
+                WasmKeeper<ExecC, QueryC>,
+                StakeKeeper,
+                DistributionKeeper,
+                FailingModule<IbcMsg, IbcQuery, Empty>,
+                FailingModule<GovMsg, Empty, Empty>,
+            >,
+            &dyn Api,
+            &mut dyn Storage,
+        ),
+    {
+        App {
+            app: RefCell::new(cw_multi_test::custom_app(init_fn)),
         }
     }
 
