@@ -2,18 +2,28 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-use anyhow::Result as AnyResult;
 use cosmwasm_std::testing::{MockApi, MockStorage};
 use cosmwasm_std::{
     Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
 };
 use cw_multi_test::{
-    AppBuilder, AppResponse, Bank, BankKeeper, DistributionKeeper, Executor, FailingModule, Module,
-    Router, StakeKeeper, Staking, Wasm, WasmKeeper,
+    BankKeeper, DistributionKeeper, Executor, FailingModule, Router, StakeKeeper, WasmKeeper,
 };
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+
+pub type BasicApp<ExecC = Empty, QueryC = Empty> = App<
+    BankKeeper,
+    MockApi,
+    MockStorage,
+    FailingModule<ExecC, QueryC, Empty>,
+    WasmKeeper<ExecC, QueryC>,
+    StakeKeeper,
+    DistributionKeeper,
+    FailingModule<IbcMsg, IbcQuery, Empty>,
+    FailingModule<GovMsg, Empty, Empty>,
+>;
 
 pub struct App<
     Bank = BankKeeper,
@@ -32,34 +42,34 @@ pub struct App<
 
 impl Default for App {
     fn default() -> Self {
-        Self::new(cw_multi_test::BasicApp::default())
+        Self::new(cw_multi_test::App::default())
     }
 }
 
-// /// Creates new default `App` implementation working with customized exec and query messages.
-// /// Outside of `App` implementation to make type elision better.
-// pub fn custom_app<ExecC, QueryC, F>(init_fn: F) -> App<ExecC, QueryC>
-// where
-//     ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
-//     QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
-//     F: FnOnce(
-//         &mut Router<
-//             BankKeeper,
-//             FailingModule<ExecC, QueryC, Empty>,
-//             WasmKeeper<ExecC, QueryC>,
-//             StakeKeeper,
-//             DistributionKeeper,
-//             FailingModule<IbcMsg, IbcQuery, Empty>,
-//             FailingModule<GovMsg, Empty, Empty>,
-//         >,
-//         &dyn Api,
-//         &mut dyn Storage,
-//     ),
-// {
-//     App {
-//         app: RefCell::new(AppBuilder::new_custom().build(init_fn)),
-//     }
-// }
+/// Creates new default `App` implementation working with customized exec and query messages.
+/// Outside of `App` implementation to make type elision better.
+pub fn custom_app<ExecC, QueryC, F>(init_fn: F) -> BasicApp<ExecC, QueryC>
+where
+    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
+    F: FnOnce(
+        &mut Router<
+            BankKeeper,
+            FailingModule<ExecC, QueryC, Empty>,
+            WasmKeeper<ExecC, QueryC>,
+            StakeKeeper,
+            DistributionKeeper,
+            FailingModule<IbcMsg, IbcQuery, Empty>,
+            FailingModule<GovMsg, Empty, Empty>,
+        >,
+        &dyn Api,
+        &mut dyn Storage,
+    ),
+{
+    App {
+        app: RefCell::new(cw_multi_test::custom_app(init_fn)),
+    }
+}
 
 impl App {
     pub fn new(app: cw_multi_test::App) -> Self {
