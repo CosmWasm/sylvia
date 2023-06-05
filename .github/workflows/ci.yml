@@ -82,28 +82,13 @@ jobs:
         run: cargo schema
       - name: Cw1-whitelist ts-codegen 
         working-directory: contracts/cw1-whitelist/
-        run: cosmwasm-ts-codegen generate \
-          --plugin client \
-          --schema ./schema \
-          --out ./ts \
-          --name cw1-whitelist \
-          --no-bundle
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
       - name: Cw1-subkeys ts-codegen 
         working-directory: contracts/cw1-subkeys/
-        run: cosmwasm-ts-codegen generate \
-          --plugin client \
-          --schema ./schema \
-          --out ./ts \
-          --name cw1-subkeys \
-          --no-bundle
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-subkeys --no-bundle
       - name: Cw20-base ts-codegen 
         working-directory: contracts/cw20-base/
-        run: cosmwasm-ts-codegen generate \
-          --plugin client \
-          --schema ./schema \
-          --out ./ts \
-          --name cw20-base \
-          --no-bundle
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw20-base --no-bundle
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
