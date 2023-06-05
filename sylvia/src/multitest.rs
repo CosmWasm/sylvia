@@ -50,31 +50,6 @@ impl Default for App {
     }
 }
 
-/// Creates new default `App` implementation working with customized exec and query messages.
-/// Outside of `App` implementation to make type elision better.
-pub fn custom_app<ExecC, QueryC, F>(init_fn: F) -> BasicApp<ExecC, QueryC>
-where
-    ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
-    QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
-    F: FnOnce(
-        &mut Router<
-            BankKeeper,
-            FailingModule<ExecC, QueryC, Empty>,
-            WasmKeeper<ExecC, QueryC>,
-            StakeKeeper,
-            DistributionKeeper,
-            FailingModule<IbcMsg, IbcQuery, Empty>,
-            FailingModule<GovMsg, Empty, Empty>,
-        >,
-        &dyn Api,
-        &mut dyn Storage,
-    ),
-{
-    BasicApp {
-        app: RefCell::new(AppBuilder::new_custom().build(init_fn)),
-    }
-}
-
 impl App {
     pub fn new(app: cw_multi_test::App) -> Self {
         Self {
@@ -147,7 +122,7 @@ where
     ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
     cw_multi_test::App: Executor<ExecC>,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app BasicApp<ExecC, QueryC>) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
         Self {
             funds: &[],
             contract_addr,
@@ -195,7 +170,7 @@ where
     ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
     cw_multi_test::App: Executor<ExecC>,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app BasicApp<ExecC, QueryC>) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
         Self {
             contract_addr,
             msg,

@@ -47,13 +47,13 @@ impl MyContract {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::Empty;
-    use sylvia::multitest::custom_app;
+    use sylvia::multitest::App;
 
     use crate::MyMsg;
 
     #[test]
     fn test_custom() {
-        let app = custom_app::<MyMsg, Empty, _>(|_, _, _| {});
+        let app = App::custom::<MyMsg, Empty, _>(|_, _, _| {});
         let code_id = crate::multitest_utils::CodeId::store_code(&app);
 
         let owner = "owner";
