@@ -25,6 +25,10 @@ pub type BasicApp<ExecC = Empty, QueryC = Empty> = App<
     FailingModule<GovMsg, Empty, Empty>,
 >;
 
+// This exist to silence `clippy::type-complexity`.
+type CWApp<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov> =
+    RefCell<cw_multi_test::App<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov>>;
+
 pub struct App<
     Bank = BankKeeper,
     Api = MockApi,
@@ -36,8 +40,7 @@ pub struct App<
     Ibc = FailingModule<IbcMsg, IbcQuery, Empty>,
     Gov = FailingModule<GovMsg, Empty, Empty>,
 > {
-    pub app:
-        RefCell<cw_multi_test::App<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov>>,
+    pub app: CWApp<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov>,
 }
 
 impl Default for App {
