@@ -48,6 +48,10 @@ jobs:
           profile: minimal
           override: true
           components: rustfmt, clippy
+      - name: Install npm
+        uses: actions/setup-node@v3
+      - name: Intall ts-codegen
+        run: npm install -g @cosmwasm/ts-codegen
       - name: Test project
         run: cargo test --locked
       - name: Clippy project
@@ -76,6 +80,15 @@ jobs:
       - name: Cw20-base schema
         working-directory: contracts/cw20-base
         run: cargo schema
+      - name: Cw1-whitelist ts-codegen 
+        working-directory: contracts/cw1-whitelist/
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
+      - name: Cw1-subkeys ts-codegen 
+        working-directory: contracts/cw1-subkeys/
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-subkeys --no-bundle
+      - name: Cw20-base ts-codegen 
+        working-directory: contracts/cw20-base/
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw20-base --no-bundle
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
