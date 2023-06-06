@@ -9,15 +9,15 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
-use crate::parser::{ContractArgs, ContractErrorAttr, Custom, InterfaceArgs, MsgType};
+use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType};
 use crate::remote::Remote;
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
-    attributes: &'a InterfaceArgs,
     item: &'a ItemTrait,
     generics: Vec<&'a GenericParam>,
+    custom: Custom,
 }
 
 /// Preprocessed `contract` macro input for non-trait impl block
@@ -26,12 +26,13 @@ pub struct ImplInput<'a> {
     error: Type,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
+    custom: Custom,
 }
 
 impl<'a> TraitInput<'a> {
     #[cfg(not(tarpaulin_include))]
     // This requires invalid implementation which would fail at compile time and making it impossible to test
-    pub fn new(attributes: &'a InterfaceArgs, item: &'a ItemTrait) -> Self {
+    pub fn new(item: &'a ItemTrait) -> Self {
         let generics = item.generics.params.iter().collect();
 
         if !item
@@ -46,10 +47,12 @@ impl<'a> TraitInput<'a> {
             );
         }
 
+        let custom = Custom::new(&item.attrs, item.span());
+
         Self {
-            attributes,
             item,
             generics,
+            custom,
         }
     }
 
@@ -83,16 +86,8 @@ impl<'a> TraitInput<'a> {
     }
 
     fn emit_messages(&self) -> TokenStream {
-        let exec = self.emit_msg(
-            &Ident::new("ExecMsg", Span::mixed_site()),
-            MsgType::Exec,
-            self.attributes,
-        );
-        let query = self.emit_msg(
-            &Ident::new("QueryMsg", Span::mixed_site()),
-            MsgType::Query,
-            self.attributes,
-        );
+        let exec = self.emit_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
+        let query = self.emit_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -104,8 +99,8 @@ impl<'a> TraitInput<'a> {
         }
     }
 
-    fn emit_msg(&self, name: &Ident, msg_ty: MsgType, args: &InterfaceArgs) -> TokenStream {
-        EnumMessage::new(name, self.item, msg_ty, &self.generics, args).emit()
+    fn emit_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
+        EnumMessage::new(name, self.item, msg_ty, &self.generics, &self.custom).emit()
     }
 }
 
@@ -130,25 +125,34 @@ impl<'a> ImplInput<'a> {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
+        let custom = Custom::new(&item.attrs, item.span());
+
         Self {
             attributes,
             item,
             generics,
             error,
+            custom,
         }
     }
 
     pub fn process(&self) -> TokenStream {
         let is_trait = self.item.trait_.is_some();
         let multitest_helpers = if cfg!(feature = "mt") {
-            MultitestHelpers::new(self.item, is_trait, &self.error, &self.generics).emit()
+            MultitestHelpers::new(
+                self.item,
+                is_trait,
+                &self.error,
+                &self.generics,
+                &self.custom,
+            )
+            .emit()
         } else {
             quote! {}
         };
 
         let interfaces = Interfaces::new(self.item);
         let variants = MsgVariants::new(self.item.as_variants(), &self.generics);
-        let _ = Custom::new(self.item);
 
         match is_trait {
             true => self.process_interface(&interfaces, variants, multitest_helpers),
@@ -232,11 +236,19 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ContractEnumMessage::new(name, self.item, msg_ty, &self.generics, &self.error).emit()
+        ContractEnumMessage::new(
+            name,
+            self.item,
+            msg_ty,
+            &self.generics,
+            &self.error,
+            &self.custom,
+        )
+        .emit()
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        GlueMessage::new(name, self.item, msg_ty, &self.error).emit()
+        GlueMessage::new(name, self.item, msg_ty, &self.error, &self.custom).emit()
     }
 
     fn emit_querier_for_bound_impl(

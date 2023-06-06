@@ -1,7 +1,7 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
-    parse_struct_message, ContractErrorAttr, ContractMessageAttr, InterfaceArgs, MsgAttr, MsgType,
+    parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, MsgAttr, MsgType,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -165,7 +165,7 @@ pub struct EnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    args: &'a InterfaceArgs,
+    custom: &'a Custom,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -174,7 +174,7 @@ impl<'a> EnumMessage<'a> {
         source: &'a ItemTrait,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
-        args: &'a InterfaceArgs,
+        custom: &'a Custom,
     ) -> Self {
         let trait_name = &source.ident;
 
@@ -216,7 +216,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
-            args,
+            custom,
         }
     }
 
@@ -233,7 +233,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where,
             msg_ty,
-            args,
+            custom,
         } = self;
 
         let match_arms = variants
@@ -256,7 +256,7 @@ impl<'a> EnumMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let dispatch_type = msg_ty.emit_result_type(&args.msg_type, &parse_quote!(C::Error));
+        let dispatch_type = msg_ty.emit_result_type(custom.msg(), &parse_quote!(C::Error));
 
         let all_generics = if all_generics.is_empty() {
             quote! {}
@@ -330,6 +330,7 @@ pub struct ContractEnumMessage<'a> {
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a Type,
+    custom: &'a Custom,
 }
 
 impl<'a> ContractEnumMessage<'a> {
@@ -339,6 +340,7 @@ impl<'a> ContractEnumMessage<'a> {
         ty: MsgType,
         generics: &'a [&'a GenericParam],
         error: &'a Type,
+        custom: &'a Custom,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
         let variants: Vec<_> = source
@@ -371,6 +373,7 @@ impl<'a> ContractEnumMessage<'a> {
             msg_ty: ty,
             contract: &source.self_ty,
             error,
+            custom,
         }
     }
 
@@ -383,6 +386,7 @@ impl<'a> ContractEnumMessage<'a> {
             msg_ty,
             contract,
             error,
+            custom,
         } = self;
 
         let match_arms = variants
@@ -399,7 +403,7 @@ impl<'a> ContractEnumMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type();
         let contract = StripGenerics.fold_type((*contract).clone());
-        let ret_type = msg_ty.emit_result_type(&None, error);
+        let ret_type = msg_ty.emit_result_type(custom.msg(), error);
 
         #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
@@ -824,6 +828,7 @@ pub struct GlueMessage<'a> {
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a Type,
+    custom: &'a Custom,
 }
 
 impl<'a> GlueMessage<'a> {
@@ -838,7 +843,13 @@ impl<'a> GlueMessage<'a> {
         syn::Ident::new(&format!("{}{}", module_name, name), name.span())
     }
 
-    pub fn new(name: &'a Ident, source: &'a ItemImpl, msg_ty: MsgType, error: &'a Type) -> Self {
+    pub fn new(
+        name: &'a Ident,
+        source: &'a ItemImpl,
+        msg_ty: MsgType,
+        error: &'a Type,
+        custom: &'a Custom,
+    ) -> Self {
         let interfaces: Vec<_> = source
             .attrs
             .iter()
@@ -862,6 +873,7 @@ impl<'a> GlueMessage<'a> {
             contract: &source.self_ty,
             msg_ty,
             error,
+            custom,
         }
     }
 
@@ -874,6 +886,7 @@ impl<'a> GlueMessage<'a> {
             contract,
             msg_ty,
             error,
+            custom,
         } = self;
         let contract = StripGenerics.fold_type((*contract).clone());
         let contract_name = Ident::new(&format!("Contract{}", name), name.span());
@@ -948,7 +961,7 @@ impl<'a> GlueMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let ret_type = msg_ty.emit_result_type(&None, error);
+        let ret_type = msg_ty.emit_result_type(custom.msg(), error);
 
         let mut response_schemas: Vec<TokenStream> = interfaces
             .iter()
@@ -1057,6 +1070,7 @@ pub struct EntryPoints {
     name: Type,
     error: Type,
     reply: Option<Ident>,
+    custom: Custom,
 }
 
 impl EntryPoints {
@@ -1085,13 +1099,28 @@ impl EntryPoints {
             .into_iter()
             .find(|variant| variant.msg_type == MsgType::Reply)
             .map(|variant| variant.function_name.clone());
+        let custom = Custom::new(&source.attrs, source.span());
 
-        Self { name, error, reply }
+        Self {
+            name,
+            error,
+            reply,
+            custom,
+        }
     }
 
     pub fn emit(&self) -> TokenStream {
-        let Self { name, error, reply } = self;
+        let Self {
+            name,
+            error,
+            reply,
+            custom,
+        } = self;
         let sylvia = crate_module();
+
+        let custom_msg = custom.msg();
+        #[cfg(not(tarpaulin_include))]
+        let resp_type = quote! { #sylvia ::cw_std::Response < #custom_msg > };
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1102,7 +1131,7 @@ impl EntryPoints {
                         deps: #sylvia ::cw_std::DepsMut,
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp_type, #error> {
                         #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
                     }
                 },
@@ -1119,7 +1148,7 @@ impl EntryPoints {
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: InstantiateMsg,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp_type, #error> {
                         msg.dispatch(&#name ::new() , (deps, env, info)).map_err(Into::into)
                     }
 
@@ -1129,7 +1158,7 @@ impl EntryPoints {
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: ContractExecMsg,
-                    ) -> Result<#sylvia ::cw_std::Response, #error> {
+                    ) -> Result<#resp_type, #error> {
                         msg.dispatch(&#name ::new(), (deps, env, info)).map_err(Into::into)
                     }
 
