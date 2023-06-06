@@ -140,12 +140,11 @@ pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     interface_impl(attr.into(), item.into()).into()
 }
 
-fn interface_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
-    fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
-        let attrs: parser::InterfaceArgs = parse2(attr)?;
+fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
+    fn inner(item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemTrait = parse2(item)?;
 
-        let expanded = TraitInput::new(&attrs, &input).process();
+        let expanded = TraitInput::new(&input).process();
         let input = StripInput.fold_item_trait(input);
 
         Ok(quote! {
@@ -155,7 +154,7 @@ fn interface_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
         })
     }
 
-    inner(attr, item).unwrap_or_else(syn::Error::into_compile_error)
+    inner(item).unwrap_or_else(syn::Error::into_compile_error)
 }
 
 /// Macro generating messages from contract impl block.

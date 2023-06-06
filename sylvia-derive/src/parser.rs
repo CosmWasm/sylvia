@@ -1,4 +1,4 @@
-use proc_macro2::{Punct, TokenStream};
+use proc_macro2::{Punct, Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
@@ -122,21 +122,15 @@ impl MsgType {
     }
 
     /// Emits type which should be returned by dispatch function for this kind of message
-    pub fn emit_result_type(self, msg_type: &Option<Type>, err_type: &Type) -> TokenStream {
+    pub fn emit_result_type(self, msg_type: &Path, err_type: &Type) -> TokenStream {
         use MsgType::*;
 
         let sylvia = crate_module();
 
-        #[cfg(not(tarpaulin_include))]
-        let response_type = msg_type
-            .as_ref()
-            .map(|ty| quote! { #sylvia ::cw_std::Response< #ty > })
-            .unwrap_or_else(|| quote! { #sylvia ::cw_std::Response });
-
         match self {
             Exec | Instantiate | Migrate | Reply => {
                 quote! {
-                    std::result::Result<#response_type, #err_type>
+                    std::result::Result< #sylvia:: cw_std::Response <#msg_type>, #err_type>
                 }
             }
             Query => quote! {
@@ -346,8 +340,9 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
     Some((method, msg_attr))
 }
 
+#[derive(Debug)]
 pub struct Custom {
-    _msg: Path,
+    msg: Path,
     _query: Path,
 }
 
@@ -356,16 +351,15 @@ impl Default for Custom {
         let sylvia = crate_module();
 
         Self {
-            _msg: parse_quote!(#sylvia ::cw_std::Empty),
+            msg: parse_quote!(#sylvia ::cw_std::Empty),
             _query: parse_quote!(#sylvia ::cw_std::Empty),
         }
     }
 }
 
 impl Custom {
-    pub fn new(source: &ItemImpl) -> Self {
-        let custom: Vec<_> = source
-            .attrs
+    pub fn new(attrs: &[Attribute], span: Span) -> Self {
+        let custom: Vec<_> = attrs
             .iter()
             .filter(|attr| match sylvia_attribute(attr) {
                 Some(attr) => attr == "custom",
@@ -389,12 +383,16 @@ impl Custom {
             1 => custom.into_iter().next().unwrap(),
             _ => {
                 emit_error!(
-                    source.span(),
+                    span,
                     "More than one `custom` attribute defined. It should be only one"
                 );
                 Self::default()
             }
         }
+    }
+
+    pub fn msg(&self) -> &Path {
+        &self.msg
     }
 }
 
@@ -410,7 +408,7 @@ impl Parse for Custom {
             let ty: Ident = content.parse()?;
             let _: Token![=] = content.parse()?;
             if ty == "msg" {
-                custom._msg = content.parse()?
+                custom.msg = content.parse()?
             } else if ty == "query" {
                 custom._query = content.parse()?
             } else {
