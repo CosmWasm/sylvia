@@ -212,6 +212,8 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
+        let mt_app = quote! {#sylvia ::cw_multi_test::App};
+
         #[cfg(not(tarpaulin_include))]
         let messages = messages.iter().map(|msg| {
             let MessageSignature {
@@ -224,7 +226,7 @@ impl<'a> MultitestHelpers<'a> {
             if msg_ty == &MsgType::Exec {
                     quote! {
                         #[track_caller]
-                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg> {
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg, #mt_app> {
                             let msg = ExecMsg:: #name ( #(#arguments),* );
 
                             #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
@@ -233,7 +235,7 @@ impl<'a> MultitestHelpers<'a> {
             } else if msg_ty == &MsgType::Migrate {
                     quote! {
                         #[track_caller]
-                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg> {
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg, #mt_app> {
                             let msg = MigrateMsg::new( #(#arguments),* );
 
                             #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
@@ -244,8 +246,7 @@ impl<'a> MultitestHelpers<'a> {
                         pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
                             let msg = QueryMsg:: #name ( #(#arguments),* );
 
-                            self.app
-                                .app
+                            (*self.app)
                                 .borrow()
                                 .wrap()
                                 .query_wasm_smart(self.contract_addr.clone(), &msg)
@@ -289,6 +290,10 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
+        let mt_app = quote! {
+            #sylvia ::cw_multi_test::App
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -302,11 +307,11 @@ impl<'a> MultitestHelpers<'a> {
                     pub struct #proxy_name <'app> {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         #[derivative(Debug="ignore")]
-                        pub app: &'app #sylvia ::multitest::App,
+                        pub app: &'app #sylvia ::multitest::App< #mt_app>,
                     }
 
                     impl<'app> #proxy_name <'app> {
-                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App< #mt_app>) -> Self {
                             #proxy_name{ contract_addr, app }
                         }
 
@@ -315,8 +320,8 @@ impl<'a> MultitestHelpers<'a> {
                         #(#interfaces)*
                     }
 
-                    impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)> for #proxy_name<'app> {
-                        fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App)) -> #proxy_name<'app> {
+                    impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app>)> for #proxy_name<'app> {
+                        fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app>)) -> #proxy_name<'app> {
                             #proxy_name::new(input.0, input.1)
                         }
                     }
@@ -376,6 +381,11 @@ impl<'a> MultitestHelpers<'a> {
                 return quote! {};
             }
         };
+
+        let mt_app = quote! {
+            #sylvia ::cw_multi_test::App
+        };
+
         let methods_definitions = messages.iter().map(|msg| {
             let MessageSignature {
                 name,
@@ -387,7 +397,7 @@ impl<'a> MultitestHelpers<'a> {
             if msg_ty == &MsgType::Exec {
                 quote! {
                     #[track_caller]
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg> {
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app> {
                         let msg = #module ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
@@ -398,8 +408,7 @@ impl<'a> MultitestHelpers<'a> {
                     fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
                         let msg = #module QueryMsg:: #name ( #(#arguments),* );
 
-                        self.app
-                            .app
+                        (*self.app)
                             .borrow()
                             .wrap()
                             .query_wasm_smart(self.contract_addr.clone(), &msg)
@@ -419,7 +428,7 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg>;
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app>;
                 }
             } else {
                 quote! {
@@ -476,6 +485,10 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
+        let mt_app = quote! {
+             #sylvia ::cw_multi_test::App
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -483,13 +496,12 @@ impl<'a> MultitestHelpers<'a> {
 
                 pub struct CodeId<'app> {
                     code_id: u64,
-                    app: &'app #sylvia ::multitest::App,
+                    app: &'app #sylvia ::multitest::App< #mt_app>,
                 }
 
                 impl<'app> CodeId<'app> {
-                    pub fn store_code(app: &'app #sylvia ::multitest::App) -> Self {
-                        let code_id = app
-                            .app
+                    pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app>) -> Self {
+                        let code_id = (*app)
                             .borrow_mut()
                             .store_code(Box::new(#contract_name ::new()));
                         Self { code_id, app }
@@ -537,8 +549,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     #[track_caller]
                     pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
-                        self.code_id
-                            .app
+                        (*self.code_id)
                             .app
                             .borrow_mut()
                             .instantiate_contract(
@@ -673,16 +684,20 @@ impl<'a> TraitMultitestHelpers<'a> {
         let sylvia = crate_module();
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
+        let mt_app = quote! {
+             #sylvia ::cw_multi_test::App
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod trait_utils {
                     pub struct #proxy_name <'app> {
                         pub contract_addr: #sylvia ::cw_std::Addr,
-                        pub app: &'app #sylvia ::multitest::App,
+                        pub app: &'app #sylvia ::multitest::App < #mt_app >,
                     }
                     impl<'app> #proxy_name <'app> {
-                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App) -> Self {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App < #mt_app >) -> Self {
                             #proxy_name { contract_addr, app }
                         }
                     }

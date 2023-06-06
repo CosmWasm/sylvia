@@ -1,11 +1,9 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
+use std::ops::Deref;
 
-use cosmwasm_std::testing::{MockApi, MockStorage};
-use cosmwasm_std::{
-    Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
-};
+use cosmwasm_std::{Addr, Api, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage};
 use cw_multi_test::{
     BankKeeper, DistributionKeeper, Executor, FailingModule, Router, StakeKeeper, WasmKeeper,
 };
@@ -13,52 +11,30 @@ use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-/// Type alias for default build `App` to make its storing simpler in typical scenario
-pub type BasicApp<ExecC = Empty, QueryC = Empty> = App<
-    BankKeeper,
-    MockApi,
-    MockStorage,
-    FailingModule<ExecC, QueryC, Empty>,
-    WasmKeeper<ExecC, QueryC>,
-    StakeKeeper,
-    DistributionKeeper,
-    FailingModule<IbcMsg, IbcQuery, Empty>,
-    FailingModule<GovMsg, Empty, Empty>,
->;
-
-// This exist to silence `clippy::type-complexity`.
-type CWApp<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov> =
-    RefCell<cw_multi_test::App<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov>>;
-
-pub struct App<
-    Bank = BankKeeper,
-    Api = MockApi,
-    Storage = MockStorage,
-    Custom = FailingModule<Empty, Empty, Empty>,
-    Wasm = WasmKeeper<Empty, Empty>,
-    Staking = StakeKeeper,
-    Distr = DistributionKeeper,
-    Ibc = FailingModule<IbcMsg, IbcQuery, Empty>,
-    Gov = FailingModule<GovMsg, Empty, Empty>,
-> {
-    pub app: CWApp<Bank, Api, Storage, Custom, Wasm, Staking, Distr, Ibc, Gov>,
+pub struct App<MtApp> {
+    app: RefCell<MtApp>,
 }
 
-impl Default for App {
+impl<MtApp> Default for App<MtApp>
+where
+    MtApp: Default,
+{
     fn default() -> Self {
-        Self::new(cw_multi_test::App::default())
+        Self::new(MtApp::default())
     }
 }
 
-impl App {
-    pub fn new(app: cw_multi_test::App) -> Self {
-        Self {
-            app: RefCell::new(app),
-        }
-    }
+impl<MtApp> Deref for App<MtApp> {
+    type Target = RefCell<MtApp>;
 
+    fn deref(&self) -> &Self::Target {
+        &self.app
+    }
+}
+
+impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
     /// Creates new default `App` implementation working with customized exec and query messages.
-    pub fn custom<ExecC, QueryC, F>(init_fn: F) -> BasicApp<ExecC, QueryC>
+    pub fn custom<F>(init_fn: F) -> Self
     where
         ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
         QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
@@ -80,30 +56,26 @@ impl App {
             app: RefCell::new(cw_multi_test::custom_app(init_fn)),
         }
     }
+}
 
-    pub fn app(&self) -> Ref<'_, cw_multi_test::App> {
+impl<MtApp> App<MtApp> {
+    pub fn new(app: MtApp) -> Self {
+        Self {
+            app: RefCell::new(app),
+        }
+    }
+
+    pub fn app(&self) -> Ref<'_, MtApp> {
         Ref::map(self.app.borrow(), |app| app)
     }
 
-    pub fn app_mut(&self) -> RefMut<'_, cw_multi_test::App> {
+    pub fn app_mut(&self) -> RefMut<'_, MtApp> {
         RefMut::map(self.app.borrow_mut(), |app| app)
-    }
-
-    pub fn block_info(&self) -> BlockInfo {
-        self.app.borrow().block_info()
-    }
-
-    pub fn set_block(&self, block: BlockInfo) {
-        self.app.borrow_mut().set_block(block)
-    }
-
-    pub fn update_block<F: Fn(&mut BlockInfo)>(&self, action: F) {
-        self.app.borrow_mut().update_block(action)
     }
 }
 
 #[must_use]
-pub struct ExecProxy<'a, 'app, Error, Msg, ExecC = Empty>
+pub struct ExecProxy<'a, 'app, Error, Msg, MtApp, ExecC = Empty>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
@@ -111,18 +83,18 @@ where
     funds: &'a [Coin],
     contract_addr: &'a Addr,
     msg: Msg,
-    app: &'app App,
+    app: &'app App<MtApp>,
     phantom: PhantomData<(Error, ExecC)>,
 }
 
-impl<'a, 'app, Error, Msg, ExecC> ExecProxy<'a, 'app, Error, Msg, ExecC>
+impl<'a, 'app, Error, Msg, MtApp, ExecC> ExecProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
     ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
-    cw_multi_test::App: Executor<ExecC>,
+    MtApp: Executor<ExecC>,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<MtApp>) -> Self {
         Self {
             funds: &[],
             contract_addr,
@@ -137,8 +109,7 @@ where
 
     #[track_caller]
     pub fn call(self, sender: &'a str) -> Result<cw_multi_test::AppResponse, Error> {
-        self.app
-            .app
+        (*self.app)
             .borrow_mut()
             .execute_contract(
                 Addr::unchecked(sender),
@@ -151,25 +122,25 @@ where
 }
 
 #[must_use]
-pub struct MigrateProxy<'a, 'app, Error, Msg, ExecC = Empty>
+pub struct MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC = Empty>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
 {
     contract_addr: &'a Addr,
     msg: Msg,
-    app: &'app App,
+    app: &'app App<MtApp>,
     phantom: PhantomData<(Error, ExecC)>,
 }
 
-impl<'a, 'app, Error, Msg, ExecC> MigrateProxy<'a, 'app, Error, Msg, ExecC>
+impl<'a, 'app, Error, Msg, MtApp, ExecC> MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
     ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
-    cw_multi_test::App: Executor<ExecC>,
+    MtApp: Executor<ExecC>,
 {
-    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App) -> Self {
+    pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<MtApp>) -> Self {
         Self {
             contract_addr,
             msg,
@@ -180,8 +151,7 @@ where
 
     #[track_caller]
     pub fn call(self, sender: &str, new_code_id: u64) -> Result<cw_multi_test::AppResponse, Error> {
-        self.app
-            .app
+        (*self.app)
             .borrow_mut()
             .migrate_contract(
                 Addr::unchecked(sender),
