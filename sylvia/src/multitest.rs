@@ -162,3 +162,35 @@ where
             .map_err(|err| err.downcast().unwrap())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::{Addr, CustomMsg, CustomQuery, Empty, StdError};
+    use schemars::JsonSchema;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+    struct MyMsg;
+
+    impl CustomMsg for MyMsg {}
+
+    #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+    struct MyQuery;
+
+    impl CustomQuery for MyQuery {}
+
+    #[test]
+    fn construct_types() {
+        // App
+        let _ = super::App::<cw_multi_test::App>::default();
+        let basic_app = super::App::new(cw_multi_test::BasicApp::default());
+        let custom_app =
+            super::App::<cw_multi_test::BasicApp<MyMsg, MyQuery>>::custom(|_, _, _| {});
+
+        // ExecProxy
+        let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp> =
+            super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &basic_app);
+        let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp<MyMsg, MyQuery>, MyMsg> =
+            super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &custom_app);
+    }
+}
