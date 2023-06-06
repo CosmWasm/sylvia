@@ -549,8 +549,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     #[track_caller]
                     pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
-                        (*self.code_id)
-                            .app
+                        (*self.code_id.app)
                             .borrow_mut()
                             .instantiate_contract(
                                 self.code_id.code_id,

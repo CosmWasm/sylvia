@@ -192,5 +192,15 @@ mod tests {
             super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &basic_app);
         let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp<MyMsg, MyQuery>, MyMsg> =
             super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &custom_app);
+
+        // MigrateProxy
+        let _: super::MigrateProxy<StdError, Empty, cw_multi_test::BasicApp> =
+            super::MigrateProxy::new(&Addr::unchecked("addr"), Empty {}, &basic_app);
+        let _: super::MigrateProxy<
+            StdError,
+            Empty,
+            cw_multi_test::BasicApp<MyMsg, MyQuery>,
+            MyMsg,
+        > = super::MigrateProxy::new(&Addr::unchecked("addr"), Empty {}, &custom_app);
     }
 }

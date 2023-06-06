@@ -42,8 +42,11 @@ fn get_contract_version_works() {
         .call(owner)
         .unwrap();
 
-    let version: ContractVersion =
-        query_contract_info(&app.app().wrap(), contract.contract_addr.to_string()).unwrap();
+    let version: ContractVersion = query_contract_info(
+        &(*app).borrow_mut().wrap(),
+        contract.contract_addr.to_string(),
+    )
+    .unwrap();
 
     assert_eq!(
         ContractVersion {
@@ -124,7 +127,7 @@ mod allowance {
             .call(owner)
             .unwrap();
 
-        let height = app.block_info().height;
+        let height = (*app).borrow().block_info().height;
         contract
             .increase_allowance(
                 spender.to_owned(),
@@ -134,7 +137,7 @@ mod allowance {
             .call(owner)
             .unwrap();
 
-        app.update_block(next_block);
+        (*app).borrow_mut().update_block(next_block);
 
         // Check allowances work for accounts with balances
         assert_eq!(
@@ -164,7 +167,7 @@ mod allowance {
             .call(owner)
             .unwrap();
 
-        let height = app.block_info().height;
+        let height = (*app).borrow().block_info().height;
         contract
             .increase_allowance(spender1.to_owned(), coin(1234, ATOM), None)
             .call(owner)
@@ -197,7 +200,7 @@ mod allowance {
             .call(owner)
             .unwrap();
 
-        app.update_block(next_block);
+        (*app).borrow_mut().update_block(next_block);
 
         let batch1 = contract.all_allowances(None, Some(2)).unwrap().allowances;
         assert_eq!(2, batch1.len());
@@ -208,7 +211,7 @@ mod allowance {
             .allowances;
         assert_eq!(1, batch2.len());
 
-        let height = app.block_info().height;
+        let height = (*app).borrow().block_info().height;
         let expected = vec![
             AllowanceInfo {
                 spender: Addr::unchecked(spender1),
