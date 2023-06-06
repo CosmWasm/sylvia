@@ -212,6 +212,7 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {#sylvia ::cw_multi_test::App};
 
         #[cfg(not(tarpaulin_include))]
@@ -290,6 +291,7 @@ impl<'a> MultitestHelpers<'a> {
             })
             .collect();
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App
         };
@@ -382,10 +384,12 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App
         };
 
+        #[cfg(not(tarpaulin_include))]
         let methods_definitions = messages.iter().map(|msg| {
             let MessageSignature {
                 name,
@@ -418,6 +422,7 @@ impl<'a> MultitestHelpers<'a> {
             }
         });
 
+        #[cfg(not(tarpaulin_include))]
         let methods_declarations = messages.iter().map(|msg| {
             let MessageSignature {
                 name,
@@ -485,6 +490,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
              #sylvia ::cw_multi_test::App
         };
@@ -574,6 +580,7 @@ impl<'a> MultitestHelpers<'a> {
         let contract = &self.contract;
         let sylvia = crate_module();
 
+        #[cfg(not(tarpaulin_include))]
         let migrate_body = if self.is_migrate {
             quote! {
                 #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
@@ -586,6 +593,7 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
 
+        #[cfg(not(tarpaulin_include))]
         let reply = if let Some(reply) = self.reply.as_ref() {
             quote! {
                 self. #reply((deps, env).into(), msg).map_err(Into::into)
@@ -683,6 +691,7 @@ impl<'a> TraitMultitestHelpers<'a> {
         let sylvia = crate_module();
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
              #sylvia ::cw_multi_test::App
         };
