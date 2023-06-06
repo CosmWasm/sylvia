@@ -165,6 +165,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::cell::{Ref, RefCell, RefMut};
+
     use cosmwasm_std::{Addr, CustomMsg, CustomQuery, Empty, StdError};
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
@@ -186,6 +188,10 @@ mod tests {
         let basic_app = super::App::new(cw_multi_test::BasicApp::default());
         let custom_app =
             super::App::<cw_multi_test::BasicApp<MyMsg, MyQuery>>::custom(|_, _, _| {});
+
+        let _: RefCell<cw_multi_test::BasicApp> = *basic_app;
+        let _: Ref<cw_multi_test::BasicApp> = basic_app.app();
+        let _: RefMut<cw_multi_test::BasicApp> = basic_app.app_mut();
 
         // ExecProxy
         let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp> =
