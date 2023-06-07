@@ -414,7 +414,7 @@ fn transfer_from_respects_limits() {
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
     // let us increase limit, but set the expiration to expire in the next block
-    let next_block_height = app.app().block_info().height + 1;
+    let next_block_height = app.block_info().height + 1;
     contract
         .cw20_allowances_proxy()
         .increase_allowance(
@@ -426,7 +426,7 @@ fn transfer_from_respects_limits() {
         .unwrap();
 
     // move to next block
-    app.app_mut().update_block(next_block);
+    app.update_block(next_block);
 
     // we should now get the expiration error
     let err = contract
@@ -510,7 +510,7 @@ fn burn_from_respects_limits() {
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
     // let us increase limit, but set the expiration to expire in the next block
-    let next_block_height = app.app().block_info().height + 1;
+    let next_block_height = app.block_info().height + 1;
     contract
         .cw20_allowances_proxy()
         .increase_allowance(
@@ -522,7 +522,7 @@ fn burn_from_respects_limits() {
         .unwrap();
 
     // move to next block
-    app.app_mut().update_block(next_block);
+    app.update_block(next_block);
 
     // we should now get the expiration error
     let err = contract
@@ -625,7 +625,7 @@ fn send_from_respects_limits() {
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
     // let us increase limit, but set the expiration to expire in the next block
-    let next_block_height = app.app().block_info().height + 1;
+    let next_block_height = app.block_info().height + 1;
     contract
         .cw20_allowances_proxy()
         .increase_allowance(
@@ -637,7 +637,7 @@ fn send_from_respects_limits() {
         .unwrap();
 
     // move to next block
-    app.app_mut().update_block(next_block);
+    app.update_block(next_block);
 
     // we should now get the expiration error
     let err = contract
@@ -682,7 +682,7 @@ fn no_past_expiration() {
         .unwrap();
 
     // set allowance with height expiration at current block height
-    let block_height = app.app().block_info().height;
+    let block_height = app.block_info().height;
     let expires = Expiration::AtHeight(block_height);
 
     let err = contract
@@ -695,7 +695,7 @@ fn no_past_expiration() {
     assert_eq!(ContractError::InvalidExpiration, err);
 
     // set allowance with time expiration in the past
-    let block_time = app.app().block_info().time;
+    let block_time = app.block_info().time;
     let expires = Expiration::AtTime(block_time.minus_seconds(1));
 
     let err = contract
@@ -708,7 +708,7 @@ fn no_past_expiration() {
     assert_eq!(ContractError::InvalidExpiration, err);
 
     // set allowance with height expiration at next block height
-    let block_height = app.app().block_info().height + 1;
+    let block_height = app.block_info().height + 1;
     let expires = Expiration::AtHeight(block_height);
 
     contract
@@ -726,7 +726,7 @@ fn no_past_expiration() {
     assert_eq!(allowance_resp, AllowanceResponse { allowance, expires });
 
     // set allowance with time expiration in the future
-    let block_time = app.app().block_info().time;
+    let block_time = app.block_info().time;
     let expires = Expiration::AtTime(block_time.plus_seconds(10));
 
     contract
@@ -750,7 +750,7 @@ fn no_past_expiration() {
     );
 
     // decrease with height expiration at current block height
-    let block_height = app.app().block_info().height;
+    let block_height = app.block_info().height;
     let expires = Expiration::AtHeight(block_height);
 
     let err = contract
@@ -763,7 +763,7 @@ fn no_past_expiration() {
     assert_eq!(ContractError::InvalidExpiration, err);
 
     // decrease with height expiration at next block height
-    let block_height = app.app().block_info().height + 1;
+    let block_height = app.block_info().height + 1;
     let expires = Expiration::AtHeight(block_height);
 
     contract
