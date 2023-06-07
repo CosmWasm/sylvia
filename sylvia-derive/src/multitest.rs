@@ -227,7 +227,7 @@ impl<'a> MultitestHelpers<'a> {
             if msg_ty == &MsgType::Exec {
                     quote! {
                         #[track_caller]
-                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg, #mt_app> {
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg, #mt_app, #sylvia ::cw_std::Empty> {
                             let msg = ExecMsg:: #name ( #(#arguments),* );
 
                             #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
@@ -236,7 +236,7 @@ impl<'a> MultitestHelpers<'a> {
             } else if msg_ty == &MsgType::Migrate {
                     quote! {
                         #[track_caller]
-                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg, #mt_app> {
+                        pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg, #mt_app, #sylvia ::cw_std::Empty> {
                             let msg = MigrateMsg::new( #(#arguments),* );
 
                             #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
@@ -401,7 +401,7 @@ impl<'a> MultitestHelpers<'a> {
             if msg_ty == &MsgType::Exec {
                 quote! {
                     #[track_caller]
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app> {
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app,  #sylvia ::cw_std::Empty> {
                         let msg = #module ExecMsg:: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
@@ -433,7 +433,7 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app>;
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app, #sylvia ::cw_std::Empty>;
                 }
             } else {
                 quote! {

@@ -66,7 +66,7 @@ impl<MtApp> App<MtApp> {
 }
 
 #[must_use]
-pub struct ExecProxy<'a, 'app, Error, Msg, MtApp, ExecC = Empty>
+pub struct ExecProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
@@ -113,7 +113,7 @@ where
 }
 
 #[must_use]
-pub struct MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC = Empty>
+pub struct MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
@@ -184,13 +184,13 @@ mod tests {
         let _: RefMut<cw_multi_test::BasicApp> = basic_app.app_mut();
 
         // ExecProxy
-        let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp> =
+        let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp, Empty> =
             super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &basic_app);
         let _: super::ExecProxy<StdError, Empty, cw_multi_test::BasicApp<MyMsg, MyQuery>, MyMsg> =
             super::ExecProxy::new(&Addr::unchecked("addr"), Empty {}, &custom_app);
 
         // MigrateProxy
-        let _: super::MigrateProxy<StdError, Empty, cw_multi_test::BasicApp> =
+        let _: super::MigrateProxy<StdError, Empty, cw_multi_test::BasicApp, Empty> =
             super::MigrateProxy::new(&Addr::unchecked("addr"), Empty {}, &basic_app);
         let _: super::MigrateProxy<
             StdError,
