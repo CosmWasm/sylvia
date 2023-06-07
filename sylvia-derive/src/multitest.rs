@@ -248,7 +248,7 @@ impl<'a> MultitestHelpers<'a> {
                             let msg = QueryMsg:: #name ( #(#arguments),* );
 
                             (*self.app)
-                                .borrow()
+                                .app()
                                 .wrap()
                                 .query_wasm_smart(self.contract_addr.clone(), &msg)
                                 .map_err(Into::into)
@@ -413,7 +413,7 @@ impl<'a> MultitestHelpers<'a> {
                         let msg = #module QueryMsg:: #name ( #(#arguments),* );
 
                         (*self.app)
-                            .borrow()
+                            .app()
                             .wrap()
                             .query_wasm_smart(self.contract_addr.clone(), &msg)
                             .map_err(Into::into)
@@ -507,8 +507,8 @@ impl<'a> MultitestHelpers<'a> {
 
                 impl<'app> CodeId<'app> {
                     pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app>) -> Self {
-                        let code_id = (*app)
-                            .borrow_mut()
+                        let code_id = app
+                            .app_mut()
                             .store_code(Box::new(#contract_name ::new()));
                         Self { code_id, app }
                     }
@@ -556,7 +556,7 @@ impl<'a> MultitestHelpers<'a> {
                     #[track_caller]
                     pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
                         (*self.code_id.app)
-                            .borrow_mut()
+                            .app_mut()
                             .instantiate_contract(
                                 self.code_id.code_id,
                                 #sylvia ::cw_std::Addr::unchecked(sender),

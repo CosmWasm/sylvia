@@ -1,7 +1,6 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
-use std::ops::Deref;
 
 use cosmwasm_std::{Addr, Api, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage};
 use cw_multi_test::{
@@ -21,14 +20,6 @@ where
 {
     fn default() -> Self {
         Self::new(MtApp::default())
-    }
-}
-
-impl<MtApp> Deref for App<MtApp> {
-    type Target = RefCell<MtApp>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.app
     }
 }
 
@@ -110,7 +101,7 @@ where
     #[track_caller]
     pub fn call(self, sender: &'a str) -> Result<cw_multi_test::AppResponse, Error> {
         (*self.app)
-            .borrow_mut()
+            .app_mut()
             .execute_contract(
                 Addr::unchecked(sender),
                 Addr::unchecked(self.contract_addr),
@@ -152,7 +143,7 @@ where
     #[track_caller]
     pub fn call(self, sender: &str, new_code_id: u64) -> Result<cw_multi_test::AppResponse, Error> {
         (*self.app)
-            .borrow_mut()
+            .app_mut()
             .migrate_contract(
                 Addr::unchecked(sender),
                 Addr::unchecked(self.contract_addr),
@@ -165,7 +156,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::cell::{Ref, RefCell, RefMut};
+    use std::cell::{Ref, RefMut};
 
     use cosmwasm_std::{Addr, CustomMsg, CustomQuery, Empty, StdError};
     use schemars::JsonSchema;
@@ -189,7 +180,6 @@ mod tests {
         let custom_app =
             super::App::<cw_multi_test::BasicApp<MyMsg, MyQuery>>::custom(|_, _, _| {});
 
-        let _: RefCell<cw_multi_test::BasicApp> = *basic_app;
         let _: Ref<cw_multi_test::BasicApp> = basic_app.app();
         let _: RefMut<cw_multi_test::BasicApp> = basic_app.app_mut();
 
