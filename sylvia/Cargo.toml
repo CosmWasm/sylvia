@@ -24,12 +24,12 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-cw-value = "0.7.0"
 serde-json-wasm = "0.5.0"
 konst = "0.3"
-cw-multi-test = { version = "0.16.2", optional = true }
+cw-multi-test = { version = "0.16.5", optional = true }
 anyhow = { version = "1.0", optional = true }
 derivative = { version = "2.2.0", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"
 cw-storage-plus = "1.0.1"
-cw-multi-test = "0.16.2"
+cw-multi-test = "0.16.5"
 thiserror = "1.0.38"

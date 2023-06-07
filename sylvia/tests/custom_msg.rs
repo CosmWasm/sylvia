@@ -12,7 +12,7 @@ impl CustomMsg for MyMsg {}
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
 struct MyQuery;
 
-impl CustomQuery for MyMsg {}
+impl CustomQuery for MyQuery {}
 
 pub struct MyContract;
 
