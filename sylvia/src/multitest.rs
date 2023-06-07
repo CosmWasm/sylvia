@@ -2,9 +2,12 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-use cosmwasm_std::{Addr, Api, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage};
+use cosmwasm_std::{
+    Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
+};
 use cw_multi_test::{
-    BankKeeper, DistributionKeeper, Executor, FailingModule, Router, StakeKeeper, WasmKeeper,
+    Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov, Ibc, Module,
+    Router, StakeKeeper, Staking, Wasm, WasmKeeper,
 };
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -62,6 +65,34 @@ impl<MtApp> App<MtApp> {
 
     pub fn app_mut(&self) -> RefMut<'_, MtApp> {
         RefMut::map(self.app.borrow_mut(), |app| app)
+    }
+}
+
+impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
+    App<cw_multi_test::App<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>>
+where
+    CustomT::ExecT: std::fmt::Debug + PartialEq + Clone + JsonSchema + DeserializeOwned + 'static,
+    CustomT::QueryT: CustomQuery + DeserializeOwned + 'static,
+    WasmT: Wasm<CustomT::ExecT, CustomT::QueryT>,
+    BankT: Bank,
+    ApiT: Api,
+    StorageT: Storage,
+    CustomT: Module,
+    StakingT: Staking,
+    DistrT: Distribution,
+    IbcT: Ibc,
+    GovT: Gov,
+{
+    pub fn block_info(&self) -> BlockInfo {
+        self.app.borrow().block_info()
+    }
+
+    pub fn set_block(&self, block: BlockInfo) {
+        self.app.borrow_mut().set_block(block)
+    }
+
+    pub fn update_block<F: Fn(&mut BlockInfo)>(&self, action: F) {
+        self.app.borrow_mut().update_block(action)
     }
 }
 
