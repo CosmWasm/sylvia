@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+      # TODO: Remove when custom_msg_support will be merged to main
+      #       Later name feature branches with `feat_` prefix
+      - custom_msg_support
+      - feat_* 
   pull_request:
 
 env:
