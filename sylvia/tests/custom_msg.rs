@@ -2,7 +2,7 @@ use cosmwasm_std::{CustomMsg, CustomQuery, Response, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::contract;
-use sylvia::types::{ExecCtx, InstantiateCtx};
+use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
 pub struct MyMsg;
@@ -10,13 +10,51 @@ pub struct MyMsg;
 impl CustomMsg for MyMsg {}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
-struct MyQuery;
+pub struct MyQuery;
 
 impl CustomQuery for MyQuery {}
 
 pub struct MyContract;
 
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+pub struct SomeResponse;
+
+mod some_interface {
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::{
+        interface,
+        types::{ExecCtx, QueryCtx},
+    };
+
+    use crate::SomeResponse;
+
+    #[interface]
+    pub trait SomeInterface {
+        type Error: From<StdError>;
+
+        #[msg(query)]
+        fn interface_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
+
+        #[msg(exec)]
+        fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+    }
+
+    impl SomeInterface for crate::MyContract {
+        type Error = StdError;
+
+        fn interface_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
+            Ok(SomeResponse)
+        }
+
+        fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+    }
+}
+
 #[contract]
+// Uncomment once into_response is called in dispatch
+// #[messages(some_interface as SomeInterface)]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -31,6 +69,16 @@ impl MyContract {
 
     #[msg(exec)]
     pub fn some_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
+        Ok(Response::default())
+    }
+
+    #[msg(query)]
+    pub fn some_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
+        Ok(SomeResponse)
+    }
+
+    #[msg(migrate)]
+    pub fn some_migrate(&self, _ctx: MigrateCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
 }
@@ -57,5 +105,6 @@ mod tests {
             .unwrap();
 
         contract.some_exec().call(owner).unwrap();
+        contract.some_query().unwrap();
     }
 }

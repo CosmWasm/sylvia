@@ -217,9 +217,19 @@ impl<'a> MultitestHelpers<'a> {
         }
 
         let custom_msg = custom.msg();
-
-        #[cfg(not(tarpaulin_include))]
-        let mt_app = quote! { #sylvia ::cw_multi_test::BasicApp< #custom_msg > };
+        let mt_app = quote! {
+            #sylvia ::cw_multi_test::App<
+                BankT,
+                ApiT,
+                StorageT,
+                CustomT,
+                WasmT,
+                StakingT,
+                DistrT,
+                IbcT,
+                GovT,
+            >
+        };
 
         #[cfg(not(tarpaulin_include))]
         let messages = messages.iter().map(|msg| {
@@ -248,7 +258,7 @@ impl<'a> MultitestHelpers<'a> {
                             #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                     }
                 }
-            } else {
+            } else if msg_ty == &MsgType::Query {
                     quote! {
                         pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
                             let msg = QueryMsg:: #name ( #(#arguments),* );
@@ -260,6 +270,8 @@ impl<'a> MultitestHelpers<'a> {
                                 .map_err(Into::into)
                         }
                     }
+            } else {
+                quote! {}
             }
         });
 
@@ -282,7 +294,7 @@ impl<'a> MultitestHelpers<'a> {
                         );
 
                         quote! {
-                            pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app> {
+                            pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app, #mt_app> {
                                 #module ::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
                             }
                         }
@@ -298,11 +310,6 @@ impl<'a> MultitestHelpers<'a> {
             .collect();
 
         #[cfg(not(tarpaulin_include))]
-        let mt_app = quote! {
-            #sylvia ::cw_multi_test::BasicApp <#custom_msg>
-        };
-
-        #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod multitest_utils {
@@ -312,14 +319,33 @@ impl<'a> MultitestHelpers<'a> {
 
                     #[derive(Derivative)]
                     #[derivative(Debug)]
-                    pub struct #proxy_name <'app> {
+                    pub struct #proxy_name <'app, MtApp> {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         #[derivative(Debug="ignore")]
-                        pub app: &'app #sylvia ::multitest::App< #mt_app>,
+                        pub app: &'app #sylvia ::multitest::App<MtApp>,
                     }
 
-                    impl<'app> #proxy_name <'app> {
-                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App< #mt_app>) -> Self {
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #proxy_name <'app, #mt_app >
+                        where
+                            CustomT: #sylvia ::cw_multi_test::Module,
+                            CustomT::ExecT: std::fmt::Debug
+                                + PartialEq
+                                + Clone
+                                + #sylvia ::schemars::JsonSchema
+                                + #sylvia ::serde::de::DeserializeOwned
+                                + 'static,
+                            CustomT::QueryT: #sylvia ::cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                            WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                            BankT: #sylvia ::cw_multi_test::Bank,
+                            ApiT: #sylvia ::cw_std::Api,
+                            StorageT: #sylvia ::cw_std::Storage,
+                            StakingT: #sylvia ::cw_multi_test::Staking,
+                            DistrT: #sylvia ::cw_multi_test::Distribution,
+                            IbcT: #sylvia ::cw_multi_test::Ibc,
+                            GovT: #sylvia ::cw_multi_test::Gov,
+                            #mt_app : Executor< #custom_msg >
+                    {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App< #mt_app >) -> Self {
                             #proxy_name{ contract_addr, app }
                         }
 
@@ -328,8 +354,33 @@ impl<'a> MultitestHelpers<'a> {
                         #(#interfaces)*
                     }
 
-                    impl<'app> From<(#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app>)> for #proxy_name<'app> {
-                        fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app>)) -> #proxy_name<'app> {
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
+                        From<(
+                            #sylvia ::cw_std::Addr,
+                            &'app #sylvia ::multitest::App<#mt_app>,
+                        )>
+                        for #proxy_name <'app, #mt_app >
+                    where
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        CustomT::ExecT: std::fmt::Debug
+                            + PartialEq
+                            + Clone
+                            + #sylvia ::schemars::JsonSchema
+                            + #sylvia ::serde::de::DeserializeOwned
+                            + 'static,
+                        CustomT::QueryT: #sylvia ::cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                        #mt_app : Executor< #custom_msg >,
+                    {
+                        fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app >))
+                            -> #proxy_name<'app, #mt_app > {
                             #proxy_name::new(input.0, input.1)
                         }
                     }
@@ -392,10 +443,18 @@ impl<'a> MultitestHelpers<'a> {
         };
 
         let custom_msg = custom.msg();
-
-        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
-            #sylvia ::cw_multi_test::BasicApp <#custom_msg>
+            #sylvia ::cw_multi_test::App<
+                BankT,
+                ApiT,
+                StorageT,
+                CustomT,
+                WasmT,
+                StakingT,
+                DistrT,
+                IbcT,
+                GovT,
+            >
         };
 
         #[cfg(not(tarpaulin_include))]
@@ -442,7 +501,7 @@ impl<'a> MultitestHelpers<'a> {
             } = msg;
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app, #custom_msg>;
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, MtApp, #custom_msg>;
                 }
             } else {
                 quote! {
@@ -457,11 +516,32 @@ impl<'a> MultitestHelpers<'a> {
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name {
+                    pub trait #trait_name<MtApp> {
                         #(#methods_declarations)*
                     }
 
-                    impl #trait_name for #module trait_utils:: #proxy_name<'_> {
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #trait_name< #mt_app > for #module trait_utils:: #proxy_name<'_, #mt_app >
+                    where
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                        CustomT::ExecT: Clone
+                            + std::fmt::Debug
+                            + PartialEq
+                            + #sylvia ::schemars::JsonSchema
+                            + #sylvia ::serde::de::DeserializeOwned
+                            + 'static,
+                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >
+                    {
+
                         #(#methods_definitions)*
                     }
                 }
@@ -501,9 +581,18 @@ impl<'a> MultitestHelpers<'a> {
 
         let custom_msg = self.custom.msg();
 
-        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
-             #sylvia ::cw_multi_test::BasicApp< #custom_msg>
+            #sylvia ::cw_multi_test::App<
+                BankT,
+                ApiT,
+                StorageT,
+                CustomT,
+                #sylvia ::cw_multi_test::WasmKeeper< #custom_msg , #sylvia ::cw_std::Empty>,
+                StakingT,
+                DistrT,
+                IbcT,
+                GovT,
+            >
         };
 
         #[cfg(not(tarpaulin_include))]
@@ -511,13 +600,23 @@ impl<'a> MultitestHelpers<'a> {
             quote! {
                 #impl_contract
 
-                pub struct CodeId<'app> {
+                pub struct CodeId<'app, MtApp> {
                     code_id: u64,
-                    app: &'app #sylvia ::multitest::App< #mt_app>,
+                    app: &'app #sylvia ::multitest::App<MtApp>,
                 }
 
-                impl<'app> CodeId<'app> {
-                    pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app>) -> Self {
+                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT> CodeId<'app, #mt_app>
+                    where
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        CustomT: #sylvia ::cw_multi_test::Module<ExecT = #custom_msg, QueryT = #sylvia ::cw_std::Empty >,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                {
+                    pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app >) -> Self {
                         let code_id = app
                             .app_mut()
                             .store_code(Box::new(#contract_name ::new()));
@@ -529,8 +628,8 @@ impl<'a> MultitestHelpers<'a> {
                     }
 
                     pub fn instantiate(
-                        &self, #(#fields,)*
-                    ) -> InstantiateProxy<'_, 'app> {
+                        &self,#(#fields,)*
+                    ) -> InstantiateProxy<'_, 'app, #mt_app > {
                         let msg = InstantiateMsg {#(#fields_names,)*};
                         InstantiateProxy {
                             code_id: self,
@@ -542,15 +641,18 @@ impl<'a> MultitestHelpers<'a> {
                     }
                 }
 
-                pub struct InstantiateProxy<'a, 'app> {
-                    code_id: &'a CodeId <'app>,
+                pub struct InstantiateProxy<'a, 'app, MtApp> {
+                    code_id: &'a CodeId <'app, MtApp>,
                     funds: &'a [#sylvia ::cw_std::Coin],
                     label: &'a str,
                     admin: Option<String>,
                     msg: InstantiateMsg,
                 }
 
-                impl<'a, 'app> InstantiateProxy<'a, 'app> {
+                impl<'a, 'app, MtApp> InstantiateProxy<'a, 'app, MtApp>
+                    where
+                        MtApp: Executor< #custom_msg >,
+                {
                     pub fn with_funds(self, funds: &'a [#sylvia ::cw_std::Coin]) -> Self {
                         Self { funds, ..self }
                     }
@@ -565,7 +667,7 @@ impl<'a> MultitestHelpers<'a> {
                     }
 
                     #[track_caller]
-                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app>, #error_type> {
+                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp>, #error_type> {
                         (*self.code_id.app)
                             .app_mut()
                             .instantiate_contract(
@@ -708,25 +810,20 @@ impl<'a> TraitMultitestHelpers<'a> {
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
 
         #[cfg(not(tarpaulin_include))]
-        let mt_app = quote! {
-             #sylvia ::cw_multi_test::App
-        };
-
-        #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod trait_utils {
-                    pub struct #proxy_name <'app> {
+                    pub struct #proxy_name <'app, MtApp> {
                         pub contract_addr: #sylvia ::cw_std::Addr,
-                        pub app: &'app #sylvia ::multitest::App < #mt_app >,
+                        pub app: &'app #sylvia ::multitest::App <MtApp>,
                     }
-                    impl<'app> #proxy_name <'app> {
-                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App < #mt_app >) -> Self {
+                    impl<'app, MtApp> #proxy_name <'app, MtApp> {
+                        pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App < MtApp >) -> Self {
                             #proxy_name { contract_addr, app }
                         }
                     }
                     #[allow(clippy::from_over_into)]
-                    impl Into<#sylvia ::cw_std::Addr> for #proxy_name <'_> {
+                    impl<MtApp> Into<#sylvia ::cw_std::Addr> for #proxy_name <'_, MtApp> {
                         fn into(self) -> #sylvia ::cw_std::Addr {
                             self.contract_addr
                         }
