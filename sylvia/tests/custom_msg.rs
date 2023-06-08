@@ -32,9 +32,11 @@ mod some_interface {
     pub trait SomeInterface {
         type Error: From<StdError>;
 
+        #[cfg(not(tarpaulin_include))]
         #[msg(query)]
         fn interface_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
 
+        #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
@@ -77,6 +79,7 @@ impl MyContract {
         Ok(SomeResponse)
     }
 
+    #[cfg(not(tarpaulin_include))]
     #[msg(migrate)]
     pub fn some_migrate(&self, _ctx: MigrateCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
