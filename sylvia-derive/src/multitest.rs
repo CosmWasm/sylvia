@@ -217,6 +217,7 @@ impl<'a> MultitestHelpers<'a> {
         }
 
         let custom_msg = custom.msg();
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App<
                 BankT,
@@ -425,6 +426,7 @@ impl<'a> MultitestHelpers<'a> {
             )
             .collect();
 
+        #[cfg(not(tarpaulin_include))]
         let module = match modules.len() {
             0 => {
                 quote! {}
@@ -443,6 +445,8 @@ impl<'a> MultitestHelpers<'a> {
         };
 
         let custom_msg = custom.msg();
+
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App<
                 BankT,
@@ -581,6 +585,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let custom_msg = self.custom.msg();
 
+        #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App<
                 BankT,
@@ -719,7 +724,6 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
 
-        #[cfg(not(tarpaulin_include))]
         let custom_msg = custom.msg();
 
         #[cfg(not(tarpaulin_include))]
