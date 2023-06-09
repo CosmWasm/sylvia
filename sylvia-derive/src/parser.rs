@@ -1,4 +1,4 @@
-use proc_macro2::{Punct, Span, TokenStream};
+use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
@@ -301,25 +301,27 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
 }
 
 #[derive(Debug)]
-pub struct Custom {
+pub struct Custom<'a> {
     msg: Path,
     _query: Path,
+    input_attr: Option<&'a Attribute>,
 }
 
-impl Default for Custom {
+impl Default for Custom<'_> {
     fn default() -> Self {
         let sylvia = crate_module();
 
         Self {
             msg: parse_quote!(#sylvia ::cw_std::Empty),
             _query: parse_quote!(#sylvia ::cw_std::Empty),
+            input_attr: None,
         }
     }
 }
 
-impl Custom {
-    pub fn new(attrs: &[Attribute], span: Span) -> Self {
-        let custom: Vec<_> = attrs
+impl<'a> Custom<'a> {
+    pub fn new(attrs: &'a [Attribute]) -> Self {
+        let mut customs = attrs
             .iter()
             .filter(|attr| match sylvia_attribute(attr) {
                 Some(attr) => attr == "custom",
@@ -327,7 +329,10 @@ impl Custom {
             })
             .filter_map(|attr| {
                 let custom = match Custom::parse.parse2(attr.tokens.clone()) {
-                    Ok(custom) => custom,
+                    Ok(mut custom) => {
+                        custom.input_attr = Some(attr);
+                        custom
+                    }
                     Err(err) => {
                         emit_error!(attr.span(), err);
                         return None;
@@ -335,20 +340,20 @@ impl Custom {
                 };
 
                 Some(custom)
-            })
-            .collect();
+            });
 
-        match custom.len() {
-            0 => Self::default(),
-            1 => custom.into_iter().next().unwrap(),
-            _ => {
-                emit_error!(
-                    span,
-                    "More than one `custom` attribute defined. It should be only one"
-                );
-                Self::default()
-            }
+        let custom = customs.next().unwrap_or_default();
+
+        for redefined in customs {
+            let redefined = redefined.input_attr.unwrap();
+            emit_error!(
+              redefined, "The attribute `custom` is redefined";
+              note = custom.input_attr.span() => "Previous definition of the attribute `custom`";
+              note = "Only one `custom` attribute can exist on a single sylvia entity"
+            );
         }
+
+        custom
     }
 
     pub fn msg(&self) -> &Path {
@@ -358,7 +363,7 @@ impl Custom {
 
 #[cfg(not(tarpaulin_include))]
 // False negative. It is being called in closure
-impl Parse for Custom {
+impl Parse for Custom<'_> {
     fn parse(input: ParseStream) -> Result<Self> {
         let content;
         parenthesized!(content in input);
