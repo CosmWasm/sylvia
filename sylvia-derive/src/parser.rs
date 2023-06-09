@@ -10,50 +10,10 @@ use syn::{
 
 use crate::crate_module;
 
-/// Parsed arguments for `interface` macro
-pub struct InterfaceArgs {
-    /// Module name wrapping generated messages, by default no additional module is created
-    pub module: Option<Ident>,
-    /// The type being a parameter of `CosmosMsg` for blockchain it is intendet to be used; can be
-    /// set to any of generic parameters to create interface being generic over blockchains; If not
-    /// provided, cosmos messages would be unparametrized (so default would be used)
-    pub msg_type: Option<Type>,
-}
-
 /// Parser arguments for `contract` macro
 pub struct ContractArgs {
     /// Module name wrapping generated messages, by default no additional module is created
     pub module: Option<Path>,
-}
-
-impl Parse for InterfaceArgs {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut module = None;
-        let mut msg_type = None;
-
-        while !input.is_empty() {
-            let attr: Ident = input.parse()?;
-            let _: Token![=] = input.parse()?;
-
-            if attr == "module" {
-                module = Some(input.parse()?);
-            } else if attr == "msg_type" {
-                msg_type = Some(input.parse()?);
-            } else {
-                return Err(Error::new(attr.span(), "expected `module`, or `msg_type`"));
-            }
-
-            if input.peek(Token![,]) {
-                let _: Token![,] = input.parse()?;
-            } else if !input.is_empty() {
-                return Err(input.error("Unexpected token, comma expected"));
-            }
-        }
-
-        let _: Nothing = input.parse()?;
-
-        Ok(InterfaceArgs { module, msg_type })
-    }
 }
 
 impl Parse for ContractArgs {
