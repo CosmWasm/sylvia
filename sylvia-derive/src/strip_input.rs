@@ -62,7 +62,7 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !(sylvia_attribute(attr).is_some()))
+            .filter(|attr| sylvia_attribute(attr).is_none())
             .collect();
 
         fold::fold_item_trait(self, ItemTrait { attrs, ..i })
