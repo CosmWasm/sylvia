@@ -537,6 +537,9 @@ impl<'a> MsgVariant<'a> {
             function_name,
             ..
         } = self;
+
+        let sylvia = crate_module();
+
         let args = fields
             .iter()
             .zip(1..)
@@ -558,7 +561,7 @@ impl<'a> MsgVariant<'a> {
             Query => quote! {
                 #name {
                     #(#fields,)*
-                } => cosmwasm_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
+                } => #sylvia ::cw_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
             Instantiate | Migrate | Reply => {
                 emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
