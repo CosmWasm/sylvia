@@ -66,7 +66,7 @@ cosmwasm-schema = "1.2.5"
 cosmwasm-std = "1.2.5"
 schemars = "0.8.12"
 serde = "1.0.160"
-sylvia = "0.3.2"
+sylvia = "0.5.0"
 ```
 
 To build your contract as wasm you can use:
@@ -676,11 +676,11 @@ cosmwasm-std = "1.2.5"
 cw-storage-plus = "1.0.1"
 schemars = "0.8.12"
 serde = "1.0.160"
-sylvia = "0.3.2"
+sylvia = "0.5.0"
 thiserror = "1.0.40"
 
 [dev-dependencies]
-sylvia = { path = "0.3.2", features = ["mt"] }
+sylvia = { path = "0.5.0", features = ["mt"] }
 ```
 
 There would obviously be more dependencies - most probably `cw-storage-plus`,
