@@ -31,7 +31,7 @@ pub struct MultitestHelpers<'a> {
     generics: &'a [&'a GenericParam],
     contract_name: &'a Ident,
     proxy_name: Ident,
-    custom: &'a Custom,
+    custom: &'a Custom<'a>,
 }
 
 fn interface_name(source: &ItemImpl) -> &Ident {

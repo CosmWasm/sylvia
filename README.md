@@ -842,5 +842,8 @@ features for you. Here is a rough roadmap for the incoming months:
 
 ## Troubleshooting
 
+For more descriptive error messages, consider using the nightly toolchain (add `+nightly`
+argument for cargo)
+
 - Missing messages from interface on your contract - You may be missing
   `messages(interface as Interface)` attribute.
