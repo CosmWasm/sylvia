@@ -1,6 +1,9 @@
 use syn::fold::{self, Fold};
 use syn::punctuated::Punctuated;
-use syn::{FnArg, ImplItemMethod, ItemImpl, PatType, Receiver, Signature, Token, TraitItemMethod};
+use syn::{
+    FnArg, ImplItemMethod, ItemImpl, ItemTrait, PatType, Receiver, Signature, Token,
+    TraitItemMethod,
+};
 
 use crate::parser::sylvia_attribute;
 
@@ -53,6 +56,16 @@ impl Fold for StripInput {
         let inputs = remove_input_attr(i.sig.inputs);
         let sig = Signature { inputs, ..i.sig };
         fold::fold_impl_item_method(self, ImplItemMethod { attrs, sig, ..i })
+    }
+
+    fn fold_item_trait(&mut self, i: ItemTrait) -> ItemTrait {
+        let attrs = i
+            .attrs
+            .into_iter()
+            .filter(|attr| !(sylvia_attribute(attr).is_some()))
+            .collect();
+
+        fold::fold_item_trait(self, ItemTrait { attrs, ..i })
     }
 
     fn fold_item_impl(&mut self, i: ItemImpl) -> ItemImpl {

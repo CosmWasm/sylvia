@@ -21,14 +21,13 @@ pub struct SomeResponse;
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::{
-        interface,
-        types::{ExecCtx, QueryCtx},
-    };
+    use sylvia::interface;
+    use sylvia::types::{ExecCtx, QueryCtx};
 
-    use crate::SomeResponse;
+    use crate::{MyMsg, SomeResponse};
 
     #[interface]
+    #[sv::custom(msg=MyMsg, query=MyQuery)]
     pub trait SomeInterface {
         type Error: From<StdError>;
 
@@ -38,7 +37,7 @@ mod some_interface {
 
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
-        fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+        fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
     }
 
     impl SomeInterface for crate::MyContract {
@@ -48,14 +47,13 @@ mod some_interface {
             Ok(SomeResponse)
         }
 
-        fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+        fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
     }
 }
 
 #[contract]
-// Uncomment once into_response is called in dispatch
 // #[messages(some_interface as SomeInterface)]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
