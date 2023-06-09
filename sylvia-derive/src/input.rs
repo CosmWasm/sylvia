@@ -17,7 +17,7 @@ use crate::variant_descs::AsVariantDescs;
 pub struct TraitInput<'a> {
     item: &'a ItemTrait,
     generics: Vec<&'a GenericParam>,
-    custom: Custom,
+    custom: Custom<'a>,
 }
 
 /// Preprocessed `contract` macro input for non-trait impl block
@@ -26,7 +26,7 @@ pub struct ImplInput<'a> {
     error: Type,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
-    custom: Custom,
+    custom: Custom<'a>,
 }
 
 impl<'a> TraitInput<'a> {
@@ -47,7 +47,7 @@ impl<'a> TraitInput<'a> {
             );
         }
 
-        let custom = Custom::new(&item.attrs, item.span());
+        let custom = Custom::new(&item.attrs);
 
         Self {
             item,
@@ -125,7 +125,7 @@ impl<'a> ImplInput<'a> {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        let custom = Custom::new(&item.attrs, item.span());
+        let custom = Custom::new(&item.attrs);
 
         Self {
             attributes,

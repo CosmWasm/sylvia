@@ -165,7 +165,7 @@ pub struct EnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    custom: &'a Custom,
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -330,7 +330,7 @@ pub struct ContractEnumMessage<'a> {
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a Type,
-    custom: &'a Custom,
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> ContractEnumMessage<'a> {
@@ -828,7 +828,7 @@ pub struct GlueMessage<'a> {
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a Type,
-    custom: &'a Custom,
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> GlueMessage<'a> {
@@ -1066,15 +1066,15 @@ impl<'a> GlueMessage<'a> {
     }
 }
 
-pub struct EntryPoints {
+pub struct EntryPoints<'a> {
     name: Type,
     error: Type,
     reply: Option<Ident>,
-    custom: Custom,
+    custom: Custom<'a>,
 }
 
-impl EntryPoints {
-    pub fn new(source: &ItemImpl) -> Self {
+impl<'a> EntryPoints<'a> {
+    pub fn new(source: &'a ItemImpl) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
 
@@ -1099,7 +1099,7 @@ impl EntryPoints {
             .into_iter()
             .find(|variant| variant.msg_type == MsgType::Reply)
             .map(|variant| variant.function_name.clone());
-        let custom = Custom::new(&source.attrs, source.span());
+        let custom = Custom::new(&source.attrs);
 
         Self {
             name,
