@@ -12,6 +12,15 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  conv_commits:
+    name: Commits consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commits validation
+        uses: taskmedia/action-conventional-commits@v1.1.3
+        with:
+          types: "feat|fix|revert|doc|test|refactor|chore|build"
+
   test_project:
     name: ${{ matrix.build }}
     runs-on: ${{ matrix.os }}
