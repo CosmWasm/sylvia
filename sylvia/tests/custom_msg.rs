@@ -21,8 +21,8 @@ pub struct SomeResponse;
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
 
     use crate::{MyMsg, SomeResponse};
 
@@ -40,13 +40,17 @@ mod some_interface {
         fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
     }
 
+    #[contract(module=super)]
+    #[sv::custom(msg=MyMsg, query=MyQuery)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
 
+        #[msg(query)]
         fn interface_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
+        #[msg(exec)]
         fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
@@ -54,7 +58,7 @@ mod some_interface {
 }
 
 #[contract]
-// #[messages(some_interface as SomeInterface)]
+#[messages(some_interface as SomeInterface)]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -89,6 +93,7 @@ mod tests {
     use crate::MyContract;
     use sylvia::multitest::App;
 
+    use crate::some_interface::test_utils::SomeInterface;
     use crate::MyMsg;
 
     #[test]
@@ -107,5 +112,13 @@ mod tests {
 
         contract.some_exec().call(owner).unwrap();
         contract.some_query().unwrap();
+
+        // Interface messsages
+        contract.some_interface_proxy().interface_query().unwrap();
+        contract
+            .some_interface_proxy()
+            .interface_exec()
+            .call(owner)
+            .unwrap();
     }
 }
