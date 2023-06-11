@@ -67,45 +67,54 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project
         run: cargo fmt --check
-      - name: Build cw20-base
-        working-directory: contracts/cw20-base
+      - name: Test examples
+        working-directory: examples
+        run: cargo test --locked
+      - name: Clippy examples
+        working-directory: examples
+        run: cargo clippy --all-targets -- -D warnings 
+      - name: Fmt check examples
+        working-directory: examples
+        run: cargo fmt --check
+      - name: Build cw20-base example
+        working-directory: examples/contracts/cw20-base
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Build cw1-subkeys
-        working-directory: contracts/cw1-subkeys
+        working-directory: examples/contracts/cw1-subkeys
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Build cw1-whitelist
-        working-directory: contracts/cw1-whitelist
+        working-directory: examples/contracts/cw1-whitelist
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
-        run: find target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
+        run: find examples/target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
       - name: Cw1-whitelist schema
-        working-directory: contracts/cw1-whitelist/
+        working-directory: examples/contracts/cw1-whitelist/
         run: cargo schema
       - name: Cw1-subkeys schema
-        working-directory: contracts/cw1-subkeys
+        working-directory: examples/contracts/cw1-subkeys
         run: cargo schema
       - name: Cw20-base schema
-        working-directory: contracts/cw20-base
+        working-directory: examples/contracts/cw20-base
         run: cargo schema
       - name: Cw1-whitelist ts-codegen 
-        working-directory: contracts/cw1-whitelist/
+        working-directory: examples/contracts/cw1-whitelist/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
       - name: Cw1-subkeys ts-codegen 
-        working-directory: contracts/cw1-subkeys/
+        working-directory: examples/contracts/cw1-subkeys/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-subkeys --no-bundle
       - name: Cw20-base ts-codegen 
-        working-directory: contracts/cw20-base/
+        working-directory: examples/contracts/cw20-base/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw20-base --no-bundle
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
           name: schema-json
           path: |
-            contracts/cw1-subkeys/schema/cw1-subkeys.json
-            contracts/cw1-whitelist/schema/cw1-whitelist.json
-            contracts/cw20-base/schema/cw20-base.json
+            examples/contracts/cw1-subkeys/schema/cw1-subkeys.json
+            examples/contracts/cw1-whitelist/schema/cw1-whitelist.json
+            examples/contracts/cw20-base/schema/cw20-base.json
 
   coverage:
     name: Code coverage

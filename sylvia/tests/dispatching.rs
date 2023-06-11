@@ -99,6 +99,7 @@ impl Interface for Contract {
     }
 }
 
+#[allow(dead_code)]
 #[cfg(not(tarpaulin_include))]
 #[contract]
 #[messages(interface as Interface)]

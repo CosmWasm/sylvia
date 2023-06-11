@@ -1,8 +1,8 @@
 [package]
 name = "cw20-base"
-version = "0.3.0"
+version = { workspace = true }
 authors = ["Jan Woźniak <jan@confio.gmbh>"]
-edition = "2021"
+edition = { workspace = true }
 description = "Coverage of cw20-base message generation."
 license = "Apache-2.0"
 repository = "https://github.com/CosmWasm/sylvia"
@@ -29,7 +29,7 @@ cw20-minting = { path = "../../interfaces/cw20-minting" }
 getrandom = { version = "0.2.8", features = ["js"] }
 semver = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-sylvia = { path = "../../sylvia" }
+sylvia = { path = "../../../sylvia" }
 thiserror = { version = "1.0" }
 
 [dev-dependencies]
@@ -37,7 +37,7 @@ anyhow = "1.0"
 assert_matches = "1.5.0"
 cw-multi-test = "0.16"
 cw-utils = "1.0"
-sylvia = { path = "../../sylvia", features = ["mt"] }
+sylvia = { path = "../../../sylvia", features = ["mt"] }
 cw20-allowances = { path = "../../interfaces/cw20-allowances", features = [
     "mt",
 ] }
