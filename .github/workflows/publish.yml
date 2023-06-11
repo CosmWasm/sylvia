@@ -6,7 +6,7 @@ on:
     - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  publisj:
+  publish:
     name: Crates.io publish
     runs-on: ubuntu-latest
     steps:
