@@ -1,12 +1,10 @@
-name: Contract Development
+name: Sylvia Testing
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 env:
   RUST_BACKTRACE: 1
