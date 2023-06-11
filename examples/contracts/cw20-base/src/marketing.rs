@@ -29,7 +29,7 @@ impl Cw20Marketing for Cw20Base<'_> {
             .marketing
             .as_ref()
             .ok_or(ContractError::Unauthorized)?
-            != &ctx.info.sender
+            != ctx.info.sender
         {
             return Err(ContractError::Unauthorized);
         }
@@ -82,7 +82,7 @@ impl Cw20Marketing for Cw20Base<'_> {
             .marketing
             .as_ref()
             .ok_or(ContractError::Unauthorized)?
-            != &ctx.info.sender
+            != ctx.info.sender
         {
             return Err(ContractError::Unauthorized);
         }
