@@ -1,6 +1,7 @@
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
 use sylvia::cw_std::{from_binary, Reply, SubMsgResponse, SubMsgResult};
 
+#[allow(dead_code)]
 mod noop_contract {
     use sylvia::contract;
     use sylvia::types::{ExecCtx, InstantiateCtx};
@@ -38,6 +39,7 @@ mod reply_contract {
 
     pub struct ReplyContract;
 
+    #[allow(dead_code)]
     #[cfg(not(tarpaulin_include))]
     #[entry_points]
     #[contract]

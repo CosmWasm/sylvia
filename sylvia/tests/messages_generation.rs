@@ -49,6 +49,7 @@ mod contract {
 
     #[cfg(not(tarpaulin_include))]
     #[contract]
+    #[allow(dead_code)]
     impl Contract {
         #[allow(clippy::new_without_default)]
         #[allow(dead_code)]

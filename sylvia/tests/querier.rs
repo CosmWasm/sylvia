@@ -1,3 +1,5 @@
+#![cfg(feature = "mt")]
+
 use cosmwasm_std::{Addr, Response, StdResult};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
