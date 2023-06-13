@@ -181,6 +181,7 @@ pub struct ContractMessageAttr {
     pub exec_generic_params: Vec<Path>,
     pub query_generic_params: Vec<Path>,
     pub variant: Ident,
+    pub has_custom_msg: bool,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -219,6 +220,7 @@ impl Parse for ContractMessageAttr {
         let generics_open: Option<Token![:]> = content.parse()?;
         let mut exec_generic_params = vec![];
         let mut query_generic_params = vec![];
+        let mut has_custom_msg = false;
 
         if generics_open.is_some() {
             loop {
@@ -242,8 +244,18 @@ impl Parse for ContractMessageAttr {
         }
 
         let _: Token![as] = content.parse()?;
-
         let variant = content.parse()?;
+
+        if content.peek(Token![:]) {
+            let _: Token![:] = content.parse()?;
+            let attr: Ident = content.parse()?;
+            if attr == "custom" {
+                let custom_content;
+                parenthesized!(custom_content in content);
+                let custom = custom_content.parse::<Path>()?;
+                has_custom_msg = custom.is_ident("msg");
+            }
+        }
 
         if !content.is_empty() {
             return Err(Error::new(
@@ -257,6 +269,7 @@ impl Parse for ContractMessageAttr {
             exec_generic_params,
             query_generic_params,
             variant,
+            has_custom_msg,
         })
     }
 }
