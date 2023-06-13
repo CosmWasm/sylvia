@@ -57,8 +57,36 @@ mod some_interface {
     }
 }
 
+mod other_interface {
+    use crate::MyMsg;
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::ExecCtx;
+    use sylvia::{contract, interface};
+
+    #[interface]
+    pub trait OtherInterface {
+        type Error: From<StdError>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+    }
+
+    #[contract(module=super)]
+    #[sv::custom(msg=MyMsg)]
+    impl OtherInterface for crate::MyContract {
+        type Error = StdError;
+
+        #[msg(exec)]
+        fn other_interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+    }
+}
+
 #[contract]
 #[messages(some_interface as SomeInterface)]
+#[messages(other_interface as OtherInterface: custom(msg))]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -93,6 +121,7 @@ mod tests {
     use crate::MyContract;
     use sylvia::multitest::App;
 
+    use crate::other_interface::test_utils::OtherInterface;
     use crate::some_interface::test_utils::SomeInterface;
     use crate::MyMsg;
 
@@ -118,6 +147,13 @@ mod tests {
         contract
             .some_interface_proxy()
             .interface_exec()
+            .call(owner)
+            .unwrap();
+
+        // Other interface messages
+        contract
+            .other_interface_proxy()
+            .other_interface_exec()
             .call(owner)
             .unwrap();
     }
