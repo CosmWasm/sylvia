@@ -897,6 +897,7 @@ impl<'a> GlueMessage<'a> {
                 exec_generic_params,
                 query_generic_params,
                 variant,
+                ..
             } = interface;
 
             let generics = match msg_ty {
@@ -924,9 +925,19 @@ impl<'a> GlueMessage<'a> {
         let interfaces_cnt = interface_names.len();
 
         let dispatch_arms = interfaces.iter().map(|interface| {
-            let ContractMessageAttr { variant, .. } = interface;
+            let ContractMessageAttr {
+                variant,
+                is_custom_msg,
+                ..
+            } = interface;
 
-            quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into(ctx)) }
+            if *is_custom_msg && msg_ty == &MsgType::Exec
+            {
+                quote! { #contract_name :: #variant(msg) => Ok( #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into(ctx))?)?) }
+            } else {
+                quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into(ctx)) }
+            }
+
         });
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
