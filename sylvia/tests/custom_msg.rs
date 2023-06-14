@@ -84,9 +84,39 @@ mod other_interface {
     }
 }
 
+mod associated_interface {
+    use crate::MyMsg;
+    use cosmwasm_std::{CustomMsg, Response, StdError, StdResult};
+    use sylvia::types::ExecCtx;
+    use sylvia::{contract, interface};
+
+    #[interface]
+    pub trait AssociatedInterface {
+        type Error: From<StdError>;
+        type ExecC: CustomMsg;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn associated_exec(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
+    }
+
+    #[contract(module=super)]
+    #[sv::custom(msg=MyMsg)]
+    impl AssociatedInterface for crate::MyContract {
+        type Error = StdError;
+        type ExecC = MyMsg;
+
+        #[msg(exec)]
+        fn associated_exec(&self, _ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
+            Ok(Response::default())
+        }
+    }
+}
+
 #[contract]
 #[messages(some_interface as SomeInterface)]
 #[messages(other_interface as OtherInterface: custom(msg))]
+#[messages(associated_interface as AssociatedInterface)]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -121,6 +151,7 @@ mod tests {
     use crate::MyContract;
     use sylvia::multitest::App;
 
+    use crate::associated_interface::test_utils::AssociatedInterface;
     use crate::other_interface::test_utils::OtherInterface;
     use crate::some_interface::test_utils::SomeInterface;
     use crate::MyMsg;
@@ -154,6 +185,13 @@ mod tests {
         contract
             .other_interface_proxy()
             .other_interface_exec()
+            .call(owner)
+            .unwrap();
+
+        // Associated interface messages
+        contract
+            .associated_interface_proxy()
+            .associated_exec()
             .call(owner)
             .unwrap();
     }
