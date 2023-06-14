@@ -165,7 +165,7 @@ pub struct EnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    custom: &'a Custom<'a>,
+    resp_type: TokenStream,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -203,6 +203,24 @@ impl<'a> EnumMessage<'a> {
             })
             .collect();
 
+        let resp_type = source
+            .items
+            .iter()
+            .find_map(|item| match item {
+                TraitItem::Type(ty) => {
+                    if ty.ident == "ExecC" {
+                        Some(quote! { <C as #trait_name>::ExecC })
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| {
+                let msg = custom.msg();
+                quote! { #msg}
+            });
+
         let (used_generics, unused_generics) = generics_checker.used_unused();
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
 
@@ -216,7 +234,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
-            custom,
+            resp_type,
         }
     }
 
@@ -233,7 +251,7 @@ impl<'a> EnumMessage<'a> {
             wheres,
             full_where,
             msg_ty,
-            custom,
+            resp_type,
         } = self;
 
         let match_arms = variants
@@ -256,7 +274,7 @@ impl<'a> EnumMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let dispatch_type = msg_ty.emit_result_type(custom.msg(), &parse_quote!(C::Error));
+        let dispatch_type = msg_ty.emit_result_type(resp_type, &parse_quote!(C::Error));
 
         let all_generics = if all_generics.is_empty() {
             quote! {}
