@@ -1,6 +1,6 @@
 use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{
@@ -82,7 +82,7 @@ impl MsgType {
     }
 
     /// Emits type which should be returned by dispatch function for this kind of message
-    pub fn emit_result_type(self, msg_type: &Path, err_type: &Type) -> TokenStream {
+    pub fn emit_result_type(self, msg_type: impl ToTokens, err_type: &Type) -> TokenStream {
         use MsgType::*;
 
         let sylvia = crate_module();
