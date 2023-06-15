@@ -165,7 +165,7 @@ pub struct EnumMessage<'a> {
     wheres: Vec<&'a WherePredicate>,
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
-    resp_type: TokenStream,
+    resp_type: Type,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -203,23 +203,17 @@ impl<'a> EnumMessage<'a> {
             })
             .collect();
 
-        let resp_type = source
-            .items
-            .iter()
-            .find_map(|item| match item {
-                TraitItem::Type(ty) => {
-                    if ty.ident == "ExecC" {
-                        Some(quote! { <C as #trait_name>::ExecC })
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .unwrap_or_else(|| {
-                let msg = custom.msg();
-                quote! { #msg}
-            });
+        let associated_exec: Option<Type> = source.items.iter().find_map(|item| match item {
+            TraitItem::Type(ty) if ty.ident == "ExecC" => {
+                Some(parse_quote! { <C as #trait_name>::ExecC })
+            }
+            _ => None,
+        });
+
+        let resp_type = match associated_exec {
+            Some(exec) if !custom.has_msg() => exec,
+            _ => custom.msg(),
+        };
 
         let (used_generics, unused_generics) = generics_checker.used_unused();
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
@@ -421,7 +415,7 @@ impl<'a> ContractEnumMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type();
         let contract = StripGenerics.fold_type((*contract).clone());
-        let ret_type = msg_ty.emit_result_type(custom.msg(), error);
+        let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
 
         #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
@@ -989,7 +983,7 @@ impl<'a> GlueMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type();
-        let ret_type = msg_ty.emit_result_type(custom.msg(), error);
+        let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
 
         let mut response_schemas: Vec<TokenStream> = interfaces
             .iter()

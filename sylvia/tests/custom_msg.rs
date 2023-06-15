@@ -10,6 +10,11 @@ pub struct MyMsg;
 impl CustomMsg for MyMsg {}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+pub struct OtherMsg;
+
+impl CustomMsg for OtherMsg {}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
 pub struct MyQuery;
 
 impl CustomQuery for MyQuery {}
@@ -57,8 +62,38 @@ mod some_interface {
     }
 }
 
+// Use `#[sv::custom(..)]` if both it and associated type defined
+mod interface {
+    use crate::{MyMsg, OtherMsg};
+    use cosmwasm_std::{CustomMsg, Response, StdError, StdResult};
+    use sylvia::types::ExecCtx;
+    use sylvia::{contract, interface};
+
+    #[interface]
+    #[sv::custom(msg=MyMsg)]
+    pub trait Interface {
+        type Error: From<StdError>;
+        type ExecC: CustomMsg;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
+    }
+
+    #[contract(module=super)]
+    #[sv::custom(msg=MyMsg)]
+    impl Interface for crate::MyContract {
+        type Error = StdError;
+        type ExecC = OtherMsg;
+
+        #[msg(exec)]
+        fn exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
+            Ok(Response::default())
+        }
+    }
+}
+
 mod other_interface {
-    use crate::MyMsg;
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::types::ExecCtx;
     use sylvia::{contract, interface};
@@ -117,6 +152,7 @@ mod associated_interface {
 #[messages(some_interface as SomeInterface)]
 #[messages(other_interface as OtherInterface: custom(msg))]
 #[messages(associated_interface as AssociatedInterface)]
+#[messages(interface as Interface)]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -148,6 +184,7 @@ impl MyContract {
 
 #[cfg(test)]
 mod tests {
+    use crate::interface::test_utils::Interface;
     use crate::MyContract;
     use sylvia::multitest::App;
 
@@ -194,5 +231,8 @@ mod tests {
             .associated_exec()
             .call(owner)
             .unwrap();
+
+        // Both associated type and custom attr used
+        contract.interface_proxy().exec().call(owner).unwrap();
     }
 }
