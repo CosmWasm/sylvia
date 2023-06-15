@@ -1,7 +1,7 @@
 pub mod responses;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, Response, StdError, StdResult};
+use cosmwasm_std::{Binary, CustomMsg, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
@@ -31,6 +31,7 @@ pub enum EmbeddedLogo {
 #[interface]
 pub trait Cw20Marketing {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
 
     /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
@@ -45,11 +46,11 @@ pub trait Cw20Marketing {
         project: Option<String>,
         description: Option<String>,
         marketing: Option<String>,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// If set as the "marketing" role on the contract, upload a new URL, SVG, or PNG for the token
     #[msg(exec)]
-    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error>;
+    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.

@@ -95,26 +95,28 @@ mod interface {
 
 mod other_interface {
     use crate::MyMsg;
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use cosmwasm_std::{CustomMsg, Empty, Response, StdError, StdResult};
     use sylvia::types::ExecCtx;
     use sylvia::{contract, interface};
 
     #[interface]
     pub trait OtherInterface {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
-        fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+        fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
     }
 
     #[contract(module=super)]
     #[sv::custom(msg=MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
+        type ExecC = Empty;
 
         #[msg(exec)]
-        fn other_interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+        fn other_interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
             Ok(Response::default())
         }
     }

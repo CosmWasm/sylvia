@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, Decimal};
 pub struct QueryResult;
 
 mod interface {
-    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use cosmwasm_std::{Addr, CustomMsg, Decimal, Response, StdError};
     use sylvia::{
         interface,
         types::{ExecCtx, QueryCtx},
@@ -17,9 +17,10 @@ mod interface {
     #[interface]
     pub trait Interface {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[msg(exec)]
-        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(exec)]
         fn argumented_execution(
@@ -28,7 +29,7 @@ mod interface {
             addr: Addr,
             coef: Decimal,
             #[serde(default)] desc: String,
-        ) -> Result<Response, Self::Error>;
+        ) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(query)]
         fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;

@@ -1,6 +1,6 @@
 pub mod responses;
 
-use cosmwasm_std::{Binary, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Binary, CustomMsg, Response, StdError, StdResult, Uint128};
 use cw_utils::Expiration;
 use responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
@@ -11,6 +11,7 @@ use sylvia::{interface, schemars};
 #[interface]
 pub trait Cw20Allowances {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
@@ -21,7 +22,7 @@ pub trait Cw20Allowances {
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Lowers the spender's access of tokens from the owner's (env.sender) account by amount.
     /// If expires is Some(), overwrites current allowance expiration with this one.
@@ -32,7 +33,7 @@ pub trait Cw20Allowances {
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Transfers amount tokens from owner -> recipient
     /// if `env.sender` has sufficient pre-approval.
@@ -43,7 +44,7 @@ pub trait Cw20Allowances {
         owner: String,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Sends amount tokens from owner -> contract
     /// if `env.sender` has sufficient pre-approval.
@@ -55,7 +56,7 @@ pub trait Cw20Allowances {
         contract: String,
         amount: Uint128,
         msg: Binary,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Destroys amount of tokens forever
     #[msg(exec)]
@@ -64,7 +65,7 @@ pub trait Cw20Allowances {
         ctx: ExecCtx,
         owner: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Returns how much spender can use from owner account, 0 if unset.
     #[msg(query)]

@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Decimal, Response, StdError, StdResult};
+use cosmwasm_std::{from_binary, Addr, Decimal, Empty, Response, StdError, StdResult};
 use interface::Interface;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 mod interface {
-    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use cosmwasm_std::{Addr, CustomMsg, Decimal, Response, StdError};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
 
@@ -18,9 +18,10 @@ mod interface {
     #[interface]
     pub trait Interface {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[msg(exec)]
-        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(exec)]
         fn argumented_execution(
@@ -29,7 +30,7 @@ mod interface {
             addr: Addr,
             coef: Decimal,
             desc: String,
-        ) -> Result<Response, Self::Error>;
+        ) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(query)]
         fn no_args_query(&self, ctx: QueryCtx) -> Result<EmptyQueryResponse, Self::Error>;
@@ -63,9 +64,10 @@ pub struct QueryResponse {
 #[messages(interface as Interface)]
 impl Interface for Contract {
     type Error = StdError;
+    type ExecC = Empty;
 
     #[msg(exec)]
-    fn no_args_execution(&self, _: ExecCtx) -> Result<Response, StdError> {
+    fn no_args_execution(&self, _: ExecCtx) -> Result<Response<Self::ExecC>, StdError> {
         *self.execs.borrow_mut() += 1;
         Ok(Response::new())
     }
@@ -77,7 +79,7 @@ impl Interface for Contract {
         addr: Addr,
         coef: Decimal,
         desc: String,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         *self.execs.borrow_mut() += 1;
 
         self.data

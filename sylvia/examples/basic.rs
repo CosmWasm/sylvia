@@ -33,7 +33,7 @@ pub struct MemberResp {
 
 mod group {
     use anyhow::Error;
-    use cosmwasm_std::{Response, StdError};
+    use cosmwasm_std::{CustomMsg, Empty, Response, StdError};
     use sylvia::types::{ExecCtx, QueryCtx};
     use sylvia::{contract, interface};
 
@@ -42,13 +42,14 @@ mod group {
     #[interface]
     pub trait Group {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[msg(exec)]
         fn update_admin(
             &self,
             ctx: ExecCtx,
             admin: Option<String>,
-        ) -> Result<Response, Self::Error>;
+        ) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(exec)]
         fn update_members(
@@ -56,7 +57,7 @@ mod group {
             ctx: ExecCtx,
             remove: Vec<String>,
             add: Vec<Member>,
-        ) -> Result<Response, Self::Error>;
+        ) -> Result<Response<Self::ExecC>, Self::Error>;
 
         #[msg(query)]
         fn member(&self, ctx: QueryCtx, addr: String) -> Result<MemberResp, Self::Error>;
@@ -65,13 +66,14 @@ mod group {
     #[contract(module=super)]
     impl Group for GroupContract {
         type Error = Error;
+        type ExecC = Empty;
 
         #[msg(exec)]
         fn update_admin(
             &self,
             _ctx: ExecCtx,
             _admin: Option<String>,
-        ) -> Result<Response, Self::Error> {
+        ) -> Result<Response<Self::ExecC>, Self::Error> {
             todo!()
         }
 
@@ -81,7 +83,7 @@ mod group {
             _ctx: ExecCtx,
             _remove: Vec<String>,
             _add: Vec<Member>,
-        ) -> Result<Response, Self::Error> {
+        ) -> Result<Response<Self::ExecC>, Self::Error> {
             todo!()
         }
 

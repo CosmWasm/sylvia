@@ -1,4 +1,4 @@
-use cosmwasm_std::{Response, StdError};
+use cosmwasm_std::{CustomMsg, Response, StdError};
 
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
@@ -6,18 +6,28 @@ use sylvia::{interface, schemars};
 #[interface]
 pub trait Cw4 {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
 
     #[msg(exec)]
-    fn update_admin(&self, ctx: ExecCtx, admin: String) -> Result<Response, Self::Error>;
+    fn update_admin(
+        &self,
+        ctx: ExecCtx,
+        admin: String,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(exec)]
-    fn update_members(&self, ctx: ExecCtx, members: Vec<String>) -> Result<Response, Self::Error>;
+    fn update_members(
+        &self,
+        ctx: ExecCtx,
+        members: Vec<String>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(exec)]
-    fn add_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
+    fn add_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(exec)]
-    fn remove_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
+    fn remove_hook(&self, ctx: ExecCtx, hook: String)
+        -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(query)]
     fn member(&self, ctx: QueryCtx, member: String) -> Result<Response, Self::Error>;

@@ -1,7 +1,7 @@
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;
-use cosmwasm_std::{Response, StdError, StdResult};
+use cosmwasm_std::{Empty, Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
 use sylvia::contract;
@@ -11,6 +11,7 @@ use sylvia::types::{ExecCtx, QueryCtx};
 #[messages(cw20_marketing as Cw20Marketing)]
 impl Cw20Marketing for Cw20Base<'_> {
     type Error = ContractError;
+    type ExecC = Empty;
 
     #[msg(exec)]
     fn update_marketing(
@@ -19,7 +20,7 @@ impl Cw20Marketing for Cw20Base<'_> {
         project: Option<String>,
         description: Option<String>,
         marketing: Option<String>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?
@@ -70,7 +71,7 @@ impl Cw20Marketing for Cw20Base<'_> {
     }
 
     #[msg(exec)]
-    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error> {
+    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response<Self::ExecC>, Self::Error> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?

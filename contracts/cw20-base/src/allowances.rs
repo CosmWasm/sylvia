@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Order, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, Binary, Empty, Order, Response, StdError, StdResult, Uint128};
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
     AllowanceResponse, SpenderAllowanceInfo,
@@ -21,6 +21,7 @@ const DEFAULT_LIMIT: u32 = 10;
 #[messages(cw20_allowances as Cw20Allowances)]
 impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;
+    type ExecC = Empty;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
@@ -31,7 +32,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let spender_addr = ctx.deps.api.addr_validate(&spender)?;
         if spender_addr == ctx.info.sender {
             return Err(ContractError::CannotSetOwnAccount);
@@ -76,7 +77,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let spender_addr = Addr::unchecked(&spender);
         if spender_addr == ctx.info.sender {
             return Err(ContractError::CannotSetOwnAccount);
@@ -126,7 +127,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         owner: String,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let rcpt_addr = ctx.deps.api.addr_validate(&recipient)?;
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
@@ -184,7 +185,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         contract: String,
         amount: Uint128,
         msg: Binary,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let rcpt_addr = ctx.deps.api.addr_validate(&contract)?;
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
@@ -237,7 +238,7 @@ impl Cw20Allowances for Cw20Base<'_> {
         ctx: ExecCtx,
         owner: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
         // deduct allowance before doing anything else have enough allowance

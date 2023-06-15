@@ -1,4 +1,4 @@
-use cosmwasm_std::{Response, StdResult};
+use cosmwasm_std::{Empty, Response, StdResult};
 use cw1_whitelist::responses::AdminListResponse;
 use cw1_whitelist::whitelist::{self, Whitelist};
 use sylvia::contract;
@@ -13,14 +13,19 @@ use crate::error::ContractError;
 #[messages(whitelist as Whitelist)]
 impl Whitelist for Cw1SubkeysContract<'_> {
     type Error = ContractError;
+    type ExecC = Empty;
 
     #[msg(exec)]
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error> {
+    fn freeze(&self, ctx: ExecCtx) -> Result<Response<Self::ExecC>, Self::Error> {
         self.whitelist.freeze(ctx).map_err(From::from)
     }
 
     #[msg(exec)]
-    fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error> {
+    fn update_admins(
+        &self,
+        ctx: ExecCtx,
+        admins: Vec<String>,
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         self.whitelist
             .update_admins(ctx, admins)
             .map_err(From::from)

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Order, Response, StdResult};
+use cosmwasm_std::{CustomMsg, Empty, Order, Response, StdResult};
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{contract, interface, schemars};
 
@@ -9,12 +9,17 @@ use crate::responses::AdminListResponse;
 #[interface]
 pub trait Whitelist {
     type Error: From<cosmwasm_std::StdError>;
+    type ExecC: CustomMsg;
 
     #[msg(exec)]
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+    fn freeze(&self, ctx: ExecCtx) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(exec)]
-    fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error>;
+    fn update_admins(
+        &self,
+        ctx: ExecCtx,
+        admins: Vec<String>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(query)]
     fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
@@ -23,9 +28,10 @@ pub trait Whitelist {
 #[contract(module=crate::contract)]
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
+    type ExecC = Empty;
 
     #[msg(exec)]
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
+    fn freeze(&self, ctx: ExecCtx) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
         }
@@ -41,7 +47,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         &self,
         ctx: ExecCtx,
         mut admins: Vec<String>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
         }

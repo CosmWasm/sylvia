@@ -11,7 +11,7 @@ pub struct CountResponse {
 }
 
 pub mod counter {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use cosmwasm_std::{CustomMsg, Empty, Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx};
     use sylvia::{contract, interface};
 
@@ -20,23 +20,25 @@ pub mod counter {
     #[interface]
     pub trait Counter {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse>;
 
         #[msg(exec)]
-        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response>;
+        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
 
         #[msg(exec)]
-        fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response>;
+        fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response<Self::ExecC>>;
 
         #[msg(exec)]
-        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
+        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
     }
 
     #[contract(module=super)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
+        type ExecC = Empty;
 
         #[msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
@@ -45,13 +47,13 @@ pub mod counter {
         }
 
         #[msg(exec)]
-        fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response> {
+        fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response<Self::ExecC>> {
             self.count.save(ctx.deps.storage, &new_count)?;
             Ok(Response::new())
         }
 
         #[msg(exec)]
-        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
+        fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
             let other_count = self
                 .remote
                 .load(ctx.deps.storage)?
@@ -64,7 +66,7 @@ pub mod counter {
         }
 
         #[msg(exec)]
-        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
+        fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
             let remote = self.remote.load(ctx.deps.storage)?;
             let other_count = BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
                 .count()?

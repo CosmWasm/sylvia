@@ -8,7 +8,7 @@ use crate::utils::{extract_return_type, filter_wheres, process_fields};
 use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
-use proc_macro_error::emit_error;
+use proc_macro_error::{emit_error, emit_warning};
 use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
@@ -212,6 +212,18 @@ impl<'a> EnumMessage<'a> {
 
         let resp_type = match associated_exec {
             Some(exec) if !custom.has_msg() => exec,
+            None if !custom.has_msg() => {
+                // emit_error!
+                // This will show only on +nightly according to:
+                // https://docs.rs/proc-macro-error/latest/proc_macro_error/macro.emit_warning.html
+                emit_warning!(
+                    source.span(), "The trait is missing the custom message definition, and returning any chain-specific custom messages on its implementation will not be possible.";
+                    note = "Consider adding the `type ExecC;` associated message in the trait definition, and then use it in the execution responses return type: `Result<Response<Self::ExecC>, _>`";
+                    note = "If it is intended and you don't want to allow executing custom messages from this trait, add the `#[sv::custom(cosmwasm_std::Empty)]` attribute on the trait.";
+                );
+
+                custom.msg()
+            }
             _ => custom.msg(),
         };
 

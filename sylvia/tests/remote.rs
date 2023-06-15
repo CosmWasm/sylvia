@@ -5,16 +5,18 @@ use sylvia::types::InstantiateCtx;
 pub struct SomeContract;
 
 pub mod some_interface {
-    use cosmwasm_std::StdError;
+    use cosmwasm_std::{CustomMsg, Empty, StdError};
     use sylvia::interface;
 
     #[interface]
     pub trait SomeInterface {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
     }
 
     impl SomeInterface for super::SomeContract {
         type Error = StdError;
+        type ExecC = Empty;
     }
 }
 

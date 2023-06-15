@@ -18,7 +18,7 @@ pub struct QueryResponse;
 type QueryResult<E> = Result<QueryResponse, E>;
 
 mod msg {
-    use cosmwasm_std::StdError;
+    use cosmwasm_std::{CustomMsg, StdError};
     use sylvia::{interface, types::QueryCtx};
 
     use crate::{QueryResponse, QueryResult};
@@ -26,6 +26,7 @@ mod msg {
     #[interface(module=msg)]
     pub trait Interface {
         type Error: From<StdError>;
+        type ExecC: CustomMsg;
 
         #[msg(query, resp=QueryResponse)]
         fn query(&self, ctx: QueryCtx, #[serde(default)] name: String) -> QueryResult<Self::Error>;
