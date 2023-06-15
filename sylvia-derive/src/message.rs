@@ -203,23 +203,24 @@ impl<'a> EnumMessage<'a> {
             })
             .collect();
 
-        let resp_type = source
-            .items
-            .iter()
-            .find_map(|item| match item {
-                TraitItem::Type(ty) => {
-                    if ty.ident == "ExecC" {
-                        Some(quote! { <C as #trait_name>::ExecC })
-                    } else {
-                        None
-                    }
+        let associated_exec = source.items.iter().find_map(|item| match item {
+            TraitItem::Type(ty) => {
+                if ty.ident == "ExecC" {
+                    Some(quote! { <C as #trait_name>::ExecC })
+                } else {
+                    None
                 }
-                _ => None,
-            })
-            .unwrap_or_else(|| {
+            }
+            _ => None,
+        });
+
+        let resp_type = match associated_exec {
+            Some(exec) if !custom.is_msg() => exec,
+            _ => {
                 let msg = custom.msg();
-                quote! { #msg}
-            });
+                quote! { #msg }
+            }
+        };
 
         let (used_generics, unused_generics) = generics_checker.used_unused();
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);

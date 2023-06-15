@@ -315,9 +315,10 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
 
 #[derive(Debug)]
 pub struct Custom<'a> {
-    msg: Path,
-    _query: Path,
+    msg: Option<Path>,
+    _query: Option<Path>,
     input_attr: Option<&'a Attribute>,
+    default_type: Path,
 }
 
 impl Default for Custom<'_> {
@@ -325,9 +326,10 @@ impl Default for Custom<'_> {
         let sylvia = crate_module();
 
         Self {
-            msg: parse_quote!(#sylvia ::cw_std::Empty),
-            _query: parse_quote!(#sylvia ::cw_std::Empty),
+            msg: None,
+            _query: None,
             input_attr: None,
+            default_type: parse_quote! {#sylvia ::cw_std::Empty},
         }
     }
 }
@@ -370,7 +372,11 @@ impl<'a> Custom<'a> {
     }
 
     pub fn msg(&self) -> &Path {
-        &self.msg
+        self.msg.as_ref().unwrap_or(&self.default_type)
+    }
+
+    pub fn is_msg(&self) -> bool {
+        self.msg.is_some()
     }
 }
 
@@ -386,9 +392,9 @@ impl Parse for Custom<'_> {
             let ty: Ident = content.parse()?;
             let _: Token![=] = content.parse()?;
             if ty == "msg" {
-                custom.msg = content.parse()?
+                custom.msg = Some(content.parse()?)
             } else if ty == "query" {
-                custom._query = content.parse()?
+                custom._query = Some(content.parse()?)
             } else {
                 return Err(Error::new(
                     ty.span(),
