@@ -1,6 +1,6 @@
 use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{
@@ -82,7 +82,7 @@ impl MsgType {
     }
 
     /// Emits type which should be returned by dispatch function for this kind of message
-    pub fn emit_result_type(self, msg_type: impl ToTokens, err_type: &Type) -> TokenStream {
+    pub fn emit_result_type(self, msg_type: &Type, err_type: &Type) -> TokenStream {
         use MsgType::*;
 
         let sylvia = crate_module();
@@ -313,23 +313,11 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
     Some((method, msg_attr))
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Custom<'a> {
-    msg: Path,
-    _query: Path,
+    msg: Option<Type>,
+    _query: Option<Type>,
     input_attr: Option<&'a Attribute>,
-}
-
-impl Default for Custom<'_> {
-    fn default() -> Self {
-        let sylvia = crate_module();
-
-        Self {
-            msg: parse_quote!(#sylvia ::cw_std::Empty),
-            _query: parse_quote!(#sylvia ::cw_std::Empty),
-            input_attr: None,
-        }
-    }
 }
 
 impl<'a> Custom<'a> {
@@ -369,8 +357,15 @@ impl<'a> Custom<'a> {
         custom
     }
 
-    pub fn msg(&self) -> &Path {
-        &self.msg
+    pub fn msg(&self) -> Type {
+        let sylvia = crate_module();
+        self.msg
+            .clone()
+            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::Empty })
+    }
+
+    pub fn has_msg(&self) -> bool {
+        self.msg.is_some()
     }
 }
 
@@ -386,9 +381,9 @@ impl Parse for Custom<'_> {
             let ty: Ident = content.parse()?;
             let _: Token![=] = content.parse()?;
             if ty == "msg" {
-                custom.msg = content.parse()?
+                custom.msg = Some(content.parse()?)
             } else if ty == "query" {
-                custom._query = content.parse()?
+                custom._query = Some(content.parse()?)
             } else {
                 return Err(Error::new(
                     ty.span(),
