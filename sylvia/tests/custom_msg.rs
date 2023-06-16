@@ -108,7 +108,7 @@ mod other_interface {
     }
 
     #[contract(module=super)]
-    #[sv::custom(msg=MyMsg)]
+    #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
 
@@ -182,7 +182,7 @@ impl MyContract {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mt"))]
 mod tests {
     use crate::interface::test_utils::Interface;
     use crate::MyContract;
