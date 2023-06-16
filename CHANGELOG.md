@@ -10,7 +10,8 @@ and this project adheres to
   querying other contracts more intuitive.
 - `module` attr for `contract` macro no longer wraps generated code in scope.
   As from now it will be used to provide path to contract implementation.
-- `new` method on contract no longer has to be `const`
+- Removed requirement for `const fn new()` method for `contract` macro call.
+  `fn new()` method is still required.
 
 ## \[0.4.2\] - 2023-05-24
 
@@ -21,8 +22,6 @@ and this project adheres to
   handler
 - Added generation of reply implementation forwarding to `#[msg(reply)]`
   handler in multitest helpers
-- Removed requirement for `const fn new()` method for `contract` macro call.
-  `fn new()` method is still required.
 
 ## \[0.4.1\] - 2023-05-23
 
