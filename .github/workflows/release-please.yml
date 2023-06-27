@@ -1,7 +1,5 @@
 on:
-  push:
-    branches:
-      - main
+  push
 
 permissions:
   contents: write
@@ -20,6 +18,4 @@ jobs:
           bump-minor-pre-major: true
           bump-patch-for-minor-pre-major: true
           bootstrap-sha: ae522441497a670a7d56dae389ffb2b7bb626960
-          plugins:
-            - cargo-workspace
-            - sentence-case
+          plugins: cargo-workspace
