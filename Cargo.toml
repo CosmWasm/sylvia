@@ -8,7 +8,7 @@ exclude = ["examples/*"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.0"
+version = "0.6.0"
 
 [workspace.dependencies]
 sylvia-derive = { version = "0.5.0", path = "sylvia-derive" }
