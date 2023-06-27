@@ -15,8 +15,6 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
-          release-type: node
-          package-name: release-please-action
           release-type: rust
           package-name: sylvia
           bump-minor-pre-major: true
