@@ -119,7 +119,7 @@ jobs:
     name: Code coverage
     runs-on: ubuntu-latest
     container:
-      image:                    xd009642/tarpaulin:develop-nightly
+      image:                    xd009642/tarpaulin:develop
       options:                  --security-opt seccomp=unconfined
     steps:
       - name:                   Checkout sources
