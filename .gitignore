@@ -2,3 +2,4 @@ target/**
 */target/**
 **/schema/**
 tarpaulin-report.html
+*.profraw
