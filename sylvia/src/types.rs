@@ -27,6 +27,11 @@ pub struct QueryCtx<'a, C: CustomQuery = Empty> {
     pub env: Env,
 }
 
+pub struct SudoCtx<'a, C: CustomQuery = Empty> {
+    pub deps: DepsMut<'a, C>,
+    pub env: Env,
+}
+
 impl<C: CustomQuery> ExecCtx<'_, C> {
     pub fn branch(&'_ mut self) -> ExecCtx<'_, C> {
         ExecCtx {
@@ -36,12 +41,22 @@ impl<C: CustomQuery> ExecCtx<'_, C> {
         }
     }
 }
+
 impl<C: CustomQuery> InstantiateCtx<'_, C> {
     pub fn branch(&'_ mut self) -> InstantiateCtx<'_, C> {
         InstantiateCtx {
             deps: self.deps.branch(),
             env: self.env.clone(),
             info: self.info.clone(),
+        }
+    }
+}
+
+impl<C: CustomQuery> SudoCtx<'_, C> {
+    pub fn branch(&'_ mut self) -> SudoCtx<'_, C> {
+        SudoCtx {
+            deps: self.deps.branch(),
+            env: self.env.clone(),
         }
     }
 }
