@@ -1,0 +1,31 @@
+[package]
+name = "entry-points-overriding"
+version = { workspace = true }
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
+edition = { workspace = true }
+description = "Example usage of sudo and entry point overriding."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+library = []
+tests = ["library", "cw-multi-test", "anyhow"]
+
+[dependencies]
+anyhow = { version = "1.0", optional = true }
+cosmwasm-schema = "1.2"
+cosmwasm-std = { version = "1.2", features = ["staking"] }
+cw-multi-test = { version = "0.16", optional = true }
+cw-storage-plus = "1.0"
+cw-utils = "1.0"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+sylvia = { path = "../../../sylvia" }
+
+[dev-dependencies]
+anyhow = "1.0"
+cw-multi-test = "0.16"
+sylvia = { path = "../../../sylvia", features = ["mt"] }

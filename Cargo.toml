@@ -1,9 +1,5 @@
 [workspace]
-members = [
-  "sylvia",
-  "sylvia-derive",
-
-]
+members = ["sylvia", "sylvia-derive"]
 exclude = ["examples/*"]
 resolver = "2"
 

@@ -84,6 +84,9 @@ jobs:
       - name: Build cw1-whitelist
         working-directory: examples/contracts/cw1-whitelist
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build entry-points-overriding
+        working-directory: examples/contracts/entry-points-overriding
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
@@ -97,6 +100,9 @@ jobs:
       - name: Cw20-base schema
         working-directory: examples/contracts/cw20-base
         run: cargo schema
+      - name: Entry-points-overriding schema
+        working-directory: examples/contracts/entry-points-overriding
+        run: cargo schema
       - name: Cw1-whitelist ts-codegen 
         working-directory: examples/contracts/cw1-whitelist/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
@@ -106,6 +112,9 @@ jobs:
       - name: Cw20-base ts-codegen 
         working-directory: examples/contracts/cw20-base/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw20-base --no-bundle
+      - name: Entry-points-overriding ts-codegen
+        working-directory: examples/contracts/entry-points-overriding
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name entry-points-overriding --no-bundle
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
@@ -114,6 +123,7 @@ jobs:
             examples/contracts/cw1-subkeys/schema/cw1-subkeys.json
             examples/contracts/cw1-whitelist/schema/cw1-whitelist.json
             examples/contracts/cw20-base/schema/cw20-base.json
+            examples/contracts/entry-points-overriding/schema/entry-points-overriding.json
 
   coverage:
     name: Code coverage
