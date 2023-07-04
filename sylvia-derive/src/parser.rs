@@ -82,6 +82,37 @@ impl MsgType {
         }
     }
 
+    pub fn emit_ctx_params(self) -> TokenStream {
+        use MsgType::*;
+
+        let sylvia = crate_module();
+
+        match self {
+            Exec | Instantiate => quote! {
+                deps: #sylvia ::cw_std::DepsMut, env: #sylvia ::cw_std::Env, info: #sylvia ::cw_std::MessageInfo
+            },
+            Migrate | Reply | Sudo => quote! {
+                deps: #sylvia ::cw_std::DepsMut, env: #sylvia ::cw_std::Env
+            },
+            Query => quote! {
+                deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env
+            },
+        }
+    }
+
+    pub fn emit_ep_name(self) -> TokenStream {
+        use MsgType::*;
+
+        match self {
+            Exec => quote! { execute },
+            Instantiate => quote! { instantiate },
+            Migrate => quote! { migrate },
+            Sudo => quote! { sudo },
+            Reply => quote! { reply },
+            Query => quote! { query },
+        }
+    }
+
     pub fn emit_ctx_values(self) -> TokenStream {
         use MsgType::*;
 
@@ -455,6 +486,35 @@ impl OverrideEntryPoint {
             #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?
                 .dispatch(self, ( #values ))
                 .map_err(Into::into)
+        }
+    }
+
+    pub fn emit_default_entry_point(
+        custom_msg: &Type,
+        name: &Type,
+        error: &Type,
+        msg_type: MsgType,
+    ) -> TokenStream {
+        let sylvia = crate_module();
+
+        #[cfg(not(tarpaulin_include))]
+        let resp_type = match msg_type {
+            MsgType::Query => quote! { #sylvia ::cw_std::Binary },
+            _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
+        };
+        let params = msg_type.emit_ctx_params();
+        let values = msg_type.emit_ctx_values();
+        let ep_name = msg_type.emit_ep_name();
+        let msg_name = msg_type.emit_msg_name();
+
+        quote! {
+            #[#sylvia ::cw_std::entry_point]
+            pub fn #ep_name (
+                #params ,
+                msg: #msg_name,
+            ) -> Result<#resp_type, #error> {
+                msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
+            }
         }
     }
 }
