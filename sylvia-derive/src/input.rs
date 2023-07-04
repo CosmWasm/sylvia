@@ -9,7 +9,7 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
-use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType};
+use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::remote::Remote;
 use crate::variant_descs::AsVariantDescs;
 
@@ -27,6 +27,7 @@ pub struct ImplInput<'a> {
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
     custom: Custom<'a>,
+    override_entry_points: OverrideEntryPoints,
 }
 
 impl<'a> TraitInput<'a> {
@@ -126,6 +127,7 @@ impl<'a> ImplInput<'a> {
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         let custom = Custom::new(&item.attrs);
+        let override_entry_points = OverrideEntryPoints::new(&item.attrs);
 
         Self {
             attributes,
@@ -133,6 +135,7 @@ impl<'a> ImplInput<'a> {
             generics,
             error,
             custom,
+            override_entry_points,
         }
     }
 
@@ -145,6 +148,7 @@ impl<'a> ImplInput<'a> {
                 &self.error,
                 &self.generics,
                 &self.custom,
+                &self.override_entry_points,
             )
             .emit()
         } else {

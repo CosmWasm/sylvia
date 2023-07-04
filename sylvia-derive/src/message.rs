@@ -2,6 +2,7 @@ use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::parser::{
     parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, MsgAttr, MsgType,
+    OverrideEntryPoint, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -544,7 +545,7 @@ impl<'a> MsgVariant<'a> {
     /// Emits match leg dispatching against this variant. Assumes enum variants are imported into the
     /// scope. Dispatching is performed by calling the function this variant is build from on the
     /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
-    pub fn emit_dispatch_leg(&self, msg_attr: MsgType) -> TokenStream {
+    pub fn emit_dispatch_leg(&self, msg_type: MsgType) -> TokenStream {
         use MsgType::*;
 
         let Self {
@@ -568,7 +569,7 @@ impl<'a> MsgVariant<'a> {
             .map(|(field, num_field)| quote!(#field : #num_field));
 
         #[cfg(not(tarpaulin_include))]
-        match msg_attr {
+        match msg_type {
             Exec => quote! {
                 #name {
                     #(#fields,)*
@@ -579,8 +580,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => #sylvia ::cw_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate | Migrate | Reply => {
-                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate | Reply | Sudo => {
+                emit_error!(name.span(), "Instantiation, Reply, Sudo and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }
@@ -1093,12 +1094,14 @@ pub struct EntryPoints<'a> {
     error: Type,
     reply: Option<Ident>,
     custom: Custom<'a>,
+    override_entry_points: OverrideEntryPoints,
 }
 
 impl<'a> EntryPoints<'a> {
     pub fn new(source: &'a ItemImpl) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
+        let override_entry_points = OverrideEntryPoints::new(&source.attrs);
 
         let error = source
             .attrs
@@ -1128,6 +1131,7 @@ impl<'a> EntryPoints<'a> {
             error,
             reply,
             custom,
+            override_entry_points,
         }
     }
 
@@ -1137,59 +1141,78 @@ impl<'a> EntryPoints<'a> {
             error,
             reply,
             custom,
+            override_entry_points,
         } = self;
         let sylvia = crate_module();
 
         let custom_msg = custom.msg();
-        #[cfg(not(tarpaulin_include))]
-        let resp_type = quote! { #sylvia ::cw_std::Response < #custom_msg > };
 
         #[cfg(not(tarpaulin_include))]
         {
-            let reply = match reply {
-                Some(reply) => quote! {
-                    #[#sylvia ::cw_std::entry_point]
-                    pub fn reply(
-                        deps: #sylvia ::cw_std::DepsMut,
-                        env: #sylvia ::cw_std::Env,
-                        msg: #sylvia ::cw_std::Reply,
-                    ) -> Result<#resp_type, #error> {
-                        #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
-                    }
-                },
-                None => quote! {},
-            };
+            let instantiate_ep = override_entry_points
+                .get_entry_point(MsgType::Instantiate)
+                .map(|ep| ep.emit_entry_point(&custom_msg, error))
+                .unwrap_or_else(|| {
+                    OverrideEntryPoint::emit_default_entry_point(
+                        &custom_msg,
+                        name,
+                        error,
+                        MsgType::Instantiate,
+                    )
+                });
+
+            let exec_ep = override_entry_points
+                .get_entry_point(MsgType::Exec)
+                .map(|ep| ep.emit_entry_point(&custom_msg, error))
+                .unwrap_or_else(|| {
+                    OverrideEntryPoint::emit_default_entry_point(
+                        &custom_msg,
+                        name,
+                        error,
+                        MsgType::Exec,
+                    )
+                });
+
+            let query_ep = override_entry_points
+                .get_entry_point(MsgType::Query)
+                .map(|ep| ep.emit_entry_point(&custom_msg, error))
+                .unwrap_or_else(|| {
+                    OverrideEntryPoint::emit_default_entry_point(
+                        &custom_msg,
+                        name,
+                        error,
+                        MsgType::Query,
+                    )
+                });
+
+            let reply_ep = override_entry_points
+                .get_entry_point(MsgType::Reply)
+                .map(|ep| ep.emit_entry_point(&custom_msg, error))
+                .unwrap_or_else(|| match reply {
+                    Some(reply) => quote! {
+                        #[#sylvia ::cw_std::entry_point]
+                        pub fn reply(
+                            deps: #sylvia ::cw_std::DepsMut,
+                            env: #sylvia ::cw_std::Env,
+                            msg: #sylvia ::cw_std::Reply,
+                        ) -> Result<#sylvia ::cw_std::Response < #custom_msg >, #error> {
+                            #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
+                        }
+                    },
+                    _ => quote! {},
+                });
 
             quote! {
                 pub mod entry_points {
                     use super::*;
 
-                    #[#sylvia ::cw_std::entry_point]
-                    pub fn instantiate(
-                        deps: #sylvia ::cw_std::DepsMut,
-                        env: #sylvia ::cw_std::Env,
-                        info: #sylvia ::cw_std::MessageInfo,
-                        msg: InstantiateMsg,
-                    ) -> Result<#resp_type, #error> {
-                        msg.dispatch(&#name ::new() , (deps, env, info)).map_err(Into::into)
-                    }
+                    #instantiate_ep
 
-                    #[#sylvia ::cw_std::entry_point]
-                    pub fn execute(
-                        deps: #sylvia ::cw_std::DepsMut,
-                        env: #sylvia ::cw_std::Env,
-                        info: #sylvia ::cw_std::MessageInfo,
-                        msg: ContractExecMsg,
-                    ) -> Result<#resp_type, #error> {
-                        msg.dispatch(&#name ::new(), (deps, env, info)).map_err(Into::into)
-                    }
+                    #exec_ep
 
-                    #[#sylvia ::cw_std::entry_point]
-                    pub fn query(deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env, msg: ContractQueryMsg) -> Result<#sylvia ::cw_std::Binary, #error> {
-                        msg.dispatch(&#name ::new(), (deps, env)).map_err(Into::into)
-                    }
+                    #query_ep
 
-                    #reply
+                    #reply_ep
                 }
             }
         }
