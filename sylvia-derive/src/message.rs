@@ -544,7 +544,7 @@ impl<'a> MsgVariant<'a> {
     /// Emits match leg dispatching against this variant. Assumes enum variants are imported into the
     /// scope. Dispatching is performed by calling the function this variant is build from on the
     /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
-    pub fn emit_dispatch_leg(&self, msg_attr: MsgType) -> TokenStream {
+    pub fn emit_dispatch_leg(&self, msg_type: MsgType) -> TokenStream {
         use MsgType::*;
 
         let Self {
@@ -568,7 +568,7 @@ impl<'a> MsgVariant<'a> {
             .map(|(field, num_field)| quote!(#field : #num_field));
 
         #[cfg(not(tarpaulin_include))]
-        match msg_attr {
+        match msg_type {
             Exec => quote! {
                 #name {
                     #(#fields,)*
@@ -579,8 +579,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => #sylvia ::cw_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate | Migrate | Reply => {
-                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate | Reply | Sudo => {
+                emit_error!(name.span(), "Instantiation, Reply, Migrate and Sudo messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }
