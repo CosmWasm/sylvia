@@ -51,6 +51,7 @@ pub enum MsgType {
     Instantiate,
     Migrate,
     Reply,
+    Sudo,
 }
 
 /// `#[msg(...)]` attribute for `interface` macro
@@ -72,12 +73,21 @@ impl MsgType {
             Exec | Instantiate => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
             },
-            Migrate | Reply => quote! {
+            Migrate | Reply | Sudo => quote! {
                 (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
             },
             Query => quote! {
                 (#sylvia ::cw_std::Deps, #sylvia ::cw_std::Env)
             },
+        }
+    }
+
+    pub fn emit_ctx_values(self) -> TokenStream {
+        use MsgType::*;
+
+        match self {
+            Exec | Instantiate => quote! { deps, env, info },
+            Migrate | Reply | Query | Sudo => quote! { deps, env },
         }
     }
 
@@ -88,7 +98,7 @@ impl MsgType {
         let sylvia = crate_module();
 
         match self {
-            Exec | Instantiate | Migrate | Reply => {
+            Exec | Instantiate | Migrate | Reply | Sudo => {
                 quote! {
                     std::result::Result< #sylvia:: cw_std::Response <#msg_type>, #err_type>
                 }
@@ -96,6 +106,17 @@ impl MsgType {
             Query => quote! {
                 std::result::Result<#sylvia ::cw_std::Binary, #err_type>
             },
+        }
+    }
+
+    pub fn emit_msg_name(&self) -> Type {
+        match self {
+            MsgType::Exec => parse_quote! { ContractExecMsg },
+            MsgType::Query => parse_quote! { ContractQueryMsg },
+            MsgType::Instantiate => parse_quote! { InstantiateMsg },
+            MsgType::Migrate => parse_quote! { MigrateMsg },
+            MsgType::Reply => parse_quote! { ReplyMsg },
+            MsgType::Sudo => todo!(),
         }
     }
 }
@@ -397,6 +418,113 @@ impl Parse for Custom<'_> {
         }
 
         Ok(custom)
+    }
+}
+
+#[derive(Debug)]
+pub struct OverrideEntryPoint {
+    entry_point: Path,
+    msg_name: Type,
+    msg_type: MsgType,
+}
+
+impl OverrideEntryPoint {
+    pub fn emit_multitest_dispatch(&self) -> TokenStream {
+        let Self {
+            entry_point,
+            msg_name,
+            msg_type,
+        } = self;
+
+        let sylvia = crate_module();
+        let values = msg_type.emit_ctx_values();
+
+        quote! {
+            #entry_point ( #values .into(), #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?)
+                .map_err(Into::into)
+        }
+    }
+
+    pub fn emit_multitest_default_dispatch(ty: MsgType) -> TokenStream {
+        let sylvia = crate_module();
+
+        let values = ty.emit_ctx_values();
+        let msg_name = ty.emit_msg_name();
+
+        quote! {
+            #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?
+                .dispatch(self, ( #values ))
+                .map_err(Into::into)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct OverrideEntryPoints(Vec<OverrideEntryPoint>);
+
+impl OverrideEntryPoints {
+    pub fn new(attrs: &[Attribute]) -> Self {
+        let entry_points = attrs
+            .iter()
+            .filter(|attr| match sylvia_attribute(attr) {
+                Some(attr) => attr == "override_entry_point",
+                None => false,
+            })
+            .filter_map(
+                |attr| match OverrideEntryPoint::parse.parse2(attr.tokens.clone()) {
+                    Ok(entry_point) => Some(entry_point),
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        None
+                    }
+                },
+            )
+            .collect();
+
+        Self(entry_points)
+    }
+
+    pub fn get_entry_point(&self, ty: MsgType) -> Option<&OverrideEntryPoint> {
+        self.0.iter().find(|entry_point| entry_point.msg_type == ty)
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
+impl Parse for OverrideEntryPoint {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let content;
+        parenthesized!(content in input);
+
+        let ty: Ident = content.parse()?;
+        let _: Token![=] = content.parse()?;
+        let entry_point = content.parse()?;
+
+        let msg_content;
+        parenthesized!(msg_content in content);
+
+        let msg_name = msg_content.parse()?;
+
+        let msg_type = match ty.to_string().as_str() {
+            "exec" =>  MsgType::Exec,
+            "instantiate" =>  MsgType::Instantiate,
+            "query" =>  MsgType::Instantiate,
+            "migrate" => MsgType::Migrate,
+            "reply" => MsgType::Reply,
+            "sudo" =>  MsgType::Sudo,
+            &_ => {
+                return Err(Error::new(
+                    ty.span(),
+                    "Invalid entry point. Expected exec, instantiate, query, migrate, reply or sudo. Found {ty}",
+                ))
+            }
+        };
+
+        Ok(Self {
+            entry_point,
+            msg_name,
+            msg_type,
+        })
     }
 }
 
