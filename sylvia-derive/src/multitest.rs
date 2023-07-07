@@ -9,7 +9,10 @@ use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::message::MsgField;
-use crate::parser::{parse_struct_message, ContractMessageAttr, Custom, MsgAttr, MsgType};
+use crate::parser::{
+    parse_struct_message, ContractMessageAttr, Custom, MsgAttr, MsgType, OverrideEntryPoint,
+    OverrideEntryPoints,
+};
 use crate::utils::{extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
@@ -32,6 +35,7 @@ pub struct MultitestHelpers<'a> {
     contract_name: &'a Ident,
     proxy_name: Ident,
     custom: &'a Custom<'a>,
+    override_entry_points: &'a OverrideEntryPoints,
 }
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -60,6 +64,7 @@ impl<'a> MultitestHelpers<'a> {
         contract_error: &'a Type,
         generics: &'a [&'a GenericParam],
         custom: &'a Custom,
+        override_entry_points: &'a OverrideEntryPoints,
     ) -> Self {
         let mut is_migrate = false;
         let mut reply = None;
@@ -197,6 +202,7 @@ impl<'a> MultitestHelpers<'a> {
             contract_name,
             proxy_name,
             custom,
+            override_entry_points,
         }
     }
 
@@ -696,32 +702,64 @@ impl<'a> MultitestHelpers<'a> {
 
     fn generate_impl_contract(&self) -> TokenStream {
         let Self {
-            contract, custom, ..
+            contract,
+            custom,
+            override_entry_points,
+            ..
         } = self;
         let sylvia = crate_module();
 
-        #[cfg(not(tarpaulin_include))]
-        let migrate_body = if self.is_migrate {
-            quote! {
-                #sylvia ::cw_std::from_slice::<MigrateMsg>(&msg)?
-                    .dispatch(self, (deps, env).into())
-                    .map_err(Into::into)
+        let instantiate_body = override_entry_points
+            .get_entry_point(MsgType::Instantiate)
+            .map(OverrideEntryPoint::emit_multitest_dispatch)
+            .unwrap_or_else(|| {
+                OverrideEntryPoint::emit_multitest_default_dispatch(MsgType::Instantiate)
+            });
+
+        let exec_body = override_entry_points
+            .get_entry_point(MsgType::Exec)
+            .map(OverrideEntryPoint::emit_multitest_dispatch)
+            .unwrap_or_else(|| OverrideEntryPoint::emit_multitest_default_dispatch(MsgType::Exec));
+
+        let query_body = override_entry_points
+            .get_entry_point(MsgType::Query)
+            .map(OverrideEntryPoint::emit_multitest_dispatch)
+            .unwrap_or_else(|| OverrideEntryPoint::emit_multitest_default_dispatch(MsgType::Query));
+
+        let sudo_body = override_entry_points
+            .get_entry_point(MsgType::Sudo)
+            .map(OverrideEntryPoint::emit_multitest_dispatch)
+            .unwrap_or_else(|| {
+                quote! {
+                    #sylvia ::anyhow::bail!("sudo not implemented for contract")
+                }
+            });
+
+        let migrate_body = match override_entry_points.get_entry_point(MsgType::Migrate) {
+            Some(entry_point) => entry_point.emit_multitest_dispatch(),
+            None if self.is_migrate => {
+                OverrideEntryPoint::emit_multitest_default_dispatch(MsgType::Migrate)
             }
-        } else {
-            quote! {
+            None => quote! {
                 #sylvia ::anyhow::bail!("migrate not implemented for contract")
-            }
+            },
         };
 
-        #[cfg(not(tarpaulin_include))]
-        let reply = if let Some(reply) = self.reply.as_ref() {
-            quote! {
-                self. #reply((deps, env).into(), msg).map_err(Into::into)
-            }
-        } else {
-            quote! {
-                #sylvia ::anyhow::bail!("reply not implemented for contract")
-            }
+        let reply_body = match override_entry_points.get_entry_point(MsgType::Reply) {
+            Some(entry_point) => entry_point.emit_multitest_dispatch(),
+            None => self
+                .reply
+                .as_ref()
+                .map(|reply| {
+                    quote! {
+                        self. #reply((deps, env).into(), msg).map_err(Into::into)
+                    }
+                })
+                .unwrap_or_else(|| {
+                    quote! {
+                        #sylvia ::anyhow::bail!("reply not implemented for contract")
+                    }
+                }),
         };
 
         let custom_msg = custom.msg();
@@ -737,9 +775,7 @@ impl<'a> MultitestHelpers<'a> {
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
-                        #sylvia ::cw_std::from_slice::<ContractExecMsg>(&msg)?
-                            .dispatch(self, (deps, env, info))
-                            .map_err(Into::into)
+                        #exec_body
                     }
 
                     fn instantiate(
@@ -749,9 +785,7 @@ impl<'a> MultitestHelpers<'a> {
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
-                        #sylvia ::cw_std::from_slice::<InstantiateMsg>(&msg)?
-                            .dispatch(self, (deps, env, info))
-                            .map_err(Into::into)
+                        #instantiate_body
                     }
 
                     fn query(
@@ -760,18 +794,16 @@ impl<'a> MultitestHelpers<'a> {
                         env: #sylvia ::cw_std::Env,
                         msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
-                        #sylvia ::cw_std::from_slice::<ContractQueryMsg>(&msg)?
-                            .dispatch(self, (deps, env))
-                            .map_err(Into::into)
+                        #query_body
                     }
 
                     fn sudo(
                         &self,
-                        _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
-                        _env: #sylvia ::cw_std::Env,
-                        _msg: Vec<u8>,
+                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        env: #sylvia ::cw_std::Env,
+                        msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
-                        #sylvia ::anyhow::bail!("sudo not implemented for contract")
+                        #sudo_body
                     }
 
                     fn reply(
@@ -780,7 +812,7 @@ impl<'a> MultitestHelpers<'a> {
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
-                        #reply
+                        #reply_body
                     }
 
                     fn migrate(
