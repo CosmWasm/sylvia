@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Response, StdResult};
 use sylvia::contract;
 use sylvia::types::InstantiateCtx;
@@ -30,6 +31,13 @@ impl SomeContract {
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
+}
+
+// Making sure `Remote` can be stored in `#[cw_serde]` types
+#[cw_serde]
+#[allow(dead_code)]
+struct CustomStorage {
+    remote: crate::Remote<'static>,
 }
 
 #[cfg(test)]
