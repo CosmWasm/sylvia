@@ -1,9 +1,5 @@
 [workspace]
-members = [
-  "sylvia",
-  "sylvia-derive",
-
-]
+members = ["sylvia", "sylvia-derive"]
 exclude = ["examples/*"]
 resolver = "2"
 
@@ -11,4 +7,4 @@ resolver = "2"
 version = "0.6.1"
 
 [workspace.dependencies]
-sylvia-derive = { version = "0.6.1", path = "sylvia-derive" }
+sylvia-derive = { path = "sylvia-derive" }
