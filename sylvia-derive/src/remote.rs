@@ -48,7 +48,7 @@ impl Remote {
         });
 
         quote! {
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             pub struct Remote<'a>(std::borrow::Cow<'a, #sylvia ::cw_std::Addr>);
 
             impl Remote<'static> {
