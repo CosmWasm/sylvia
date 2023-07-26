@@ -32,7 +32,7 @@ mod some_interface {
     use crate::{MyMsg, SomeResponse};
 
     #[interface]
-    #[sv::custom(msg=MyMsg, query=MyQuery)]
+    #[sv::custom(msg=MyMsg)]
     pub trait SomeInterface {
         type Error: From<StdError>;
 
@@ -46,7 +46,7 @@ mod some_interface {
     }
 
     #[contract(module=super)]
-    #[sv::custom(msg=MyMsg, query=MyQuery)]
+    #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
 
@@ -153,7 +153,7 @@ mod associated_interface {
 #[messages(other_interface as OtherInterface: custom(msg))]
 #[messages(associated_interface as AssociatedInterface)]
 #[messages(interface as Interface)]
-#[sv::custom(msg=MyMsg, query=MyQuery)]
+#[sv::custom(msg=MyMsg)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
