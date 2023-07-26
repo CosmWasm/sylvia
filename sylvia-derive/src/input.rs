@@ -240,7 +240,8 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
-        StructMessage::new(self.item, msg_ty, &self.generics).map_or(quote! {}, |msg| msg.emit())
+        StructMessage::new(self.item, msg_ty, &self.generics, &self.custom)
+            .map_or(quote! {}, |msg| msg.emit())
     }
 
     fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
