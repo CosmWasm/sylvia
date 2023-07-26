@@ -64,20 +64,20 @@ pub enum MsgAttr {
 }
 
 impl MsgType {
-    pub fn emit_ctx_type(self) -> TokenStream {
+    pub fn emit_ctx_type(self, query_type: &Type) -> TokenStream {
         use MsgType::*;
 
         let sylvia = crate_module();
 
         match self {
             Exec | Instantiate => quote! {
-                (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
+                (#sylvia ::cw_std::DepsMut< #query_type >, #sylvia ::cw_std::Env, #sylvia ::cw_std::MessageInfo)
             },
             Migrate | Reply | Sudo => quote! {
-                (#sylvia ::cw_std::DepsMut, #sylvia ::cw_std::Env)
+                (#sylvia ::cw_std::DepsMut< #query_type >, #sylvia ::cw_std::Env)
             },
             Query => quote! {
-                (#sylvia ::cw_std::Deps, #sylvia ::cw_std::Env)
+                (#sylvia ::cw_std::Deps< #query_type >, #sylvia ::cw_std::Env)
             },
         }
     }
@@ -370,7 +370,7 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
 #[derive(Debug, Default)]
 pub struct Custom<'a> {
     msg: Option<Type>,
-    _query: Option<Type>,
+    query: Option<Type>,
     input_attr: Option<&'a Attribute>,
 }
 
@@ -418,6 +418,13 @@ impl<'a> Custom<'a> {
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::Empty })
     }
 
+    pub fn query(&self) -> Type {
+        let sylvia = crate_module();
+        self.query
+            .clone()
+            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::Empty })
+    }
+
     pub fn has_msg(&self) -> bool {
         self.msg.is_some()
     }
@@ -437,7 +444,7 @@ impl Parse for Custom<'_> {
             if ty == "msg" {
                 custom.msg = Some(content.parse()?)
             } else if ty == "query" {
-                custom._query = Some(content.parse()?)
+                custom.query = Some(content.parse()?)
             } else {
                 return Err(Error::new(
                     ty.span(),
