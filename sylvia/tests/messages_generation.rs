@@ -1,9 +1,16 @@
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::{Addr, CustomQuery, Decimal};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 #[derive(
     serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
 )]
 pub struct QueryResult;
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+pub struct MyQuery;
+
+impl CustomQuery for MyQuery {}
 
 mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
@@ -43,13 +50,14 @@ mod contract {
     use sylvia::contract;
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 
-    use crate::QueryResult;
+    use crate::{MyQuery, QueryResult};
 
     pub struct Contract {}
 
     #[cfg(not(tarpaulin_include))]
     #[contract]
     #[allow(dead_code)]
+    #[sv::custom(query=MyQuery)]
     impl Contract {
         #[allow(clippy::new_without_default)]
         #[allow(dead_code)]
@@ -58,24 +66,24 @@ mod contract {
         }
 
         #[msg(instantiate)]
-        pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+        pub fn instantiate(&self, _ctx: InstantiateCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
         #[msg(migrate)]
-        pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
+        pub fn migrate(&self, _ctx: MigrateCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
         #[msg(exec)]
-        fn no_args_execution(&self, _ctx: ExecCtx) -> StdResult<Response> {
+        fn no_args_execution(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
         #[msg(exec)]
         fn argumented_execution(
             &self,
-            _ctx: ExecCtx,
+            _ctx: ExecCtx<MyQuery>,
             _addr: cosmwasm_std::Addr,
             #[serde(default)] _coef: cosmwasm_std::Decimal,
             #[serde(default)] _desc: String,
@@ -84,12 +92,12 @@ mod contract {
         }
 
         #[msg(query)]
-        fn no_args_query(&self, _ctx: QueryCtx) -> StdResult<QueryResult> {
+        fn no_args_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<QueryResult> {
             Ok(QueryResult {})
         }
 
         #[msg(query)]
-        fn argumented_query(&self, _ctx: QueryCtx, _user: Addr) -> StdResult<QueryResult> {
+        fn argumented_query(&self, _ctx: QueryCtx<MyQuery>, _user: Addr) -> StdResult<QueryResult> {
             Ok(QueryResult {})
         }
     }

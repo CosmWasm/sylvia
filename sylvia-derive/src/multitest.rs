@@ -584,6 +584,7 @@ impl<'a> MultitestHelpers<'a> {
         let impl_contract = self.generate_impl_contract();
 
         let custom_msg = self.custom.msg();
+        let custom_query = self.custom.query();
 
         #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
@@ -592,7 +593,7 @@ impl<'a> MultitestHelpers<'a> {
                 ApiT,
                 StorageT,
                 CustomT,
-                #sylvia ::cw_multi_test::WasmKeeper< #custom_msg , #sylvia ::cw_std::Empty>,
+                #sylvia ::cw_multi_test::WasmKeeper< #custom_msg , #custom_query >,
                 StakingT,
                 DistrT,
                 IbcT,
@@ -615,7 +616,7 @@ impl<'a> MultitestHelpers<'a> {
                         BankT: #sylvia ::cw_multi_test::Bank,
                         ApiT: #sylvia ::cw_std::Api,
                         StorageT: #sylvia ::cw_std::Storage,
-                        CustomT: #sylvia ::cw_multi_test::Module<ExecT = #custom_msg, QueryT = #sylvia ::cw_std::Empty >,
+                        CustomT: #sylvia ::cw_multi_test::Module<ExecT = #custom_msg, QueryT = #custom_query >,
                         StakingT: #sylvia ::cw_multi_test::Staking,
                         DistrT: #sylvia ::cw_multi_test::Distribution,
                         IbcT: #sylvia ::cw_multi_test::Ibc,
@@ -725,14 +726,15 @@ impl<'a> MultitestHelpers<'a> {
         };
 
         let custom_msg = custom.msg();
+        let custom_query = custom.query();
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                impl #sylvia ::cw_multi_test::Contract<#custom_msg> for #contract {
+                impl #sylvia ::cw_multi_test::Contract<#custom_msg, #custom_query> for #contract {
                     fn execute(
                         &self,
-                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        deps: #sylvia ::cw_std::DepsMut< #custom_query >,
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
@@ -744,7 +746,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn instantiate(
                         &self,
-                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        deps: #sylvia ::cw_std::DepsMut<#custom_query>,
                         env: #sylvia ::cw_std::Env,
                         info: #sylvia ::cw_std::MessageInfo,
                         msg: Vec<u8>,
@@ -756,7 +758,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn query(
                         &self,
-                        deps: #sylvia ::cw_std::Deps<#sylvia ::cw_std::Empty>,
+                        deps: #sylvia ::cw_std::Deps<#custom_query>,
                         env: #sylvia ::cw_std::Env,
                         msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Binary> {
@@ -767,7 +769,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn sudo(
                         &self,
-                        _deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        _deps: #sylvia ::cw_std::DepsMut<#custom_query>,
                         _env: #sylvia ::cw_std::Env,
                         _msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
@@ -776,7 +778,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn reply(
                         &self,
-                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        deps: #sylvia ::cw_std::DepsMut<#custom_query>,
                         env: #sylvia ::cw_std::Env,
                         msg: #sylvia ::cw_std::Reply,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
@@ -785,7 +787,7 @@ impl<'a> MultitestHelpers<'a> {
 
                     fn migrate(
                         &self,
-                        deps: #sylvia ::cw_std::DepsMut<#sylvia ::cw_std::Empty>,
+                        deps: #sylvia ::cw_std::DepsMut<#custom_query>,
                         env: #sylvia ::cw_std::Env,
                         msg: Vec<u8>,
                     ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {

@@ -30,6 +30,7 @@ pub struct StructMessage<'a> {
     full_where: Option<&'a WhereClause>,
     result: &'a ReturnType,
     msg_attr: MsgAttr,
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> StructMessage<'a> {
@@ -38,6 +39,7 @@ impl<'a> StructMessage<'a> {
         source: &'a ItemImpl,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
+        custom: &'a Custom,
     ) -> Option<StructMessage<'a>> {
         let mut generics_checker = CheckGenerics::new(generics);
 
@@ -63,6 +65,7 @@ impl<'a> StructMessage<'a> {
             full_where: source.generics.where_clause.as_ref(),
             result: &method.sig.output,
             msg_attr,
+            custom,
         })
     }
 
@@ -92,6 +95,7 @@ impl<'a> StructMessage<'a> {
             full_where,
             result,
             msg_attr,
+            custom,
         } = self;
 
         let where_clause = if !wheres.is_empty() {
@@ -102,7 +106,7 @@ impl<'a> StructMessage<'a> {
             quote! {}
         };
 
-        let ctx_type = msg_attr.msg_type().emit_ctx_type();
+        let ctx_type = msg_attr.msg_type().emit_ctx_type(&custom.query());
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
         let parameters = fields.iter().map(|field| {
             let name = field.name;
@@ -166,6 +170,7 @@ pub struct EnumMessage<'a> {
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
     resp_type: Type,
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -229,6 +234,7 @@ impl<'a> EnumMessage<'a> {
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
             resp_type,
+            custom,
         }
     }
 
@@ -246,6 +252,7 @@ impl<'a> EnumMessage<'a> {
             full_where,
             msg_ty,
             resp_type,
+            custom,
         } = self;
 
         let match_arms = variants
@@ -267,7 +274,7 @@ impl<'a> EnumMessage<'a> {
             quote! {}
         };
 
-        let ctx_type = msg_ty.emit_ctx_type();
+        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
         let dispatch_type = msg_ty.emit_result_type(resp_type, &parse_quote!(C::Error));
 
         let all_generics = if all_generics.is_empty() {
@@ -413,7 +420,7 @@ impl<'a> ContractEnumMessage<'a> {
         let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
 
-        let ctx_type = msg_ty.emit_ctx_type();
+        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
         let contract = StripGenerics.fold_type((*contract).clone());
         let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
 
@@ -982,7 +989,7 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        let ctx_type = msg_ty.emit_ctx_type();
+        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
         let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
 
         let mut response_schemas: Vec<TokenStream> = interfaces
