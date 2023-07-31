@@ -454,6 +454,8 @@ to be part of a contract logic.
 For the interface implementation there should be at most one `messages` attribute used.
 In case of the contract implementation there can be multiple `messages` attributes used.
 
+`sv::override_entry_point` - refer to `Override entry points` section.
+
 ```rust
 struct MyMsg;
 impl CustomMsg for MyMsg {}
@@ -645,6 +647,72 @@ fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractErro
 
 It is important to create an entry function in the contract type - this way, it
 gains access to all the state accessors defined on the type.
+
+## Overriding entry points
+
+If above approach is not working for you because f.e. you want to use `sudo` entry point
+and generated `multitest helpers` don't yet support it and you are unable to test your contract
+or you prefer to use some custom defined entry point it is possible to override the entry point
+on the contract.
+
+Let's consider following code:
+
+```rust
+#[cw_serde]
+pub enum UserExecMsg {
+    IncreaseByOne {},
+}
+
+pub fn increase_by_one(ctx: ExecCtx) -> StdResult<Response> {
+    crate::COUNTER.update(ctx.deps.storage, |count| -> Result<u32, StdError> {
+        Ok(count + 1)
+    })?;
+    Ok(Response::new())
+}
+
+#[cw_serde]
+pub enum CustomExecMsg {
+    ContractExec(crate::ContractExecMsg),
+    CustomExec(UserExecMsg),
+}
+
+impl CustomExecMsg {
+    pub fn dispatch(self, ctx: (DepsMut, Env, MessageInfo)) -> StdResult<Response> {
+        match self {
+            CustomExecMsg::ContractExec(msg) => {
+                msg.dispatch(&crate::contract::Contract::new(), ctx)
+            }
+            CustomExecMsg::CustomExec(_) => increase_by_one(ctx.into()),
+        }
+    }
+}
+
+#[entry_point]
+pub fn execute(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: CustomExecMsg,
+) -> StdResult<Response> {
+    msg.dispatch((deps, env, info))
+}
+```
+
+It is possible to define some custom `exec` message which will dispatch over one generated
+by your Contract and one defined by you. To use this custom entry point with `contract` macro
+you can add the `sv::override_entry_point(...)` attribute.
+
+```rust    
+#[contract]
+#[sv::override_entry_point(exec=crate::entry_points::execute(crate::exec::CustomExecMsg))]
+#[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::SudoMsg))]
+impl Contract {
+```
+
+It is possible to override all message types like that. Next to the entry point path you will
+also have to provide the type of your custom message. It is required to deserialize the messsage
+in the `multitest helpers`.
+
 
 ## Multitest
 
@@ -847,3 +915,6 @@ argument for cargo)
 
 - Missing messages from interface on your contract - You may be missing
   `messages(interface as Interface)` attribute.
+- Cannot find type BoundQuerier - your `Contract` is defined in different module than current one.
+  Your `impl Interface for Contract` should have the `#[contract(module=path::to::Contract)]`
+  invocation.
