@@ -1,18 +1,62 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{CustomQuery, Response, StdResult};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use sylvia::contract;
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+#[cw_serde]
 pub struct MyQuery;
 
 impl CustomQuery for MyQuery {}
 
+#[cw_serde]
+pub struct OtherQuery;
+
+impl CustomQuery for OtherQuery {}
+
 pub struct MyContract;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
+#[cw_serde]
 pub struct SomeResponse;
+
+mod interface {
+    use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
+
+    use crate::{MyQuery, OtherQuery, SomeResponse};
+
+    #[interface]
+    #[sv::custom(query=MyQuery)]
+    pub trait Interface {
+        type Error: From<StdError>;
+        type QueryC: CustomQuery;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(query)]
+        fn interface_query(&self, ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
+    }
+
+    #[contract(module=super)]
+    #[sv::custom(query=MyQuery)]
+    impl Interface for crate::MyContract {
+        type Error = StdError;
+        type QueryC = OtherQuery;
+
+        #[msg(query)]
+        fn interface_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse> {
+            Ok(SomeResponse)
+        }
+
+        #[msg(exec)]
+        fn interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+    }
+}
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
@@ -28,11 +72,11 @@ mod some_interface {
 
         #[cfg(not(tarpaulin_include))]
         #[msg(query)]
-        fn interface_query(&self, ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse>;
+        fn some_interface_query(&self, ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse>;
 
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
-        fn interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
+        fn some_interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
     }
 
     #[contract(module=super)]
@@ -41,12 +85,50 @@ mod some_interface {
         type Error = StdError;
 
         #[msg(query)]
-        fn interface_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse> {
+        fn some_interface_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
         #[msg(exec)]
-        fn interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
+        fn some_interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+    }
+}
+
+mod associated_type_interface {
+    use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
+
+    use crate::{MyQuery, SomeResponse};
+
+    #[interface]
+    pub trait AssociatedTypeInterface {
+        type Error: From<StdError>;
+        type QueryC: CustomQuery;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(query)]
+        fn associated_query(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<SomeResponse>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn associated_exec(&self, ctx: ExecCtx<Self::QueryC>) -> StdResult<Response>;
+    }
+
+    #[contract(module=super)]
+    impl AssociatedTypeInterface for crate::MyContract {
+        type Error = StdError;
+        type QueryC = MyQuery;
+
+        #[msg(query)]
+        fn associated_query(&self, _ctx: QueryCtx<Self::QueryC>) -> StdResult<SomeResponse> {
+            Ok(SomeResponse)
+        }
+
+        #[msg(exec)]
+        fn associated_exec(&self, _ctx: ExecCtx<Self::QueryC>) -> StdResult<Response> {
             Ok(Response::default())
         }
     }
@@ -54,6 +136,8 @@ mod some_interface {
 
 #[contract]
 #[messages(some_interface as SomeInterface)]
+#[messages(associated_type_interface as AssociatedTypeInterface)]
+#[messages(interface as Interface)]
 #[sv::custom(query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -85,11 +169,12 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::{MyContract, MyQuery};
+    use crate::associated_type_interface::test_utils::AssociatedTypeInterface;
+    use crate::some_interface::test_utils::SomeInterface;
+    use crate::{interface::test_utils::Interface, MyContract, MyQuery};
+
     use cosmwasm_std::Empty;
     use sylvia::multitest::App;
-
-    use crate::some_interface::test_utils::SomeInterface;
 
     #[test]
     fn test_custom() {
@@ -108,10 +193,32 @@ mod tests {
         contract.some_exec().call(owner).unwrap();
         contract.some_query().unwrap();
 
-        // Interface messsages
-        contract.some_interface_proxy().interface_query().unwrap();
+        // `sv::custom` attribute interface
         contract
             .some_interface_proxy()
+            .some_interface_query()
+            .unwrap();
+        contract
+            .some_interface_proxy()
+            .some_interface_exec()
+            .call(owner)
+            .unwrap();
+
+        // Associated tyoe interface messages
+        contract
+            .associated_type_interface_proxy()
+            .associated_query()
+            .unwrap();
+        contract
+            .associated_type_interface_proxy()
+            .associated_exec()
+            .call(owner)
+            .unwrap();
+
+        // `sv::custom` attribute and associated type interface
+        contract.interface_proxy().interface_query().unwrap();
+        contract
+            .interface_proxy()
             .interface_exec()
             .call(owner)
             .unwrap();

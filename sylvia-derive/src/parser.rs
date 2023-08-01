@@ -4,8 +4,8 @@ use quote::quote;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, parse_quote, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, Path, Result,
-    Token, Type,
+    parenthesized, parse_quote, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, ItemTrait,
+    Path, Result, Token, TraitItem, Type,
 };
 
 use crate::crate_module;
@@ -367,6 +367,17 @@ pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItem
     Some((method, msg_attr))
 }
 
+pub fn parse_associated_custom_type(source: &ItemTrait, type_name: &str) -> Option<Type> {
+    let trait_name = &source.ident;
+    source.items.iter().find_map(|item| match item {
+        TraitItem::Type(ty) if ty.ident == type_name => {
+            let type_name = Ident::new(type_name, ty.span());
+            Some(parse_quote! { <C as #trait_name>:: #type_name})
+        }
+        _ => None,
+    })
+}
+
 #[derive(Debug, Default)]
 pub struct Custom<'a> {
     msg: Option<Type>,
@@ -411,22 +422,25 @@ impl<'a> Custom<'a> {
         custom
     }
 
-    pub fn msg(&self) -> Type {
-        let sylvia = crate_module();
-        self.msg
-            .clone()
-            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::Empty })
+    pub fn msg_or_default(&self) -> Type {
+        self.msg.clone().unwrap_or_else(Self::default_type)
     }
 
-    pub fn query(&self) -> Type {
-        let sylvia = crate_module();
-        self.query
-            .clone()
-            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::Empty })
+    pub fn query_or_default(&self) -> Type {
+        self.query.clone().unwrap_or_else(Self::default_type)
     }
 
-    pub fn has_msg(&self) -> bool {
-        self.msg.is_some()
+    pub fn msg(&self) -> Option<Type> {
+        self.msg.clone()
+    }
+
+    pub fn query(&self) -> Option<Type> {
+        self.query.clone()
+    }
+
+    pub fn default_type() -> Type {
+        let sylvia = crate_module();
+        parse_quote! { #sylvia ::cw_std::Empty }
     }
 }
 
