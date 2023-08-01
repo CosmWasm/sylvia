@@ -32,6 +32,7 @@ pub struct SudoCtx<'a, C: CustomQuery = Empty> {
     pub env: Env,
 }
 
+#[cfg(not(tarpaulin_include))]
 impl<C: CustomQuery> ExecCtx<'_, C> {
     pub fn branch(&'_ mut self) -> ExecCtx<'_, C> {
         ExecCtx {
@@ -42,6 +43,7 @@ impl<C: CustomQuery> ExecCtx<'_, C> {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl<C: CustomQuery> InstantiateCtx<'_, C> {
     pub fn branch(&'_ mut self) -> InstantiateCtx<'_, C> {
         InstantiateCtx {
@@ -52,6 +54,7 @@ impl<C: CustomQuery> InstantiateCtx<'_, C> {
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl<C: CustomQuery> SudoCtx<'_, C> {
     pub fn branch(&'_ mut self) -> SudoCtx<'_, C> {
         SudoCtx {

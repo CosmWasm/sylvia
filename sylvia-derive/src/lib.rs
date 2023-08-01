@@ -256,6 +256,7 @@ pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
     entry_points_impl(attr.into(), item.into()).into()
 }
 
+#[cfg(not(tarpaulin_include))]
 fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(_attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemImpl = parse2(item)?;
