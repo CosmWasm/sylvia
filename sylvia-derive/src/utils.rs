@@ -9,6 +9,7 @@ use syn::{
 use crate::check_generics::CheckGenerics;
 use crate::message::MsgField;
 
+#[cfg(not(tarpaulin_include))]
 pub fn filter_wheres<'a>(
     clause: &'a Option<WhereClause>,
     generics: &[&GenericParam],
