@@ -222,7 +222,7 @@ impl<'a> MultitestHelpers<'a> {
             return self.impl_trait_on_proxy();
         }
 
-        let custom_msg = custom.msg();
+        let custom_msg = custom.msg_or_default();
         #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
             #sylvia ::cw_multi_test::App<
@@ -450,7 +450,7 @@ impl<'a> MultitestHelpers<'a> {
             }
         };
 
-        let custom_msg = custom.msg();
+        let custom_msg = custom.msg_or_default();
 
         #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
@@ -589,8 +589,8 @@ impl<'a> MultitestHelpers<'a> {
 
         let impl_contract = self.generate_impl_contract();
 
-        let custom_msg = self.custom.msg();
-        let custom_query = self.custom.query();
+        let custom_msg = self.custom.msg_or_default();
+        let custom_query = self.custom.query_or_default();
 
         #[cfg(not(tarpaulin_include))]
         let mt_app = quote! {
@@ -763,8 +763,8 @@ impl<'a> MultitestHelpers<'a> {
                 }),
         };
 
-        let custom_msg = custom.msg();
-        let custom_query = custom.query();
+        let custom_msg = custom.msg_or_default();
+        let custom_query = custom.query_or_default();
 
         #[cfg(not(tarpaulin_include))]
         {
