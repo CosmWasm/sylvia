@@ -2,8 +2,8 @@ use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
-    parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, MsgAttr, MsgType,
-    OverrideEntryPoint, OverrideEntryPoints,
+    parse_associated_custom_type, parse_struct_message, ContractErrorAttr, ContractMessageAttr,
+    Custom, MsgAttr, MsgType, OverrideEntryPoint, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{extract_return_type, filter_wheres, process_fields};
@@ -108,7 +108,9 @@ impl<'a> StructMessage<'a> {
             quote! {}
         };
 
-        let ctx_type = msg_attr.msg_type().emit_ctx_type(&custom.query());
+        let ctx_type = msg_attr
+            .msg_type()
+            .emit_ctx_type(&custom.query_or_default());
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
         let parameters = fields.iter().map(|field| {
             let name = field.name;
@@ -172,7 +174,7 @@ pub struct EnumMessage<'a> {
     full_where: Option<&'a WhereClause>,
     msg_ty: MsgType,
     resp_type: Type,
-    custom: &'a Custom<'a>,
+    query_type: Type,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -210,17 +212,18 @@ impl<'a> EnumMessage<'a> {
             })
             .collect();
 
-        let associated_exec: Option<Type> = source.items.iter().find_map(|item| match item {
-            TraitItem::Type(ty) if ty.ident == "ExecC" => {
-                Some(parse_quote! { <C as #trait_name>::ExecC })
-            }
-            _ => None,
-        });
+        let associated_exec = parse_associated_custom_type(source, "ExecC");
+        let associated_query = parse_associated_custom_type(source, "QueryC");
 
-        let resp_type = match associated_exec {
-            Some(exec) if !custom.has_msg() => exec,
-            _ => custom.msg(),
-        };
+        let resp_type = custom
+            .msg()
+            .or(associated_exec)
+            .unwrap_or_else(Custom::default_type);
+
+        let query_type = custom
+            .query()
+            .or(associated_query)
+            .unwrap_or_else(Custom::default_type);
 
         let (used_generics, unused_generics) = generics_checker.used_unused();
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
@@ -236,7 +239,7 @@ impl<'a> EnumMessage<'a> {
             full_where: source.generics.where_clause.as_ref(),
             msg_ty: ty,
             resp_type,
-            custom,
+            query_type,
         }
     }
 
@@ -254,7 +257,7 @@ impl<'a> EnumMessage<'a> {
             full_where,
             msg_ty,
             resp_type,
-            custom,
+            query_type,
         } = self;
 
         let match_arms = variants
@@ -276,7 +279,7 @@ impl<'a> EnumMessage<'a> {
             quote! {}
         };
 
-        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
+        let ctx_type = msg_ty.emit_ctx_type(query_type);
         let dispatch_type = msg_ty.emit_result_type(resp_type, &parse_quote!(C::Error));
 
         let all_generics = if all_generics.is_empty() {
@@ -422,9 +425,9 @@ impl<'a> ContractEnumMessage<'a> {
         let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
         let variants = variants.iter().map(MsgVariant::emit);
 
-        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
+        let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
         let contract = StripGenerics.fold_type((*contract).clone());
-        let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
+        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
 
         #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
@@ -924,8 +927,8 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        let ctx_type = msg_ty.emit_ctx_type(&custom.query());
-        let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
+        let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
+        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
 
         let mut response_schemas_calls = interfaces.emit_response_schemas_calls(name);
         response_schemas_calls.push(quote! {#name :: response_schemas_impl()});
@@ -1079,7 +1082,7 @@ impl<'a> EntryPoints<'a> {
         } = self;
         let sylvia = crate_module();
 
-        let custom_msg = custom.msg();
+        let custom_msg = custom.msg_or_default();
 
         #[cfg(not(tarpaulin_include))]
         {
