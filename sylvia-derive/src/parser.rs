@@ -82,6 +82,7 @@ impl MsgType {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn emit_ctx_params(self) -> TokenStream {
         use MsgType::*;
 
@@ -100,6 +101,7 @@ impl MsgType {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn emit_ep_name(self) -> TokenStream {
         use MsgType::*;
 
@@ -489,6 +491,7 @@ impl OverrideEntryPoint {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn emit_default_entry_point(
         custom_msg: &Type,
         name: &Type,
@@ -497,7 +500,6 @@ impl OverrideEntryPoint {
     ) -> TokenStream {
         let sylvia = crate_module();
 
-        #[cfg(not(tarpaulin_include))]
         let resp_type = match msg_type {
             MsgType::Query => quote! { #sylvia ::cw_std::Binary },
             _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
