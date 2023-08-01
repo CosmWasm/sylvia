@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.6.1...sylvia-derive-v0.7.0) - 2023-08-01
+
+### Added
+- Override generated entry_points
+- Override entry_points in multitest helpers
+
+### Fixed
+- [**breaking**] `Remote` type implements all relevant traits so it can be stored in `#[cw_serde]` types
+
 ## [0.6.1] - 2023-06-28
 
 - Fix dependencies in sylvia 0.6.0 (0.6.0 will be yanked)
