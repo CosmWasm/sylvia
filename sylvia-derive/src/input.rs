@@ -28,6 +28,7 @@ pub struct ImplInput<'a> {
     generics: Vec<&'a GenericParam>,
     custom: Custom<'a>,
     override_entry_points: OverrideEntryPoints,
+    interfaces: Interfaces,
 }
 
 impl<'a> TraitInput<'a> {
@@ -60,7 +61,7 @@ impl<'a> TraitInput<'a> {
     pub fn process(&self) -> TokenStream {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::new(&[]).emit();
+        let remote = Remote::new(&Interfaces::default()).emit();
         let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
 
         #[cfg(not(tarpaulin_include))]
@@ -128,6 +129,7 @@ impl<'a> ImplInput<'a> {
 
         let custom = Custom::new(&item.attrs);
         let override_entry_points = OverrideEntryPoints::new(&item.attrs);
+        let interfaces = Interfaces::new(item);
 
         Self {
             attributes,
@@ -136,6 +138,7 @@ impl<'a> ImplInput<'a> {
             error,
             custom,
             override_entry_points,
+            interfaces,
         }
     }
 
@@ -149,6 +152,7 @@ impl<'a> ImplInput<'a> {
                 &self.generics,
                 &self.custom,
                 &self.override_entry_points,
+                &self.interfaces,
             )
             .emit()
         } else {
@@ -187,7 +191,7 @@ impl<'a> ImplInput<'a> {
         multitest_helpers: TokenStream,
     ) -> TokenStream {
         let messages = self.emit_messages();
-        let remote = Remote::new(&self.item.attrs).emit();
+        let remote = Remote::new(interfaces).emit();
         let querier = variants.emit_querier();
         let querier_from_impl = interfaces.emit_querier_from_impl();
 
@@ -252,7 +256,15 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        GlueMessage::new(name, self.item, msg_ty, &self.error, &self.custom).emit()
+        GlueMessage::new(
+            name,
+            self.item,
+            msg_ty,
+            &self.error,
+            &self.custom,
+            &self.interfaces,
+        )
+        .emit()
     }
 
     fn emit_querier_for_bound_impl(

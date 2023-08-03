@@ -37,6 +37,7 @@ pub mod counter {
     }
 
     #[contract(module=super)]
+    #[messages(crate::counter as Counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 

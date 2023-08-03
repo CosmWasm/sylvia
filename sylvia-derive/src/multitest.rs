@@ -1,17 +1,18 @@
-use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type};
+use syn::{
+    parse_quote, FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type,
+};
 
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
+use crate::interfaces::Interfaces;
 use crate::message::MsgField;
 use crate::parser::{
-    parse_struct_message, ContractMessageAttr, Custom, MsgAttr, MsgType, OverrideEntryPoint,
-    OverrideEntryPoints,
+    parse_struct_message, Custom, MsgAttr, MsgType, OverrideEntryPoint, OverrideEntryPoints,
 };
 use crate::utils::{extract_return_type, process_fields};
 
@@ -36,6 +37,7 @@ pub struct MultitestHelpers<'a> {
     proxy_name: Ident,
     custom: &'a Custom<'a>,
     override_entry_points: &'a OverrideEntryPoints,
+    interfaces: &'a Interfaces,
 }
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -65,6 +67,7 @@ impl<'a> MultitestHelpers<'a> {
         generics: &'a [&'a GenericParam],
         custom: &'a Custom,
         override_entry_points: &'a OverrideEntryPoints,
+        interfaces: &'a Interfaces,
     ) -> Self {
         let mut is_migrate = false;
         let mut reply = None;
@@ -203,6 +206,7 @@ impl<'a> MultitestHelpers<'a> {
             proxy_name,
             custom,
             override_entry_points,
+            interfaces,
         }
     }
 
@@ -211,9 +215,9 @@ impl<'a> MultitestHelpers<'a> {
             messages,
             error_type,
             proxy_name,
-            source,
             is_trait,
             custom,
+            interfaces,
             ..
         } = self;
         let sylvia = crate_module();
@@ -224,7 +228,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let custom_msg = custom.msg();
         #[cfg(not(tarpaulin_include))]
-        let mt_app = quote! {
+        let mt_app: Type = parse_quote! {
             #sylvia ::cw_multi_test::App<
                 BankT,
                 ApiT,
@@ -284,37 +288,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let contract_block = self.generate_contract_helpers();
 
-        let interfaces: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => {
-                        let ContractMessageAttr { module, .. } = interface;
-                        assert!(!module.segments.is_empty());
-                        let module_name = &module.segments[0].ident;
-                        let method_name = Ident::new(&format!("{}_proxy", module_name), module_name.span());
-                        let proxy_name = Ident::new(
-                            &format!("{}Proxy", module_name.to_string().to_case(Case::UpperCamel)),
-                            module_name.span(),
-                        );
-
-                        quote! {
-                            pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app, #mt_app> {
-                                #module ::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
+        let proxy_accessors = interfaces.emit_proxy_accessors(&mt_app);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -358,7 +332,7 @@ impl<'a> MultitestHelpers<'a> {
 
                         #(#messages)*
 
-                        #(#interfaces)*
+                        #(#proxy_accessors)*
                     }
 
                     impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
@@ -402,8 +376,8 @@ impl<'a> MultitestHelpers<'a> {
         let Self {
             messages,
             error_type,
-            source,
             custom,
+            interfaces,
             ..
         } = self;
 
@@ -413,24 +387,7 @@ impl<'a> MultitestHelpers<'a> {
         let proxy_name = &self.proxy_name;
         let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
 
-        let modules: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(
-                |attr| match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => {
-                        let ContractMessageAttr { module, .. } = &interface;
-                        assert!(!module.segments.is_empty());
-                        Some(module.segments[0].ident.clone())
-                    }
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        None
-                    }
-                },
-            )
-            .collect();
+        let modules: Vec<&Path> = interfaces.as_modules().collect();
 
         #[cfg(not(tarpaulin_include))]
         let module = match modules.len() {
@@ -442,11 +399,15 @@ impl<'a> MultitestHelpers<'a> {
                 quote! {#module ::}
             }
             _ => {
-                emit_error!(
-                    source.span(),
-                    "Only one #[messages] attribute is allowed per contract"
-                );
-                return quote! {};
+                let first = &modules[0];
+                for redefined in &modules[1..] {
+                    emit_error!(
+                      redefined, "The attribute `messages` is redefined";
+                      note = first.span() => "Previous definition of the attribute `messsages`";
+                      note = "Only one `messages` attribute can exist on an interface implementation on contract"
+                    );
+                }
+                quote! {}
             }
         };
 
