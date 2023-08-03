@@ -1,5 +1,6 @@
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
+use crate::interfaces::Interfaces;
 use crate::parser::{
     parse_struct_message, ContractErrorAttr, ContractMessageAttr, Custom, MsgAttr, MsgType,
     OverrideEntryPoint, OverrideEntryPoints,
@@ -836,57 +837,30 @@ impl<'a> MsgField<'a> {
 /// Glue message is the message composing Exec/Query messages from several traits
 #[derive(Debug)]
 pub struct GlueMessage<'a> {
-    interfaces: Vec<ContractMessageAttr>,
     name: &'a Ident,
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a Type,
     custom: &'a Custom<'a>,
+    interfaces: &'a Interfaces,
 }
 
 impl<'a> GlueMessage<'a> {
-    #[cfg(not(tarpaulin_include))]
-    // Lack of coverage here is false negative due to usage in closures
-    fn merge_module_with_name(module: &syn::Path, name: &syn::Ident) -> syn::Ident {
-        let segments = &module.segments;
-        assert!(!segments.is_empty());
-
-        let syn::PathSegment { ident, .. } = &segments[0];
-        let module_name = ident.to_string().to_case(Case::UpperCamel);
-        syn::Ident::new(&format!("{}{}", module_name, name), name.span())
-    }
-
     pub fn new(
         name: &'a Ident,
         source: &'a ItemImpl,
         msg_ty: MsgType,
         error: &'a Type,
         custom: &'a Custom,
+        interfaces: &'a Interfaces,
     ) -> Self {
-        let interfaces: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => interface,
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
-
         GlueMessage {
-            interfaces,
             name,
             contract: &source.self_ty,
             msg_ty,
             error,
             custom,
+            interfaces,
         }
     }
 
@@ -894,50 +868,26 @@ impl<'a> GlueMessage<'a> {
         let sylvia = crate_module();
 
         let Self {
-            interfaces,
             name,
             contract,
             msg_ty,
             error,
             custom,
+            interfaces,
         } = self;
         let contract = StripGenerics.fold_type((*contract).clone());
         let contract_name = Ident::new(&format!("Contract{}", name), name.span());
 
-        let variants = interfaces.iter().map(|interface| {
-            let ContractMessageAttr {
-                module,
-                exec_generic_params,
-                query_generic_params,
-                variant,
-                ..
-            } = interface;
-
-            let generics = match msg_ty {
-                MsgType::Exec => exec_generic_params.as_slice(),
-                MsgType::Query => query_generic_params.as_slice(),
-                _ => &[],
-            };
-
-            let enum_name = GlueMessage::merge_module_with_name(module, name);
-            quote! { #variant(#module :: #enum_name<#(#generics,)*>) }
-        });
+        let variants = interfaces.emit_glue_message_variants(msg_ty, name);
 
         let msg_name = quote! {#contract ( #name)};
-        let mut interface_names: Vec<TokenStream> = interfaces
-            .iter()
-            .map(|interface| {
-                let ContractMessageAttr { module, .. } = interface;
+        let mut messages_call_on_all_variants: Vec<TokenStream> =
+            interfaces.emit_messages_call(name);
+        messages_call_on_all_variants.push(quote! {&#name :: messages()});
 
-                let enum_name = GlueMessage::merge_module_with_name(module, name);
-                quote! { &#module :: #enum_name :: messages()}
-            })
-            .collect();
-        interface_names.push(quote! {&#name :: messages()});
+        let variants_cnt = messages_call_on_all_variants.len();
 
-        let interfaces_cnt = interface_names.len();
-
-        let dispatch_arms = interfaces.iter().map(|interface| {
+        let dispatch_arms = interfaces.interfaces().iter().map(|interface| {
             let ContractMessageAttr {
                 variant,
                 has_custom_msg,
@@ -954,23 +904,7 @@ impl<'a> GlueMessage<'a> {
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
 
-        #[cfg(not(tarpaulin_include))]
-        let deserialization_attempts = interfaces.iter().map(|interface| {
-            let ContractMessageAttr {
-                module, variant, ..
-            } = interface;
-            let enum_name = GlueMessage::merge_module_with_name(module, name);
-
-            quote! {
-                let msgs = &#module :: #enum_name ::messages();
-                if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
-                    match val.deserialize_into() {
-                        Ok(msg) => return Ok(Self:: #variant (msg)),
-                        Err(err) => return Err(D::Error::custom(err)).map(Self:: #variant),
-                    };
-                }
-            }
-        });
+        let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(name);
 
         #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
@@ -986,16 +920,8 @@ impl<'a> GlueMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type();
         let ret_type = msg_ty.emit_result_type(&custom.msg(), error);
 
-        let mut response_schemas: Vec<TokenStream> = interfaces
-            .iter()
-            .map(|interface| {
-                let ContractMessageAttr { module, .. } = interface;
-
-                let enum_name = GlueMessage::merge_module_with_name(module, name);
-                quote! { #module :: #enum_name :: response_schemas_impl()}
-            })
-            .collect();
-        response_schemas.push(quote! {#name :: response_schemas_impl()});
+        let mut response_schemas_calls = interfaces.emit_response_schemas_calls(name);
+        response_schemas_calls.push(quote! {#name :: response_schemas_impl()});
 
         let response_schemas = match name.to_string().as_str() {
             "QueryMsg" => {
@@ -1005,7 +931,7 @@ impl<'a> GlueMessage<'a> {
                         #[cfg(not(target_arch = "wasm32"))]
                         impl cosmwasm_schema::QueryResponses for #contract_name {
                             fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
-                                let responses = [#(#response_schemas),*];
+                                let responses = [#(#response_schemas_calls),*];
                                 responses.into_iter().flatten().collect()
                             }
                         }
@@ -1035,7 +961,7 @@ impl<'a> GlueMessage<'a> {
                         ctx: #ctx_type,
                     ) -> #ret_type {
                         const _: () = {
-                            let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                            let msgs: [&[&str]; #variants_cnt] = [#(#messages_call_on_all_variants),*];
                             #sylvia ::utils::assert_no_intersection(msgs);
                         };
 
@@ -1062,15 +988,16 @@ impl<'a> GlueMessage<'a> {
                         if map.len() != 1 {
                             return Err(D::Error::custom(format!("Expected exactly one message. Received {}", map.len())))
                         }
+
                         // Due to earlier size check of map this unwrap is safe
                         let recv_msg_name = map.into_iter().next().unwrap();
 
                         if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
-                            #(#deserialization_attempts)*
+                            #(#interfaces_deserialization_attempts)*
                             #contract_deserialization_attempt
                         }
 
-                        let msgs: [&[&str]; #interfaces_cnt] = [#(#interface_names),*];
+                        let msgs: [&[&str]; #variants_cnt] = [#(#messages_call_on_all_variants),*];
                         let mut err_msg = msgs.into_iter().flatten().fold(
                             // It might be better to forward the error or serialization, but we just
                             // deserialized it from JSON, not reason to expect failure here.

@@ -1,41 +1,23 @@
 use proc_macro2::TokenStream;
-use proc_macro_error::emit_error;
 use quote::quote;
-use syn::parse::{Parse, Parser};
-use syn::spanned::Spanned;
-use syn::Attribute;
 
 use crate::crate_module;
+use crate::interfaces::Interfaces;
 use crate::parser::ContractMessageAttr;
 
-pub struct Remote {
-    interfaces: Vec<ContractMessageAttr>,
+pub struct Remote<'a> {
+    interfaces: &'a Interfaces,
 }
 
-impl Remote {
-    pub fn new(attrs: &[Attribute]) -> Self {
-        let interfaces: Vec<_> = attrs
-            .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
-                    Ok(interface) => interface,
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
+impl<'a> Remote<'a> {
+    pub fn new(interfaces: &'a Interfaces) -> Self {
         Self { interfaces }
     }
 
     pub fn emit(&self) -> TokenStream {
         let sylvia = crate_module();
 
-        let from_implementations = self.interfaces.iter().map(|interface| {
+        let from_implementations = self.interfaces.interfaces().iter().map(|interface| {
             let ContractMessageAttr { module, .. } = interface;
 
             quote! {
