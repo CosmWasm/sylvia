@@ -13,7 +13,7 @@ tests = ["library", "cw-multi-test", "anyhow"]
 [dependencies]
 anyhow = { version = "1.0.68", optional = true }
 cosmwasm-schema = "1.2"
-cosmwasm-std = { version = "1.2", features = ["staking"] }
+cosmwasm-std = { version = "1.3", features = ["staking"] }
 cw-multi-test = { version = "0.16.2", optional = true }
 cw-storage-plus = "1.0"
 cw-utils = "1.0"
