@@ -134,10 +134,48 @@ mod associated_type_interface {
     }
 }
 
+mod default_query_interface {
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::{contract, interface};
+
+    use crate::SomeResponse;
+
+    #[interface]
+    pub trait DefaultQueryInterface {
+        type Error: From<StdError>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(query)]
+        fn default_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(exec)]
+        fn default_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+    }
+
+    #[contract(module=super)]
+    #[sv::custom(query=MyQuery)]
+    impl DefaultQueryInterface for crate::MyContract {
+        type Error = StdError;
+
+        #[msg(query)]
+        fn default_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
+            Ok(SomeResponse)
+        }
+
+        #[msg(exec)]
+        fn default_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+    }
+}
+
 #[contract]
 #[messages(some_interface as SomeInterface)]
 #[messages(associated_type_interface as AssociatedTypeInterface)]
 #[messages(interface as Interface)]
+#[messages(default_query_interface as DefaultQueryInterface: custom(query))]
 #[sv::custom(query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -170,6 +208,7 @@ impl MyContract {
 #[cfg(all(test, feature = "mt"))]
 mod tests {
     use crate::associated_type_interface::test_utils::AssociatedTypeInterface;
+    use crate::default_query_interface::test_utils::DefaultQueryInterface;
     use crate::some_interface::test_utils::SomeInterface;
     use crate::{interface::test_utils::Interface, MyContract, MyQuery};
 
@@ -220,6 +259,17 @@ mod tests {
         contract
             .interface_proxy()
             .interface_exec()
+            .call(owner)
+            .unwrap();
+
+        // Neither `custom` attribute nor associated type
+        contract
+            .default_query_interface_proxy()
+            .default_query()
+            .unwrap();
+        contract
+            .default_query_interface_proxy()
+            .default_exec()
             .call(owner)
             .unwrap();
     }

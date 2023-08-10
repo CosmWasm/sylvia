@@ -901,15 +901,28 @@ impl<'a> GlueMessage<'a> {
             let ContractMessageAttr {
                 variant,
                 has_custom_msg,
+                has_custom_query,
                 ..
             } = interface;
 
-            match *has_custom_msg&& msg_ty == &MsgType::Exec
-            {
-                true => quote! { #contract_name :: #variant(msg) => Ok( #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into(ctx))?)?) },
-                false => quote! { #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into(ctx)) }
-            }
+            let ctx = match (msg_ty, has_custom_query) {
+                (MsgType::Exec, true )=> quote! {
+                    ( ctx.0.into_empty(), ctx.1, ctx.2)
+                },
+                (MsgType::Query, true )=> quote! {
+                    ( ctx.0.into_empty(), ctx.1)
+                },
+                _=> quote! { ctx },
+            };
 
+            match (msg_ty, has_custom_msg) {
+                (MsgType::Exec, true) => quote! {
+                    #contract_name :: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
+                },
+                _ => quote! {
+                    #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
+                },
+            }
         });
 
         let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
