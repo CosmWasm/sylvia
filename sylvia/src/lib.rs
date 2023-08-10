@@ -2,7 +2,6 @@
 //!
 //! Most of implementation lies in `cw-derive-ng` crate which is reexported here
 
-pub mod into_deps;
 pub mod into_response;
 #[cfg(feature = "mt")]
 pub mod multitest;

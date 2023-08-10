@@ -236,6 +236,7 @@ pub struct ContractMessageAttr {
     pub query_generic_params: Vec<Path>,
     pub variant: Ident,
     pub has_custom_msg: bool,
+    pub has_custom_query: bool,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -262,6 +263,35 @@ fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
     Ok(params)
 }
 
+fn interface_has_custom(content: ParseStream) -> Result<(bool, bool)> {
+    let mut has_custom_msg = false;
+    let mut has_custom_query = false;
+
+    let _: Token![:] = content.parse()?;
+    let attr: Ident = content.parse()?;
+    if attr != "custom" {
+        return Ok((has_custom_msg, has_custom_query));
+    }
+
+    let custom_content;
+    parenthesized!(custom_content in content);
+
+    while !custom_content.is_empty() {
+        let custom = custom_content.parse::<Path>()?;
+        match custom.get_ident() {
+            Some(ident) if ident == "msg" => has_custom_msg = true,
+            Some(ident) if ident == "query" => has_custom_query = true,
+            _ => {
+                return Err(Error::new(
+                    custom.span(),
+                    "Invalid custom attribute, expected one of: `msg`, `query`",
+                ))
+            }
+        }
+    }
+    Ok((has_custom_msg, has_custom_query))
+}
+
 #[cfg(not(tarpaulin_include))]
 // False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
@@ -274,7 +304,6 @@ impl Parse for ContractMessageAttr {
         let generics_open: Option<Token![:]> = content.parse()?;
         let mut exec_generic_params = vec![];
         let mut query_generic_params = vec![];
-        let mut has_custom_msg = false;
 
         if generics_open.is_some() {
             loop {
@@ -300,16 +329,11 @@ impl Parse for ContractMessageAttr {
         let _: Token![as] = content.parse()?;
         let variant = content.parse()?;
 
-        if content.peek(Token![:]) {
-            let _: Token![:] = content.parse()?;
-            let attr: Ident = content.parse()?;
-            if attr == "custom" {
-                let custom_content;
-                parenthesized!(custom_content in content);
-                let custom = custom_content.parse::<Path>()?;
-                has_custom_msg = custom.is_ident("msg");
-            }
-        }
+        let (has_custom_msg, has_custom_query) = if content.peek(Token![:]) {
+            interface_has_custom(&content)?
+        } else {
+            (false, false)
+        };
 
         if !content.is_empty() {
             return Err(Error::new(
@@ -324,6 +348,7 @@ impl Parse for ContractMessageAttr {
             query_generic_params,
             variant,
             has_custom_msg,
+            has_custom_query,
         })
     }
 }
