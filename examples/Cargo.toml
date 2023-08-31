@@ -12,6 +12,7 @@ members = [
   "contracts/cw1-subkeys",
   "contracts/cw20-base",
   "contracts/entry-points-overriding",
+  "contracts/custom",
 ]
 resolver = "2"
 
