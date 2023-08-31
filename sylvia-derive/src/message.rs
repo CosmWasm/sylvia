@@ -1096,6 +1096,7 @@ impl<'a> EntryPoints<'a> {
         let sylvia = crate_module();
 
         let custom_msg = custom.msg_or_default();
+        let custom_query = custom.query_or_default();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1106,6 +1107,7 @@ impl<'a> EntryPoints<'a> {
                         Some(_) => quote! {},
                         None => OverrideEntryPoint::emit_default_entry_point(
                             &custom_msg,
+                            &custom_query,
                             name,
                             error,
                             msg_type,
@@ -1120,7 +1122,7 @@ impl<'a> EntryPoints<'a> {
                     Some(reply) => quote! {
                         #[#sylvia ::cw_std::entry_point]
                         pub fn reply(
-                            deps: #sylvia ::cw_std::DepsMut,
+                            deps: #sylvia ::cw_std::DepsMut< #custom_query >,
                             env: #sylvia ::cw_std::Env,
                             msg: #sylvia ::cw_std::Reply,
                         ) -> Result<#sylvia ::cw_std::Response < #custom_msg >, #error> {
