@@ -1,4 +1,4 @@
-use cosmwasm_std::{CustomMsg, CustomQuery, Response, StdResult};
+use cosmwasm_std::{CustomMsg, Response, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::contract;
@@ -13,11 +13,6 @@ impl CustomMsg for MyMsg {}
 pub struct OtherMsg;
 
 impl CustomMsg for OtherMsg {}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
-pub struct MyQuery;
-
-impl CustomQuery for MyQuery {}
 
 pub struct MyContract;
 
