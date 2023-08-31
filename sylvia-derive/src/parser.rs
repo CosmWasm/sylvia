@@ -83,20 +83,20 @@ impl MsgType {
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn emit_ctx_params(self) -> TokenStream {
+    pub fn emit_ctx_params(self, query_type: &Type) -> TokenStream {
         use MsgType::*;
 
         let sylvia = crate_module();
 
         match self {
             Exec | Instantiate => quote! {
-                deps: #sylvia ::cw_std::DepsMut, env: #sylvia ::cw_std::Env, info: #sylvia ::cw_std::MessageInfo
+                deps: #sylvia ::cw_std::DepsMut< #query_type>, env: #sylvia ::cw_std::Env, info: #sylvia ::cw_std::MessageInfo
             },
             Migrate | Reply | Sudo => quote! {
-                deps: #sylvia ::cw_std::DepsMut, env: #sylvia ::cw_std::Env
+                deps: #sylvia ::cw_std::DepsMut< #query_type>, env: #sylvia ::cw_std::Env
             },
             Query => quote! {
-                deps: #sylvia ::cw_std::Deps, env: #sylvia ::cw_std::Env
+                deps: #sylvia ::cw_std::Deps< #query_type>, env: #sylvia ::cw_std::Env
             },
         }
     }
@@ -540,6 +540,7 @@ impl OverrideEntryPoint {
     #[cfg(not(tarpaulin_include))]
     pub fn emit_default_entry_point(
         custom_msg: &Type,
+        custom_query: &Type,
         name: &Type,
         error: &Type,
         msg_type: MsgType,
@@ -550,7 +551,7 @@ impl OverrideEntryPoint {
             MsgType::Query => quote! { #sylvia ::cw_std::Binary },
             _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
         };
-        let params = msg_type.emit_ctx_params();
+        let params = msg_type.emit_ctx_params(custom_query);
         let values = msg_type.emit_ctx_values();
         let ep_name = msg_type.emit_ep_name();
         let msg_name = msg_type.emit_msg_name();

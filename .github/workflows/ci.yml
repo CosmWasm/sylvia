@@ -51,7 +51,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.66.0
+          toolchain: 1.70.0
           target: wasm32-unknown-unknown
           profile: minimal
           override: true
@@ -87,6 +87,9 @@ jobs:
       - name: Build entry-points-overriding
         working-directory: examples/contracts/entry-points-overriding
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build custom
+        working-directory: examples/contracts/custom
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
@@ -103,6 +106,9 @@ jobs:
       - name: Entry-points-overriding schema
         working-directory: examples/contracts/entry-points-overriding
         run: cargo schema
+      - name: Custom schema
+        working-directory: examples/contracts/custom
+        run: cargo schema
       - name: Cw1-whitelist ts-codegen 
         working-directory: examples/contracts/cw1-whitelist/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
@@ -115,6 +121,9 @@ jobs:
       - name: Entry-points-overriding ts-codegen
         working-directory: examples/contracts/entry-points-overriding
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name entry-points-overriding --no-bundle
+      - name: Custom ts-codegen
+        working-directory: examples/contracts/custom/
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
@@ -124,6 +133,7 @@ jobs:
             examples/contracts/cw1-whitelist/schema/cw1-whitelist.json
             examples/contracts/cw20-base/schema/cw20-base.json
             examples/contracts/entry-points-overriding/schema/entry-points-overriding.json
+            examples/contracts/custom/schema/custom.json
 
   coverage:
     name: Code coverage
@@ -146,7 +156,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name:                   Generate code coverage
         run: |
-          cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml --engine llvm
+          cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml --engine llvm
       - name:                   Upload to codecov.io
         uses:                   codecov/codecov-action@v2
         with:
