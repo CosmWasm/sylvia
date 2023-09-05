@@ -900,12 +900,11 @@ impl<'a> GlueMessage<'a> {
         let dispatch_arms = interfaces.interfaces().iter().map(|interface| {
             let ContractMessageAttr {
                 variant,
-                has_custom_msg,
-                has_custom_query,
+                customs,
                 ..
             } = interface;
 
-            let ctx = match (msg_ty, has_custom_query) {
+            let ctx = match (msg_ty, customs.has_query) {
                 (MsgType::Exec, true )=> quote! {
                     ( ctx.0.into_empty(), ctx.1, ctx.2)
                 },
@@ -915,7 +914,7 @@ impl<'a> GlueMessage<'a> {
                 _=> quote! { ctx },
             };
 
-            match (msg_ty, has_custom_msg) {
+            match (msg_ty, customs.has_msg) {
                 (MsgType::Exec, true) => quote! {
                     #contract_name :: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
                 },
