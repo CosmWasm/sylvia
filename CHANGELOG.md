@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.7.1...sylvia-derive-v0.8.0) - 2023-09-05
+
+### Added
+- Cast `deps` to empty
+- Support QueryC associated type on interface
+- Support custom queries on contracts
+
 ## [0.7.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.7.0...sylvia-derive-v0.7.1) - 2023-08-14
 
 ### Fixed
