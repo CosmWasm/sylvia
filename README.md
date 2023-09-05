@@ -713,7 +713,6 @@ It is possible to override all message types like that. Next to the entry point 
 also have to provide the type of your custom message. It is required to deserialize the messsage
 in the `multitest helpers`.
 
-
 ## Multitest
 
 Sylvia also generates some helpers for testing contracts - it is hidden behind the
@@ -863,6 +862,64 @@ extra proxy wrapper that would send the messages from a particular interface. I 
 had to add trait with group-related methods - it is named in the same way as the
 original `Group` trait, but lies in `multitest_utils` module of the contract.
 
+## CustomQuery and CustomMsg
+
+Interfaces can be defined to work with some `CustomQuery`/`CustomMsg`.
+Having some messages defined as below:
+
+```rust
+struct MyMsg;
+impl CustomMsg for MyMsg {}
+
+struct MyQuery;
+impl CustomQuery for MyMsg {}
+```
+
+we can either make the interface to work only with specified message type via
+`sv::custom(..)` like:
+
+```rust
+#[interface]
+#[sv::custom(query=MyQuery, msg=MyMsg)]
+pub trait SomeInterface {
+}
+
+#[contract(module=super)]
+#[sv::custom(msg=MyMsg, query=MyQuery)]
+impl SomeInterface for crate::MyContract {
+}
+```
+
+or to allow users of this interface to choose with which message type it should be
+used. In such case you can define `ExecC` and `QueryC` associated type in the interface.
+
+With interface defined as such:
+
+```rust
+#[interface]
+pub trait AssociatedInterface {
+    type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
+}
+
+#[contract(module=super)]
+#[sv::custom(msg=MyMsg)]
+impl AssociatedInterface for crate::MyContract {
+    type Error = StdError;
+    type ExecC = MyMsg;
+    type QueryC = MyQuery;
+
+    #[msg(exec)]
+    fn associated_exec(&self, _ctx: ExecCtx<Self::QueryC>) -> StdResult<Response<Self::ExecC>> {
+        Ok(Response::default())
+    }
+}
+```
+
+In case both associated type and `sv::custom()` attribute are defined `sv::custom()`
+will be used to determine `CustomMsg` and/or `CustomQuery`.
+
 ## Generating schema
 
 Sylvia is designed to generate all the code which cosmwasm-schema relies on - this
@@ -893,7 +950,6 @@ implementation.
 Sylvia is in the adoption stage right now, but we are still working on more and more
 features for you. Here is a rough roadmap for the incoming months:
 
-- CustomMsg and CustomQuery support - Currently in progress
 - Sudo support - Although you can define your own sudo entry point it is currently
   not supported in generated multitest helpers.
 - Replies - Sylvia still needs support for essential CosmWasm messages, which are
