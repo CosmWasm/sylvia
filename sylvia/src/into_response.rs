@@ -52,7 +52,7 @@ impl<T> IntoResponse<T> for Response<Empty> {
             .map(|msg| msg.into_msg())
             .collect::<StdResult<_>>()?;
         let mut resp = Response::new()
-            .add_submessages(messages.into_iter())
+            .add_submessages(messages)
             .add_events(self.events)
             .add_attributes(self.attributes);
         resp.data = self.data;

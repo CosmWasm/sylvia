@@ -2,7 +2,7 @@ use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    FnArg, GenericArgument, GenericParam, PathArguments, PathSegment, ReturnType, Signature, Type,
+    FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature, Type,
     WhereClause, WherePredicate,
 };
 
@@ -52,14 +52,14 @@ pub fn process_fields<'s>(
         .collect()
 }
 
-pub fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
-    let ReturnType::Type(_, ty) = ret_type  else {
-            unreachable!()
-        };
+pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
+    let ReturnType::Type(_, ty) = ret_type else {
+        unreachable!()
+    };
 
-    let Type::Path(type_path) = ty.as_ref()  else {
-            unreachable!()
-        };
+    let Type::Path(type_path) = ty.as_ref() else {
+        unreachable!()
+    };
     let segments = &type_path.path.segments;
     assert!(!segments.is_empty());
     let segment = &segments[0];
@@ -73,16 +73,14 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &PathSegment {
                     Please use #[msg(return_type=<your_return_type>)]"
         );
     }
-    let PathArguments::AngleBracketed(args) = &segments[0].arguments  else{
-            unreachable!()
-        };
+    let PathArguments::AngleBracketed(args) = &segments[0].arguments else {
+        unreachable!()
+    };
     let args = &args.args;
     assert!(!args.is_empty());
-    let GenericArgument::Type(Type::Path(type_path)) = &args[0] else{
-            unreachable!()
-        };
-    let segments = &type_path.path.segments;
-    assert!(!segments.is_empty());
+    let GenericArgument::Type(Type::Path(type_path)) = &args[0] else {
+        unreachable!()
+    };
 
-    &segments[0]
+    &type_path.path
 }

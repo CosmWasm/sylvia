@@ -1,4 +1,5 @@
 use cosmwasm_std::{CustomQuery, Deps, DepsMut, Empty, Env, MessageInfo};
+use serde::de::DeserializeOwned;
 
 pub struct ReplyCtx<'a, C: CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
@@ -93,3 +94,5 @@ impl<'a, C: CustomQuery> From<(Deps<'a, C>, Env)> for QueryCtx<'a, C> {
         Self { deps, env }
     }
 }
+
+pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
