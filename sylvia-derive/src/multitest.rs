@@ -42,7 +42,9 @@ pub struct MultitestHelpers<'a> {
 
 fn interface_name(source: &ItemImpl) -> &Ident {
     let trait_name = &source.trait_;
-    let Some(trait_name) = trait_name else {unreachable!()};
+    let Some(trait_name) = trait_name else {
+        unreachable!()
+    };
     let (_, Path { segments, .. }, _) = &trait_name;
     assert!(!segments.is_empty());
 
@@ -50,9 +52,9 @@ fn interface_name(source: &ItemImpl) -> &Ident {
 }
 
 fn extract_contract_name(contract: &Type) -> &Ident {
-    let Type::Path(type_path) = contract  else {
-            unreachable!()
-        };
+    let Type::Path(type_path) = contract else {
+        unreachable!()
+    };
     let segments = &type_path.path.segments;
     assert!(!segments.is_empty());
     let segment = &segments[0];
@@ -540,7 +542,7 @@ impl<'a> MultitestHelpers<'a> {
         let mut generics_checker = CheckGenerics::new(generics);
 
         let parsed = parse_struct_message(source, MsgType::Instantiate);
-        let Some((method,_)) = parsed else {
+        let Some((method, _)) = parsed else {
             return quote! {};
         };
 
