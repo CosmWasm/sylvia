@@ -10,6 +10,7 @@ pub mod utils;
 
 #[cfg(feature = "mt")]
 pub use anyhow;
+pub use cosmwasm_schema as cw_schema;
 pub use cosmwasm_std as cw_std;
 #[cfg(feature = "mt")]
 pub use cw_multi_test;

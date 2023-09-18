@@ -1,6 +1,7 @@
 use syn::visit::Visit;
 use syn::GenericParam;
 
+#[derive(Debug)]
 pub struct CheckGenerics<'g> {
     generics: &'g [&'g GenericParam],
     used: Vec<&'g GenericParam>,

@@ -62,7 +62,14 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
         let remote = Remote::new(&Interfaces::default()).emit();
-        let querier = MsgVariants::new(self.item.as_variants(), &self.generics).emit_querier();
+
+        let querier = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Query,
+            &self.generics,
+            &self.item.generics.where_clause,
+        )
+        .emit_querier();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -159,22 +166,26 @@ impl<'a> ImplInput<'a> {
             quote! {}
         };
 
-        let interfaces = Interfaces::new(self.item);
-        let variants = MsgVariants::new(self.item.as_variants(), &self.generics);
+        let unbonded_generics = &vec![];
+        let variants = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Query,
+            unbonded_generics,
+            &None,
+        );
 
         match is_trait {
-            true => self.process_interface(&interfaces, variants, multitest_helpers),
-            false => self.process_contract(&interfaces, variants, multitest_helpers),
+            true => self.process_interface(variants, multitest_helpers),
+            false => self.process_contract(variants, multitest_helpers),
         }
     }
 
     fn process_interface(
         &self,
-        interfaces: &Interfaces,
         variants: MsgVariants<'a>,
         multitest_helpers: TokenStream,
     ) -> TokenStream {
-        let querier_bound_for_impl = self.emit_querier_for_bound_impl(interfaces, variants);
+        let querier_bound_for_impl = self.emit_querier_for_bound_impl(variants);
 
         #[cfg(not(tarpaulin_include))]
         quote! {
@@ -186,14 +197,14 @@ impl<'a> ImplInput<'a> {
 
     fn process_contract(
         &self,
-        interfaces: &Interfaces,
         variants: MsgVariants<'a>,
         multitest_helpers: TokenStream,
     ) -> TokenStream {
         let messages = self.emit_messages();
-        let remote = Remote::new(interfaces).emit();
+        let remote = Remote::new(&self.interfaces).emit();
+
         let querier = variants.emit_querier();
-        let querier_from_impl = interfaces.emit_querier_from_impl();
+        let querier_from_impl = self.interfaces.emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -268,12 +279,9 @@ impl<'a> ImplInput<'a> {
         .emit()
     }
 
-    fn emit_querier_for_bound_impl(
-        &self,
-        interfaces: &Interfaces,
-        variants: MsgVariants<'a>,
-    ) -> TokenStream {
-        let trait_module = interfaces
+    fn emit_querier_for_bound_impl(&self, variants: MsgVariants<'a>) -> TokenStream {
+        let trait_module = self
+            .interfaces
             .interfaces()
             .first()
             .map(|interface| &interface.module);

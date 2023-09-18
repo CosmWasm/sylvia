@@ -303,7 +303,7 @@ impl<'a> EnumMessage<'a> {
                     #[allow(clippy::derive_partial_eq_without_eq)]
                     #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
                     #[serde(rename_all="snake_case")]
-                    pub enum #unique_enum_name #generics #where_clause {
+                    pub enum #unique_enum_name #generics {
                         #(#variants,)*
                     }
                     pub type #name #generics = #unique_enum_name #generics;
@@ -314,7 +314,7 @@ impl<'a> EnumMessage<'a> {
                     #[allow(clippy::derive_partial_eq_without_eq)]
                     #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                     #[serde(rename_all="snake_case")]
-                    pub enum #unique_enum_name #generics #where_clause {
+                    pub enum #unique_enum_name #generics {
                         #(#variants,)*
                     }
                     pub type #name #generics = #unique_enum_name #generics;
@@ -506,7 +506,9 @@ impl<'a> MsgVariant<'a> {
 
         let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
             match resp_type {
-                Some(resp_type) => quote! {#resp_type},
+                Some(resp_type) => {
+                    quote! {#resp_type}
+                }
                 None => {
                     let return_type = extract_return_type(&sig.output);
                     quote! {#return_type}
@@ -667,12 +669,20 @@ impl<'a> MsgVariant<'a> {
     }
 }
 
-pub struct MsgVariants<'a>(Vec<MsgVariant<'a>>);
+pub struct MsgVariants<'a> {
+    variants: Vec<MsgVariant<'a>>,
+    unbonded_generics: Vec<&'a GenericParam>,
+    where_clause: Option<WhereClause>,
+}
 
 impl<'a> MsgVariants<'a> {
-    pub fn new(source: VariantDescs<'a>, generics: &[&'a GenericParam]) -> Self {
+    pub fn new(
+        source: VariantDescs<'a>,
+        msg_type: MsgType,
+        generics: &'a Vec<&'a GenericParam>,
+        unfiltered_where_clause: &'a Option<WhereClause>,
+    ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
-
         let variants: Vec<_> = source
             .filter_map(|variant_desc| {
                 let msg_attr = variant_desc.attr_msg()?;
@@ -684,6 +694,10 @@ impl<'a> MsgVariants<'a> {
                     }
                 };
 
+                if attr.msg_type() != msg_type {
+                    return None;
+                }
+
                 Some(MsgVariant::new(
                     variant_desc.into_sig(),
                     &mut generics_checker,
@@ -691,12 +705,38 @@ impl<'a> MsgVariants<'a> {
                 ))
             })
             .collect();
-        Self(variants)
+
+        let (unbonded_generics, _) = generics_checker.used_unused();
+        let wheres = filter_wheres(
+            unfiltered_where_clause,
+            generics.as_slice(),
+            &unbonded_generics,
+        );
+        let where_clause = if !wheres.is_empty() {
+            Some(parse_quote! { where #(#wheres),* })
+        } else {
+            None
+        };
+
+        Self {
+            variants,
+            unbonded_generics,
+            where_clause,
+        }
+    }
+
+    pub fn variants(&self) -> &Vec<MsgVariant<'a>> {
+        &self.variants
     }
 
     pub fn emit_querier(&self) -> TokenStream {
         let sylvia = crate_module();
-        let variants = &self.0;
+        let Self {
+            variants,
+            unbonded_generics,
+            where_clause,
+            ..
+        } = self;
 
         let methods_impl = variants
             .iter()
@@ -707,6 +747,12 @@ impl<'a> MsgVariants<'a> {
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
             .map(MsgVariant::emit_querier_declaration);
+
+        let querier = if !unbonded_generics.is_empty() {
+            quote! { Querier < #(#unbonded_generics,)* > }
+        } else {
+            quote! { Querier }
+        };
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -730,12 +776,11 @@ impl<'a> MsgVariants<'a> {
                     }
                 }
 
-                impl <'a, C: #sylvia ::cw_std::CustomQuery> Querier for BoundQuerier<'a, C> {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#unbonded_generics,)*> #querier for BoundQuerier<'a, C> #where_clause {
                     #(#methods_impl)*
                 }
 
-
-                pub trait Querier {
+                pub trait #querier {
                     #(#methods_declaration)*
                 }
             }
@@ -748,24 +793,33 @@ impl<'a> MsgVariants<'a> {
         contract_module: Option<&Path>,
     ) -> TokenStream {
         let sylvia = crate_module();
-        let variants = &self.0;
+        let Self {
+            variants,
+            unbonded_generics,
+            where_clause,
+            ..
+        } = self;
 
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
             .map(|variant| variant.emit_querier_impl(trait_module));
 
-        let querier = trait_module
+        let mut querier = trait_module
             .map(|module| quote! { #module ::Querier })
             .unwrap_or_else(|| quote! { Querier });
         let bound_querier = contract_module
             .map(|module| quote! { #module ::BoundQuerier})
             .unwrap_or_else(|| quote! { BoundQuerier });
 
+        if !unbonded_generics.is_empty() {
+            querier = quote! { #querier < #(#unbonded_generics,)* > };
+        }
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                impl <'a, C: #sylvia ::cw_std::CustomQuery> #querier for #bound_querier<'a, C> {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#unbonded_generics,)*> #querier for #bound_querier<'a, C> #where_clause {
                     #(#methods_impl)*
                 }
             }
@@ -886,7 +940,7 @@ impl<'a> GlueMessage<'a> {
             interfaces,
         } = self;
         let contract = StripGenerics.fold_type((*contract).clone());
-        let contract_name = Ident::new(&format!("Contract{}", name), name.span());
+        let enum_name = Ident::new(&format!("Contract{}", name), name.span());
 
         let variants = interfaces.emit_glue_message_variants(msg_ty, name);
 
@@ -916,15 +970,15 @@ impl<'a> GlueMessage<'a> {
 
             match (msg_ty, customs.has_msg) {
                 (MsgType::Exec, true) => quote! {
-                    #contract_name :: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
+                    #enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
                 },
                 _ => quote! {
-                    #contract_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
+                    #enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
                 },
             }
         });
 
-        let dispatch_arm = quote! {#contract_name :: #contract (msg) =>msg.dispatch(contract, ctx)};
+        let dispatch_arm = quote! {#enum_name :: #contract (msg) => msg.dispatch(contract, ctx)};
 
         let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(name);
 
@@ -951,7 +1005,7 @@ impl<'a> GlueMessage<'a> {
                 {
                     quote! {
                         #[cfg(not(target_arch = "wasm32"))]
-                        impl cosmwasm_schema::QueryResponses for #contract_name {
+                        impl #sylvia ::cw_schema::QueryResponses for #enum_name {
                             fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                                 let responses = [#(#response_schemas_calls),*];
                                 responses.into_iter().flatten().collect()
@@ -971,12 +1025,12 @@ impl<'a> GlueMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case", untagged)]
-                pub enum #contract_name {
+                pub enum #enum_name {
                     #(#variants,)*
                     #msg_name
                 }
 
-                impl #contract_name {
+                impl #enum_name {
                     pub fn dispatch(
                         self,
                         contract: &#contract,
@@ -996,7 +1050,7 @@ impl<'a> GlueMessage<'a> {
 
                 #response_schemas
 
-                impl<'de> serde::Deserialize<'de> for #contract_name {
+                impl<'de> serde::Deserialize<'de> for #enum_name {
                     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                         where D: serde::Deserializer<'de>,
                     {
@@ -1043,7 +1097,8 @@ pub struct EntryPoints<'a> {
     error: Type,
     custom: Custom<'a>,
     override_entry_points: OverrideEntryPoints,
-    variants: MsgVariants<'a>,
+    has_migrate: bool,
+    reply: Option<Ident>,
 }
 
 impl<'a> EntryPoints<'a> {
@@ -1067,9 +1122,15 @@ impl<'a> EntryPoints<'a> {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        let generics: Vec<_> = source.generics.params.iter().collect();
+        let has_migrate = !MsgVariants::new(source.as_variants(), MsgType::Migrate, &vec![], &None)
+            .variants()
+            .is_empty();
 
-        let variants = MsgVariants::new(source.as_variants(), &generics);
+        let reply = MsgVariants::new(source.as_variants(), MsgType::Reply, &vec![], &None)
+            .variants()
+            .iter()
+            .map(|variant| variant.function_name.clone())
+            .next();
         let custom = Custom::new(&source.attrs);
 
         Self {
@@ -1077,7 +1138,8 @@ impl<'a> EntryPoints<'a> {
             error,
             custom,
             override_entry_points,
-            variants,
+            has_migrate,
+            reply,
         }
     }
 
@@ -1087,17 +1149,13 @@ impl<'a> EntryPoints<'a> {
             error,
             custom,
             override_entry_points,
-            variants,
+            has_migrate,
+            reply,
         } = self;
         let sylvia = crate_module();
 
         let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
-        let reply = variants
-            .0
-            .iter()
-            .find(|variant| variant.msg_type == MsgType::Reply)
-            .map(|variant| variant.function_name.clone());
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1119,12 +1177,8 @@ impl<'a> EntryPoints<'a> {
             let migrate_not_overridden = override_entry_points
                 .get_entry_point(MsgType::Migrate)
                 .is_none();
-            let migrate_msg_defined = variants
-                .0
-                .iter()
-                .any(|variant| variant.msg_type == MsgType::Migrate);
 
-            let migrate = if migrate_not_overridden && migrate_msg_defined {
+            let migrate = if migrate_not_overridden && *has_migrate {
                 OverrideEntryPoint::emit_default_entry_point(
                     &custom_msg,
                     &custom_query,
