@@ -1041,9 +1041,9 @@ impl<'a> GlueMessage<'a> {
 pub struct EntryPoints<'a> {
     name: Type,
     error: Type,
-    reply: Option<Ident>,
     custom: Custom<'a>,
     override_entry_points: OverrideEntryPoints,
+    variants: MsgVariants<'a>,
 }
 
 impl<'a> EntryPoints<'a> {
@@ -1068,19 +1068,16 @@ impl<'a> EntryPoints<'a> {
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         let generics: Vec<_> = source.generics.params.iter().collect();
-        let reply = MsgVariants::new(source.as_variants(), &generics)
-            .0
-            .into_iter()
-            .find(|variant| variant.msg_type == MsgType::Reply)
-            .map(|variant| variant.function_name.clone());
+
+        let variants = MsgVariants::new(source.as_variants(), &generics);
         let custom = Custom::new(&source.attrs);
 
         Self {
             name,
             error,
-            reply,
             custom,
             override_entry_points,
+            variants,
         }
     }
 
@@ -1088,14 +1085,19 @@ impl<'a> EntryPoints<'a> {
         let Self {
             name,
             error,
-            reply,
             custom,
             override_entry_points,
+            variants,
         } = self;
         let sylvia = crate_module();
 
         let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
+        let reply = variants
+            .0
+            .iter()
+            .find(|variant| variant.msg_type == MsgType::Reply)
+            .map(|variant| variant.function_name.clone());
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1113,6 +1115,26 @@ impl<'a> EntryPoints<'a> {
                         ),
                     },
                 );
+
+            let migrate_not_overridden = override_entry_points
+                .get_entry_point(MsgType::Migrate)
+                .is_none();
+            let migrate_msg_defined = variants
+                .0
+                .iter()
+                .any(|variant| variant.msg_type == MsgType::Migrate);
+
+            let migrate = if migrate_not_overridden && migrate_msg_defined {
+                OverrideEntryPoint::emit_default_entry_point(
+                    &custom_msg,
+                    &custom_query,
+                    name,
+                    error,
+                    MsgType::Migrate,
+                )
+            } else {
+                quote! {}
+            };
 
             let reply_ep = override_entry_points
                 .get_entry_point(MsgType::Reply)
@@ -1136,6 +1158,8 @@ impl<'a> EntryPoints<'a> {
                     use super::*;
 
                     #(#entry_points)*
+
+                    #migrate
 
                     #reply_ep
                 }

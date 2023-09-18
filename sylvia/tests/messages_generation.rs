@@ -46,15 +46,17 @@ mod interface {
 }
 
 mod contract {
-    use cosmwasm_std::{Addr, Response, StdResult};
+    use cosmwasm_std::{Addr, Reply, Response, StdResult};
     use sylvia::contract;
-    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx};
+    use sylvia_derive::entry_points;
 
     use crate::{MyQuery, QueryResult};
 
     pub struct Contract {}
 
     #[cfg(not(tarpaulin_include))]
+    #[entry_points]
     #[contract]
     #[allow(dead_code)]
     #[sv::custom(query=MyQuery)]
@@ -99,6 +101,11 @@ mod contract {
         #[msg(query)]
         fn argumented_query(&self, _ctx: QueryCtx<MyQuery>, _user: Addr) -> StdResult<QueryResult> {
             Ok(QueryResult {})
+        }
+
+        #[msg(reply)]
+        fn my_reply(&self, _ctx: ReplyCtx<MyQuery>, _reply: Reply) -> StdResult<Response> {
+            Ok(Response::new())
         }
     }
 }
@@ -153,4 +160,17 @@ fn contract_messages_constructible() {
         contract::QueryMsg::NoArgsQuery {} => (),
         contract::QueryMsg::ArgumentedQuery { .. } => (),
     }
+}
+
+#[test]
+fn entry_points_generation() {
+    use contract::entry_points;
+
+    let _ = cw_multi_test::ContractWrapper::new(
+        entry_points::execute,
+        entry_points::instantiate,
+        entry_points::query,
+    )
+    .with_migrate(entry_points::migrate)
+    .with_reply(entry_points::reply);
 }
