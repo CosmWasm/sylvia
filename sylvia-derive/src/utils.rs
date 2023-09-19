@@ -1,9 +1,11 @@
+use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
+use quote::quote;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature, Type,
-    WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature,
+    Type, WhereClause, WherePredicate,
 };
 
 use crate::check_generics::CheckGenerics;
@@ -83,4 +85,18 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
     };
 
     &type_path.path
+}
+
+pub fn as_where_clause(where_predicates: &[&WherePredicate]) -> Option<WhereClause> {
+    match where_predicates.is_empty() {
+        true => None,
+        false => Some(parse_quote! { where #(#where_predicates),* }),
+    }
+}
+
+pub fn brace_generics(unbonded_generics: &[&GenericParam]) -> TokenStream {
+    match unbonded_generics.is_empty() {
+        true => quote! {},
+        false => quote! { < #(#unbonded_generics,)* > },
+    }
 }
