@@ -404,7 +404,7 @@ but only one - the one with info about the trait being implemented.
 
 ## Macro attributes
 
-`Sylvia` work with multiple attributes. I will explain here how and when to use which of them.
+`Sylvia` works with multiple attributes. I will explain here how and when to use which of them.
 
 ```rust
 #[contract(module=contract_module::inner_module)]
@@ -413,7 +413,7 @@ impl Interface for MyContract {
 }
 ```
 
-`module` is meant to be used when implementing interface on the contract. It's purpose
+`module` is meant to be used when implementing interface on the contract. Its purpose
 is to inform `sylvia` where is the contract defined. If the contract is implemented in the same
 scope this attribute can and should be omitted.
 
@@ -426,7 +426,7 @@ impl MyContract {
 }
 ```
 
-`error` is used by both `contract` and `entry_point` macros. It is neccessary in case a custom
+`error` is used by both `contract` and `entry_point` macros. It is necessary in case a custom
 error is being used by your contract. If omitted generated code will use `StdError`.
 
 ```rust
@@ -444,7 +444,7 @@ impl Interface for MyContract {
 ```
 
 `messages` is the attribute for the `contract` macro. We can use it both when implementing contract
-and when implementing an interface on a contract. It's purpose is to point sylvia to what interface
+and when implementing an interface on a contract. Its purpose is to point sylvia to what interface
 is being implemented and how module in which it is defined is called.
 
 In case of the implementation of a trait it is only needed if the trait is defined in different
@@ -710,7 +710,7 @@ impl Contract {
 ```
 
 It is possible to override all message types like that. Next to the entry point path you will
-also have to provide the type of your custom message. It is required to deserialize the messsage
+also have to provide the type of your custom message. It is required to deserialize the message
 in the `multitest helpers`.
 
 ## Multitest
@@ -826,7 +826,7 @@ is an error type of the contract.
 ## Interface items in multitest
 
 Because of implementation restrictions, calling methods from the contract interface
-looks slightly different:
+look slightly different:
 
 ```rust
 use contract::multitest_utils::Group;

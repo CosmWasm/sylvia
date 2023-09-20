@@ -30,7 +30,7 @@ pub const fn assert_no_intersection<const N: usize>(msgs: [&[&str]; N]) {
         // Compare all elements at current indexes
         verify_no_collissions(&msgs, &states, &index);
 
-        // Increment index of alaphabeticaly first element
+        // Increment index of alphabetically first element
         states[index] = match states[index] {
             State::Ongoing(wi) => {
                 if msgs[index].len() == wi + 1 {
@@ -80,7 +80,7 @@ const fn get_next_alphabetical_index<const N: usize>(
 }
 
 // Compare values at current indexes saved in states.
-// All comparisions are made with value at index which point to alphabetically smallest
+// All comparisons are made with value at index which point to alphabetically smallest
 // and values in each other arrays at their current position.
 //
 // Because arrays are sorted we don't have to compare each value with each other
