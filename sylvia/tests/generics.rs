@@ -32,7 +32,6 @@ pub mod cw1 {
 #[cw_serde]
 pub struct ExternalMsg;
 impl cosmwasm_std::CustomMsg for ExternalMsg {}
-impl sylvia::types::CustomMsg for ExternalMsg {}
 
 #[cw_serde]
 pub struct ExternalQuery;
@@ -44,6 +43,8 @@ mod tests {
 
     use crate::{cw1::Querier, ExternalMsg, ExternalQuery};
 
+    use crate::cw1::InterfaceTypes;
+    use sylvia::types::InterfaceMessages;
     #[test]
     fn construct_messages() {
         let contract = Addr::unchecked("contract");
@@ -59,5 +60,15 @@ mod tests {
         let cw1_querier = crate::cw1::BoundQuerier::borrowed(&contract, &querier);
         let _: Result<ExternalQuery, _> = Querier::some_query(&cw1_querier, ExternalMsg {});
         let _: Result<ExternalQuery, _> = cw1_querier.some_query(ExternalMsg {});
+
+        // Construct messages with Interface extension
+        let _ =
+            <InterfaceTypes<ExternalMsg, _, ExternalQuery> as InterfaceMessages>::Query::some_query(
+                ExternalMsg {},
+            );
+        let _=
+            <InterfaceTypes<_, ExternalMsg, cosmwasm_std::Empty> as InterfaceMessages>::Exec::execute(vec![
+                CosmosMsg::Custom(ExternalMsg {}),
+            ]);
     }
 }
