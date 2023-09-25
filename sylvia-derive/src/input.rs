@@ -7,7 +7,9 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type
 
 use crate::crate_module;
 use crate::interfaces::Interfaces;
-use crate::message::{ContractEnumMessage, EnumMessage, GlueMessage, MsgVariants, StructMessage};
+use crate::message::{
+    ContractEnumMessage, EnumMessage, GlueMessage, InterfaceMessages, MsgVariants, StructMessage,
+};
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::remote::Remote;
@@ -71,6 +73,8 @@ impl<'a> TraitInput<'a> {
         )
         .emit_querier();
 
+        let interface_messages = InterfaceMessages::new(self.item, &self.generics).emit();
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -81,6 +85,8 @@ impl<'a> TraitInput<'a> {
                 #remote
 
                 #querier
+
+                #interface_messages
             }
         }
     }

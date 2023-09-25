@@ -96,3 +96,10 @@ impl<'a, C: CustomQuery> From<(Deps<'a, C>, Env)> for QueryCtx<'a, C> {
 }
 
 pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
+
+impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
+
+pub trait InterfaceMessages {
+    type Exec;
+    type Query;
+}
