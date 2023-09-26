@@ -19,7 +19,7 @@ error[E0308]: mismatched types
               found struct `InstantiateCtx<'_>`
 ```
 
-`InstantiateCtx` and `ExecCtx` could be previosly used interchangeably. They are currently separate
+`InstantiateCtx` and `ExecCtx` could be previously used interchangeably. They are currently separate
   types. The same applies to `ReplyCtx`/`MigrateCtx` pair.
 
 ## 0.4.2 -> 0.5.0
@@ -39,4 +39,4 @@ error[E0308]: mismatched types
 +}
 ```
 
-`module` attr for macro contract should now point to your contract implemntation
+`module` attr for macro contract should now point to your contract implementation
