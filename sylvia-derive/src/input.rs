@@ -3,7 +3,10 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{parse_quote, GenericParam, Ident, ItemImpl, ItemTrait, TraitItem, Type};
+use syn::{
+    parse_quote, GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, PathArguments,
+    TraitItem, Type,
+};
 
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -156,42 +159,48 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
-        let is_trait = self.item.trait_.is_some();
+        let Self {
+            item,
+            generics,
+            error,
+            custom,
+            override_entry_points,
+            interfaces,
+            ..
+        } = self;
+        let is_trait = item.trait_.is_some();
         let multitest_helpers = if cfg!(feature = "mt") {
+            let interface_generics = self.extract_generic_argument();
             MultitestHelpers::new(
-                self.item,
+                item,
                 is_trait,
-                &self.error,
-                &self.generics,
-                &self.custom,
-                &self.override_entry_points,
-                &self.interfaces,
+                error,
+                &interface_generics,
+                custom,
+                override_entry_points,
+                interfaces,
             )
             .emit()
         } else {
             quote! {}
         };
 
-        let unbonded_generics = &vec![];
+        let where_clause = &item.generics.where_clause;
         let variants = MsgVariants::new(
             self.item.as_variants(),
             MsgType::Query,
-            unbonded_generics,
-            &None,
+            generics,
+            where_clause,
         );
 
         match is_trait {
-            true => self.process_interface(variants, multitest_helpers),
+            true => self.process_interface(multitest_helpers),
             false => self.process_contract(variants, multitest_helpers),
         }
     }
 
-    fn process_interface(
-        &self,
-        variants: MsgVariants<'a>,
-        multitest_helpers: TokenStream,
-    ) -> TokenStream {
-        let querier_bound_for_impl = self.emit_querier_for_bound_impl(variants);
+    fn process_interface(&self, multitest_helpers: TokenStream) -> TokenStream {
+        let querier_bound_for_impl = self.emit_querier_for_bound_impl();
 
         #[cfg(not(tarpaulin_include))]
         quote! {
@@ -203,7 +212,7 @@ impl<'a> ImplInput<'a> {
 
     fn process_contract(
         &self,
-        variants: MsgVariants<'a>,
+        variants: MsgVariants<'a, GenericParam>,
         multitest_helpers: TokenStream,
     ) -> TokenStream {
         let messages = self.emit_messages();
@@ -285,13 +294,31 @@ impl<'a> ImplInput<'a> {
         .emit()
     }
 
-    fn emit_querier_for_bound_impl(&self, variants: MsgVariants<'a>) -> TokenStream {
+    /// This method should only be called for trait impl block
+    fn extract_generic_argument(&self) -> Vec<&GenericArgument> {
+        let interface_generics = &self.item.trait_.as_ref();
+        let args = match interface_generics {
+            Some((_, path, _)) => path.segments.last().map(|segment| &segment.arguments),
+            None => None,
+        };
+
+        match args {
+            Some(PathArguments::AngleBracketed(args)) => {
+                args.args.pairs().map(|pair| *pair.value()).collect()
+            }
+            _ => vec![],
+        }
+    }
+
+    fn emit_querier_for_bound_impl(&self) -> TokenStream {
         let trait_module = self
             .interfaces
-            .interfaces()
-            .first()
+            .get_only_interface()
             .map(|interface| &interface.module);
         let contract_module = self.attributes.module.as_ref();
+        let generics = self.extract_generic_argument();
+
+        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Query, &generics, &None);
 
         variants.emit_querier_for_bound_impl(trait_module, contract_module)
     }
