@@ -1,4 +1,4 @@
-use crate::check_generics::CheckGenerics;
+use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
@@ -13,7 +13,7 @@ use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
@@ -269,11 +269,13 @@ impl<'a> EnumMessage<'a> {
             quote! {}
         } else if MsgType::Query == *msg_ty {
             quote! {
+                #[serde(skip)]
                 #[returns((#(#generics,)*))]
                 _Phantom(std::marker::PhantomData<( #(#generics,)* )>),
             }
         } else {
             quote! {
+                #[serde(skip)]
                 _Phantom(std::marker::PhantomData<( #(#generics,)* )>),
             }
         };
@@ -281,7 +283,7 @@ impl<'a> EnumMessage<'a> {
         let match_arms = if !generics.is_empty() {
             quote! {
                 #(#match_arms,)*
-                _Phantom(_) => unreachable!(),
+                _Phantom(_) => Err(#sylvia ::cw_std::StdError::generic_err("Phantom message should not be constructed.")).map_err(Into::into),
             }
         } else {
             quote! {
@@ -489,11 +491,14 @@ pub struct MsgVariant<'a> {
 
 impl<'a> MsgVariant<'a> {
     /// Creates new message variant from trait method
-    pub fn new(
+    pub fn new<Generic>(
         sig: &'a Signature,
-        generics_checker: &mut CheckGenerics,
+        generics_checker: &mut CheckGenerics<Generic>,
         msg_attr: MsgAttr,
-    ) -> MsgVariant<'a> {
+    ) -> MsgVariant<'a>
+    where
+        Generic: GetPath + PartialEq,
+    {
         let function_name = &sig.ident;
 
         let name = Ident::new(
@@ -622,10 +627,10 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_impl(
+    pub fn emit_querier_impl<Generic: ToTokens>(
         &self,
         trait_module: Option<&Path>,
-        unbonded_generics: &Vec<&GenericParam>,
+        unbonded_generics: &Vec<&Generic>,
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
@@ -680,17 +685,20 @@ impl<'a> MsgVariant<'a> {
     }
 }
 
-pub struct MsgVariants<'a> {
+pub struct MsgVariants<'a, Generic> {
     variants: Vec<MsgVariant<'a>>,
-    unbonded_generics: Vec<&'a GenericParam>,
+    used_generics: Vec<&'a Generic>,
     where_predicates: Vec<&'a WherePredicate>,
 }
 
-impl<'a> MsgVariants<'a> {
+impl<'a, Generic> MsgVariants<'a, Generic>
+where
+    Generic: GetPath + PartialEq + ToTokens,
+{
     pub fn new(
         source: VariantDescs<'a>,
         msg_type: MsgType,
-        generics: &'a [&'a GenericParam],
+        generics: &'a [&'a Generic],
         unfiltered_where_clause: &'a Option<WhereClause>,
     ) -> Self {
         let mut generics_checker = CheckGenerics::new(generics);
@@ -717,12 +725,12 @@ impl<'a> MsgVariants<'a> {
             })
             .collect();
 
-        let (unbonded_generics, _) = generics_checker.used_unused();
-        let where_predicates = filter_wheres(unfiltered_where_clause, generics, &unbonded_generics);
+        let (used_generics, _) = generics_checker.used_unused();
+        let where_predicates = filter_wheres(unfiltered_where_clause, generics, &used_generics);
 
         Self {
             variants,
-            unbonded_generics,
+            used_generics,
             where_predicates,
         }
     }
@@ -744,7 +752,7 @@ impl<'a> MsgVariants<'a> {
         let sylvia = crate_module();
         let Self {
             variants,
-            unbonded_generics,
+            used_generics,
             ..
         } = self;
         let where_clause = self.where_clause();
@@ -752,14 +760,14 @@ impl<'a> MsgVariants<'a> {
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl(None, unbonded_generics));
+            .map(|variant| variant.emit_querier_impl(None, used_generics));
 
         let methods_declaration = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
             .map(MsgVariant::emit_querier_declaration);
 
-        let braced_generics = emit_bracketed_generics(unbonded_generics);
+        let braced_generics = emit_bracketed_generics(used_generics);
         let querier = quote! { Querier #braced_generics };
 
         #[cfg(not(tarpaulin_include))]
@@ -784,7 +792,7 @@ impl<'a> MsgVariants<'a> {
                     }
                 }
 
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#unbonded_generics,)*> #querier for BoundQuerier<'a, C> #where_clause {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#used_generics,)*> #querier for BoundQuerier<'a, C> #where_clause {
                     #(#methods_impl)*
                 }
 
@@ -803,7 +811,7 @@ impl<'a> MsgVariants<'a> {
         let sylvia = crate_module();
         let Self {
             variants,
-            unbonded_generics,
+            used_generics,
             ..
         } = self;
         let where_clause = self.where_clause();
@@ -811,23 +819,25 @@ impl<'a> MsgVariants<'a> {
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl(trait_module, unbonded_generics));
+            .map(|variant| variant.emit_querier_impl(trait_module, used_generics));
 
-        let mut querier = trait_module
+        let querier = trait_module
             .map(|module| quote! { #module ::Querier })
             .unwrap_or_else(|| quote! { Querier });
         let bound_querier = contract_module
             .map(|module| quote! { #module ::BoundQuerier})
             .unwrap_or_else(|| quote! { BoundQuerier });
 
-        if !unbonded_generics.is_empty() {
-            querier = quote! { #querier < #(#unbonded_generics,)* > };
-        }
+        let querier = if !used_generics.is_empty() {
+            quote! { #querier < #(#used_generics,)* > }
+        } else {
+            quote! { #querier }
+        };
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#unbonded_generics,)*> #querier for #bound_querier<'a, C> #where_clause {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery> #querier for #bound_querier<'a, C > #where_clause {
                     #(#methods_impl)*
                 }
             }
@@ -844,7 +854,13 @@ pub struct MsgField<'a> {
 
 impl<'a> MsgField<'a> {
     /// Creates new field from trait method argument
-    pub fn new(item: &'a PatType, generics_checker: &mut CheckGenerics) -> Option<MsgField<'a>> {
+    pub fn new<Generic>(
+        item: &'a PatType,
+        generics_checker: &mut CheckGenerics<Generic>,
+    ) -> Option<MsgField<'a>>
+    where
+        Generic: GetPath + PartialEq,
+    {
         let name = match &*item.pat {
             Pat::Ident(p) => Some(&p.ident),
             pat => {
@@ -950,7 +966,7 @@ impl<'a> GlueMessage<'a> {
         let contract = StripGenerics.fold_type((*contract).clone());
         let enum_name = Ident::new(&format!("Contract{}", name), name.span());
 
-        let variants = interfaces.emit_glue_message_variants(msg_ty, name);
+        let variants = interfaces.emit_glue_message_variants(msg_ty);
 
         let msg_name = quote! {#contract ( #name)};
         let mut messages_call_on_all_variants: Vec<TokenStream> =
@@ -1101,8 +1117,8 @@ impl<'a> GlueMessage<'a> {
 }
 
 pub struct InterfaceMessages<'a> {
-    exec_variants: MsgVariants<'a>,
-    query_variants: MsgVariants<'a>,
+    exec_variants: MsgVariants<'a, GenericParam>,
+    query_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
 }
 
@@ -1137,8 +1153,8 @@ impl<'a> InterfaceMessages<'a> {
             generics,
         } = self;
 
-        let exec_generics = &exec_variants.unbonded_generics;
-        let query_generics = &query_variants.unbonded_generics;
+        let exec_generics = &exec_variants.used_generics;
+        let query_generics = &query_variants.used_generics;
 
         let bracket_generics = emit_bracketed_generics(generics);
         let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
@@ -1195,15 +1211,17 @@ impl<'a> EntryPoints<'a> {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        let has_migrate = !MsgVariants::new(source.as_variants(), MsgType::Migrate, &[], &None)
-            .variants()
-            .is_empty();
+        let has_migrate =
+            !MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Migrate, &[], &None)
+                .variants()
+                .is_empty();
 
-        let reply = MsgVariants::new(source.as_variants(), MsgType::Reply, &[], &None)
-            .variants()
-            .iter()
-            .map(|variant| variant.function_name.clone())
-            .next();
+        let reply =
+            MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
+                .variants()
+                .iter()
+                .map(|variant| variant.function_name.clone())
+                .next();
         let custom = Custom::new(&source.attrs);
 
         Self {

@@ -1,20 +1,18 @@
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{
-    parse_quote, FnArg, GenericParam, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type,
-};
+use syn::{parse_quote, FnArg, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path, Type};
 
-use crate::check_generics::CheckGenerics;
+use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::MsgField;
 use crate::parser::{
     parse_struct_message, Custom, MsgAttr, MsgType, OverrideEntryPoint, OverrideEntryPoints,
 };
-use crate::utils::{extract_return_type, process_fields};
+use crate::utils::{emit_bracketed_generics, extract_return_type, process_fields};
 
 struct MessageSignature<'a> {
     pub name: &'a Ident,
@@ -24,7 +22,7 @@ struct MessageSignature<'a> {
     pub return_type: TokenStream,
 }
 
-pub struct MultitestHelpers<'a> {
+pub struct MultitestHelpers<'a, Generics> {
     messages: Vec<MessageSignature<'a>>,
     error_type: TokenStream,
     contract: &'a Type,
@@ -32,7 +30,7 @@ pub struct MultitestHelpers<'a> {
     is_migrate: bool,
     reply: Option<Ident>,
     source: &'a ItemImpl,
-    generics: &'a [&'a GenericParam],
+    generics: &'a [&'a Generics],
     contract_name: &'a Ident,
     proxy_name: Ident,
     custom: &'a Custom<'a>,
@@ -61,12 +59,15 @@ fn extract_contract_name(contract: &Type) -> &Ident {
     &segment.ident
 }
 
-impl<'a> MultitestHelpers<'a> {
+impl<'a, Generics> MultitestHelpers<'a, Generics>
+where
+    Generics: ToTokens + PartialEq + GetPath,
+{
     pub fn new(
         source: &'a ItemImpl,
         is_trait: bool,
         contract_error: &'a Type,
-        generics: &'a [&'a GenericParam],
+        generics: &'a [&'a Generics],
         custom: &'a Custom,
         override_entry_points: &'a OverrideEntryPoints,
         interfaces: &'a Interfaces,
@@ -380,6 +381,7 @@ impl<'a> MultitestHelpers<'a> {
             error_type,
             custom,
             interfaces,
+            generics,
             ..
         } = self;
 
@@ -389,29 +391,13 @@ impl<'a> MultitestHelpers<'a> {
         let proxy_name = &self.proxy_name;
         let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
 
-        let modules: Vec<&Path> = interfaces.as_modules().collect();
-
-        #[cfg(not(tarpaulin_include))]
-        let module = match modules.len() {
-            0 => {
-                quote! {}
-            }
-            1 => {
-                let module = &modules[0];
-                quote! {#module ::}
-            }
-            _ => {
-                let first = &modules[0];
-                for redefined in &modules[1..] {
-                    emit_error!(
-                      redefined, "The attribute `messages` is redefined";
-                      note = first.span() => "Previous definition of the attribute `messsages`";
-                      note = "Only one `messages` attribute can exist on an interface implementation on contract"
-                    );
-                }
-                quote! {}
-            }
-        };
+        let module = interfaces
+            .get_only_interface()
+            .map(|interface| {
+                let module = &interface.module;
+                quote! { #module :: }
+            })
+            .unwrap_or(quote! {});
 
         let custom_msg = custom.msg_or_default();
 
@@ -430,6 +416,9 @@ impl<'a> MultitestHelpers<'a> {
             >
         };
 
+        let bracketed_generics = emit_bracketed_generics(generics);
+        let interface_enum = quote! { < #module InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
+
         #[cfg(not(tarpaulin_include))]
         let methods_definitions = messages.iter().map(|msg| {
             let MessageSignature {
@@ -439,11 +428,12 @@ impl<'a> MultitestHelpers<'a> {
                 msg_ty,
                 return_type,
             } = msg;
+        let type_name = msg_ty.as_accessor_name();
             if msg_ty == &MsgType::Exec {
                 quote! {
                     #[track_caller]
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, #mt_app, #custom_msg> {
-                        let msg = #module ExecMsg:: #name ( #(#arguments),* );
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, #mt_app, #custom_msg> {
+                        let msg = #interface_enum :: #type_name :: #name ( #(#arguments),* );
 
                         #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                     }
@@ -451,7 +441,7 @@ impl<'a> MultitestHelpers<'a> {
             } else {
                 quote! {
                     fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = #module QueryMsg:: #name ( #(#arguments),* );
+                        let msg = #interface_enum :: #type_name :: #name ( #(#arguments),* );
 
                         (*self.app)
                             .app()
@@ -472,9 +462,10 @@ impl<'a> MultitestHelpers<'a> {
                 return_type,
                 ..
             } = msg;
+            let type_name = msg_ty.as_accessor_name();
             if msg_ty == &MsgType::Exec {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #module ExecMsg, MtApp, #custom_msg>;
+                    fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
                 }
             } else {
                 quote! {

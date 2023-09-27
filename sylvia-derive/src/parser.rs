@@ -152,6 +152,14 @@ impl MsgType {
             MsgType::Sudo => todo!(),
         }
     }
+
+    pub fn as_accessor_name(&self) -> Option<Type> {
+        match self {
+            MsgType::Exec => Some(parse_quote! { Exec }),
+            MsgType::Query => Some(parse_quote! { Query }),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq<MsgType> for MsgAttr {
@@ -238,34 +246,8 @@ pub struct Customs {
 #[derive(Debug)]
 pub struct ContractMessageAttr {
     pub module: Path,
-    pub exec_generic_params: Vec<Path>,
-    pub query_generic_params: Vec<Path>,
     pub variant: Ident,
     pub customs: Customs,
-}
-
-#[cfg(not(tarpaulin_include))]
-// False negative. Called in function below
-fn parse_generics(content: &ParseBuffer) -> Result<Vec<Path>> {
-    let _: Token![<] = content.parse()?;
-    let mut params = vec![];
-
-    loop {
-        let param: Path = content.parse()?;
-        params.push(param);
-
-        let generics_close: Option<Token![>]> = content.parse()?;
-        if generics_close.is_some() {
-            break;
-        }
-
-        let comma: Option<Token![,]> = content.parse()?;
-        if comma.is_none() {
-            return Err(Error::new(content.span(), "Expected comma or `>`"));
-        }
-    }
-
-    Ok(params)
 }
 
 fn interface_has_custom(content: ParseStream) -> Result<Customs> {
@@ -316,31 +298,6 @@ impl Parse for ContractMessageAttr {
 
         let module = content.parse()?;
 
-        let generics_open: Option<Token![:]> = content.parse()?;
-        let mut exec_generic_params = vec![];
-        let mut query_generic_params = vec![];
-
-        if generics_open.is_some() {
-            loop {
-                let ty: Ident = content.parse()?;
-                let params = if ty == "exec" {
-                    &mut exec_generic_params
-                } else if ty == "query" {
-                    &mut query_generic_params
-                } else {
-                    return Err(Error::new(ty.span(), "Invalid message type"));
-                };
-
-                *params = parse_generics(&content)?;
-
-                if content.peek(Token![as]) {
-                    break;
-                }
-
-                let _: Token![,] = content.parse()?;
-            }
-        }
-
         let _: Token![as] = content.parse()?;
         let variant = content.parse()?;
 
@@ -355,8 +312,6 @@ impl Parse for ContractMessageAttr {
 
         Ok(Self {
             module,
-            exec_generic_params,
-            query_generic_params,
             variant,
             customs,
         })

@@ -83,30 +83,23 @@ impl Interfaces {
             .collect()
     }
 
-    pub fn emit_glue_message_variants(
-        &self,
-        msg_ty: &MsgType,
-        msg_name: &Ident,
-    ) -> Vec<TokenStream> {
+    pub fn emit_glue_message_variants(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
+        let sylvia = crate_module();
+
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module,
-                    exec_generic_params,
-                    query_generic_params,
-                    variant,
-                    ..
+                    module, variant, ..
                 } = interface;
 
-                let generics = match msg_ty {
-                    MsgType::Exec => exec_generic_params.as_slice(),
-                    MsgType::Query => query_generic_params.as_slice(),
-                    _ => &[],
-                };
-
-                let enum_name = Self::merge_module_with_name(interface, msg_name);
-                quote! { #variant(#module :: #enum_name<#(#generics,)*>) }
+                let interface_enum =
+                    quote! { <#module ::InterfaceTypes as #sylvia ::types::InterfaceMessages> };
+                if msg_ty == &MsgType::Query {
+                    quote! { #variant ( #interface_enum :: Query) }
+                } else {
+                    quote! { #variant ( #interface_enum :: Exec)}
+                }
             })
             .collect()
     }
@@ -157,5 +150,24 @@ impl Interfaces {
 
     pub fn as_modules(&self) -> impl Iterator<Item = &Path> {
         self.interfaces.iter().map(|interface| &interface.module)
+    }
+
+    pub fn get_only_interface(&self) -> Option<&ContractMessageAttr> {
+        let interfaces = &self.interfaces;
+        match interfaces.len() {
+            0 => None,
+            1 => Some(&interfaces[0]),
+            _ => {
+                let first = &interfaces[0];
+                for redefined in &interfaces[1..] {
+                    emit_error!(
+                      redefined.module, "The attribute `messages` is redefined";
+                      note = first.module.span() => "Previous definition of the attribute `messsages`";
+                      note = "Only one `messages` attribute can exist on an interface implementation on contract"
+                    );
+                }
+                None
+            }
+        }
     }
 }

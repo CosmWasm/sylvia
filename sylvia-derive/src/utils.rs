@@ -1,21 +1,21 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature,
-    Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, Path, PathArguments, ReturnType, Signature, Type,
+    WhereClause, WherePredicate,
 };
 
-use crate::check_generics::CheckGenerics;
+use crate::check_generics::{CheckGenerics, GetPath};
 use crate::message::MsgField;
 
 #[cfg(not(tarpaulin_include))]
-pub fn filter_wheres<'a>(
+pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
     clause: &'a Option<WhereClause>,
-    generics: &[&GenericParam],
-    used_generics: &[&GenericParam],
+    generics: &[&Generic],
+    used_generics: &[&Generic],
 ) -> Vec<&'a WherePredicate> {
     clause
         .as_ref()
@@ -36,10 +36,13 @@ pub fn filter_wheres<'a>(
         .unwrap_or_default()
 }
 
-pub fn process_fields<'s>(
+pub fn process_fields<'s, Generic>(
     sig: &'s Signature,
-    generics_checker: &mut CheckGenerics,
-) -> Vec<MsgField<'s>> {
+    generics_checker: &mut CheckGenerics<Generic>,
+) -> Vec<MsgField<'s>>
+where
+    Generic: GetPath + PartialEq,
+{
     sig.inputs
         .iter()
         .skip(2)
@@ -94,7 +97,7 @@ pub fn as_where_clause(where_predicates: &[&WherePredicate]) -> Option<WhereClau
     }
 }
 
-pub fn emit_bracketed_generics(unbonded_generics: &[&GenericParam]) -> TokenStream {
+pub fn emit_bracketed_generics<Generic: ToTokens>(unbonded_generics: &[&Generic]) -> TokenStream {
     match unbonded_generics.is_empty() {
         true => quote! {},
         false => quote! { < #(#unbonded_generics,)* > },

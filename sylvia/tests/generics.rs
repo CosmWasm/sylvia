@@ -29,6 +29,58 @@ pub mod cw1 {
     }
 }
 
+pub mod cw1_contract {
+    use cosmwasm_std::{Response, StdResult};
+    use sylvia::types::InstantiateCtx;
+    use sylvia_derive::contract;
+
+    pub struct Cw1Contract;
+
+    #[contract]
+    impl Cw1Contract {
+        pub const fn new() -> Self {
+            Self
+        }
+
+        #[msg(instantiate)]
+        pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+    }
+}
+
+pub mod impl_cw1 {
+    use cosmwasm_std::{CosmosMsg, Response, StdError};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
+
+    use crate::{cw1::Cw1, cw1_contract::Cw1Contract, ExternalMsg};
+
+    #[contract(module = crate::cw1_contract)]
+    #[messages(crate::cw1 as Cw1)]
+    impl Cw1<ExternalMsg, crate::ExternalMsg, crate::ExternalQuery> for Cw1Contract {
+        type Error = StdError;
+
+        #[msg(exec)]
+        fn execute(
+            &self,
+            _ctx: ExecCtx,
+            _msgs: Vec<CosmosMsg<ExternalMsg>>,
+        ) -> Result<Response<ExternalMsg>, Self::Error> {
+            Ok(Response::new())
+        }
+
+        #[msg(query)]
+        fn some_query(
+            &self,
+            _ctx: QueryCtx,
+            _param: crate::ExternalMsg,
+        ) -> Result<crate::ExternalQuery, Self::Error> {
+            Ok(crate::ExternalQuery {})
+        }
+    }
+}
+
 #[cw_serde]
 pub struct ExternalMsg;
 impl cosmwasm_std::CustomMsg for ExternalMsg {}
@@ -37,7 +89,7 @@ impl cosmwasm_std::CustomMsg for ExternalMsg {}
 pub struct ExternalQuery;
 impl cosmwasm_std::CustomQuery for ExternalQuery {}
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mt"))]
 mod tests {
     use cosmwasm_std::{testing::mock_dependencies, Addr, CosmosMsg, Empty, QuerierWrapper};
 
