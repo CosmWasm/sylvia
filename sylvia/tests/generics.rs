@@ -34,16 +34,21 @@ pub mod cw1_contract {
     use sylvia::types::InstantiateCtx;
     use sylvia_derive::contract;
 
+    use crate::{ExternalMsg, ExternalQuery};
+
     pub struct Cw1Contract;
 
     #[contract]
+    #[messages(crate::cw1<ExternalMsg, ExternalMsg, ExternalQuery> as Cw1)]
+    /// Required if interface returns generic `Response`
+    #[sv::custom(msg=ExternalMsg)]
     impl Cw1Contract {
         pub const fn new() -> Self {
             Self
         }
 
         #[msg(instantiate)]
-        pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+        pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response<ExternalMsg>> {
             Ok(Response::new())
         }
     }
@@ -91,12 +96,11 @@ impl cosmwasm_std::CustomQuery for ExternalQuery {}
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
+    use crate::cw1::{InterfaceTypes, Querier as Cw1Querier};
+    use crate::{ExternalMsg, ExternalQuery};
     use cosmwasm_std::{testing::mock_dependencies, Addr, CosmosMsg, Empty, QuerierWrapper};
-
-    use crate::{cw1::Querier, ExternalMsg, ExternalQuery};
-
-    use crate::cw1::InterfaceTypes;
     use sylvia::types::InterfaceMessages;
+
     #[test]
     fn construct_messages() {
         let contract = Addr::unchecked("contract");
@@ -110,8 +114,12 @@ mod tests {
         let querier: QuerierWrapper<ExternalQuery> = QuerierWrapper::new(&deps.querier);
 
         let cw1_querier = crate::cw1::BoundQuerier::borrowed(&contract, &querier);
-        let _: Result<ExternalQuery, _> = Querier::some_query(&cw1_querier, ExternalMsg {});
+        let _: Result<ExternalQuery, _> =
+            crate::cw1::Querier::some_query(&cw1_querier, ExternalMsg {});
         let _: Result<ExternalQuery, _> = cw1_querier.some_query(ExternalMsg {});
+
+        let contract_querier = crate::cw1_contract::BoundQuerier::borrowed(&contract, &querier);
+        let _: Result<ExternalQuery, _> = contract_querier.some_query(ExternalMsg {});
 
         // Construct messages with Interface extension
         let _ =
