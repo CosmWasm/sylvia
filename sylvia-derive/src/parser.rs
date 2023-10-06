@@ -1,14 +1,17 @@
 use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
+use syn::fold::Fold;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, parse_quote, Attribute, Ident, ImplItem, ImplItemMethod, ItemImpl, ItemTrait,
-    Path, Result, Token, TraitItem, Type,
+    parenthesized, parse_quote, Attribute, GenericArgument, Ident, ImplItem, ImplItemMethod,
+    ItemImpl, ItemTrait, Path, PathArguments, Result, Token, TraitItem, Type,
 };
 
 use crate::crate_module;
+use crate::strip_generics::StripGenerics;
 
 /// Parser arguments for `contract` macro
 pub struct ContractArgs {
@@ -248,6 +251,7 @@ pub struct ContractMessageAttr {
     pub module: Path,
     pub variant: Ident,
     pub customs: Customs,
+    pub generics: Punctuated<GenericArgument, Token![,]>,
 }
 
 fn interface_has_custom(content: ParseStream) -> Result<Customs> {
@@ -289,6 +293,26 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
     Ok(customs)
 }
 
+fn extract_generics_from_path(module: &mut Path) -> Punctuated<GenericArgument, Token![,]> {
+    let generics = module.segments.last().map(|segment| {
+        match segment.arguments.clone(){
+            PathArguments::AngleBracketed(generics) => {
+                generics.args
+            },
+            PathArguments::None => Default::default(),
+            PathArguments::Parenthesized(generics) => {
+                emit_error!(
+                    generics.span(), "Found paranthesis wrapping generics in `messages` attribute.";
+                    note = "Expected `messages` attribute to be in form `#[messages(Path<generics> as Type)]`"
+                );
+               Default::default()
+            }
+        }
+    }).unwrap_or_default();
+
+    generics
+}
+
 #[cfg(not(tarpaulin_include))]
 // False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
@@ -296,7 +320,9 @@ impl Parse for ContractMessageAttr {
         let content;
         parenthesized!(content in input);
 
-        let module = content.parse()?;
+        let mut module = content.parse()?;
+        let generics = extract_generics_from_path(&mut module);
+        let module = StripGenerics.fold_path(module);
 
         let _: Token![as] = content.parse()?;
         let variant = content.parse()?;
@@ -314,6 +340,7 @@ impl Parse for ContractMessageAttr {
             module,
             variant,
             customs,
+            generics,
         })
     }
 }
@@ -478,6 +505,7 @@ impl OverrideEntryPoint {
             entry_point,
             msg_name,
             msg_type,
+            ..
         } = self;
 
         let sylvia = crate_module();

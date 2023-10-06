@@ -970,7 +970,7 @@ impl<'a> GlueMessage<'a> {
 
         let msg_name = quote! {#contract ( #name)};
         let mut messages_call_on_all_variants: Vec<TokenStream> =
-            interfaces.emit_messages_call(name);
+            interfaces.emit_messages_call(msg_ty);
         messages_call_on_all_variants.push(quote! {&#name :: messages()});
 
         let variants_cnt = messages_call_on_all_variants.len();
@@ -1004,7 +1004,7 @@ impl<'a> GlueMessage<'a> {
 
         let dispatch_arm = quote! {#enum_name :: #contract (msg) => msg.dispatch(contract, ctx)};
 
-        let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(name);
+        let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(msg_ty);
 
         #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
@@ -1020,7 +1020,7 @@ impl<'a> GlueMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
 
-        let mut response_schemas_calls = interfaces.emit_response_schemas_calls(name);
+        let mut response_schemas_calls = interfaces.emit_response_schemas_calls(msg_ty);
         response_schemas_calls.push(quote! {#name :: response_schemas_impl()});
 
         let response_schemas = match name.to_string().as_str() {

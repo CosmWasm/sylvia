@@ -15,13 +15,6 @@ pub struct Interfaces {
 }
 
 impl Interfaces {
-    fn merge_module_with_name(message_attr: &ContractMessageAttr, name: &syn::Ident) -> syn::Ident {
-        // ContractMessageAttr will fail to parse empty `#[messsages()]` attribute so we can safely unwrap here
-        let syn::PathSegment { ident, .. } = &message_attr.module.segments.last().unwrap();
-        let module_name = ident.to_string().to_case(Case::UpperCamel);
-        syn::Ident::new(&format!("{}{}", module_name, name), name.span())
-    }
-
     pub fn new(source: &ItemImpl) -> Self {
         let interfaces: Vec<_> = source
             .attrs
@@ -90,11 +83,19 @@ impl Interfaces {
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module, variant, ..
+                    module,
+                    variant,
+                    generics,
+                    ..
                 } = interface;
+                let generics = if !generics.is_empty() {
+                    quote! { < #generics > }
+                } else {
+                    quote! {}
+                };
 
                 let interface_enum =
-                    quote! { <#module ::InterfaceTypes as #sylvia ::types::InterfaceMessages> };
+                    quote! { <#module ::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> };
                 if msg_ty == &MsgType::Query {
                     quote! { #variant ( #interface_enum :: Query) }
                 } else {
@@ -104,28 +105,46 @@ impl Interfaces {
             .collect()
     }
 
-    pub fn emit_messages_call(&self, msg_name: &Ident) -> Vec<TokenStream> {
-        self.interfaces
-            .iter()
-            .map(|interface| {
-                let enum_name = Self::merge_module_with_name(interface, msg_name);
-                let module = &interface.module;
-                quote! { &#module :: #enum_name :: messages()}
-            })
-            .collect()
-    }
+    pub fn emit_messages_call(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
+        let sylvia = crate_module();
 
-    pub fn emit_deserialization_attempts(&self, msg_name: &Ident) -> Vec<TokenStream> {
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module, variant, ..
+                    module, generics, ..
                 } = interface;
-                let enum_name = Self::merge_module_with_name(interface, msg_name);
-
+                let generics = if !generics.is_empty() {
+                    quote! { < #generics > }
+                } else {
+                    quote! {}
+                };
+                let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    let msgs = &#module :: #enum_name ::messages();
+                    &<#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: messages()
+                }
+            })
+            .collect()
+    }
+
+    pub fn emit_deserialization_attempts(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
+        let sylvia = crate_module();
+
+        self.interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr {
+                    module, variant, generics, ..
+                } = interface;
+                let generics = if !generics.is_empty() {
+                    quote! { < #generics > }
+                } else {
+                    quote! {}
+                };
+
+                let type_name = msg_ty.as_accessor_name();
+                quote! {
+                    let msgs = &<#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: messages();
                     if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                         match val.deserialize_into() {
                             Ok(msg) => return Ok(Self:: #variant (msg)),
@@ -137,13 +156,26 @@ impl Interfaces {
             .collect()
     }
 
-    pub fn emit_response_schemas_calls(&self, msg_name: &Ident) -> Vec<TokenStream> {
+    pub fn emit_response_schemas_calls(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
+        let sylvia = crate_module();
+
         self.interfaces
             .iter()
             .map(|interface| {
-                let enum_name = Self::merge_module_with_name(interface, msg_name);
-                let module = &interface.module;
-                quote! { #module :: #enum_name :: response_schemas_impl()}
+                let ContractMessageAttr {
+                    module, generics, ..
+                } = interface;
+
+                let generics = if !generics.is_empty() {
+                    quote! { < #generics > }
+                } else {
+                    quote! {}
+                };
+
+                let type_name = msg_ty.as_accessor_name();
+                quote! {
+                    <#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: response_schemas_impl()
+                }
             })
             .collect()
     }
