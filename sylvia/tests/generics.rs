@@ -232,6 +232,7 @@ impl cosmwasm_std::CustomMsg for ExternalMsg {}
 #[cw_serde]
 pub struct ExternalQuery;
 impl cosmwasm_std::CustomQuery for ExternalQuery {}
+
 #[cfg(all(test, feature = "mt"))]
 mod tests {
     use crate::cw1::{InterfaceTypes, Querier as Cw1Querier};
