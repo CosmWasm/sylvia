@@ -41,7 +41,7 @@ pub mod whitelist {
     pub trait Whitelist<Msg, QueryRet>
     where
         for<'msg_de> Msg: CustomMsg + Deserialize<'msg_de>,
-        for<'msg_de> QueryRet: CustomQuery + DeserializeOwned,
+        QueryRet: CustomQuery + DeserializeOwned,
     {
         type Error: From<StdError>;
 
@@ -76,6 +76,32 @@ pub mod non_generic {
 
         #[msg(query)]
         fn non_generic_query(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
+    }
+}
+
+pub mod generic_contract {
+    use cosmwasm_std::{CustomQuery, Response, StdResult};
+    use serde::de::DeserializeOwned;
+    use serde::Deserialize;
+    use sylvia::types::{CustomMsg, InstantiateCtx};
+    use sylvia_derive::contract;
+
+    pub struct GenericContract<Msg, QueryRet>(std::marker::PhantomData<(Msg, QueryRet)>);
+
+    #[contract]
+    impl<Msg, QueryRet> GenericContract<Msg, QueryRet>
+    where
+        for<'msg_de> Msg: CustomMsg + Deserialize<'msg_de> + 'msg_de,
+        for<'a> QueryRet: CustomQuery + DeserializeOwned + 'a,
+    {
+        pub const fn new() -> Self {
+            Self(std::marker::PhantomData)
+        }
+
+        #[msg(instantiate)]
+        pub fn instantiate(&self, _ctx: InstantiateCtx, _msg: Msg) -> StdResult<Response> {
+            Ok(Response::new())
+        }
     }
 }
 
@@ -206,6 +232,7 @@ impl cosmwasm_std::CustomMsg for ExternalMsg {}
 #[cw_serde]
 pub struct ExternalQuery;
 impl cosmwasm_std::CustomQuery for ExternalQuery {}
+
 #[cfg(all(test, feature = "mt"))]
 mod tests {
     use crate::cw1::{InterfaceTypes, Querier as Cw1Querier};
@@ -294,6 +321,23 @@ mod tests {
         contract
             .non_generic_proxy()
             .non_generic_exec(vec![])
+            .call(owner)
+            .unwrap();
+    }
+
+    #[test]
+    fn generic_contract() {
+        let app = App::default();
+        let code_id = crate::generic_contract::multitest_utils::CodeId::store_code::<
+            ExternalMsg,
+            ExternalQuery,
+        >(&app);
+
+        let owner = "owner";
+
+        code_id
+            .instantiate(ExternalMsg {})
+            .with_label("GenericContract")
             .call(owner)
             .unwrap();
     }

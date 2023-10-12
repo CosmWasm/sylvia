@@ -1,6 +1,6 @@
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::{
@@ -8,6 +8,7 @@ use syn::{
     TraitItem, Type,
 };
 
+use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{
@@ -159,47 +160,17 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
-        let Self {
-            item,
-            generics,
-            error,
-            custom,
-            override_entry_points,
-            interfaces,
-            ..
-        } = self;
-        let is_trait = item.trait_.is_some();
-        let multitest_helpers = if cfg!(feature = "mt") {
-            let interface_generics = self.extract_generic_argument();
-            MultitestHelpers::new(
-                item,
-                is_trait,
-                error,
-                &interface_generics,
-                custom,
-                override_entry_points,
-                interfaces,
-            )
-            .emit()
-        } else {
-            quote! {}
-        };
-
-        let where_clause = &item.generics.where_clause;
-        let variants = MsgVariants::new(
-            self.item.as_variants(),
-            MsgType::Query,
-            generics,
-            where_clause,
-        );
+        let is_trait = self.item.trait_.is_some();
 
         match is_trait {
-            true => self.process_interface(multitest_helpers),
-            false => self.process_contract(variants, multitest_helpers),
+            true => self.process_interface(),
+            false => self.process_contract(),
         }
     }
 
-    fn process_interface(&self, multitest_helpers: TokenStream) -> TokenStream {
+    fn process_interface(&self) -> TokenStream {
+        let interface_generics = self.extract_generic_argument();
+        let multitest_helpers = self.emit_multitest_helpers(&interface_generics);
         let querier_bound_for_impl = self.emit_querier_for_bound_impl();
 
         #[cfg(not(tarpaulin_include))]
@@ -210,14 +181,19 @@ impl<'a> ImplInput<'a> {
         }
     }
 
-    fn process_contract(
-        &self,
-        variants: MsgVariants<'a, GenericParam>,
-        multitest_helpers: TokenStream,
-    ) -> TokenStream {
-        let messages = self.emit_messages();
-        let remote = Remote::new(&self.interfaces).emit();
+    fn process_contract(&self) -> TokenStream {
+        let Self { item, generics, .. } = self;
+        let multitest_helpers = self.emit_multitest_helpers(generics);
+        let where_clause = &item.generics.where_clause;
+        let variants = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Query,
+            generics,
+            where_clause,
+        );
 
+        let messages = self.emit_messages(&variants);
+        let remote = Remote::new(&self.interfaces).emit();
         let querier = variants.emit_querier();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
 
@@ -237,15 +213,23 @@ impl<'a> ImplInput<'a> {
         }
     }
 
-    fn emit_messages(&self) -> TokenStream {
+    fn emit_messages(&self, variants: &MsgVariants<GenericParam>) -> TokenStream {
         let instantiate = self.emit_struct_msg(MsgType::Instantiate);
         let migrate = self.emit_struct_msg(MsgType::Migrate);
         let exec_impl =
             self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
         let query_impl =
             self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
-        let exec = self.emit_glue_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
-        let query = self.emit_glue_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
+        let exec = self.emit_glue_msg(
+            &Ident::new("ExecMsg", Span::mixed_site()),
+            MsgType::Exec,
+            variants,
+        );
+        let query = self.emit_glue_msg(
+            &Ident::new("QueryMsg", Span::mixed_site()),
+            MsgType::Query,
+            variants,
+        );
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -282,7 +266,12 @@ impl<'a> ImplInput<'a> {
         .emit()
     }
 
-    fn emit_glue_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
+    fn emit_glue_msg(
+        &self,
+        name: &Ident,
+        msg_ty: MsgType,
+        variants: &MsgVariants<GenericParam>,
+    ) -> TokenStream {
         GlueMessage::new(
             name,
             self.item,
@@ -290,6 +279,7 @@ impl<'a> ImplInput<'a> {
             &self.error,
             &self.custom,
             &self.interfaces,
+            variants,
         )
         .emit()
     }
@@ -321,5 +311,36 @@ impl<'a> ImplInput<'a> {
         let variants = MsgVariants::new(self.item.as_variants(), MsgType::Query, &generics, &None);
 
         variants.emit_querier_for_bound_impl(trait_module, contract_module)
+    }
+
+    fn emit_multitest_helpers<Generic>(&self, generics: &[&Generic]) -> TokenStream
+    where
+        Generic: ToTokens + PartialEq + GetPath,
+    {
+        let Self {
+            item,
+            error,
+            custom,
+            override_entry_points,
+            interfaces,
+            ..
+        } = self;
+
+        let is_trait = self.item.trait_.is_some();
+
+        if cfg!(feature = "mt") {
+            MultitestHelpers::new(
+                item,
+                is_trait,
+                error,
+                generics,
+                custom,
+                override_entry_points,
+                interfaces,
+            )
+            .emit()
+        } else {
+            quote! {}
+        }
     }
 }
