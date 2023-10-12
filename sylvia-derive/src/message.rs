@@ -3,7 +3,7 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
     parse_associated_custom_type, parse_struct_message, ContractErrorAttr, ContractMessageAttr,
-    Custom, MsgAttr, MsgType, OverrideEntryPoint, OverrideEntryPoints,
+    Custom, MsgAttr, MsgType, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{
@@ -19,7 +19,7 @@ use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericParam, Ident, ImplItem, ItemImpl, ItemTrait, Pat, PatType, Path,
+    parse_quote, Attribute, GenericParam, Ident, ItemImpl, ItemTrait, Pat, PatType, Path,
     ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
 };
 
@@ -123,7 +123,7 @@ impl<'a> StructMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case")]
-                pub struct #name #generics #where_clause {
+                pub struct #name #generics {
                     #(pub #fields,)*
                 }
 
@@ -242,9 +242,7 @@ impl<'a> EnumMessage<'a> {
             query_type,
         } = self;
 
-        let match_arms = variants
-            .iter()
-            .map(|variant| variant.emit_dispatch_leg(*msg_ty));
+        let match_arms = variants.iter().map(|variant| variant.emit_dispatch_leg());
         let mut msgs: Vec<String> = variants
             .iter()
             .map(|var| var.name.to_string().to_case(Case::Snake))
@@ -351,7 +349,7 @@ impl<'a> EnumMessage<'a> {
 /// Representation of single enum message
 pub struct ContractEnumMessage<'a> {
     name: &'a Ident,
-    variants: Vec<MsgVariant<'a>>,
+    variants: MsgVariants<'a, GenericParam>,
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a Type,
@@ -362,40 +360,22 @@ impl<'a> ContractEnumMessage<'a> {
     pub fn new(
         name: &'a Ident,
         source: &'a ItemImpl,
-        ty: MsgType,
+        msg_ty: MsgType,
         generics: &'a [&'a GenericParam],
         error: &'a Type,
         custom: &'a Custom,
     ) -> Self {
-        let mut generics_checker = CheckGenerics::new(generics);
-        let variants: Vec<_> = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                ImplItem::Method(method) => {
-                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
-                        Ok(attr) => attr,
-                        Err(err) => {
-                            emit_error!(method.span(), err);
-                            return None;
-                        }
-                    };
-
-                    if attr == ty {
-                        Some(MsgVariant::new(&method.sig, &mut generics_checker, attr))
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .collect();
+        let variants = MsgVariants::new(
+            source.as_variants(),
+            msg_ty,
+            generics,
+            &source.generics.where_clause,
+        );
 
         Self {
             name,
             variants,
-            msg_ty: ty,
+            msg_ty,
             contract: &source.self_ty,
             error,
             custom,
@@ -414,61 +394,45 @@ impl<'a> ContractEnumMessage<'a> {
             custom,
         } = self;
 
-        let match_arms = variants
-            .iter()
-            .map(|variant| variant.emit_dispatch_leg(*msg_ty));
-        let mut msgs: Vec<String> = variants
-            .iter()
-            .map(|var| var.name.to_string().to_case(Case::Snake))
-            .collect();
-        msgs.sort();
-        let msgs_cnt = msgs.len();
-        let variants_constructors = variants.iter().map(MsgVariant::emit_variants_constructors);
-        let variants = variants.iter().map(MsgVariant::emit);
+        let match_arms = variants.emit_dispatch_legs();
+        let generic_name = variants.emit_generic_name(name);
+        let unused_generics = variants.unused_generics();
+        let unused_generics = emit_bracketed_generics(unused_generics);
+
+        let mut variant_names = variants.as_names_snake_cased();
+        variant_names.sort();
+        let variants_cnt = variant_names.len();
+        let variants_constructors = variants.emit_constructors();
+        let variants = variants.emit();
 
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
-        let contract = StripGenerics.fold_type((*contract).clone());
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
 
-        #[cfg(not(tarpaulin_include))]
-        let enum_declaration = match name.to_string().as_str() {
-            "QueryMsg" => {
-                quote! {
-                        #[allow(clippy::derive_partial_eq_without_eq)]
-                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, cosmwasm_schema::QueryResponses)]
-                        #[serde(rename_all="snake_case")]
-                        pub enum #name {
-                            #(#variants,)*
-                        }
-                }
-            }
-            _ => {
-                quote! {
-                        #[allow(clippy::derive_partial_eq_without_eq)]
-                        #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                        #[serde(rename_all="snake_case")]
-                        pub enum #name {
-                            #(#variants,)*
-                    }
-                }
-            }
+        let derive_query = match msg_ty {
+            MsgType::Query => quote! { #sylvia ::cw_schema::QueryResponses },
+            _ => quote! {},
         };
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                #enum_declaration
+                #[allow(clippy::derive_partial_eq_without_eq)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
+                #[serde(rename_all="snake_case")]
+                pub enum #generic_name {
+                    #(#variants,)*
+                }
 
-                impl #name {
-                    pub fn dispatch(self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
+                impl #generic_name {
+                    pub fn dispatch #unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
                         use #name::*;
 
                         match self {
                             #(#match_arms,)*
                         }
                     }
-                    pub const fn messages() -> [&'static str; #msgs_cnt] {
-                        [#(#msgs,)*]
+                    pub const fn messages() -> [&'static str; #variants_cnt] {
+                        [#(#variant_names,)*]
                     }
 
                     #(#variants_constructors)*
@@ -479,6 +443,7 @@ impl<'a> ContractEnumMessage<'a> {
 }
 
 /// Representation of whole message variant
+#[derive(Debug)]
 pub struct MsgVariant<'a> {
     name: Ident,
     function_name: &'a Ident,
@@ -564,13 +529,14 @@ impl<'a> MsgVariant<'a> {
     /// Emits match leg dispatching against this variant. Assumes enum variants are imported into the
     /// scope. Dispatching is performed by calling the function this variant is build from on the
     /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
-    pub fn emit_dispatch_leg(&self, msg_type: MsgType) -> TokenStream {
+    pub fn emit_dispatch_leg(&self) -> TokenStream {
         use MsgType::*;
 
         let Self {
             name,
             fields,
             function_name,
+            msg_type,
             ..
         } = self;
 
@@ -683,12 +649,23 @@ impl<'a> MsgVariant<'a> {
             }
         }
     }
+
+    pub fn as_fields_names(&self) -> Vec<&Ident> {
+        self.fields.iter().map(MsgField::name).collect()
+    }
+
+    pub fn emit_fields(&self) -> Vec<TokenStream> {
+        self.fields.iter().map(MsgField::emit).collect()
+    }
 }
 
+#[derive(Debug)]
 pub struct MsgVariants<'a, Generic> {
     variants: Vec<MsgVariant<'a>>,
     used_generics: Vec<&'a Generic>,
+    unused_generics: Vec<&'a Generic>,
     where_predicates: Vec<&'a WherePredicate>,
+    msg_ty: MsgType,
 }
 
 impl<'a, Generic> MsgVariants<'a, Generic>
@@ -697,11 +674,11 @@ where
 {
     pub fn new(
         source: VariantDescs<'a>,
-        msg_type: MsgType,
-        generics: &'a [&'a Generic],
+        msg_ty: MsgType,
+        all_generics: &'a [&'a Generic],
         unfiltered_where_clause: &'a Option<WhereClause>,
     ) -> Self {
-        let mut generics_checker = CheckGenerics::new(generics);
+        let mut generics_checker = CheckGenerics::new(all_generics);
         let variants: Vec<_> = source
             .filter_map(|variant_desc| {
                 let msg_attr = variant_desc.attr_msg()?;
@@ -713,7 +690,7 @@ where
                     }
                 };
 
-                if attr.msg_type() != msg_type {
+                if attr.msg_type() != msg_ty {
                     return None;
                 }
 
@@ -725,13 +702,15 @@ where
             })
             .collect();
 
-        let (used_generics, _) = generics_checker.used_unused();
-        let where_predicates = filter_wheres(unfiltered_where_clause, generics, &used_generics);
+        let (used_generics, unused_generics) = generics_checker.used_unused();
+        let where_predicates = filter_wheres(unfiltered_where_clause, all_generics, &used_generics);
 
         Self {
             variants,
             used_generics,
+            unused_generics,
             where_predicates,
+            msg_ty,
         }
     }
 
@@ -746,6 +725,18 @@ where
 
     pub fn variants(&self) -> &Vec<MsgVariant<'a>> {
         &self.variants
+    }
+
+    pub fn used_generics(&self) -> &Vec<&'a Generic> {
+        &self.used_generics
+    }
+
+    pub fn unused_generics(&self) -> &Vec<&'a Generic> {
+        &self.unused_generics
+    }
+
+    pub fn where_predicates(&'a self) -> &'a [&'a WherePredicate] {
+        &self.where_predicates
     }
 
     pub fn emit_querier(&self) -> TokenStream {
@@ -843,9 +834,100 @@ where
             }
         }
     }
+
+    pub fn emit_multitest_default_dispatch(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            msg_ty,
+            used_generics,
+            ..
+        } = self;
+
+        let values = msg_ty.emit_ctx_values();
+        let msg_name = msg_ty.emit_msg_name(used_generics.as_slice());
+
+        quote! {
+            #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?
+                .dispatch(self, ( #values ))
+                .map_err(Into::into)
+        }
+    }
+
+    pub fn emit_default_entry_point(
+        &self,
+        custom_msg: &Type,
+        custom_query: &Type,
+        name: &Type,
+        error: &Type,
+    ) -> TokenStream {
+        let Self {
+            used_generics,
+            msg_ty,
+            ..
+        } = self;
+        let sylvia = crate_module();
+
+        let resp_type = match msg_ty {
+            MsgType::Query => quote! { #sylvia ::cw_std::Binary },
+            _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
+        };
+        let params = msg_ty.emit_ctx_params(custom_query);
+        let values = msg_ty.emit_ctx_values();
+        let ep_name = msg_ty.emit_ep_name();
+        let msg_name = msg_ty.emit_msg_name(used_generics);
+
+        quote! {
+            #[#sylvia ::cw_std::entry_point]
+            pub fn #ep_name (
+                #params ,
+                msg: #msg_name,
+            ) -> Result<#resp_type, #error> {
+                msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
+            }
+        }
+    }
+
+    pub fn emit_dispatch_legs(&self) -> impl Iterator<Item = TokenStream> + '_ {
+        self.variants
+            .iter()
+            .map(|variant| variant.emit_dispatch_leg())
+    }
+
+    pub fn as_names_snake_cased(&self) -> Vec<String> {
+        self.variants
+            .iter()
+            .map(|variant| variant.name.to_string().to_case(Case::Snake))
+            .collect()
+    }
+
+    pub fn emit_constructors(&self) -> impl Iterator<Item = TokenStream> + '_ {
+        self.variants
+            .iter()
+            .map(MsgVariant::emit_variants_constructors)
+    }
+
+    pub fn emit_generic_name(&self, name: &Ident) -> TokenStream {
+        let generics = emit_bracketed_generics(&self.used_generics);
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #name #generics
+            }
+        }
+    }
+
+    pub fn emit(&self) -> impl Iterator<Item = TokenStream> + '_ {
+        self.variants.iter().map(MsgVariant::emit)
+    }
+
+    pub fn get_only_variant(&self) -> Option<&MsgVariant> {
+        self.variants.first()
+    }
 }
 
 /// Representation of single message variant field
+#[derive(Debug)]
 pub struct MsgField<'a> {
     name: &'a Ident,
     ty: &'a Type,
@@ -931,6 +1013,7 @@ pub struct GlueMessage<'a> {
     error: &'a Type,
     custom: &'a Custom<'a>,
     interfaces: &'a Interfaces,
+    variants: &'a MsgVariants<'a, GenericParam>,
 }
 
 impl<'a> GlueMessage<'a> {
@@ -941,6 +1024,7 @@ impl<'a> GlueMessage<'a> {
         error: &'a Type,
         custom: &'a Custom,
         interfaces: &'a Interfaces,
+        variants: &'a MsgVariants<'a, GenericParam>,
     ) -> Self {
         GlueMessage {
             name,
@@ -949,12 +1033,12 @@ impl<'a> GlueMessage<'a> {
             error,
             custom,
             interfaces,
+            variants,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
         let sylvia = crate_module();
-
         let Self {
             name,
             contract,
@@ -962,18 +1046,23 @@ impl<'a> GlueMessage<'a> {
             error,
             custom,
             interfaces,
+            variants,
         } = self;
-        let contract = StripGenerics.fold_type((*contract).clone());
+        let contract_name = StripGenerics.fold_type((*contract).clone());
         let enum_name = Ident::new(&format!("Contract{}", name), name.span());
+        let used_generics = variants.used_generics();
+        let used_generics = emit_bracketed_generics(used_generics);
+        let unused_generics = variants.unused_generics();
+        let unused_generics = emit_bracketed_generics(unused_generics);
+        let where_clause = variants.where_clause();
 
         let variants = interfaces.emit_glue_message_variants(msg_ty);
 
-        let msg_name = quote! {#contract ( #name)};
-        let mut messages_call_on_all_variants: Vec<TokenStream> =
-            interfaces.emit_messages_call(msg_ty);
-        messages_call_on_all_variants.push(quote! {&#name :: messages()});
+        let contract_variant = quote! { #contract_name ( #name ) };
+        let mut messages_call = interfaces.emit_messages_call(msg_ty);
+        messages_call.push(quote! { &#name :: messages() });
 
-        let variants_cnt = messages_call_on_all_variants.len();
+        let variants_cnt = messages_call.len();
 
         let dispatch_arms = interfaces.interfaces().iter().map(|interface| {
             let ContractMessageAttr {
@@ -1002,7 +1091,8 @@ impl<'a> GlueMessage<'a> {
             }
         });
 
-        let dispatch_arm = quote! {#enum_name :: #contract (msg) => msg.dispatch(contract, ctx)};
+        let dispatch_arm =
+            quote! {#enum_name :: #contract_name (msg) => msg.dispatch(contract, ctx)};
 
         let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(msg_ty);
 
@@ -1011,8 +1101,8 @@ impl<'a> GlueMessage<'a> {
             let msgs = &#name :: messages();
             if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                 match val.deserialize_into() {
-                    Ok(msg) => return Ok(Self:: #contract (msg)),
-                    Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract)
+                    Ok(msg) => return Ok(Self:: #contract_name (msg)),
+                    Err(err) => return Err(D::Error::custom(err)).map(Self:: #contract_name )
                 };
             }
         };
@@ -1049,19 +1139,19 @@ impl<'a> GlueMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case", untagged)]
-                pub enum #enum_name {
+                pub enum #enum_name #used_generics {
                     #(#variants,)*
-                    #msg_name
+                    #contract_variant
                 }
 
-                impl #enum_name {
-                    pub fn dispatch(
+                impl #used_generics #enum_name #used_generics {
+                    pub fn dispatch #unused_generics #where_clause (
                         self,
                         contract: &#contract,
                         ctx: #ctx_type,
                     ) -> #ret_type {
                         const _: () = {
-                            let msgs: [&[&str]; #variants_cnt] = [#(#messages_call_on_all_variants),*];
+                            let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                             #sylvia ::utils::assert_no_intersection(msgs);
                         };
 
@@ -1097,7 +1187,7 @@ impl<'a> GlueMessage<'a> {
                             #contract_deserialization_attempt
                         }
 
-                        let msgs: [&[&str]; #variants_cnt] = [#(#messages_call_on_all_variants),*];
+                        let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                         let mut err_msg = msgs.into_iter().flatten().fold(
                             // It might be better to forward the error or serialization, but we just
                             // deserialized it from JSON, not reason to expect failure here.
@@ -1182,12 +1272,13 @@ impl<'a> InterfaceMessages<'a> {
 }
 
 pub struct EntryPoints<'a> {
+    source: &'a ItemImpl,
     name: Type,
     error: Type,
     custom: Custom<'a>,
     override_entry_points: OverrideEntryPoints,
-    has_migrate: bool,
-    reply: Option<Ident>,
+    generics: Vec<&'a GenericParam>,
+    where_clause: &'a Option<WhereClause>,
 }
 
 impl<'a> EntryPoints<'a> {
@@ -1211,56 +1302,71 @@ impl<'a> EntryPoints<'a> {
             )
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
-        let has_migrate =
-            !MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Migrate, &[], &None)
-                .variants()
-                .is_empty();
-
-        let reply =
-            MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
-                .variants()
-                .iter()
-                .map(|variant| variant.function_name.clone())
-                .next();
+        let generics: Vec<_> = source.generics.params.iter().collect();
+        let where_clause = &source.generics.where_clause;
         let custom = Custom::new(&source.attrs);
 
         Self {
+            source,
             name,
             error,
             custom,
             override_entry_points,
-            has_migrate,
-            reply,
+            generics,
+            where_clause,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
         let Self {
+            source,
             name,
             error,
             custom,
             override_entry_points,
-            has_migrate,
-            reply,
+            generics,
+            where_clause,
         } = self;
         let sylvia = crate_module();
 
         let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
 
+        let instantiate_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Instantiate,
+            generics,
+            where_clause,
+        );
+        let exec_variants =
+            MsgVariants::new(source.as_variants(), MsgType::Exec, generics, where_clause);
+        let query_variants =
+            MsgVariants::new(source.as_variants(), MsgType::Query, generics, where_clause);
+        let migrate_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Migrate,
+            generics,
+            where_clause,
+        );
+        let reply =
+            MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
+                .variants()
+                .iter()
+                .map(|variant| variant.function_name.clone())
+                .next();
+
         #[cfg(not(tarpaulin_include))]
         {
-            let entry_points = [MsgType::Instantiate, MsgType::Exec, MsgType::Query]
+            let entry_points = [instantiate_variants, exec_variants, query_variants]
                 .into_iter()
                 .map(
-                    |msg_type| match override_entry_points.get_entry_point(msg_type) {
+                    |variants| match override_entry_points.get_entry_point(variants.msg_ty) {
                         Some(_) => quote! {},
-                        None => OverrideEntryPoint::emit_default_entry_point(
+                        None => variants.emit_default_entry_point(
                             &custom_msg,
                             &custom_query,
                             name,
                             error,
-                            msg_type,
                         ),
                     },
                 );
@@ -1269,14 +1375,9 @@ impl<'a> EntryPoints<'a> {
                 .get_entry_point(MsgType::Migrate)
                 .is_none();
 
-            let migrate = if migrate_not_overridden && *has_migrate {
-                OverrideEntryPoint::emit_default_entry_point(
-                    &custom_msg,
-                    &custom_query,
-                    name,
-                    error,
-                    MsgType::Migrate,
-                )
+            let migrate = if migrate_not_overridden && migrate_variants.get_only_variant().is_some()
+            {
+                migrate_variants.emit_default_entry_point(&custom_msg, &custom_query, name, error)
             } else {
                 quote! {}
             };
