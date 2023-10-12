@@ -1,6 +1,6 @@
 use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::fold::Fold;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::punctuated::Punctuated;
@@ -145,13 +145,21 @@ impl MsgType {
         }
     }
 
-    pub fn emit_msg_name(&self) -> Type {
+    pub fn emit_msg_name<Generic>(&self, generics: &[&Generic]) -> Type
+    where
+        Generic: ToTokens,
+    {
+        let generics = if !generics.is_empty() {
+            quote! { ::< #(#generics,)* > }
+        } else {
+            quote! {}
+        };
         match self {
-            MsgType::Exec => parse_quote! { ContractExecMsg },
-            MsgType::Query => parse_quote! { ContractQueryMsg },
-            MsgType::Instantiate => parse_quote! { InstantiateMsg },
-            MsgType::Migrate => parse_quote! { MigrateMsg },
-            MsgType::Reply => parse_quote! { ReplyMsg },
+            MsgType::Exec => parse_quote! { ContractExecMsg #generics },
+            MsgType::Query => parse_quote! { ContractQueryMsg #generics },
+            MsgType::Instantiate => parse_quote! { InstantiateMsg #generics },
+            MsgType::Migrate => parse_quote! { MigrateMsg #generics },
+            MsgType::Reply => parse_quote! { ReplyMsg #generics },
             MsgType::Sudo => todo!(),
         }
     }
@@ -514,49 +522,6 @@ impl OverrideEntryPoint {
         quote! {
             #entry_point ( #values .into(), #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?)
                 .map_err(Into::into)
-        }
-    }
-
-    pub fn emit_multitest_default_dispatch(ty: MsgType) -> TokenStream {
-        let sylvia = crate_module();
-
-        let values = ty.emit_ctx_values();
-        let msg_name = ty.emit_msg_name();
-
-        quote! {
-            #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?
-                .dispatch(self, ( #values ))
-                .map_err(Into::into)
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    pub fn emit_default_entry_point(
-        custom_msg: &Type,
-        custom_query: &Type,
-        name: &Type,
-        error: &Type,
-        msg_type: MsgType,
-    ) -> TokenStream {
-        let sylvia = crate_module();
-
-        let resp_type = match msg_type {
-            MsgType::Query => quote! { #sylvia ::cw_std::Binary },
-            _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
-        };
-        let params = msg_type.emit_ctx_params(custom_query);
-        let values = msg_type.emit_ctx_values();
-        let ep_name = msg_type.emit_ep_name();
-        let msg_name = msg_type.emit_msg_name();
-
-        quote! {
-            #[#sylvia ::cw_std::entry_point]
-            pub fn #ep_name (
-                #params ,
-                msg: #msg_name,
-            ) -> Result<#resp_type, #error> {
-                msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
-            }
         }
     }
 }
