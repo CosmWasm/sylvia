@@ -185,16 +185,16 @@ impl<'a> ImplInput<'a> {
         let Self { item, generics, .. } = self;
         let multitest_helpers = self.emit_multitest_helpers(generics);
         let where_clause = &item.generics.where_clause;
-        let variants = MsgVariants::new(
+
+        let querier = MsgVariants::new(
             self.item.as_variants(),
             MsgType::Query,
             generics,
             where_clause,
-        );
-
-        let messages = self.emit_messages(&variants);
+        )
+        .emit_querier();
+        let messages = self.emit_messages();
         let remote = Remote::new(&self.interfaces).emit();
-        let querier = variants.emit_querier();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
 
         #[cfg(not(tarpaulin_include))]
@@ -213,23 +213,13 @@ impl<'a> ImplInput<'a> {
         }
     }
 
-    fn emit_messages(&self, variants: &MsgVariants<GenericParam>) -> TokenStream {
+    fn emit_messages(&self) -> TokenStream {
         let instantiate = self.emit_struct_msg(MsgType::Instantiate);
         let migrate = self.emit_struct_msg(MsgType::Migrate);
-        let exec_impl =
-            self.emit_enum_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
-        let query_impl =
-            self.emit_enum_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
-        let exec = self.emit_glue_msg(
-            &Ident::new("ExecMsg", Span::mixed_site()),
-            MsgType::Exec,
-            variants,
-        );
-        let query = self.emit_glue_msg(
-            &Ident::new("QueryMsg", Span::mixed_site()),
-            MsgType::Query,
-            variants,
-        );
+        let exec_impl = self.emit_enum_msg(MsgType::Exec);
+        let query_impl = self.emit_enum_msg(MsgType::Query);
+        let exec = self.emit_glue_msg(MsgType::Exec);
+        let query = self.emit_glue_msg(MsgType::Query);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -254,26 +244,16 @@ impl<'a> ImplInput<'a> {
             .map_or(quote! {}, |msg| msg.emit())
     }
 
-    fn emit_enum_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        ContractEnumMessage::new(
-            name,
-            self.item,
-            msg_ty,
-            &self.generics,
-            &self.error,
-            &self.custom,
-        )
-        .emit()
+    fn emit_enum_msg(&self, msg_ty: MsgType) -> TokenStream {
+        ContractEnumMessage::new(self.item, msg_ty, &self.generics, &self.error, &self.custom)
+            .emit()
     }
 
-    fn emit_glue_msg(
-        &self,
-        name: &Ident,
-        msg_ty: MsgType,
-        variants: &MsgVariants<GenericParam>,
-    ) -> TokenStream {
+    fn emit_glue_msg(&self, msg_ty: MsgType) -> TokenStream {
+        let Self { generics, item, .. } = self;
+        let where_clause = &item.generics.where_clause;
+        let variants = MsgVariants::new(item.as_variants(), msg_ty, generics, where_clause);
         GlueMessage::new(
-            name,
             self.item,
             msg_ty,
             &self.error,

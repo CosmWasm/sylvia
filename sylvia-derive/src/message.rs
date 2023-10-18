@@ -348,37 +348,32 @@ impl<'a> EnumMessage<'a> {
 
 /// Representation of single enum message
 pub struct ContractEnumMessage<'a> {
-    name: &'a Ident,
     variants: MsgVariants<'a, GenericParam>,
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a Type,
     custom: &'a Custom<'a>,
+    where_clause: &'a Option<WhereClause>,
 }
 
 impl<'a> ContractEnumMessage<'a> {
     pub fn new(
-        name: &'a Ident,
         source: &'a ItemImpl,
         msg_ty: MsgType,
         generics: &'a [&'a GenericParam],
         error: &'a Type,
         custom: &'a Custom,
     ) -> Self {
-        let variants = MsgVariants::new(
-            source.as_variants(),
-            msg_ty,
-            generics,
-            &source.generics.where_clause,
-        );
+        let where_clause = &source.generics.where_clause;
+        let variants = MsgVariants::new(source.as_variants(), msg_ty, generics, where_clause);
 
         Self {
-            name,
             variants,
             msg_ty,
             contract: &source.self_ty,
             error,
             custom,
+            where_clause,
         }
     }
 
@@ -386,18 +381,21 @@ impl<'a> ContractEnumMessage<'a> {
         let sylvia = crate_module();
 
         let Self {
-            name,
             variants,
             msg_ty,
             contract,
             error,
             custom,
+            where_clause,
+            ..
         } = self;
 
+        let enum_name = msg_ty.emit_msg_name(false);
         let match_arms = variants.emit_dispatch_legs();
-        let generic_name = variants.emit_generic_name(name);
         let unused_generics = variants.unused_generics();
         let unused_generics = emit_bracketed_generics(unused_generics);
+        let used_generics = variants.used_generics();
+        let used_generics = emit_bracketed_generics(used_generics);
 
         let mut variant_names = variants.as_names_snake_cased();
         variant_names.sort();
@@ -419,13 +417,13 @@ impl<'a> ContractEnumMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
                 #[serde(rename_all="snake_case")]
-                pub enum #generic_name {
+                pub enum #enum_name #used_generics {
                     #(#variants,)*
                 }
 
-                impl #generic_name {
-                    pub fn dispatch #unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type {
-                        use #name::*;
+                impl #used_generics #enum_name #used_generics {
+                    pub fn dispatch #unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
+                        use #enum_name::*;
 
                         match self {
                             #(#match_arms,)*
@@ -650,13 +648,17 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_multitest_proxy_methods(
+    pub fn emit_multitest_proxy_methods<Generic>(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         mt_app: &Type,
         error_type: &Type,
-    ) -> TokenStream {
+        generics: &[&Generic],
+    ) -> TokenStream
+    where
+        Generic: ToTokens,
+    {
         let sylvia = crate_module();
         let Self {
             name,
@@ -668,27 +670,33 @@ impl<'a> MsgVariant<'a> {
         let params = fields.iter().map(|field| field.emit_method_field());
         let arguments = fields.iter().map(MsgField::name);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let enum_name = msg_ty.emit_msg_name(false);
+        let enum_name: Type = if !generics.is_empty() {
+            parse_quote! { #enum_name ::< #(#generics,)* > }
+        } else {
+            parse_quote! { #enum_name }
+        };
 
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, ExecMsg, #mt_app, #custom_msg> {
-                    let msg = ExecMsg:: #name ( #(#arguments),* );
+                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #enum_name, #mt_app, #custom_msg> {
+                    let msg = #enum_name :: #name ( #(#arguments),* );
 
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Migrate => quote! {
                 #[track_caller]
-                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, MigrateMsg, #mt_app, #custom_msg> {
-                    let msg = MigrateMsg::new( #(#arguments),* );
+                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, #enum_name, #mt_app, #custom_msg> {
+                    let msg = #enum_name ::new( #(#arguments),* );
 
                     #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Query => quote! {
                 pub fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                    let msg = QueryMsg:: #name ( #(#arguments),* );
+                    let msg = #enum_name :: #name ( #(#arguments),* );
 
                     (*self.app)
                         .app()
@@ -871,8 +879,13 @@ where
         &self.unused_generics
     }
 
-    pub fn where_predicates(&'a self) -> &'a [&'a WherePredicate] {
-        &self.where_predicates
+    pub fn as_where_clause(&'a self) -> Option<WhereClause> {
+        let where_predicates = &self.where_predicates;
+        if !where_predicates.is_empty() {
+            Some(parse_quote!( where #(#where_predicates,)* ))
+        } else {
+            None
+        }
     }
 
     pub fn emit_querier(&self) -> TokenStream {
@@ -980,10 +993,11 @@ where
         } = self;
 
         let values = msg_ty.emit_ctx_values();
-        let msg_name = msg_ty.emit_msg_name(used_generics.as_slice());
+        let msg_name = msg_ty.emit_msg_name(true);
+        let bracketed_generics = emit_bracketed_generics(used_generics);
 
         quote! {
-            #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?
+            #sylvia ::cw_std::from_slice::< #msg_name #bracketed_generics >(&msg)?
                 .dispatch(self, ( #values ))
                 .map_err(Into::into)
         }
@@ -1010,13 +1024,14 @@ where
         let params = msg_ty.emit_ctx_params(custom_query);
         let values = msg_ty.emit_ctx_values();
         let ep_name = msg_ty.emit_ep_name();
-        let msg_name = msg_ty.emit_msg_name(used_generics);
+        let msg_name = msg_ty.emit_msg_name(true);
+        let bracketed_generics = emit_bracketed_generics(used_generics);
 
         quote! {
             #[#sylvia ::cw_std::entry_point]
             pub fn #ep_name (
                 #params ,
-                msg: #msg_name,
+                msg: #msg_name #bracketed_generics,
             ) -> Result<#resp_type, #error> {
                 msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
             }
@@ -1031,7 +1046,13 @@ where
         self.variants
             .iter()
             .map(|variant| {
-                variant.emit_multitest_proxy_methods(&self.msg_ty, custom_msg, mt_app, error_type)
+                variant.emit_multitest_proxy_methods(
+                    &self.msg_ty,
+                    custom_msg,
+                    mt_app,
+                    error_type,
+                    &self.used_generics,
+                )
             })
             .collect()
     }
@@ -1098,17 +1119,6 @@ where
         self.variants
             .iter()
             .map(MsgVariant::emit_variants_constructors)
-    }
-
-    pub fn emit_generic_name(&self, name: &Ident) -> TokenStream {
-        let generics = emit_bracketed_generics(&self.used_generics);
-
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #name #generics
-            }
-        }
     }
 
     pub fn emit(&self) -> impl Iterator<Item = TokenStream> + '_ {
@@ -1201,27 +1211,26 @@ impl<'a> MsgField<'a> {
 /// Glue message is the message composing Exec/Query messages from several traits
 #[derive(Debug)]
 pub struct GlueMessage<'a> {
-    name: &'a Ident,
+    source: &'a ItemImpl,
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a Type,
     custom: &'a Custom<'a>,
     interfaces: &'a Interfaces,
-    variants: &'a MsgVariants<'a, GenericParam>,
+    variants: MsgVariants<'a, GenericParam>,
 }
 
 impl<'a> GlueMessage<'a> {
     pub fn new(
-        name: &'a Ident,
         source: &'a ItemImpl,
         msg_ty: MsgType,
         error: &'a Type,
         custom: &'a Custom,
         interfaces: &'a Interfaces,
-        variants: &'a MsgVariants<'a, GenericParam>,
+        variants: MsgVariants<'a, GenericParam>,
     ) -> Self {
         GlueMessage {
-            name,
+            source,
             contract: &source.self_ty,
             msg_ty,
             error,
@@ -1234,7 +1243,7 @@ impl<'a> GlueMessage<'a> {
     pub fn emit(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
-            name,
+            source,
             contract,
             msg_ty,
             error,
@@ -1242,19 +1251,28 @@ impl<'a> GlueMessage<'a> {
             interfaces,
             variants,
         } = self;
-        let contract_name = StripGenerics.fold_type((*contract).clone());
-        let enum_name = Ident::new(&format!("Contract{}", name), name.span());
+
         let used_generics = variants.used_generics();
-        let used_generics = emit_bracketed_generics(used_generics);
         let unused_generics = variants.unused_generics();
+        let where_clause = variants.as_where_clause();
+        let full_where_clause = &source.generics.where_clause;
+
+        let contract_enum_name = msg_ty.emit_msg_name(true);
+        let enum_name = msg_ty.emit_msg_name(false);
+        let contract_name = StripGenerics.fold_type((*contract).clone());
         let unused_generics = emit_bracketed_generics(unused_generics);
-        let where_clause = variants.where_clause();
+        let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let variants = interfaces.emit_glue_message_variants(msg_ty);
 
-        let contract_variant = quote! { #contract_name ( #name ) };
+        let contract_variant = quote! { #contract_name ( #enum_name #bracketed_used_generics ) };
         let mut messages_call = interfaces.emit_messages_call(msg_ty);
-        messages_call.push(quote! { &#name :: messages() });
+        let prefixed_used_generics = if !used_generics.is_empty() {
+            quote! { :: #bracketed_used_generics }
+        } else {
+            quote! {}
+        };
+        messages_call.push(quote! { &#enum_name #prefixed_used_generics :: messages() });
 
         let variants_cnt = messages_call.len();
 
@@ -1277,22 +1295,22 @@ impl<'a> GlueMessage<'a> {
 
             match (msg_ty, customs.has_msg) {
                 (MsgType::Exec, true) => quote! {
-                    #enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
+                    #contract_enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
                 },
                 _ => quote! {
-                    #enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
+                    #contract_enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
                 },
             }
         });
 
         let dispatch_arm =
-            quote! {#enum_name :: #contract_name (msg) => msg.dispatch(contract, ctx)};
+            quote! {#contract_enum_name :: #contract_name (msg) => msg.dispatch(contract, ctx)};
 
         let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(msg_ty);
 
         #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
-            let msgs = &#name :: messages();
+            let msgs = &#enum_name #prefixed_used_generics :: messages();
             if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                 match val.deserialize_into() {
                     Ok(msg) => return Ok(Self:: #contract_name (msg)),
@@ -1305,15 +1323,16 @@ impl<'a> GlueMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
 
         let mut response_schemas_calls = interfaces.emit_response_schemas_calls(msg_ty);
-        response_schemas_calls.push(quote! {#name :: response_schemas_impl()});
+        response_schemas_calls
+            .push(quote! {#enum_name #prefixed_used_generics :: response_schemas_impl()});
 
-        let response_schemas = match name.to_string().as_str() {
-            "QueryMsg" => {
+        let response_schemas = match msg_ty {
+            MsgType::Query => {
                 #[cfg(not(tarpaulin_include))]
                 {
                     quote! {
                         #[cfg(not(target_arch = "wasm32"))]
-                        impl #sylvia ::cw_schema::QueryResponses for #enum_name {
+                        impl #bracketed_used_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_used_generics #where_clause {
                             fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                                 let responses = [#(#response_schemas_calls),*];
                                 responses.into_iter().flatten().collect()
@@ -1333,21 +1352,23 @@ impl<'a> GlueMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case", untagged)]
-                pub enum #enum_name #used_generics {
+                pub enum #contract_enum_name #bracketed_used_generics {
                     #(#variants,)*
                     #contract_variant
                 }
 
-                impl #used_generics #enum_name #used_generics {
-                    pub fn dispatch #unused_generics #where_clause (
+                impl #bracketed_used_generics #contract_enum_name #bracketed_used_generics {
+                    pub fn dispatch #unused_generics (
                         self,
                         contract: &#contract,
                         ctx: #ctx_type,
-                    ) -> #ret_type {
-                        const _: () = {
+                    ) -> #ret_type #full_where_clause {
+                        const fn assert_no_intersection #bracketed_used_generics () #where_clause {
                             let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                             #sylvia ::utils::assert_no_intersection(msgs);
-                        };
+                        }
+
+                        assert_no_intersection #prefixed_used_generics ();
 
                         match self {
                             #(#dispatch_arms,)*
@@ -1358,7 +1379,7 @@ impl<'a> GlueMessage<'a> {
 
                 #response_schemas
 
-                impl<'de> serde::Deserialize<'de> for #enum_name {
+                impl<'de, #(#used_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_used_generics #where_clause {
                     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                         where D: serde::Deserializer<'de>,
                     {
