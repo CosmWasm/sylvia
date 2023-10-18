@@ -80,26 +80,63 @@ pub mod non_generic {
 }
 
 pub mod generic_contract {
-    use cosmwasm_std::{CustomQuery, Response, StdResult};
+    use cosmwasm_std::{Reply, Response, StdResult};
     use serde::de::DeserializeOwned;
     use serde::Deserialize;
-    use sylvia::types::{CustomMsg, InstantiateCtx};
+    use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx};
     use sylvia_derive::contract;
 
-    pub struct GenericContract<Msg, QueryRet>(std::marker::PhantomData<(Msg, QueryRet)>);
+    pub struct GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>(
+        std::marker::PhantomData<(
+            InstantiateParam,
+            ExecParam,
+            QueryParam,
+            MigrateParam,
+            RetType,
+        )>,
+    );
 
     #[contract]
-    impl<Msg, QueryRet> GenericContract<Msg, QueryRet>
+    impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
+        GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
     where
-        for<'msg_de> Msg: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-        for<'a> QueryRet: CustomQuery + DeserializeOwned + 'a,
+        for<'msg_de> InstantiateParam: CustomMsg + Deserialize<'msg_de> + 'msg_de,
+        for<'exec> ExecParam: CustomMsg + DeserializeOwned + 'exec,
+        for<'exec> QueryParam: CustomMsg + DeserializeOwned + 'exec,
+        for<'exec> MigrateParam: CustomMsg + DeserializeOwned + 'exec,
+        for<'ret> RetType: CustomMsg + DeserializeOwned + 'ret,
     {
         pub const fn new() -> Self {
             Self(std::marker::PhantomData)
         }
 
         #[msg(instantiate)]
-        pub fn instantiate(&self, _ctx: InstantiateCtx, _msg: Msg) -> StdResult<Response> {
+        pub fn instantiate(
+            &self,
+            _ctx: InstantiateCtx,
+            _msg: InstantiateParam,
+        ) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[msg(exec)]
+        pub fn execute(&self, _ctx: ExecCtx, _msg: ExecParam) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[msg(query)]
+        pub fn query(&self, _ctx: QueryCtx, _msg: QueryParam) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[msg(migrate)]
+        pub fn migrate(&self, _ctx: MigrateCtx, _msg: MigrateParam) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[allow(dead_code)]
+        #[msg(reply)]
+        fn reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
             Ok(Response::new())
         }
     }
@@ -327,18 +364,31 @@ mod tests {
 
     #[test]
     fn generic_contract() {
+        use crate::generic_contract::multitest_utils::CodeId;
         let app = App::default();
-        let code_id = crate::generic_contract::multitest_utils::CodeId::store_code::<
+        let code_id: CodeId<
+            cw_multi_test::BasicApp<Empty, Empty>,
             ExternalMsg,
-            ExternalQuery,
-        >(&app);
+            ExternalMsg,
+            ExternalMsg,
+            crate::ExternalMsg,
+            crate::ExternalMsg,
+        > = CodeId::store_code(&app);
 
         let owner = "owner";
 
-        code_id
+        let contract = code_id
             .instantiate(ExternalMsg {})
             .with_label("GenericContract")
+            .with_admin(owner)
             .call(owner)
+            .unwrap();
+
+        contract.execute(ExternalMsg).call(owner).unwrap();
+        contract.query(ExternalMsg).unwrap();
+        contract
+            .migrate(ExternalMsg)
+            .call(owner, code_id.code_id())
             .unwrap();
     }
 }
