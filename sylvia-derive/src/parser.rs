@@ -1,6 +1,6 @@
 use proc_macro2::{Punct, TokenStream};
 use proc_macro_error::emit_error;
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::punctuated::Punctuated;
@@ -145,21 +145,15 @@ impl MsgType {
         }
     }
 
-    pub fn emit_msg_name<Generic>(&self, generics: &[&Generic]) -> Type
-    where
-        Generic: ToTokens,
-    {
-        let generics = if !generics.is_empty() {
-            quote! { ::< #(#generics,)* > }
-        } else {
-            quote! {}
-        };
+    pub fn emit_msg_name(&self, is_wrapper: bool) -> Type {
         match self {
-            MsgType::Exec => parse_quote! { ContractExecMsg #generics },
-            MsgType::Query => parse_quote! { ContractQueryMsg #generics },
-            MsgType::Instantiate => parse_quote! { InstantiateMsg #generics },
-            MsgType::Migrate => parse_quote! { MigrateMsg #generics },
-            MsgType::Reply => parse_quote! { ReplyMsg #generics },
+            MsgType::Exec if is_wrapper => parse_quote! { ContractExecMsg },
+            MsgType::Query if is_wrapper => parse_quote! { ContractQueryMsg },
+            MsgType::Exec => parse_quote! { ExecMsg },
+            MsgType::Query => parse_quote! { QueryMsg },
+            MsgType::Instantiate => parse_quote! { InstantiateMsg },
+            MsgType::Migrate => parse_quote! { MigrateMsg },
+            MsgType::Reply => parse_quote! { ReplyMsg },
             MsgType::Sudo => todo!(),
         }
     }

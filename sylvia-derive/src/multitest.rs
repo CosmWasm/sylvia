@@ -38,6 +38,7 @@ pub struct MultitestHelpers<'a, Generics> {
     is_trait: bool,
     source: &'a ItemImpl,
     generics: &'a [&'a Generics],
+    where_clause: &'a Option<syn::WhereClause>,
     contract_name: &'a Ident,
     proxy_name: Ident,
     custom: &'a Custom<'a>,
@@ -127,6 +128,7 @@ where
             is_trait,
             source,
             generics,
+            where_clause,
             contract_name,
             proxy_name,
             custom,
@@ -150,6 +152,8 @@ where
             exec_variants,
             query_variants,
             migrate_variants,
+            generics,
+            where_clause,
             ..
         } = self;
         let sylvia = crate_module();
@@ -180,6 +184,9 @@ where
             query_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let migrate_methods =
             migrate_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+        let where_predicates = where_clause
+            .as_ref()
+            .map(|where_clause| &where_clause.predicates);
 
         let contract_block = self.generate_contract_helpers();
 
@@ -195,13 +202,14 @@ where
 
                     #[derive(Derivative)]
                     #[derivative(Debug)]
-                    pub struct #proxy_name <'app, MtApp> {
+                    pub struct #proxy_name <'app, MtApp, #(#generics,)* > {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         #[derivative(Debug="ignore")]
                         pub app: &'app #sylvia ::multitest::App<MtApp>,
+                        _phantom: std::marker::PhantomData<( #(#generics,)* )>,
                     }
 
-                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #proxy_name <'app, #mt_app >
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > #proxy_name <'app, #mt_app, #(#generics,)* >
                         where
                             CustomT: #sylvia ::cw_multi_test::Module,
                             CustomT::ExecT: std::fmt::Debug
@@ -219,10 +227,11 @@ where
                             DistrT: #sylvia ::cw_multi_test::Distribution,
                             IbcT: #sylvia ::cw_multi_test::Ibc,
                             GovT: #sylvia ::cw_multi_test::Gov,
-                            #mt_app : Executor< #custom_msg >
+                            #mt_app : Executor< #custom_msg >,
+                            #where_predicates
                     {
                         pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App< #mt_app >) -> Self {
-                            #proxy_name{ contract_addr, app }
+                            #proxy_name { contract_addr, app, _phantom: std::marker::PhantomData::default() }
                         }
 
                         #( #exec_methods )*
@@ -231,12 +240,12 @@ where
                         #( #proxy_accessors )*
                     }
 
-                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generics,)* >
                         From<(
                             #sylvia ::cw_std::Addr,
                             &'app #sylvia ::multitest::App<#mt_app>,
                         )>
-                        for #proxy_name <'app, #mt_app >
+                        for #proxy_name <'app, #mt_app, #(#generics,)* >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         CustomT::ExecT: std::fmt::Debug
@@ -255,9 +264,10 @@ where
                         IbcT: #sylvia ::cw_multi_test::Ibc,
                         GovT: #sylvia ::cw_multi_test::Gov,
                         #mt_app : Executor< #custom_msg >,
+                        #where_predicates
                     {
                         fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app >))
-                            -> #proxy_name<'app, #mt_app > {
+                            -> #proxy_name<'app, #mt_app, #(#generics,)* > {
                             #proxy_name::new(input.0, input.1)
                         }
                     }
@@ -378,10 +388,10 @@ where
     fn generate_contract_helpers(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
-            source,
             error_type,
             is_trait,
             generics,
+            where_clause,
             contract_name,
             proxy_name,
             instantiate_variants,
@@ -404,11 +414,10 @@ where
 
         let used_generics = instantiate_variants.used_generics();
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
-        let bracketed_generics = emit_bracketed_generics(generics);
-        let full_where_clause = &source.generics.where_clause;
 
-        let where_predicates = instantiate_variants.where_predicates();
-        let where_clause = instantiate_variants.where_clause();
+        let where_predicates = where_clause
+            .as_ref()
+            .map(|where_clause| &where_clause.predicates);
         let contract = if !generics.is_empty() {
             quote! { #contract_name ::< #(#generics,)* > }
         } else {
@@ -446,12 +455,14 @@ where
             quote! {
                 #impl_contract
 
-                pub struct CodeId<'app, MtApp> {
+                pub struct CodeId<'app, MtApp, #(#generics,)* > {
                     code_id: u64,
                     app: &'app #sylvia ::multitest::App<MtApp>,
+                    _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+
                 }
 
-                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT> CodeId<'app, #mt_app>
+                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > CodeId<'app, #mt_app, #(#generics,)* >
                     where
                         BankT: #sylvia ::cw_multi_test::Bank,
                         ApiT: #sylvia ::cw_std::Api,
@@ -461,23 +472,24 @@ where
                         DistrT: #sylvia ::cw_multi_test::Distribution,
                         IbcT: #sylvia ::cw_multi_test::Ibc,
                         GovT: #sylvia ::cw_multi_test::Gov,
+                        #where_predicates
                 {
-                    pub fn store_code #bracketed_generics (app: &'app #sylvia ::multitest::App< #mt_app >) -> Self #full_where_clause {
+                    pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app >) -> Self {
                         let code_id = app
                             .app_mut()
                             .store_code(Box::new(#contract ::new()));
-                        Self { code_id, app }
+                        Self { code_id, app, _phantom: std::marker::PhantomData::default() }
                     }
 
                     pub fn code_id(&self) -> u64 {
                         self.code_id
                     }
 
-                    pub fn instantiate #bracketed_used_generics (
+                    pub fn instantiate(
                         &self,#(#fields,)*
-                    ) -> InstantiateProxy<'_, 'app, #mt_app, #(#used_generics,)* > #where_clause {
+                    ) -> InstantiateProxy<'_, 'app, #mt_app, #(#generics,)* > {
                         let msg = #instantiate_msg {#(#fields_names,)*};
-                        InstantiateProxy::<_, #(#used_generics,)* > {
+                        InstantiateProxy::<_, #(#generics,)* > {
                             code_id: self,
                             funds: &[],
                             label: "Contract",
@@ -487,24 +499,24 @@ where
                     }
                 }
 
-                pub struct InstantiateProxy<'a, 'app, MtApp, #(#used_generics,)* > {
-                    code_id: &'a CodeId <'app, MtApp>,
-                    funds: &'a [#sylvia ::cw_std::Coin],
-                    label: &'a str,
+                pub struct InstantiateProxy<'proxy, 'app, MtApp, #(#generics,)* > {
+                    code_id: &'proxy CodeId <'app, MtApp, #(#generics,)* >,
+                    funds: &'proxy [#sylvia ::cw_std::Coin],
+                    label: &'proxy str,
                     admin: Option<String>,
                     msg: InstantiateMsg #bracketed_used_generics,
                 }
 
-                impl<'a, 'app, MtApp, #(#used_generics,)* > InstantiateProxy<'a, 'app, MtApp, #(#used_generics,)* >
+                impl<'proxy, 'app, MtApp, #(#generics,)* > InstantiateProxy<'proxy, 'app, MtApp, #(#generics,)* >
                     where
                         MtApp: Executor< #custom_msg >,
-                        #(#where_predicates,)*
+                        #where_predicates
                 {
-                    pub fn with_funds(self, funds: &'a [#sylvia ::cw_std::Coin]) -> Self {
+                    pub fn with_funds(self, funds: &'proxy [#sylvia ::cw_std::Coin]) -> Self {
                         Self { funds, ..self }
                     }
 
-                    pub fn with_label(self, label: &'a str) -> Self {
+                    pub fn with_label(self, label: &'proxy str) -> Self {
                         Self { label, ..self }
                     }
 
@@ -514,7 +526,7 @@ where
                     }
 
                     #[track_caller]
-                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp>, #error_type> {
+                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp, #(#generics,)* >, #error_type> {
                         (*self.code_id.app)
                             .app_mut()
                             .instantiate_contract(
@@ -529,6 +541,7 @@ where
                             .map(|addr| #proxy_name {
                                 contract_addr: addr,
                                 app: self.code_id.app,
+                                _phantom: std::marker::PhantomData::default(),
                             })
                     }
                 }
