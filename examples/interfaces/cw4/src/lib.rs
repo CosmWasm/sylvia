@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn exec_msgs() {
         assert_eq!(
-            Cw4ExecMsg::messages(),
+            execute_messages(),
             ["add_hook", "remove_hook", "update_admin", "update_members"]
         );
     }
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn query_msgs() {
         assert_eq!(
-            Cw4QueryMsg::messages(),
+            query_messages(),
             ["admin", "hooks", "list_members", "member", "total_weight"]
         );
     }
