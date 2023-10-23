@@ -66,6 +66,7 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project
         run: cargo fmt --check
+
       - name: Test examples
         working-directory: examples
         run: cargo test --locked
@@ -75,6 +76,7 @@ jobs:
       - name: Fmt check examples
         working-directory: examples
         run: cargo fmt --check
+
       - name: Build cw20-base example
         working-directory: examples/contracts/cw20-base
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
@@ -90,10 +92,18 @@ jobs:
       - name: Build custom
         working-directory: examples/contracts/custom
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build generic_contract 
+        working-directory: examples/contracts/generic_contract
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build generic_iface_on_contract 
+        working-directory: examples/contracts/generic_iface_on_contract
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
         run: find examples/target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
+
       - name: Cw1-whitelist schema
         working-directory: examples/contracts/cw1-whitelist/
         run: cargo schema
@@ -109,6 +119,13 @@ jobs:
       - name: Custom schema
         working-directory: examples/contracts/custom
         run: cargo schema
+      - name: Generic_contract schema
+        working-directory: examples/contracts/generic_contract
+        run: cargo schema
+      - name: generic_iface_on_contract schema
+        working-directory: examples/contracts/generic_iface_on_contract
+        run: cargo schema
+
       - name: Cw1-whitelist ts-codegen 
         working-directory: examples/contracts/cw1-whitelist/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
@@ -124,6 +141,13 @@ jobs:
       - name: Custom ts-codegen
         working-directory: examples/contracts/custom/
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+      - name: Generic_contract ts-codegen
+        working-directory: examples/contracts/generic_contract/
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+      - name: Generic_iface_on_contract ts-codegen
+        working-directory: examples/contracts/generic_iface_on_contract
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
@@ -134,6 +158,8 @@ jobs:
             examples/contracts/cw20-base/schema/cw20-base.json
             examples/contracts/entry-points-overriding/schema/entry-points-overriding.json
             examples/contracts/custom/schema/custom.json
+            examples/contracts/generic_contract/schema/generic_contract.json
+            examples/contracts/generic_iface_on_contract/schema/generic_iface_on_contract.json
 
   coverage:
     name: Code coverage
