@@ -106,45 +106,32 @@ impl Interfaces {
     }
 
     pub fn emit_messages_call(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
         self.interfaces
             .iter()
             .map(|interface| {
-                let ContractMessageAttr {
-                    module, generics, ..
-                } = interface;
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
-                let type_name = msg_ty.as_accessor_name();
+                let ContractMessageAttr { module, .. } = interface;
+
+                let ep_name = msg_ty.emit_ep_name();
+                let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), module.span());
                 quote! {
-                    &<#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: messages()
+                    &#module :: #messages_fn_name()
                 }
             })
             .collect()
     }
 
     pub fn emit_deserialization_attempts(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module, variant, generics, ..
+                    module, variant, ..
                 } = interface;
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
+                let ep_name = msg_ty.emit_ep_name();
+                let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), module.span());
 
-                let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    let msgs = &<#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: messages();
+                    let msgs = &#module :: #messages_fn_name();
                     if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                         match val.deserialize_into() {
                             Ok(msg) => return Ok(Self:: #variant (msg)),

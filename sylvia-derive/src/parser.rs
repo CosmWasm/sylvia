@@ -105,16 +105,16 @@ impl MsgType {
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn emit_ep_name(self) -> TokenStream {
+    pub fn emit_ep_name(self) -> Ident {
         use MsgType::*;
 
         match self {
-            Exec => quote! { execute },
-            Instantiate => quote! { instantiate },
-            Migrate => quote! { migrate },
-            Sudo => quote! { sudo },
-            Reply => quote! { reply },
-            Query => quote! { query },
+            Exec => parse_quote! { execute },
+            Instantiate => parse_quote! { instantiate },
+            Migrate => parse_quote! { migrate },
+            Sudo => parse_quote! { sudo },
+            Reply => parse_quote! { reply },
+            Query => parse_quote! { query },
         }
     }
 
