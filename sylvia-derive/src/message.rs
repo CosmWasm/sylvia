@@ -293,6 +293,9 @@ impl<'a> EnumMessage<'a> {
 
         let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
 
+        let ep_name = msg_ty.emit_ep_name();
+        let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), name.span());
+
         #[cfg(not(tarpaulin_include))]
         let enum_declaration = match name.to_string().as_str() {
             "QueryMsg" => {
@@ -336,10 +339,11 @@ impl<'a> EnumMessage<'a> {
                             #match_arms
                         }
                     }
-                    pub const fn messages() -> [&'static str; #msgs_cnt] {
-                        [#(#msgs,)*]
-                    }
                     #(#variants_constructors)*
+                }
+
+                pub const fn #messages_fn_name () -> [&'static str; #msgs_cnt] {
+                    [#(#msgs,)*]
                 }
             }
         }
@@ -411,6 +415,9 @@ impl<'a> ContractEnumMessage<'a> {
             _ => quote! {},
         };
 
+        let ep_name = msg_ty.emit_ep_name();
+        let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -429,11 +436,12 @@ impl<'a> ContractEnumMessage<'a> {
                             #(#match_arms,)*
                         }
                     }
-                    pub const fn messages() -> [&'static str; #variants_cnt] {
-                        [#(#variant_names,)*]
-                    }
 
                     #(#variants_constructors)*
+                }
+
+                pub const fn #messages_fn_name () -> [&'static str; #variants_cnt] {
+                    [#(#variant_names,)*]
                 }
             }
         }
@@ -1265,6 +1273,8 @@ impl<'a> GlueMessage<'a> {
 
         let variants = interfaces.emit_glue_message_variants(msg_ty);
 
+        let ep_name = msg_ty.emit_ep_name();
+        let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
         let contract_variant = quote! { #contract_name ( #enum_name #bracketed_used_generics ) };
         let mut messages_call = interfaces.emit_messages_call(msg_ty);
         let prefixed_used_generics = if !used_generics.is_empty() {
@@ -1272,7 +1282,7 @@ impl<'a> GlueMessage<'a> {
         } else {
             quote! {}
         };
-        messages_call.push(quote! { &#enum_name #prefixed_used_generics :: messages() });
+        messages_call.push(quote! { &#messages_fn_name() });
 
         let variants_cnt = messages_call.len();
 
@@ -1310,7 +1320,7 @@ impl<'a> GlueMessage<'a> {
 
         #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
-            let msgs = &#enum_name #prefixed_used_generics :: messages();
+            let msgs = &#messages_fn_name();
             if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                 match val.deserialize_into() {
                     Ok(msg) => return Ok(Self:: #contract_name (msg)),
@@ -1363,12 +1373,10 @@ impl<'a> GlueMessage<'a> {
                         contract: &#contract,
                         ctx: #ctx_type,
                     ) -> #ret_type #full_where_clause {
-                        const fn assert_no_intersection #bracketed_used_generics () #where_clause {
+                        const _: () = {
                             let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                             #sylvia ::utils::assert_no_intersection(msgs);
-                        }
-
-                        assert_no_intersection #prefixed_used_generics ();
+                        };
 
                         match self {
                             #(#dispatch_arms,)*
