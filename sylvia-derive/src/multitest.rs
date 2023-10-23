@@ -455,14 +455,14 @@ where
             quote! {
                 #impl_contract
 
-                pub struct CodeId<'app, MtApp, #(#generics,)* > {
+                pub struct CodeId<'app, #(#generics,)* MtApp> {
                     code_id: u64,
                     app: &'app #sylvia ::multitest::App<MtApp>,
                     _phantom: std::marker::PhantomData<( #(#generics,)* )>,
 
                 }
 
-                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > CodeId<'app, #mt_app, #(#generics,)* >
+                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > CodeId<'app, #(#generics,)* #mt_app >
                     where
                         BankT: #sylvia ::cw_multi_test::Bank,
                         ApiT: #sylvia ::cw_std::Api,
@@ -487,9 +487,9 @@ where
 
                     pub fn instantiate(
                         &self,#(#fields,)*
-                    ) -> InstantiateProxy<'_, 'app, #mt_app, #(#generics,)* > {
+                    ) -> InstantiateProxy<'_, 'app, #(#generics,)* #mt_app > {
                         let msg = #instantiate_msg {#(#fields_names,)*};
-                        InstantiateProxy::<_, #(#generics,)* > {
+                        InstantiateProxy::< #(#generics,)* _> {
                             code_id: self,
                             funds: &[],
                             label: "Contract",
@@ -499,15 +499,15 @@ where
                     }
                 }
 
-                pub struct InstantiateProxy<'proxy, 'app, MtApp, #(#generics,)* > {
-                    code_id: &'proxy CodeId <'app, MtApp, #(#generics,)* >,
+                pub struct InstantiateProxy<'proxy, 'app, #(#generics,)* MtApp> {
+                    code_id: &'proxy CodeId <'app, #(#generics,)* MtApp>,
                     funds: &'proxy [#sylvia ::cw_std::Coin],
                     label: &'proxy str,
                     admin: Option<String>,
                     msg: InstantiateMsg #bracketed_used_generics,
                 }
 
-                impl<'proxy, 'app, MtApp, #(#generics,)* > InstantiateProxy<'proxy, 'app, MtApp, #(#generics,)* >
+                impl<'proxy, 'app, #(#generics,)* MtApp> InstantiateProxy<'proxy, 'app, #(#generics,)* MtApp>
                     where
                         MtApp: Executor< #custom_msg >,
                         #where_predicates
