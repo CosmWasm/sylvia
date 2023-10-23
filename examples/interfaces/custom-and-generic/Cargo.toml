@@ -1,0 +1,22 @@
+[package]
+name = "custom-and-generic"
+version = { workspace = true }
+authors = ["Jan Woźniak <jan@confio.gmbh>"]
+edition = { workspace = true }
+description = "Interface with custom msg and generic support."
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/sylvia"
+homepage = "https://cosmwasm.com"
+
+[features]
+mt = ["sylvia/mt"]
+
+[dependencies]
+cosmwasm-std = { version = "1.3", features = ["staking"] }
+cosmwasm-schema = "1.2"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+sylvia = { path = "../../../sylvia" }
+
+[dev-dependencies]
+anyhow = "1.0"
+cw-multi-test = "0.16"

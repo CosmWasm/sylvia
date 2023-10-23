@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{CustomQuery, Deps, DepsMut, Empty, Env, MessageInfo};
 use serde::de::DeserializeOwned;
 
@@ -98,6 +99,11 @@ impl<'a, C: CustomQuery> From<(Deps<'a, C>, Env)> for QueryCtx<'a, C> {
 pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
 
 impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
+
+#[cw_serde]
+pub struct SvCustomMsg;
+
+impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 
 pub trait InterfaceMessages {
     type Exec;

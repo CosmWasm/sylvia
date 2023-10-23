@@ -1,18 +1,22 @@
 [workspace]
 members = [
-  # Contract intefaces
-  "interfaces/cw1",
-  "interfaces/cw4",
-  "interfaces/cw20-allowances",
-  "interfaces/cw20-minting",
-  "interfaces/cw20-marketing",
+    # Contract intefaces
+    "interfaces/cw1",
+    "interfaces/cw4",
+    "interfaces/cw20-allowances",
+    "interfaces/cw20-minting",
+    "interfaces/cw20-marketing",
+    "interfaces/custom-and-generic",
+    "interfaces/generic",
 
-  # Contracts
-  "contracts/cw1-whitelist",
-  "contracts/cw1-subkeys",
-  "contracts/cw20-base",
-  "contracts/entry-points-overriding",
-  "contracts/custom",
+    # Contracts
+    "contracts/cw1-whitelist",
+    "contracts/cw1-subkeys",
+    "contracts/cw20-base",
+    "contracts/entry-points-overriding",
+    "contracts/custom",
+    "contracts/generic_contract",
+    "contracts/generic_iface_on_contract",
 ]
 resolver = "2"
 
