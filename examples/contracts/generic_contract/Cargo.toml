@@ -24,6 +24,9 @@ cw-storage-plus = "1.0"
 cw-utils = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 sylvia = { path = "../../../sylvia" }
+cw1 = { path = "../../interfaces/cw1" }
+generic = { path = "../../interfaces/generic" }
+custom-and-generic = { path = "../../interfaces/custom-and-generic" }
 
 [dev-dependencies]
 anyhow = "1.0"
