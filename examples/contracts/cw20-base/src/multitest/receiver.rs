@@ -1,8 +1,6 @@
 use cosmwasm_std::{Binary, Response, StdError, Uint128};
 use sylvia::types::ExecCtx;
-use sylvia::{contract, interface, schemars};
-
-use super::receiver_contract::ReceiverContract;
+use sylvia::{interface, schemars};
 
 #[interface]
 pub trait Receiver {
@@ -18,18 +16,26 @@ pub trait Receiver {
     ) -> Result<Response, Self::Error>;
 }
 
-#[contract(module=crate::multitest::receiver_contract)]
-impl Receiver for ReceiverContract {
-    type Error = StdError;
+pub mod impl_receiver {
+    use crate::multitest::receiver_contract::ReceiverContract;
+    use cosmwasm_std::{Response, StdError};
+    use sylvia::contract;
+    use sylvia::types::ExecCtx;
 
-    #[msg(exec)]
-    fn receive(
-        &self,
-        _ctx: ExecCtx,
-        _sender: String,
-        _amount: cosmwasm_std::Uint128,
-        _msg: cosmwasm_std::Binary,
-    ) -> Result<Response, Self::Error> {
-        Ok(Response::default())
+    #[contract(module=crate::multitest::receiver_contract)]
+    #[messages(crate::multitest::receiver as Receiver)]
+    impl super::Receiver for ReceiverContract {
+        type Error = StdError;
+
+        #[msg(exec)]
+        fn receive(
+            &self,
+            _ctx: ExecCtx,
+            _sender: String,
+            _amount: cosmwasm_std::Uint128,
+            _msg: cosmwasm_std::Binary,
+        ) -> Result<Response, Self::Error> {
+            Ok(Response::default())
+        }
     }
 }

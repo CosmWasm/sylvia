@@ -370,7 +370,7 @@ mod permissions {
 }
 
 mod cw1_execute {
-    use crate::cw1::test_utils::Cw1;
+    use crate::cw1::sv::test_utils::Cw1;
     use cosmwasm_std::BankMsg;
 
     use super::*;

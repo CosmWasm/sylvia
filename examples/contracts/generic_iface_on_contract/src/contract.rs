@@ -27,9 +27,9 @@ mod tests {
     use sylvia::{multitest::App, types::SvCustomMsg};
 
     use super::NonGenericContract;
-    use crate::custom_and_generic::test_utils::CustomAndGeneric;
-    use crate::cw1::test_utils::Cw1;
-    use crate::generic::test_utils::Generic;
+    use crate::custom_and_generic::sv::test_utils::CustomAndGeneric;
+    use crate::cw1::sv::test_utils::Cw1;
+    use crate::generic::sv::test_utils::Generic;
 
     #[test]
     fn mt_helpers() {
