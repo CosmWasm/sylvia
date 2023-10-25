@@ -13,9 +13,10 @@ use syn::{
 use crate::crate_module;
 use crate::strip_generics::StripGenerics;
 
-/// Parser arguments for `contract` macro
+/// Parsed arguments for `contract` macro
 pub struct ContractArgs {
-    /// Module name wrapping generated messages, by default no additional module is created
+    /// Module in which contract impl block is defined.
+    /// Used only while implementing `Interface` on `Contract`.
     pub module: Option<Path>,
 }
 
@@ -43,6 +44,31 @@ impl Parse for ContractArgs {
         let _: Nothing = input.parse()?;
 
         Ok(ContractArgs { module })
+    }
+}
+
+/// Parsed arguments for `entry_points` macro
+pub struct EntryPointArgs {
+    /// Types used in place of contracts generics.
+    pub generics: Option<Punctuated<GenericArgument, Token![,]>>,
+}
+
+impl Parse for EntryPointArgs {
+    fn parse(input: ParseStream) -> Result<Self> {
+        if input.is_empty() {
+            return Ok(Self { generics: None });
+        }
+
+        let path: Path = input.parse()?;
+
+        let generics = match path.segments.last() {
+            Some(segment) if segment.ident == "generics" => Some(extract_generics_from_path(&path)),
+            _ => return Err(Error::new(path.span(), "Expected `generics`")),
+        };
+
+        let _: Nothing = input.parse()?;
+
+        Ok(Self { generics })
     }
 }
 
@@ -158,11 +184,16 @@ impl MsgType {
         }
     }
 
-    pub fn as_accessor_name(&self) -> Option<Type> {
+    pub fn as_accessor_name(&self, is_wrapper: bool) -> Option<Type> {
         match self {
+            MsgType::Exec if is_wrapper => Some(parse_quote! { ContractExec }),
+            MsgType::Query if is_wrapper => Some(parse_quote! { ContractQuery }),
+            MsgType::Instantiate => Some(parse_quote! { Instantiate }),
             MsgType::Exec => Some(parse_quote! { Exec }),
             MsgType::Query => Some(parse_quote! { Query }),
-            _ => None,
+            MsgType::Migrate => Some(parse_quote! { Migrate }),
+            MsgType::Sudo => Some(parse_quote! { Sudo }),
+            MsgType::Reply => Some(parse_quote! { Reply }),
         }
     }
 }
@@ -295,7 +326,7 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
     Ok(customs)
 }
 
-fn extract_generics_from_path(module: &mut Path) -> Punctuated<GenericArgument, Token![,]> {
+fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Token![,]> {
     let generics = module.segments.last().map(|segment| {
         match segment.arguments.clone(){
             PathArguments::AngleBracketed(generics) => {
@@ -322,8 +353,8 @@ impl Parse for ContractMessageAttr {
         let content;
         parenthesized!(content in input);
 
-        let mut module = content.parse()?;
-        let generics = extract_generics_from_path(&mut module);
+        let module = content.parse()?;
+        let generics = extract_generics_from_path(&module);
         let module = StripGenerics.fold_path(module);
 
         let _: Token![as] = content.parse()?;
