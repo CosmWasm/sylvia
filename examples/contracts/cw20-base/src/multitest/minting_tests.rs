@@ -5,7 +5,7 @@ use sylvia::multitest::App;
 use crate::contract::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::minting::test_utils::Cw20Minting;
+use crate::minting::sv::test_utils::Cw20Minting;
 use crate::responses::{Cw20Coin, TokenInfoResponse};
 
 #[test]

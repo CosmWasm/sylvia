@@ -70,7 +70,7 @@ mod impl_group {
 
     use crate::{GroupContract, MemberResp};
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::group as Group)]
     impl crate::group::Group for GroupContract {
         type Error = Error;

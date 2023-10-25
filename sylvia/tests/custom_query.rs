@@ -48,7 +48,7 @@ mod impl_interface {
 
     use crate::{MyQuery, OtherQuery, SomeResponse};
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::interface as Interface)]
     #[sv::custom(query=MyQuery)]
     impl crate::interface::Interface for crate::MyContract {
@@ -96,7 +96,7 @@ mod impl_some_interface {
 
     use crate::{MyQuery, SomeResponse};
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::some_interface as SomeInterface)]
     #[sv::custom(query=MyQuery)]
     impl super::some_interface::SomeInterface for crate::MyContract {
@@ -142,7 +142,7 @@ mod impl_associated_type_interface {
     use sylvia::types::{ExecCtx, QueryCtx};
     use sylvia_derive::contract;
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::associated_type_interface as AssociatedTypeInterface)]
     impl AssociatedTypeInterface for crate::MyContract {
         type Error = StdError;
@@ -187,7 +187,7 @@ mod impl_default_query_interface {
     use sylvia::types::{ExecCtx, QueryCtx};
     use sylvia_derive::contract;
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::default_query_interface as DefaultQueryInterface)]
     #[sv::custom(query=MyQuery)]
     impl DefaultQueryInterface for crate::MyContract {
@@ -241,10 +241,10 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::impl_associated_type_interface::test_utils::AssociatedTypeInterface;
-    use crate::impl_default_query_interface::test_utils::DefaultQueryInterface;
-    use crate::impl_interface::test_utils::Interface;
-    use crate::impl_some_interface::test_utils::SomeInterface;
+    use crate::impl_associated_type_interface::sv::test_utils::AssociatedTypeInterface;
+    use crate::impl_default_query_interface::sv::test_utils::DefaultQueryInterface;
+    use crate::impl_interface::sv::test_utils::Interface;
+    use crate::impl_some_interface::sv::test_utils::SomeInterface;
     use crate::{MyContract, MyQuery};
 
     use cosmwasm_std::Empty;
