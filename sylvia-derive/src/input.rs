@@ -82,15 +82,18 @@ impl<'a> TraitInput<'a> {
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                #messages
+                pub mod sv {
+                    use super::*;
+                    #messages
 
-                #multitest_helpers
+                    #multitest_helpers
 
-                #remote
+                    #remote
 
-                #querier
+                    #querier
 
-                #interface_messages
+                    #interface_messages
+                }
             }
         }
     }

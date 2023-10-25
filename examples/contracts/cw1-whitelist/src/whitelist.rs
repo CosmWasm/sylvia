@@ -1,26 +1,14 @@
 use cosmwasm_std::{Empty, Order, Response, StdResult};
+use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
-use sylvia::{contract, interface, schemars};
+use whitelist::responses::AdminListResponse;
+use whitelist::Whitelist;
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
-use crate::responses::AdminListResponse;
-
-#[interface]
-pub trait Whitelist {
-    type Error: From<cosmwasm_std::StdError>;
-
-    #[msg(exec)]
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
-
-    #[msg(exec)]
-    fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error>;
-
-    #[msg(query)]
-    fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
-}
 
 #[contract(module=crate::contract)]
+#[messages(whitelist as Whitelist)]
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 

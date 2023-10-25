@@ -615,8 +615,13 @@ impl<'a> MsgVariant<'a> {
         let parameters = fields.iter().map(MsgField::emit_method_field);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        // This method is called for `impl Contract` and `impl Trait for Contract`
+        // In case of first one, `trait_module` will always be `None`.
+        // In case of the second one, `module` on interface is not an `Option` so it will always be
+        // `Some` or the compilation will fail earlier.
         let msg = trait_module
-            .map(|module| quote! { #module ::QueryMsg })
+            .map(|module| quote! { #module ::sv::QueryMsg })
             .unwrap_or_else(|| quote! { QueryMsg });
 
         let msg = if !unbonded_generics.is_empty() {
@@ -740,7 +745,7 @@ impl<'a> MsgVariant<'a> {
         let params = fields.iter().map(|field| field.emit_method_field());
         let arguments = fields.iter().map(MsgField::name);
         let bracketed_generics = emit_bracketed_generics(generics);
-        let interface_enum = quote! { < #module InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
+        let interface_enum = quote! { < #module sv::InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
         let type_name = msg_ty.as_accessor_name();
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -970,8 +975,8 @@ where
             .map(|variant| variant.emit_querier_impl(trait_module, used_generics));
 
         let querier = trait_module
-            .map(|module| quote! { #module ::Querier })
-            .unwrap_or_else(|| quote! { Querier });
+            .map(|module| quote! { #module ::sv::Querier })
+            .unwrap_or_else(|| quote! { sv::Querier });
         let bound_querier = contract_module
             .map(|module| quote! { #module ::BoundQuerier})
             .unwrap_or_else(|| quote! { BoundQuerier });

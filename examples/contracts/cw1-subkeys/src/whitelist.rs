@@ -1,8 +1,8 @@
 use cosmwasm_std::{Response, StdResult};
-use cw1_whitelist::responses::AdminListResponse;
-use cw1_whitelist::whitelist::{self, Whitelist};
 use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
+use whitelist::responses::AdminListResponse;
+use whitelist::Whitelist;
 
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;

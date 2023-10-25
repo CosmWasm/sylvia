@@ -20,10 +20,10 @@ pub struct SomeResponse;
 
 mod interface {
     use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
-    use crate::{MyQuery, OtherQuery, SomeResponse};
+    use crate::{MyQuery, SomeResponse};
 
     #[interface]
     #[sv::custom(query=MyQuery)]
@@ -39,10 +39,19 @@ mod interface {
         #[msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
     }
+}
+
+mod impl_interface {
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
+
+    use crate::{MyQuery, OtherQuery, SomeResponse};
 
     #[contract(module=super)]
+    #[messages(crate::interface as Interface)]
     #[sv::custom(query=MyQuery)]
-    impl Interface for crate::MyContract {
+    impl crate::interface::Interface for crate::MyContract {
         type Error = StdError;
         type QueryC = OtherQuery;
 
@@ -60,8 +69,8 @@ mod interface {
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -78,10 +87,19 @@ mod some_interface {
         #[msg(exec)]
         fn some_interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
     }
+}
+
+mod impl_some_interface {
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
+
+    use crate::{MyQuery, SomeResponse};
 
     #[contract(module=super)]
+    #[messages(crate::some_interface as SomeInterface)]
     #[sv::custom(query=MyQuery)]
-    impl SomeInterface for crate::MyContract {
+    impl super::some_interface::SomeInterface for crate::MyContract {
         type Error = StdError;
 
         #[msg(query)]
@@ -98,10 +116,10 @@ mod some_interface {
 
 mod associated_type_interface {
     use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
-    use crate::{MyQuery, SomeResponse};
+    use crate::SomeResponse;
 
     #[interface]
     pub trait AssociatedTypeInterface {
@@ -116,8 +134,16 @@ mod associated_type_interface {
         #[msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx<Self::QueryC>) -> StdResult<Response>;
     }
+}
+
+mod impl_associated_type_interface {
+    use crate::{associated_type_interface::AssociatedTypeInterface, MyQuery, SomeResponse};
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
 
     #[contract(module=super)]
+    #[messages(crate::associated_type_interface as AssociatedTypeInterface)]
     impl AssociatedTypeInterface for crate::MyContract {
         type Error = StdError;
         type QueryC = MyQuery;
@@ -136,8 +162,8 @@ mod associated_type_interface {
 
 mod default_query_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
     use crate::SomeResponse;
 
@@ -153,8 +179,16 @@ mod default_query_interface {
         #[msg(exec)]
         fn default_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
+}
+
+mod impl_default_query_interface {
+    use crate::{default_query_interface::DefaultQueryInterface, SomeResponse};
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
 
     #[contract(module=super)]
+    #[messages(crate::default_query_interface as DefaultQueryInterface)]
     #[sv::custom(query=MyQuery)]
     impl DefaultQueryInterface for crate::MyContract {
         type Error = StdError;
@@ -207,10 +241,11 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::associated_type_interface::test_utils::AssociatedTypeInterface;
-    use crate::default_query_interface::test_utils::DefaultQueryInterface;
-    use crate::some_interface::test_utils::SomeInterface;
-    use crate::{interface::test_utils::Interface, MyContract, MyQuery};
+    use crate::impl_associated_type_interface::test_utils::AssociatedTypeInterface;
+    use crate::impl_default_query_interface::test_utils::DefaultQueryInterface;
+    use crate::impl_interface::test_utils::Interface;
+    use crate::impl_some_interface::test_utils::SomeInterface;
+    use crate::{MyContract, MyQuery};
 
     use cosmwasm_std::Empty;
     use sylvia::multitest::App;

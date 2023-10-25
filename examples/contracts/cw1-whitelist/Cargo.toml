@@ -22,6 +22,7 @@ cosmwasm-schema = "1.2"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 sylvia = { path = "../../../sylvia" }
 cw1 = { path = "../../interfaces/cw1" }
+whitelist = { path = "../../interfaces/whitelist" }
 cw-storage-plus = "1.0"
 thiserror = { version = "1.0" }
 cw2 = "1.0"

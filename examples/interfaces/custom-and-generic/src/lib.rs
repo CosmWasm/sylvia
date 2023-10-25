@@ -36,33 +36,33 @@ mod tests {
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
     use sylvia::types::{InterfaceMessages, SvCustomMsg};
 
-    use crate::Querier;
+    use crate::sv::Querier;
 
     #[test]
     fn construct_messages() {
         let contract = Addr::unchecked("contract");
 
         // Direct message construction
-        let _ = super::QueryMsg::<_, Empty>::custom_generic_query(SvCustomMsg {});
-        let _ = super::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
-        let _ = super::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
+        let _ = super::sv::QueryMsg::<_, Empty>::custom_generic_query(SvCustomMsg {});
+        let _ = super::sv::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
+        let _ = super::sv::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
 
         // Querier
         let deps = mock_dependencies();
         let querier_wrapper: QuerierWrapper = QuerierWrapper::new(&deps.querier);
 
-        let querier = super::BoundQuerier::borrowed(&contract, &querier_wrapper);
+        let querier = super::sv::BoundQuerier::borrowed(&contract, &querier_wrapper);
         let _: Result<SvCustomMsg, _> =
-            super::Querier::custom_generic_query(&querier, SvCustomMsg {});
+            super::sv::Querier::custom_generic_query(&querier, SvCustomMsg {});
         let _: Result<SvCustomMsg, _> = querier.custom_generic_query(SvCustomMsg {});
 
         // Construct messages with Interface extension
         let _ =
-            <super::InterfaceTypes<SvCustomMsg, _, SvCustomMsg> as InterfaceMessages>::Query::custom_generic_query(
+            <super::sv::InterfaceTypes<SvCustomMsg, _, SvCustomMsg> as InterfaceMessages>::Query::custom_generic_query(
                 SvCustomMsg {},
             );
         let _=
-            <super::InterfaceTypes<_, SvCustomMsg, cosmwasm_std::Empty> as InterfaceMessages>::Exec::custom_generic_execute(
+            <super::sv::InterfaceTypes<_, SvCustomMsg, cosmwasm_std::Empty> as InterfaceMessages>::Exec::custom_generic_execute(
             vec![ CosmosMsg::Custom(SvCustomMsg{}),
             ]);
     }
