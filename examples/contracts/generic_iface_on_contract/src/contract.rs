@@ -35,7 +35,7 @@ mod tests {
     fn mt_helpers() {
         let _ = NonGenericContract::new();
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg>>::custom(|_, _, _| {});
-        let code_id = super::multitest_utils::CodeId::store_code(&app);
+        let code_id = super::sv::multitest_utils::CodeId::store_code(&app);
 
         let owner = "owner";
 

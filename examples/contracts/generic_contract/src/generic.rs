@@ -44,7 +44,7 @@ impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
 #[cfg(test)]
 mod tests {
     use super::sv::test_utils::Generic;
-    use crate::contract::multitest_utils::CodeId;
+    use crate::contract::sv::multitest_utils::CodeId;
     use cosmwasm_std::CosmosMsg;
     use sylvia::multitest::App;
     use sylvia::types::SvCustomMsg;

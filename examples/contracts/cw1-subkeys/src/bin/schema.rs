@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
 
-use cw1_subkeys::contract::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
+use cw1_subkeys::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
 
 #[cfg(not(tarpaulin_include))]
 fn main() {

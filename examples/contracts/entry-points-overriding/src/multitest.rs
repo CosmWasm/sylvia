@@ -1,9 +1,8 @@
 #[cfg(test)]
 mod test {
-    use crate::{
-        contract::{multitest_utils::CodeId, ContractExecMsg, ExecMsg},
-        messages::{CustomExecMsg, SudoMsg, UserExecMsg},
-    };
+    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::{ContractExecMsg, ExecMsg};
+    use crate::messages::{CustomExecMsg, SudoMsg, UserExecMsg};
     use cosmwasm_std::Addr;
     use cw_multi_test::Executor;
     use sylvia::multitest::App;

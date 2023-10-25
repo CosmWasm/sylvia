@@ -137,28 +137,28 @@ fn interface_messages_constructible() {
 
 #[test]
 fn contract_messages_constructible() {
-    let no_args_exec = contract::ExecMsg::NoArgsExecution {};
-    let _argumented_exec = contract::ExecMsg::ArgumentedExecution {
+    let no_args_exec = contract::sv::ExecMsg::NoArgsExecution {};
+    let _argumented_exec = contract::sv::ExecMsg::ArgumentedExecution {
         _addr: Addr::unchecked("owner"),
         _coef: Decimal::percent(10),
         _desc: "Some description".to_owned(),
     };
-    let no_args_query = contract::QueryMsg::NoArgsQuery {};
-    let _argumented_query = contract::QueryMsg::ArgumentedQuery {
+    let no_args_query = contract::sv::QueryMsg::NoArgsQuery {};
+    let _argumented_query = contract::sv::QueryMsg::ArgumentedQuery {
         _user: Addr::unchecked("owner"),
     };
-    let _ = contract::InstantiateMsg {};
-    let _ = contract::MigrateMsg {};
+    let _ = contract::sv::InstantiateMsg {};
+    let _ = contract::sv::MigrateMsg {};
 
     // Ensure no extra variants are generated
     match no_args_exec {
-        contract::ExecMsg::NoArgsExecution {} => (),
-        contract::ExecMsg::ArgumentedExecution { .. } => (),
+        contract::sv::ExecMsg::NoArgsExecution {} => (),
+        contract::sv::ExecMsg::ArgumentedExecution { .. } => (),
     }
 
     match no_args_query {
-        contract::QueryMsg::NoArgsQuery {} => (),
-        contract::QueryMsg::ArgumentedQuery { .. } => (),
+        contract::sv::QueryMsg::NoArgsQuery {} => (),
+        contract::sv::QueryMsg::ArgumentedQuery { .. } => (),
     }
 }
 
