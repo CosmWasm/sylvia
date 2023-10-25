@@ -34,7 +34,7 @@ where
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::{InterfaceMessages, SvCustomMsg};
+    use sylvia::types::{InterfaceApi, SvCustomMsg};
 
     use crate::sv::Querier;
 
@@ -58,11 +58,11 @@ mod tests {
 
         // Construct messages with Interface extension
         let _ =
-            <super::sv::InterfaceTypes<SvCustomMsg, _, SvCustomMsg> as InterfaceMessages>::Query::custom_generic_query(
+            <super::sv::Api<SvCustomMsg, _, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
                 SvCustomMsg {},
             );
         let _=
-            <super::sv::InterfaceTypes<_, SvCustomMsg, cosmwasm_std::Empty> as InterfaceMessages>::Exec::custom_generic_execute(
+            <super::sv::Api<_, SvCustomMsg, cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
             vec![ CosmosMsg::Custom(SvCustomMsg{}),
             ]);
     }

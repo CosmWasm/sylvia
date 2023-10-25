@@ -745,7 +745,8 @@ impl<'a> MsgVariant<'a> {
         let params = fields.iter().map(|field| field.emit_method_field());
         let arguments = fields.iter().map(MsgField::name);
         let bracketed_generics = emit_bracketed_generics(generics);
-        let interface_enum = quote! { < #module sv::InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
+        let interface_enum =
+            quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
         let type_name = msg_ty.as_accessor_name();
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -1434,13 +1435,113 @@ impl<'a> GlueMessage<'a> {
     }
 }
 
-pub struct InterfaceMessages<'a> {
+pub struct ContractApi<'a> {
+    source: &'a ItemImpl,
+    exec_variants: MsgVariants<'a, GenericParam>,
+    query_variants: MsgVariants<'a, GenericParam>,
+    instantiate_variants: MsgVariants<'a, GenericParam>,
+    migrate_variants: MsgVariants<'a, GenericParam>,
+    generics: &'a [&'a GenericParam],
+    custom: &'a Custom<'a>,
+}
+
+impl<'a> ContractApi<'a> {
+    pub fn new(
+        source: &'a ItemImpl,
+        generics: &'a [&'a GenericParam],
+        custom: &'a Custom<'a>,
+    ) -> Self {
+        let exec_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Exec,
+            generics,
+            &source.generics.where_clause,
+        );
+
+        let query_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Query,
+            generics,
+            &source.generics.where_clause,
+        );
+
+        let instantiate_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Instantiate,
+            generics,
+            &source.generics.where_clause,
+        );
+
+        let migrate_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Migrate,
+            generics,
+            &source.generics.where_clause,
+        );
+
+        Self {
+            source,
+            exec_variants,
+            query_variants,
+            instantiate_variants,
+            migrate_variants,
+            generics,
+            custom,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            source,
+            exec_variants,
+            query_variants,
+            instantiate_variants,
+            migrate_variants,
+            generics,
+            custom,
+        } = self;
+
+        let contract_name = &source.self_ty;
+        let exec_generics = &exec_variants.used_generics;
+        let query_generics = &query_variants.used_generics;
+        let instantiate_generics = &instantiate_variants.used_generics;
+        let migrate_generics = &migrate_variants.used_generics;
+
+        let bracket_generics = emit_bracketed_generics(generics);
+        let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
+        let query_bracketed_generics = emit_bracketed_generics(query_generics);
+        let instantiate_bracketed_generics = emit_bracketed_generics(instantiate_generics);
+        let migrate_bracketed_generics = emit_bracketed_generics(migrate_generics);
+
+        let migrate_type = match !migrate_variants.variants().is_empty() {
+            true => quote! { type Migrate = MigrateMsg #migrate_bracketed_generics; },
+            false => quote! { type Migrate = #sylvia ::cw_std::Empty; },
+        };
+        let custom_query = custom.query_or_default();
+
+        quote! {
+            impl #bracket_generics #sylvia ::types::ContractApi for #contract_name {
+                type ContractExec = ContractExecMsg #exec_bracketed_generics;
+                type ContractQuery = ContractQueryMsg #query_bracketed_generics;
+                type Exec = ExecMsg #exec_bracketed_generics;
+                type Query = QueryMsg #query_bracketed_generics;
+                type Instantiate = InstantiateMsg #instantiate_bracketed_generics;
+                #migrate_type
+                type Remote<'remote> = Remote<'remote>;
+                type Querier<'querier> = BoundQuerier<'querier, #custom_query >;
+            }
+        }
+    }
+}
+
+pub struct InterfaceApi<'a> {
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
 }
 
-impl<'a> InterfaceMessages<'a> {
+impl<'a> InterfaceApi<'a> {
     pub fn new(source: &'a ItemTrait, generics: &'a [&'a GenericParam]) -> Self {
         let exec_variants = MsgVariants::new(
             source.as_variants(),
@@ -1487,11 +1588,11 @@ impl<'a> InterfaceMessages<'a> {
         };
 
         quote! {
-            pub struct InterfaceTypes #bracket_generics {
+            pub struct Api #bracket_generics {
                 #phantom
             }
 
-            impl #bracket_generics #sylvia ::types::InterfaceMessages for InterfaceTypes #bracket_generics {
+            impl #bracket_generics #sylvia ::types::InterfaceApi for Api #bracket_generics {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
             }
