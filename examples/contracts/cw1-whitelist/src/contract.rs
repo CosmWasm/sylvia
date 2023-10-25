@@ -290,7 +290,7 @@ mod tests {
     mod msgs {
         use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
 
-        use crate::contract::{ContractExecMsg, ContractQueryMsg};
+        use crate::contract::sv::{ContractExecMsg, ContractQueryMsg};
 
         #[test]
         fn freeze() {

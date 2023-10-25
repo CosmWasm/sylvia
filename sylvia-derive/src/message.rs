@@ -978,8 +978,8 @@ where
             .map(|module| quote! { #module ::sv::Querier })
             .unwrap_or_else(|| quote! { sv::Querier });
         let bound_querier = contract_module
-            .map(|module| quote! { #module ::BoundQuerier})
-            .unwrap_or_else(|| quote! { BoundQuerier });
+            .map(|module| quote! { #module ::sv::BoundQuerier})
+            .unwrap_or_else(|| quote! { sv::BoundQuerier });
 
         let querier = if !used_generics.is_empty() {
             quote! { #querier < #(#used_generics,)* > }
@@ -1044,7 +1044,7 @@ where
             #[#sylvia ::cw_std::entry_point]
             pub fn #ep_name (
                 #params ,
-                msg: #msg_name #bracketed_generics,
+                msg: sv:: #msg_name #bracketed_generics,
             ) -> Result<#resp_type, #error> {
                 msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
             }

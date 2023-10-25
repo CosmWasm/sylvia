@@ -2,7 +2,8 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use sylvia::types::ExecCtx;
 
-use crate::contract::{ContractExecMsg, CounterContract};
+use crate::contract::sv::ContractExecMsg;
+use crate::contract::CounterContract;
 
 #[cw_serde]
 pub struct CountResponse {

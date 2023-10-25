@@ -207,15 +207,19 @@ impl<'a> ImplInput<'a> {
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                #messages
+                pub mod sv {
+                    use super::*;
 
-                #multitest_helpers
+                    #messages
 
-                #remote
+                    #multitest_helpers
 
-                #querier
+                    #remote
 
-                #(#querier_from_impl)*
+                    #querier
+
+                    #(#querier_from_impl)*
+                }
             }
         }
     }
