@@ -21,9 +21,9 @@ impl<'a> Remote<'a> {
             let ContractMessageAttr { module, .. } = interface;
 
             quote! {
-                impl<'a> From<&'a Remote<'a>> for #module ::Remote<'a> {
+                impl<'a> From<&'a Remote<'a>> for #module ::sv::Remote<'a> {
                     fn from(remote: &'a Remote) -> Self {
-                        #module ::Remote::borrowed(remote.as_ref())
+                        #module ::sv::Remote::borrowed(remote.as_ref())
                     }
                 }
             }

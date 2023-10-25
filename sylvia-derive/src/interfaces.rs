@@ -46,7 +46,7 @@ impl Interfaces {
         self.as_modules()
             .map(|module| {
                 quote! {
-                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::BoundQuerier<'a, C> {
+                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::sv::BoundQuerier<'a, C> {
                         fn from(querier: &'a BoundQuerier<'a, C>) -> Self {
                             Self::borrowed(querier.contract(),  querier.querier())
                         }
@@ -68,8 +68,8 @@ impl Interfaces {
                 );
 
                 quote! {
-                    pub fn #method_name (&self) -> #module ::trait_utils:: #proxy_name <'app, #mt_app> {
-                        #module ::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
+                    pub fn #method_name (&self) -> #module ::sv::trait_utils:: #proxy_name <'app, #mt_app> {
+                        #module ::sv::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
                     }
                 }
             })
@@ -95,7 +95,7 @@ impl Interfaces {
                 };
 
                 let interface_enum =
-                    quote! { <#module ::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> };
+                    quote! { <#module ::sv::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> };
                 if msg_ty == &MsgType::Query {
                     quote! { #variant ( #interface_enum :: Query) }
                 } else {
@@ -114,7 +114,7 @@ impl Interfaces {
                 let ep_name = msg_ty.emit_ep_name();
                 let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), module.span());
                 quote! {
-                    &#module :: #messages_fn_name()
+                    &#module ::sv:: #messages_fn_name()
                 }
             })
             .collect()
@@ -131,7 +131,7 @@ impl Interfaces {
                 let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), module.span());
 
                 quote! {
-                    let msgs = &#module :: #messages_fn_name();
+                    let msgs = &#module ::sv:: #messages_fn_name();
                     if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
                         match val.deserialize_into() {
                             Ok(msg) => return Ok(Self:: #variant (msg)),
@@ -161,7 +161,7 @@ impl Interfaces {
 
                 let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    <#module :: InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: response_schemas_impl()
+                    <#module ::sv::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: response_schemas_impl()
                 }
             })
             .collect()

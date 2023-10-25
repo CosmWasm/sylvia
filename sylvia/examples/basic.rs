@@ -32,12 +32,11 @@ pub struct MemberResp {
 }
 
 mod group {
-    use anyhow::Error;
     use cosmwasm_std::{Response, StdError};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
-    use crate::{GroupContract, Member, MemberResp};
+    use crate::{Member, MemberResp};
 
     #[interface]
     pub trait Group {
@@ -61,9 +60,19 @@ mod group {
         #[msg(query)]
         fn member(&self, ctx: QueryCtx, addr: String) -> Result<MemberResp, Self::Error>;
     }
+}
+
+mod impl_group {
+    use anyhow::Error;
+    use cosmwasm_std::Response;
+    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia_derive::contract;
+
+    use crate::{GroupContract, MemberResp};
 
     #[contract(module=super)]
-    impl Group for GroupContract {
+    #[messages(crate::group as Group)]
+    impl crate::group::Group for GroupContract {
         type Error = Error;
 
         #[msg(exec)]
@@ -80,7 +89,7 @@ mod group {
             &self,
             _ctx: ExecCtx,
             _remove: Vec<String>,
-            _add: Vec<Member>,
+            _add: Vec<crate::Member>,
         ) -> Result<Response, Self::Error> {
             todo!()
         }

@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod test {
     use cosmwasm_std::{to_binary, WasmMsg};
+    use whitelist::responses::AdminListResponse;
 
     use crate::contract::multitest_utils::CodeId;
     use crate::cw1::test_utils::Cw1;
     use crate::error::ContractError;
-    use crate::responses::AdminListResponse;
-    use crate::whitelist;
     use crate::whitelist::test_utils::Whitelist;
     use assert_matches::assert_matches;
     use sylvia::multitest::App;
@@ -30,7 +29,7 @@ mod test {
             .call(owner)
             .unwrap();
 
-        let freeze = whitelist::ExecMsg::Freeze {};
+        let freeze = whitelist::sv::ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
             contract_addr: second_contract.contract_addr.to_string(),
             msg: to_binary(&freeze).unwrap(),

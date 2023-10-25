@@ -21,8 +21,8 @@ pub struct SomeResponse;
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
     use crate::{MyMsg, SomeResponse};
 
@@ -39,8 +39,18 @@ mod some_interface {
         #[msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
     }
+}
+
+mod impl_some_interface {
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::contract;
+    use sylvia::types::{ExecCtx, QueryCtx};
+
+    use crate::some_interface::SomeInterface;
+    use crate::{MyMsg, SomeResponse};
 
     #[contract(module=super)]
+    #[messages(crate::some_interface as SomeInterface)]
     #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
@@ -59,10 +69,10 @@ mod some_interface {
 
 // Use `#[sv::custom(..)]` if both it and associated type defined
 mod interface {
-    use crate::{MyMsg, OtherMsg};
+    use crate::MyMsg;
     use cosmwasm_std::{CustomMsg, Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::ExecCtx;
-    use sylvia::{contract, interface};
 
     #[interface]
     #[sv::custom(msg=MyMsg)]
@@ -74,8 +84,16 @@ mod interface {
         #[msg(exec)]
         fn exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
     }
+}
+mod impl_interface {
+    use crate::interface::Interface;
+    use crate::{MyMsg, OtherMsg};
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::contract;
+    use sylvia::types::ExecCtx;
 
     #[contract(module=super)]
+    #[messages(crate::interface as Interface)]
     #[sv::custom(msg=MyMsg)]
     impl Interface for crate::MyContract {
         type Error = StdError;
@@ -90,8 +108,8 @@ mod interface {
 
 mod other_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::ExecCtx;
-    use sylvia::{contract, interface};
 
     #[interface]
     pub trait OtherInterface {
@@ -101,8 +119,15 @@ mod other_interface {
         #[msg(exec)]
         fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
+}
+mod impl_other_interface {
+    use crate::other_interface::OtherInterface;
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::contract;
+    use sylvia::types::ExecCtx;
 
     #[contract(module=super)]
+    #[messages(crate::other_interface as OtherInterface)]
     #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
@@ -115,10 +140,9 @@ mod other_interface {
 }
 
 mod associated_interface {
-    use crate::MyMsg;
     use cosmwasm_std::{CustomMsg, Response, StdError, StdResult};
+    use sylvia::interface;
     use sylvia::types::ExecCtx;
-    use sylvia::{contract, interface};
 
     #[interface]
     pub trait AssociatedInterface {
@@ -129,8 +153,16 @@ mod associated_interface {
         #[msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
     }
+}
+mod impl_associated_interface {
+    use crate::associated_interface::AssociatedInterface;
+    use crate::MyMsg;
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::contract;
+    use sylvia::types::ExecCtx;
 
     #[contract(module=super)]
+    #[messages(crate::associated_interface as AssociatedInterface)]
     #[sv::custom(msg=MyMsg)]
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;
@@ -179,14 +211,13 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::interface::test_utils::Interface;
+    use crate::impl_associated_interface::test_utils::AssociatedInterface;
+    use crate::impl_interface::test_utils::Interface;
+    use crate::impl_other_interface::test_utils::OtherInterface;
+    use crate::impl_some_interface::test_utils::SomeInterface;
     use crate::MyContract;
-    use sylvia::multitest::App;
-
-    use crate::associated_interface::test_utils::AssociatedInterface;
-    use crate::other_interface::test_utils::OtherInterface;
-    use crate::some_interface::test_utils::SomeInterface;
     use crate::MyMsg;
+    use sylvia::multitest::App;
 
     #[test]
     fn test_custom() {

@@ -18,6 +18,7 @@ cw-multi-test = { version = "0.16.2", optional = true }
 cw-storage-plus = "1.0"
 cw-utils = "1.0"
 cw1 = { path = "../../interfaces/cw1" }
+whitelist = { path = "../../interfaces/whitelist" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = "1.0"
 getrandom = { version = "0.2.8", features = ["js"] }
