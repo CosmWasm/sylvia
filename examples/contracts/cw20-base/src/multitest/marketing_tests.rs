@@ -6,7 +6,7 @@ use sylvia::multitest::App;
 use crate::contract::multitest_utils::CodeId;
 use crate::contract::{InstantiateMarketingInfo, InstantiateMsgData};
 use crate::error::ContractError;
-use crate::marketing::test_utils::Cw20Marketing;
+use crate::marketing::sv::test_utils::Cw20Marketing;
 
 const PNG_HEADER: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
 

@@ -35,7 +35,7 @@ impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType> Cw1
 
 #[cfg(test)]
 mod tests {
-    use super::test_utils::Cw1;
+    use super::sv::test_utils::Cw1;
     use crate::contract::multitest_utils::CodeId;
     use cosmwasm_std::{CosmosMsg, Empty};
     use sylvia::{multitest::App, types::SvCustomMsg};

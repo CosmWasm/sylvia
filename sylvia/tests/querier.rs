@@ -14,9 +14,8 @@ pub struct CountResponse {
 
 pub mod counter {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sv::Querier;
+    use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia::{contract, interface};
 
     use crate::CountResponse;
 
@@ -36,8 +35,17 @@ pub mod counter {
         #[msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
+}
 
-    #[contract(module=super)]
+pub mod impl_counter {
+    use crate::counter::sv::Querier;
+    use crate::counter::Counter;
+    use crate::CountResponse;
+    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::contract;
+    use sylvia::types::{ExecCtx, QueryCtx};
+
+    #[contract(module=crate)]
     #[messages(crate::counter as Counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
@@ -70,9 +78,10 @@ pub mod counter {
         #[msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let other_count = sv::BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
-                .count()?
-                .count;
+            let other_count =
+                crate::counter::sv::BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
+                    .count()?
+                    .count;
             self.count.update(ctx.deps.storage, |count| {
                 let count = count.saturating_sub(other_count);
                 Ok::<_, StdError>(count)
@@ -115,7 +124,7 @@ mod tests {
     use cosmwasm_std::{Addr, Empty, QuerierWrapper};
     use sylvia::multitest::App;
 
-    use crate::counter::test_utils::Counter;
+    use crate::impl_counter::sv::test_utils::Counter;
     use crate::multitest_utils::CodeId;
 
     #[test]

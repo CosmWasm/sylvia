@@ -4,9 +4,9 @@ mod test {
     use whitelist::responses::AdminListResponse;
 
     use crate::contract::multitest_utils::CodeId;
-    use crate::cw1::test_utils::Cw1;
+    use crate::cw1::sv::test_utils::Cw1;
     use crate::error::ContractError;
-    use crate::whitelist::test_utils::Whitelist;
+    use crate::whitelist::sv::test_utils::Whitelist;
     use assert_matches::assert_matches;
     use sylvia::multitest::App;
 

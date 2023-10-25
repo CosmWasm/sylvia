@@ -39,7 +39,7 @@ impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
 
 #[cfg(test)]
 mod tests {
-    use super::test_utils::CustomAndGeneric;
+    use super::sv::test_utils::CustomAndGeneric;
     use crate::contract::multitest_utils::CodeId;
     use sylvia::{multitest::App, types::SvCustomMsg};
 
