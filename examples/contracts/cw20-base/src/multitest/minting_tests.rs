@@ -2,7 +2,7 @@ use cosmwasm_std::{StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::minting::sv::test_utils::Cw20Minting;

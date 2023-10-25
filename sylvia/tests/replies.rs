@@ -55,7 +55,7 @@ mod reply_contract {
 
         #[msg(exec)]
         fn poke(&self, _ctx: ExecCtx, noop: String) -> StdResult<Response> {
-            let msg = noop_contract::ExecMsg::Noop {};
+            let msg = noop_contract::sv::ExecMsg::Noop {};
             let msg = WasmMsg::Execute {
                 contract_addr: noop,
                 msg: to_binary(&msg)?,
@@ -93,16 +93,16 @@ fn entry_point_generation() {
     assert_eq!(data, "data");
 }
 
-#[cfg(feature = "mt")]
+#[cfg(all(test, feature = "mt"))]
 #[test]
 fn mt_helper_generation() {
     let app = sylvia::multitest::App::default();
     let owner = "owner";
 
-    let noop_contract_code = noop_contract::multitest_utils::CodeId::store_code(&app);
+    let noop_contract_code = noop_contract::sv::multitest_utils::CodeId::store_code(&app);
     let noop_contract = noop_contract_code.instantiate().call(owner).unwrap();
 
-    let reply_contract_code = reply_contract::multitest_utils::CodeId::store_code(&app);
+    let reply_contract_code = reply_contract::sv::multitest_utils::CodeId::store_code(&app);
     let reply_contract = reply_contract_code.instantiate().call(owner).unwrap();
 
     let resp = reply_contract

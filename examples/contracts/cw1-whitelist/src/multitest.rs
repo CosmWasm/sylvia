@@ -3,7 +3,7 @@ mod test {
     use cosmwasm_std::{to_binary, WasmMsg};
     use whitelist::responses::AdminListResponse;
 
-    use crate::contract::multitest_utils::CodeId;
+    use crate::contract::sv::multitest_utils::CodeId;
     use crate::cw1::sv::test_utils::Cw1;
     use crate::error::ContractError;
     use crate::whitelist::sv::test_utils::Whitelist;

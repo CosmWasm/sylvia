@@ -1,4 +1,4 @@
-use contract::ContractExecMsg;
+use contract::sv::ContractExecMsg;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Coin;
 use cw_storage_plus::Item;
@@ -145,8 +145,8 @@ mod tests {
     use cw_multi_test::Executor;
     use sylvia::multitest::App;
 
-    use crate::contract::multitest_utils::CodeId;
-    use crate::contract::{ContractExecMsg, ExecMsg};
+    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::exec::{CustomExecMsg, UserExecMsg};
     use crate::SudoMsg;
 

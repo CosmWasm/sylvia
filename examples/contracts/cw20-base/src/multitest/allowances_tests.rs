@@ -8,10 +8,10 @@ use cw_utils::Expiration;
 use sylvia::multitest::App;
 
 use crate::allowances::sv::test_utils::Cw20Allowances;
-use crate::contract::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::multitest::receiver_contract::multitest_utils::CodeId as ReceiverCodeId;
+use crate::multitest::receiver_contract::sv::multitest_utils::CodeId as ReceiverCodeId;
 use crate::responses::Cw20Coin;
 
 #[test]

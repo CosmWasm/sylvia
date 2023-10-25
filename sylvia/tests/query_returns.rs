@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn generate_contract_query() {
-        let _ = QueryMsg::ContractQuery {
+        let _ = sv::QueryMsg::ContractQuery {
             _name: "some_name".to_owned(),
         };
     }

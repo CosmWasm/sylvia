@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
 
-use entry_points_overriding::contract::{ContractQueryMsg, InstantiateMsg};
+use entry_points_overriding::contract::sv::{ContractQueryMsg, InstantiateMsg};
 use entry_points_overriding::messages::CustomExecMsg;
 use entry_points_overriding::messages::SudoMsg;
 

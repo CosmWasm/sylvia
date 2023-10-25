@@ -1,12 +1,20 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Decimal, Response, StdError, StdResult};
-use interface::Interface;
+use cosmwasm_std::{from_binary, Addr, Decimal, Response};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::collections::HashMap;
-use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx};
+
+use crate::contract::Contract;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct EmptyQueryResponse {}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct QueryResponse {
+    coef: Decimal,
+    desc: String,
+}
 
 mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
@@ -40,77 +48,83 @@ mod interface {
     }
 }
 
-#[derive(Default)]
-pub struct Contract {
-    execs: RefCell<u64>,
-    queries: RefCell<u64>,
+mod impl_interface {
+    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use sylvia::types::{ExecCtx, QueryCtx};
 
-    data: RefCell<HashMap<Addr, QueryResponse>>,
-}
+    use crate::{EmptyQueryResponse, QueryResponse};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct EmptyQueryResponse {}
+    #[sylvia::contract(module = crate::contract)]
+    #[messages(crate::interface as Interface)]
+    impl crate::interface::Interface for crate::contract::Contract {
+        type Error = StdError;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct QueryResponse {
-    coef: Decimal,
-    desc: String,
-}
+        #[msg(exec)]
+        fn no_args_execution(&self, _: ExecCtx) -> Result<Response, StdError> {
+            *self.execs.borrow_mut() += 1;
+            Ok(Response::new())
+        }
 
-#[contract]
-#[messages(interface as Interface)]
-impl Interface for Contract {
-    type Error = StdError;
+        #[msg(exec)]
+        fn argumented_execution(
+            &self,
+            _: ExecCtx,
+            addr: Addr,
+            coef: Decimal,
+            desc: String,
+        ) -> Result<Response, Self::Error> {
+            *self.execs.borrow_mut() += 1;
 
-    #[msg(exec)]
-    fn no_args_execution(&self, _: ExecCtx) -> Result<Response, StdError> {
-        *self.execs.borrow_mut() += 1;
-        Ok(Response::new())
-    }
+            self.data
+                .borrow_mut()
+                .insert(addr, QueryResponse { coef, desc });
+            Ok(Response::new())
+        }
 
-    #[msg(exec)]
-    fn argumented_execution(
-        &self,
-        _: ExecCtx,
-        addr: Addr,
-        coef: Decimal,
-        desc: String,
-    ) -> Result<Response, Self::Error> {
-        *self.execs.borrow_mut() += 1;
+        #[msg(query)]
+        fn no_args_query(&self, _: QueryCtx) -> Result<EmptyQueryResponse, StdError> {
+            *self.queries.borrow_mut() += 1;
+            Ok(dbg!(EmptyQueryResponse {}))
+        }
 
-        self.data
-            .borrow_mut()
-            .insert(addr, QueryResponse { coef, desc });
-        Ok(Response::new())
-    }
-
-    #[msg(query)]
-    fn no_args_query(&self, _: QueryCtx) -> Result<EmptyQueryResponse, StdError> {
-        *self.queries.borrow_mut() += 1;
-        Ok(dbg!(EmptyQueryResponse {}))
-    }
-
-    #[msg(query)]
-    fn argumented_query(&self, _: QueryCtx, user: Addr) -> Result<QueryResponse, Self::Error> {
-        *self.queries.borrow_mut() += 1;
-        Ok(self.data.borrow().get(&user).unwrap().clone())
+        #[msg(query)]
+        fn argumented_query(&self, _: QueryCtx, user: Addr) -> Result<QueryResponse, Self::Error> {
+            *self.queries.borrow_mut() += 1;
+            Ok(self.data.borrow().get(&user).unwrap().clone())
+        }
     }
 }
 
-#[allow(dead_code)]
-#[cfg(not(tarpaulin_include))]
-#[contract]
-#[messages(interface as Interface)]
-impl Contract {
-    fn new() -> Self {
-        Self::default()
+mod contract {
+    use std::{cell::RefCell, collections::HashMap};
+
+    use cosmwasm_std::{Addr, Response, StdResult};
+    use sylvia::types::ExecCtx;
+    use sylvia_derive::contract;
+
+    use crate::QueryResponse;
+
+    #[derive(Default)]
+    pub struct Contract {
+        pub(crate) execs: RefCell<u64>,
+        pub(crate) queries: RefCell<u64>,
+
+        pub(crate) data: RefCell<HashMap<Addr, QueryResponse>>,
     }
 
-    #[msg(instantiate)]
-    fn instanciate(&self, _: ExecCtx) -> StdResult<Response> {
-        Ok(Response::new())
+    #[allow(dead_code)]
+    #[cfg(not(tarpaulin_include))]
+    #[contract]
+    #[messages(crate::interface as Interface)]
+    impl Contract {
+        fn new() -> Self {
+            Self::default()
+        }
+
+        #[msg(instantiate)]
+        fn instanciate(&self, _: ExecCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
     }
 }
 

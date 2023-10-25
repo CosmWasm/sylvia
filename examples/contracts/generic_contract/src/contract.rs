@@ -79,7 +79,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::multitest_utils::CodeId;
+    use super::sv::multitest_utils::CodeId;
     use sylvia::multitest::App;
     use sylvia::types::SvCustomMsg;
 
