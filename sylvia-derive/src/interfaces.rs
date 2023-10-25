@@ -159,7 +159,7 @@ impl Interfaces {
                     quote! {}
                 };
 
-                let type_name = msg_ty.as_accessor_name();
+                let type_name = msg_ty.as_accessor_name(false);
                 quote! {
                     <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> :: #type_name :: response_schemas_impl()
                 }

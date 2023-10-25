@@ -6,6 +6,9 @@ use sylvia::types::{
 };
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 pub struct GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>(
     std::marker::PhantomData<(
         InstantiateParam,
@@ -16,6 +19,7 @@ pub struct GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam
     )>,
 );
 
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg>))]
 #[contract]
 #[messages(cw1 as Cw1: custom(msg))]
 #[messages(generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as Generic: custom(msg))]
