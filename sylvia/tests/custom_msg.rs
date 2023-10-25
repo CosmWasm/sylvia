@@ -223,7 +223,7 @@ mod tests {
     fn test_custom() {
         let _ = MyContract::new();
         let app = App::<cw_multi_test::BasicApp<MyMsg>>::custom(|_, _, _| {});
-        let code_id = crate::multitest_utils::CodeId::store_code(&app);
+        let code_id = crate::sv::multitest_utils::CodeId::store_code(&app);
 
         let owner = "owner";
 

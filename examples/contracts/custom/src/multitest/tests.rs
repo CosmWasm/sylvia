@@ -1,6 +1,6 @@
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::CodeId;
 
 use super::custom_module::CustomModule;
 

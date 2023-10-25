@@ -3,7 +3,7 @@ use cw2::{query_contract_info, ContractVersion};
 use cw_utils::{Expiration, NativeBalance};
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::CodeId;
 use crate::contract::{CONTRACT_NAME, CONTRACT_VERSION};
 
 const ATOM: &str = "atom";

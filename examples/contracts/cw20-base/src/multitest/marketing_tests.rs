@@ -3,7 +3,7 @@ use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoRes
 use cw20_marketing::{EmbeddedLogo, Logo};
 use sylvia::multitest::App;
 
-use crate::contract::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::CodeId;
 use crate::contract::{InstantiateMarketingInfo, InstantiateMsgData};
 use crate::error::ContractError;
 use crate::marketing::sv::test_utils::Cw20Marketing;
