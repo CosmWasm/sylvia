@@ -95,7 +95,7 @@ impl Interfaces {
                 };
 
                 let interface_enum =
-                    quote! { <#module ::sv::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> };
+                    quote! { <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> };
                 if msg_ty == &MsgType::Query {
                     quote! { #variant ( #interface_enum :: Query) }
                 } else {
@@ -161,7 +161,7 @@ impl Interfaces {
 
                 let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    <#module ::sv::InterfaceTypes #generics as #sylvia ::types::InterfaceMessages> :: #type_name :: response_schemas_impl()
+                    <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> :: #type_name :: response_schemas_impl()
                 }
             })
             .collect()

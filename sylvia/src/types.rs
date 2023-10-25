@@ -105,7 +105,18 @@ pub struct SvCustomMsg;
 
 impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 
-pub trait InterfaceMessages {
+pub trait InterfaceApi {
     type Exec;
     type Query;
+}
+
+pub trait ContractApi {
+    type Instantiate;
+    type Query;
+    type Exec;
+    type ContractQuery;
+    type ContractExec;
+    type Migrate;
+    type Querier<'querier>;
+    type Remote<'remote>;
 }

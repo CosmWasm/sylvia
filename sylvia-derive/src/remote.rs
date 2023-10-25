@@ -33,13 +33,11 @@ impl<'a> Remote<'a> {
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             pub struct Remote<'a>(std::borrow::Cow<'a, #sylvia ::cw_std::Addr>);
 
-            impl Remote<'static> {
+            impl<'a> Remote<'a> {
                 pub fn new(addr: #sylvia ::cw_std::Addr) -> Self {
                     Self(std::borrow::Cow::Owned(addr))
                 }
-            }
 
-            impl<'a> Remote<'a> {
                 pub fn borrowed(addr: &'a #sylvia ::cw_std::Addr) -> Self {
                     Self(std::borrow::Cow::Borrowed(addr))
                 }
