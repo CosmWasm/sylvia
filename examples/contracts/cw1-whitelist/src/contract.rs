@@ -1,5 +1,4 @@
 use crate::error::ContractError;
-use crate::whitelist;
 use cosmwasm_std::{Addr, Deps, Empty, Response};
 
 use cw2::set_contract_version;
@@ -57,11 +56,11 @@ impl Cw1WhitelistContract<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::responses::AdminListResponse;
-    use crate::whitelist::{self, Whitelist};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, to_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg};
     use cw1::Cw1;
+    use whitelist::responses::AdminListResponse;
+    use whitelist::Whitelist;
 
     #[test]
     fn instantiate_and_modify_config() {
@@ -182,7 +181,7 @@ mod tests {
             )
             .unwrap();
 
-        let freeze = whitelist::ExecMsg::Freeze {};
+        let freeze = whitelist::sv::ExecMsg::Freeze {};
         let msgs = vec![
             BankMsg::Send {
                 to_address: bob.to_string(),
@@ -289,15 +288,13 @@ mod tests {
     }
 
     mod msgs {
-        use super::*;
-
         use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
 
         use crate::contract::{ContractExecMsg, ContractQueryMsg};
 
         #[test]
         fn freeze() {
-            let original = whitelist::ExecMsg::Freeze {};
+            let original = whitelist::sv::ExecMsg::Freeze {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -309,14 +306,14 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Whitelist(whitelist::ExecMsg::Freeze {}),
+                ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::Freeze {}),
                 deserialized
             );
         }
 
         #[test]
         fn update_admins() {
-            let original = whitelist::ExecMsg::UpdateAdmins {
+            let original = whitelist::sv::ExecMsg::UpdateAdmins {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
             let serialized = to_binary(&original).unwrap();
@@ -332,7 +329,7 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractExecMsg::Whitelist(whitelist::ExecMsg::UpdateAdmins {
+                ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::UpdateAdmins {
                     admins: vec!["admin1".to_owned(), "admin3".to_owned()]
                 }),
                 deserialized
@@ -341,7 +338,7 @@ mod tests {
 
         #[test]
         fn admin_list() {
-            let original = whitelist::QueryMsg::AdminList {};
+            let original = whitelist::sv::QueryMsg::AdminList {};
             let serialized = to_binary(&original).unwrap();
             let deserialized = from_binary(&serialized).unwrap();
 
@@ -353,14 +350,14 @@ mod tests {
             let deserialized = from_slice(json).unwrap();
 
             assert_eq!(
-                ContractQueryMsg::Whitelist(whitelist::QueryMsg::AdminList {}),
+                ContractQueryMsg::Whitelist(whitelist::sv::QueryMsg::AdminList {}),
                 deserialized
             );
         }
 
         #[test]
         fn execute() {
-            let original = cw1::ExecMsg::Execute {
+            let original = cw1::sv::ExecMsg::Execute {
                 msgs: vec![BankMsg::Send {
                     to_address: "admin1".to_owned(),
                     amount: vec![],
@@ -374,7 +371,7 @@ mod tests {
 
         #[test]
         fn can_execute() {
-            let original = cw1::QueryMsg::CanExecute {
+            let original = cw1::sv::QueryMsg::CanExecute {
                 sender: "admin".to_owned(),
                 msg: BankMsg::Send {
                     to_address: "admin1".to_owned(),

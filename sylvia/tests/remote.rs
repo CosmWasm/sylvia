@@ -49,9 +49,9 @@ mod tests {
     #[test]
     fn remote_generation() {
         // interface
-        let _ = some_interface::Remote::new(Addr::unchecked("some_interface"));
+        let _ = some_interface::sv::Remote::new(Addr::unchecked("some_interface"));
         let addr = Addr::unchecked("some_interface");
-        let _ = some_interface::Remote::borrowed(&addr);
+        let _ = some_interface::sv::Remote::borrowed(&addr);
 
         // contract
         let new_remote = crate::Remote::new(Addr::unchecked("some_contract"));
@@ -59,7 +59,7 @@ mod tests {
         let borrowed_remote = crate::Remote::borrowed(&addr);
         assert_eq!(&Addr::unchecked("some_contract"), borrowed_remote.as_ref());
 
-        let _ = some_interface::Remote::from(&borrowed_remote);
-        let _ = some_interface::Remote::from(&new_remote);
+        let _ = some_interface::sv::Remote::from(&borrowed_remote);
+        let _ = some_interface::sv::Remote::from(&new_remote);
     }
 }

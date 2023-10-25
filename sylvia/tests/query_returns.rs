@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn generate_interface_query() {
-        let _ = msg::InterfaceQueryMsg::Query {
+        let _ = msg::sv::InterfaceQueryMsg::Query {
             name: "some_name".to_owned(),
         };
     }

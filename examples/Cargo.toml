@@ -2,6 +2,7 @@
 members = [
     # Contract intefaces
     "interfaces/cw1",
+    "interfaces/whitelist",
     "interfaces/cw4",
     "interfaces/cw20-allowances",
     "interfaces/cw20-minting",

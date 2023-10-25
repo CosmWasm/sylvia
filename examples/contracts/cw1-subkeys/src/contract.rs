@@ -3,7 +3,6 @@ use cosmwasm_std::{
     StakingMsg, StdResult,
 };
 use cw1_whitelist::contract::Cw1WhitelistContract;
-use cw1_whitelist::whitelist;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
