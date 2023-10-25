@@ -12,7 +12,8 @@ use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{
-    ContractEnumMessage, EnumMessage, GlueMessage, InterfaceMessages, MsgVariants, StructMessage,
+    ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
+    StructMessage,
 };
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
@@ -77,7 +78,7 @@ impl<'a> TraitInput<'a> {
         )
         .emit_querier();
 
-        let interface_messages = InterfaceMessages::new(self.item, &self.generics).emit();
+        let interface_messages = InterfaceApi::new(self.item, &self.generics).emit();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -189,7 +190,12 @@ impl<'a> ImplInput<'a> {
     }
 
     fn process_contract(&self) -> TokenStream {
-        let Self { item, generics, .. } = self;
+        let Self {
+            item,
+            generics,
+            custom,
+            ..
+        } = self;
         let multitest_helpers = self.emit_multitest_helpers(generics);
         let where_clause = &item.generics.where_clause;
 
@@ -203,6 +209,7 @@ impl<'a> ImplInput<'a> {
         let messages = self.emit_messages();
         let remote = Remote::new(&self.interfaces).emit();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
+        let contract_api = ContractApi::new(item, generics, custom).emit();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -219,6 +226,8 @@ impl<'a> ImplInput<'a> {
                     #querier
 
                     #(#querier_from_impl)*
+
+                    #contract_api
                 }
             }
         }
