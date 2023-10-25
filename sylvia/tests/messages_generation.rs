@@ -112,26 +112,26 @@ mod contract {
 
 #[test]
 fn interface_messages_constructible() {
-    let no_args_exec = interface::ExecMsg::NoArgsExecution {};
-    let _argumented_exec = interface::ExecMsg::ArgumentedExecution {
+    let no_args_exec = interface::sv::ExecMsg::NoArgsExecution {};
+    let _argumented_exec = interface::sv::ExecMsg::ArgumentedExecution {
         addr: Addr::unchecked("owner"),
         coef: Decimal::percent(10),
         desc: "Some description".to_owned(),
     };
-    let no_args_query = interface::QueryMsg::NoArgsQuery {};
-    let _argumented_query = interface::QueryMsg::ArgumentedQuery {
+    let no_args_query = interface::sv::QueryMsg::NoArgsQuery {};
+    let _argumented_query = interface::sv::QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("owner"),
     };
 
     // Ensure no extra variants are generated
     match no_args_exec {
-        interface::ExecMsg::NoArgsExecution {} => (),
-        interface::ExecMsg::ArgumentedExecution { .. } => (),
+        interface::sv::ExecMsg::NoArgsExecution {} => (),
+        interface::sv::ExecMsg::ArgumentedExecution { .. } => (),
     }
 
     match no_args_query {
-        interface::QueryMsg::NoArgsQuery {} => (),
-        interface::QueryMsg::ArgumentedQuery { .. } => (),
+        interface::sv::QueryMsg::NoArgsQuery {} => (),
+        interface::sv::QueryMsg::ArgumentedQuery { .. } => (),
     }
 }
 

@@ -36,11 +36,9 @@ pub trait Cw1 {
 mod tests {
     use cosmwasm_std::{coins, from_binary, from_slice, to_binary, BankMsg};
 
-    use super::*;
-
     #[test]
     fn execute() {
-        let original = ExecMsg::Execute {
+        let original = super::sv::ExecMsg::Execute {
             msgs: vec![BankMsg::Send {
                 to_address: "receiver".to_owned(),
                 amount: coins(10, "atom"),
@@ -57,12 +55,12 @@ mod tests {
     #[test]
     fn execute_from_slice() {
         let deserialized = from_slice(br#"{"execute": { "msgs": [] }}"#).unwrap();
-        assert_eq!(ExecMsg::Execute { msgs: vec![] }, deserialized);
+        assert_eq!(super::sv::ExecMsg::Execute { msgs: vec![] }, deserialized);
     }
 
     #[test]
     fn query() {
-        let original = QueryMsg::CanExecute {
+        let original = super::sv::QueryMsg::CanExecute {
             sender: "sender".to_owned(),
             msg: BankMsg::Send {
                 to_address: "receiver".to_owned(),
@@ -99,7 +97,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            QueryMsg::CanExecute {
+            super::sv::QueryMsg::CanExecute {
                 sender: "address".to_owned(),
                 msg: BankMsg::Send {
                     to_address: "receiver".to_owned(),

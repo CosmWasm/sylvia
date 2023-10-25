@@ -39,7 +39,7 @@ pub trait Cw4 {
 mod tests {
     use cosmwasm_std::{from_binary, from_slice, to_binary};
 
-    use super::*;
+    use super::sv::*;
 
     #[test]
     fn execute() {

@@ -17,9 +17,11 @@ fn interface_name(source: &ItemImpl) -> &Ident {
         unreachable!()
     };
     let (_, Path { segments, .. }, _) = &trait_name;
-    assert!(!segments.is_empty());
 
-    &segments[0].ident
+    match segments.last() {
+        Some(segment) => &segment.ident,
+        None => unreachable!(),
+    }
 }
 
 fn extract_contract_name(contract: &Type) -> &Ident {
@@ -321,7 +323,7 @@ where
         };
 
         let bracketed_generics = emit_bracketed_generics(generics);
-        let interface_enum = quote! { < #module InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
+        let interface_enum = quote! { < #module sv::InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
 
         let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
@@ -356,7 +358,7 @@ where
                         #(#exec_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #trait_name< #mt_app > for #module trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,

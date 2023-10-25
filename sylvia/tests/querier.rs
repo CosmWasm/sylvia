@@ -14,6 +14,7 @@ pub struct CountResponse {
 
 pub mod counter {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use sv::Querier;
     use sylvia::types::{ExecCtx, QueryCtx};
     use sylvia::{contract, interface};
 
@@ -69,7 +70,7 @@ pub mod counter {
         #[msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let other_count = BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
+            let other_count = sv::BoundQuerier::borrowed(&remote.0, &ctx.deps.querier)
                 .count()?
                 .count;
             self.count.update(ctx.deps.storage, |count| {
@@ -124,16 +125,16 @@ mod tests {
         let remote_addr = Addr::unchecked("remote");
 
         // Remote generation
-        let remote = super::counter::Remote::new(remote_addr.clone());
-        let _: super::counter::BoundQuerier<_> = remote.querier(&querier_wrapper);
+        let remote = super::counter::sv::Remote::new(remote_addr.clone());
+        let _: super::counter::sv::BoundQuerier<_> = remote.querier(&querier_wrapper);
         let remote = super::Remote::new(remote_addr.clone());
         let _: super::BoundQuerier<_> = remote.querier(&querier_wrapper);
 
         // Querier generation
-        let _ = super::counter::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
+        let _ = super::counter::sv::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
         let querier = super::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
 
-        let _ = super::counter::BoundQuerier::from(&querier);
+        let _ = super::counter::sv::BoundQuerier::from(&querier);
     }
 
     #[test]
