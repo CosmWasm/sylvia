@@ -49,7 +49,7 @@ mod impl_some_interface {
     use crate::some_interface::SomeInterface;
     use crate::{MyMsg, SomeResponse};
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::some_interface as SomeInterface)]
     #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
@@ -92,7 +92,7 @@ mod impl_interface {
     use sylvia::contract;
     use sylvia::types::ExecCtx;
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::interface as Interface)]
     #[sv::custom(msg=MyMsg)]
     impl Interface for crate::MyContract {
@@ -126,7 +126,7 @@ mod impl_other_interface {
     use sylvia::contract;
     use sylvia::types::ExecCtx;
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::other_interface as OtherInterface)]
     #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
@@ -161,7 +161,7 @@ mod impl_associated_interface {
     use sylvia::contract;
     use sylvia::types::ExecCtx;
 
-    #[contract(module=super)]
+    #[contract(module=crate)]
     #[messages(crate::associated_interface as AssociatedInterface)]
     #[sv::custom(msg=MyMsg)]
     impl AssociatedInterface for crate::MyContract {
@@ -211,10 +211,10 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::impl_associated_interface::test_utils::AssociatedInterface;
-    use crate::impl_interface::test_utils::Interface;
-    use crate::impl_other_interface::test_utils::OtherInterface;
-    use crate::impl_some_interface::test_utils::SomeInterface;
+    use crate::impl_associated_interface::sv::test_utils::AssociatedInterface;
+    use crate::impl_interface::sv::test_utils::Interface;
+    use crate::impl_other_interface::sv::test_utils::OtherInterface;
+    use crate::impl_some_interface::sv::test_utils::SomeInterface;
     use crate::MyContract;
     use crate::MyMsg;
     use sylvia::multitest::App;

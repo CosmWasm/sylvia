@@ -178,9 +178,13 @@ impl<'a> ImplInput<'a> {
 
         #[cfg(not(tarpaulin_include))]
         quote! {
-            #multitest_helpers
+            pub mod sv {
+                use super::*;
 
-            #querier_bound_for_impl
+                #multitest_helpers
+
+                #querier_bound_for_impl
+            }
         }
     }
 
