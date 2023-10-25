@@ -323,7 +323,8 @@ where
         };
 
         let bracketed_generics = emit_bracketed_generics(generics);
-        let interface_enum = quote! { < #module sv::InterfaceTypes #bracketed_generics as #sylvia ::types::InterfaceMessages> };
+        let interface_enum =
+            quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
 
         let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
