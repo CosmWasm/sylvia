@@ -2,8 +2,12 @@ use cosmwasm_std::{Response, StdResult};
 use sylvia::types::{InstantiateCtx, SvCustomMsg};
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
 pub struct NonGenericContract;
 
+#[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
 #[messages(generic<SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg))]
 #[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as CustomAndGeneric)]

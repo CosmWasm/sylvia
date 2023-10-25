@@ -3,7 +3,7 @@ use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
     parse_associated_custom_type, parse_struct_message, ContractErrorAttr, ContractMessageAttr,
-    Custom, MsgAttr, MsgType, OverrideEntryPoints,
+    Custom, EntryPointArgs, MsgAttr, MsgType, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{
@@ -16,11 +16,12 @@ use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::fold::Fold;
 use syn::parse::{Parse, Parser};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericParam, Ident, ItemImpl, ItemTrait, Pat, PatType, Path,
-    ReturnType, Signature, TraitItem, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, Pat,
+    PatType, Path, ReturnType, Signature, Token, TraitItem, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -747,7 +748,7 @@ impl<'a> MsgVariant<'a> {
         let bracketed_generics = emit_bracketed_generics(generics);
         let interface_enum =
             quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
-        let type_name = msg_ty.as_accessor_name();
+        let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
@@ -790,7 +791,7 @@ impl<'a> MsgVariant<'a> {
         } = self;
 
         let params = fields.iter().map(|field| field.emit_method_field());
-        let type_name = msg_ty.as_accessor_name();
+        let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
@@ -1023,12 +1024,9 @@ where
         custom_query: &Type,
         name: &Type,
         error: &Type,
+        contract_generics: &Option<Punctuated<GenericArgument, Token![,]>>,
     ) -> TokenStream {
-        let Self {
-            used_generics,
-            msg_ty,
-            ..
-        } = self;
+        let Self { msg_ty, .. } = self;
         let sylvia = crate_module();
 
         let resp_type = match msg_ty {
@@ -1038,16 +1036,19 @@ where
         let params = msg_ty.emit_ctx_params(custom_query);
         let values = msg_ty.emit_ctx_values();
         let ep_name = msg_ty.emit_ep_name();
-        let msg_name = msg_ty.emit_msg_name(true);
-        let bracketed_generics = emit_bracketed_generics(used_generics);
+        let bracketed_generics = match &contract_generics {
+            Some(generics) => quote! { ::< #generics > },
+            None => quote! {},
+        };
+        let associated_name = msg_ty.as_accessor_name(true);
 
         quote! {
             #[#sylvia ::cw_std::entry_point]
             pub fn #ep_name (
                 #params ,
-                msg: sv:: #msg_name #bracketed_generics,
+                msg: < #name < #contract_generics > as #sylvia ::types::ContractApi> :: #associated_name,
             ) -> Result<#resp_type, #error> {
-                msg.dispatch(&#name ::new() , ( #values )).map_err(Into::into)
+                msg.dispatch(&#name #bracketed_generics ::new() , ( #values )).map_err(Into::into)
             }
         }
     }
@@ -1608,10 +1609,11 @@ pub struct EntryPoints<'a> {
     override_entry_points: OverrideEntryPoints,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
+    attrs: EntryPointArgs,
 }
 
 impl<'a> EntryPoints<'a> {
-    pub fn new(source: &'a ItemImpl) -> Self {
+    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
         let override_entry_points = OverrideEntryPoints::new(&source.attrs);
@@ -1643,6 +1645,7 @@ impl<'a> EntryPoints<'a> {
             override_entry_points,
             generics,
             where_clause,
+            attrs,
         }
     }
 
@@ -1655,6 +1658,7 @@ impl<'a> EntryPoints<'a> {
             override_entry_points,
             generics,
             where_clause,
+            attrs,
         } = self;
         let sylvia = crate_module();
 
@@ -1683,6 +1687,10 @@ impl<'a> EntryPoints<'a> {
                 .iter()
                 .map(|variant| variant.function_name.clone())
                 .next();
+        let contract_generics = match &attrs.generics {
+            Some(generics) => quote! { ::< #generics > },
+            None => quote! {},
+        };
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -1696,6 +1704,7 @@ impl<'a> EntryPoints<'a> {
                             &custom_query,
                             name,
                             error,
+                            &attrs.generics,
                         ),
                     },
                 );
@@ -1706,7 +1715,13 @@ impl<'a> EntryPoints<'a> {
 
             let migrate = if migrate_not_overridden && migrate_variants.get_only_variant().is_some()
             {
-                migrate_variants.emit_default_entry_point(&custom_msg, &custom_query, name, error)
+                migrate_variants.emit_default_entry_point(
+                    &custom_msg,
+                    &custom_query,
+                    name,
+                    error,
+                    &attrs.generics,
+                )
             } else {
                 quote! {}
             };
@@ -1722,7 +1737,7 @@ impl<'a> EntryPoints<'a> {
                             env: #sylvia ::cw_std::Env,
                             msg: #sylvia ::cw_std::Reply,
                         ) -> Result<#sylvia ::cw_std::Response < #custom_msg >, #error> {
-                            #name ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
+                            #name #contract_generics ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
                         }
                     },
                     _ => quote! {},

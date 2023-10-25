@@ -258,9 +258,10 @@ pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 #[cfg(not(tarpaulin_include))]
 fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
-    fn inner(_attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
+    fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
+        let attrs: parser::EntryPointArgs = parse2(attr)?;
         let input: ItemImpl = parse2(item)?;
-        let expanded = EntryPoints::new(&input).emit();
+        let expanded = EntryPoints::new(&input, attrs).emit();
 
         Ok(quote! {
             #input

@@ -1,4 +1,5 @@
 use cosmwasm_std::{Reply, Response, StdResult};
+use cw_storage_plus::Item;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{
@@ -6,32 +7,48 @@ use sylvia::types::{
 };
 use sylvia::{contract, schemars};
 
-pub struct GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>(
-    std::marker::PhantomData<(
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
+
+pub struct GenericContract<
+    InstantiateParam,
+    ExecParam,
+    QueryParam,
+    MigrateParam,
+    RetType,
+    FieldType,
+> {
+    _field: Item<'static, FieldType>,
+    _phantom: std::marker::PhantomData<(
         InstantiateParam,
         ExecParam,
         QueryParam,
         MigrateParam,
         RetType,
     )>,
-);
+}
 
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg, String>))]
 #[contract]
 #[messages(cw1 as Cw1: custom(msg))]
 #[messages(generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as Generic: custom(msg))]
 #[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg)]
-impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
-    GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType>
+impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
+    GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
 where
     for<'msg_de> InstantiateParam: CustomMsg + Deserialize<'msg_de> + 'msg_de,
     ExecParam: CustomMsg + DeserializeOwned + 'static,
     QueryParam: CustomMsg + DeserializeOwned + 'static,
     MigrateParam: CustomMsg + DeserializeOwned + 'static,
     RetType: CustomMsg + DeserializeOwned + 'static,
+    FieldType: 'static,
 {
     pub const fn new() -> Self {
-        Self(std::marker::PhantomData)
+        Self {
+            _field: Item::new("field"),
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     #[msg(instantiate)]
@@ -92,6 +109,7 @@ mod tests {
             SvCustomMsg,
             super::SvCustomMsg,
             super::SvCustomMsg,
+            String,
             _,
         > = CodeId::store_code(&app);
 
