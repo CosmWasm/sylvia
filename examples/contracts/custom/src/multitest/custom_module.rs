@@ -1,35 +1,28 @@
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::testing::{MockApi, MockStorage};
 use cosmwasm_std::{
     to_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
     Storage,
 };
-use cw_multi_test::{AppResponse, BankKeeper, CosmosRouter, Module, WasmKeeper};
+use cw_multi_test::{AppResponse, CosmosRouter, Module};
 use cw_storage_plus::Item;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 
-pub type CustomApp = cw_multi_test::App<
-    BankKeeper,
-    MockApi,
-    MockStorage,
-    CustomModule,
-    WasmKeeper<CounterMsg, CounterQuery>,
->;
-
 pub struct CustomModule {
     pub counter: Item<'static, u64>,
 }
 
-impl CustomModule {
-    pub fn new() -> Self {
+impl Default for CustomModule {
+    fn default() -> Self {
         Self {
             counter: Item::new("counter"),
         }
     }
+}
 
+impl CustomModule {
     pub fn save_counter(&self, storage: &mut dyn Storage, value: u64) -> StdResult<()> {
         self.counter.save(storage, &value)
     }
