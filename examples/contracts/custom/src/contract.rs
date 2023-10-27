@@ -1,13 +1,17 @@
 use cosmwasm_std::{CosmosMsg, QueryRequest, Response, StdResult};
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
-use sylvia::{contract, entry_points, schemars};
+use sylvia::{contract, schemars};
+
+#[cfg(not(feature = "library"))]
+use sylvia::entry_points;
 
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 
 pub struct CustomContract;
 
-#[cfg_attr(not(feature = "mt"), entry_points)]
+#[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
+#[messages(cw1 as Cw1: custom(msg, query))]
 #[sv::custom(query=CounterQuery, msg=CounterMsg)]
 impl CustomContract {
     pub const fn new() -> Self {

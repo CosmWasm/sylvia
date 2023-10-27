@@ -299,6 +299,10 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
                 ))
             }
         }
+        if !custom_content.peek(Token![,]) {
+            break;
+        }
+        let _: Token![,] = custom_content.parse()?;
     }
     Ok(customs)
 }

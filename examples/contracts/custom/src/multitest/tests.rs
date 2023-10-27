@@ -2,19 +2,19 @@ use sylvia::multitest::App;
 
 use crate::contract::multitest_utils::CodeId;
 
-use super::custom_module::{CustomApp, CustomModule};
+use super::custom_module::CustomModule;
 
 #[test]
 fn test_custom() {
     let owner = "owner";
 
     let mt_app = cw_multi_test::BasicAppBuilder::new_custom()
-        .with_custom(CustomModule::new())
+        .with_custom(CustomModule::default())
         .build(|router, _, storage| {
             router.custom.save_counter(storage, 0).unwrap();
         });
 
-    let app = App::<CustomApp>::new(mt_app);
+    let app = App::new(mt_app);
 
     let code_id = CodeId::store_code(&app);
 

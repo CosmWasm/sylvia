@@ -237,6 +237,7 @@ dependencies = [
  "cosmwasm-std",
  "cw-multi-test",
  "cw-storage-plus",
+ "cw1",
  "serde",
  "sylvia",
 ]
