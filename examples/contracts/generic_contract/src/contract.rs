@@ -44,7 +44,7 @@ where
     RetType: CustomMsg + DeserializeOwned + 'static,
     FieldType: 'static,
 {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             _field: Item::new("field"),
             _phantom: std::marker::PhantomData,
