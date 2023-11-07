@@ -6,13 +6,14 @@ use sylvia::types::{ExecCtx, QueryCtx};
 #[contract(module = crate::contract)]
 #[messages(cw1 as Cw1)]
 #[sv::custom(msg=sylvia::types::SvCustomMsg)]
-impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType> Cw1
+impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType> Cw1
     for crate::contract::GenericContract<
         InstantiateParam,
         ExecParam,
         QueryParam,
         MigrateParam,
         RetType,
+        FieldType,
     >
 {
     type Error = StdError;
@@ -49,6 +50,7 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             sylvia::types::SvCustomMsg,
+            String,
             _,
         >::store_code(&app);
 
