@@ -90,6 +90,7 @@ pub enum MsgAttr {
     Instantiate { name: Ident },
     Migrate { name: Ident },
     Reply,
+    Sudo,
 }
 
 impl MsgType {
@@ -171,7 +172,7 @@ impl MsgType {
         }
     }
 
-    pub fn emit_msg_name(&self, is_wrapper: bool) -> Type {
+    pub fn emit_msg_name(&self, is_wrapper: bool) -> Ident {
         match self {
             MsgType::Exec if is_wrapper => parse_quote! { ContractExecMsg },
             MsgType::Query if is_wrapper => parse_quote! { ContractQueryMsg },
@@ -180,7 +181,7 @@ impl MsgType {
             MsgType::Instantiate => parse_quote! { InstantiateMsg },
             MsgType::Migrate => parse_quote! { MigrateMsg },
             MsgType::Reply => parse_quote! { ReplyMsg },
-            MsgType::Sudo => todo!(),
+            MsgType::Sudo => parse_quote! { SudoMsg },
         }
     }
 
@@ -226,6 +227,7 @@ impl MsgAttr {
             Instantiate { .. } => MsgType::Instantiate,
             Migrate { .. } => MsgType::Migrate,
             Reply => MsgType::Reply,
+            Sudo => MsgType::Sudo,
         }
     }
 }
@@ -248,10 +250,12 @@ impl Parse for MsgAttr {
             Ok(Self::Migrate { name })
         } else if ty == "reply" {
             Ok(Self::Reply)
+        } else if ty == "sudo" {
+            Ok(Self::Sudo)
         } else {
             Err(Error::new(
                 ty.span(),
-                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`",
+                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`, `reply` or `sudo`.",
             ))
         }
     }
