@@ -16,7 +16,7 @@ mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
     use sylvia::{
         interface,
-        types::{ExecCtx, QueryCtx},
+        types::{ExecCtx, QueryCtx, SudoCtx},
     };
 
     use crate::QueryResult;
@@ -42,6 +42,12 @@ mod interface {
 
         #[msg(query)]
         fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResult, Self::Error>;
+
+        #[msg(sudo)]
+        fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error>;
+
+        #[msg(sudo)]
+        fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error>;
     }
 }
 
@@ -113,13 +119,17 @@ mod contract {
 #[test]
 fn interface_messages_constructible() {
     let no_args_exec = interface::sv::ExecMsg::NoArgsExecution {};
-    let _argumented_exec = interface::sv::ExecMsg::ArgumentedExecution {
+    let _ = interface::sv::ExecMsg::ArgumentedExecution {
         addr: Addr::unchecked("owner"),
         coef: Decimal::percent(10),
         desc: "Some description".to_owned(),
     };
     let no_args_query = interface::sv::QueryMsg::NoArgsQuery {};
-    let _argumented_query = interface::sv::QueryMsg::ArgumentedQuery {
+    let _ = interface::sv::QueryMsg::ArgumentedQuery {
+        user: Addr::unchecked("owner"),
+    };
+    let no_args_sudo = interface::sv::SudoMsg::NoArgsSudo {};
+    let _ = interface::sv::SudoMsg::ArgumentedSudo {
         user: Addr::unchecked("owner"),
     };
 
@@ -132,6 +142,11 @@ fn interface_messages_constructible() {
     match no_args_query {
         interface::sv::QueryMsg::NoArgsQuery {} => (),
         interface::sv::QueryMsg::ArgumentedQuery { .. } => (),
+    }
+
+    match no_args_sudo {
+        interface::sv::SudoMsg::NoArgsSudo {} => (),
+        interface::sv::SudoMsg::ArgumentedSudo { .. } => (),
     }
 }
 
