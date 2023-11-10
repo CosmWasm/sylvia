@@ -1,4 +1,4 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, Parser};
@@ -109,8 +109,9 @@ impl<'a> TraitInput<'a> {
     }
 
     fn emit_messages(&self) -> TokenStream {
-        let exec = self.emit_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
-        let query = self.emit_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
+        let exec = self.emit_msg(MsgType::Exec);
+        let query = self.emit_msg(MsgType::Query);
+        let sudo = self.emit_msg(MsgType::Sudo);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -118,12 +119,14 @@ impl<'a> TraitInput<'a> {
                 #exec
 
                 #query
+
+                #sudo
             }
         }
     }
 
-    fn emit_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        EnumMessage::new(name, self.item, msg_ty, &self.generics, &self.custom).emit()
+    fn emit_msg(&self, msg_ty: MsgType) -> TokenStream {
+        EnumMessage::new(self.item, msg_ty, &self.generics, &self.custom).emit()
     }
 }
 
