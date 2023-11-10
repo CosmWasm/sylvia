@@ -3,8 +3,8 @@ use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
-    parse_associated_custom_type, parse_struct_message, ContractErrorAttr, ContractMessageAttr,
-    Custom, EntryPointArgs, MsgAttr, MsgType, OverrideEntryPoints,
+    parse_associated_custom_type, parse_struct_message, ContractErrorAttr, Custom, EntryPointArgs,
+    MsgAttr, MsgType, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
 use crate::strip_self_path::{AddSelfPath, ReplaceAssociatedType, StripSelfPath};
@@ -1218,32 +1218,7 @@ impl<'a> GlueMessage<'a> {
 
         let variants_cnt = messages_call.len();
 
-        let dispatch_arms = interfaces.interfaces().iter().map(|interface| {
-            let ContractMessageAttr {
-                variant,
-                customs,
-                ..
-            } = interface;
-
-            let ctx = match (msg_ty, customs.has_query) {
-                (MsgType::Exec, true )=> quote! {
-                    ( ctx.0.into_empty(), ctx.1, ctx.2)
-                },
-                (MsgType::Query, true )=> quote! {
-                    ( ctx.0.into_empty(), ctx.1)
-                },
-                _=> quote! { ctx },
-            };
-
-            match (msg_ty, customs.has_msg) {
-                (MsgType::Exec, true) => quote! {
-                    #contract_enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
-                },
-                _ => quote! {
-                    #contract_enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
-                },
-            }
-        });
+        let dispatch_arms = interfaces.emit_dispatch_arms(msg_ty);
 
         let dispatch_arm =
             quote! {#contract_enum_name :: #contract_name (msg) => msg.dispatch(contract, ctx)};
@@ -1367,6 +1342,7 @@ pub struct ContractApi<'a> {
     query_variants: MsgVariants<'a, GenericParam>,
     instantiate_variants: MsgVariants<'a, GenericParam>,
     migrate_variants: MsgVariants<'a, GenericParam>,
+    sudo_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
     custom: &'a Custom<'a>,
     interfaces: &'a Interfaces,
@@ -1407,12 +1383,20 @@ impl<'a> ContractApi<'a> {
             &source.generics.where_clause,
         );
 
+        let sudo_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Sudo,
+            generics,
+            &source.generics.where_clause,
+        );
+
         Self {
             source,
             exec_variants,
             query_variants,
             instantiate_variants,
             migrate_variants,
+            sudo_variants,
             generics,
             custom,
             interfaces,
@@ -1427,6 +1411,7 @@ impl<'a> ContractApi<'a> {
             query_variants,
             instantiate_variants,
             migrate_variants,
+            sudo_variants,
             generics,
             custom,
             interfaces,
@@ -1438,6 +1423,7 @@ impl<'a> ContractApi<'a> {
         let query_generics = &query_variants.used_generics;
         let instantiate_generics = &instantiate_variants.used_generics;
         let migrate_generics = &migrate_variants.used_generics;
+        let sudo_generics = &sudo_variants.used_generics;
 
         let interface_generics = interfaces.as_generic_args();
         let interface_generics = filter_generics(generics, &interface_generics);
@@ -1452,14 +1438,21 @@ impl<'a> ContractApi<'a> {
             .chain(query_generics.iter())
             .unique()
             .collect();
+        let contract_sudo_generics: Vec<_> = interface_generics
+            .iter()
+            .chain(sudo_generics.iter())
+            .unique()
+            .collect();
 
         let bracket_generics = emit_bracketed_generics(generics);
         let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
         let query_bracketed_generics = emit_bracketed_generics(query_generics);
+        let sudo_bracketed_generics = emit_bracketed_generics(sudo_generics);
         let instantiate_bracketed_generics = emit_bracketed_generics(instantiate_generics);
         let migrate_bracketed_generics = emit_bracketed_generics(migrate_generics);
         let contract_exec_bracketed_generics = emit_bracketed_generics(&contract_exec_generics);
         let contract_query_bracketed_generics = emit_bracketed_generics(&contract_query_generics);
+        let contract_sudo_bracketed_generics = emit_bracketed_generics(&contract_sudo_generics);
 
         let migrate_type = match !migrate_variants.variants().is_empty() {
             true => quote! { type Migrate = MigrateMsg #migrate_bracketed_generics; },
@@ -1471,8 +1464,10 @@ impl<'a> ContractApi<'a> {
             impl #bracket_generics #sylvia ::types::ContractApi for #contract_name #where_clause {
                 type ContractExec = ContractExecMsg #contract_exec_bracketed_generics;
                 type ContractQuery = ContractQueryMsg #contract_query_bracketed_generics;
+                type ContractSudo = ContractSudoMsg #contract_sudo_bracketed_generics;
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
+                type Sudo = SudoMsg #sudo_bracketed_generics;
                 type Instantiate = InstantiateMsg #instantiate_bracketed_generics;
                 #migrate_type
                 type Remote<'remote> = Remote<'remote, #(#generics,)* >;
@@ -1519,10 +1514,15 @@ impl<'a> InterfaceApi<'a> {
             &generics,
             &source.generics.where_clause,
         );
-
         let query_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Query,
+            &generics,
+            &source.generics.where_clause,
+        );
+        let sudo_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Sudo,
             &generics,
             &source.generics.where_clause,
         );
@@ -1531,10 +1531,12 @@ impl<'a> InterfaceApi<'a> {
         let custom_query = custom.query_or_default();
         let exec_generics = &exec_variants.used_generics;
         let query_generics = &query_variants.used_generics;
+        let sudo_generics = &sudo_variants.used_generics;
 
         let bracket_generics = emit_bracketed_generics(&generics);
         let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
         let query_bracketed_generics = emit_bracketed_generics(query_generics);
+        let sudo_bracketed_generics = emit_bracketed_generics(sudo_generics);
 
         let phantom = if !generics.is_empty() {
             quote! {
@@ -1552,6 +1554,7 @@ impl<'a> InterfaceApi<'a> {
             impl #bracket_generics #sylvia ::types::InterfaceApi for Api #bracket_generics #where_clause {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
+                type Sudo = SudoMsg #sudo_bracketed_generics;
                 type Querier<'querier> = BoundQuerier<'querier, #custom_query, #(#generics,)* >;
             }
         }

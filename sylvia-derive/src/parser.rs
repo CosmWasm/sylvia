@@ -179,6 +179,20 @@ impl MsgType {
         }
     }
 
+    pub fn emit_ctx_dispatch_values(self, customs: &Customs) -> TokenStream {
+        use MsgType::*;
+
+        match (self, customs.has_query) {
+            (Exec, true) => quote! {
+                (ctx.0.into_empty(), ctx.1, ctx.2)
+            },
+            (Query, true) | (Sudo, true) => quote! {
+                (ctx.0.into_empty(), ctx.1)
+            },
+            _ => quote! { ctx },
+        }
+    }
+
     /// Emits type which should be returned by dispatch function for this kind of message
     pub fn emit_result_type(self, msg_type: &Type, err_type: &Type) -> TokenStream {
         use MsgType::*;
@@ -201,6 +215,7 @@ impl MsgType {
         match self {
             MsgType::Exec => parse_quote! { ContractExecMsg },
             MsgType::Query => parse_quote! { ContractQueryMsg },
+            MsgType::Sudo => parse_quote! { ContractSudoMsg },
             _ => self.emit_msg_name(),
         }
     }
@@ -220,6 +235,7 @@ impl MsgType {
         match self {
             MsgType::Exec => parse_quote! { ContractExec },
             MsgType::Query => parse_quote! { ContractQuery },
+            MsgType::Sudo => parse_quote! { ContractSudo },
             _ => self.as_accessor_name(),
         }
     }

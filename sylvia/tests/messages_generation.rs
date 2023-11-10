@@ -54,7 +54,7 @@ mod interface {
 mod contract {
     use cosmwasm_std::{Addr, Reply, Response, StdResult};
     use sylvia::contract;
-    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx};
+    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
     use sylvia_derive::entry_points;
 
     use crate::{MyQuery, QueryResult};
@@ -113,6 +113,16 @@ mod contract {
         fn my_reply(&self, _ctx: ReplyCtx<MyQuery>, _reply: Reply) -> StdResult<Response> {
             Ok(Response::new())
         }
+
+        #[msg(sudo)]
+        fn no_args_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[msg(sudo)]
+        fn argumented_sudo(&self, _ctx: SudoCtx<MyQuery>, _user: Addr) -> StdResult<Response> {
+            Ok(Response::new())
+        }
     }
 }
 
@@ -162,6 +172,10 @@ fn contract_messages_constructible() {
     let _argumented_query = contract::sv::QueryMsg::ArgumentedQuery {
         _user: Addr::unchecked("owner"),
     };
+    let no_args_sudo = contract::sv::SudoMsg::NoArgsSudo {};
+    let _ = contract::sv::SudoMsg::ArgumentedSudo {
+        _user: Addr::unchecked("owner"),
+    };
     let _ = contract::sv::InstantiateMsg {};
     let _ = contract::sv::MigrateMsg {};
 
@@ -174,6 +188,11 @@ fn contract_messages_constructible() {
     match no_args_query {
         contract::sv::QueryMsg::NoArgsQuery {} => (),
         contract::sv::QueryMsg::ArgumentedQuery { .. } => (),
+    }
+
+    match no_args_sudo {
+        contract::sv::SudoMsg::NoArgsSudo {} => (),
+        contract::sv::SudoMsg::ArgumentedSudo { .. } => (),
     }
 }
 
