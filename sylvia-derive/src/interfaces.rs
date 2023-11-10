@@ -39,10 +39,6 @@ impl Interfaces {
         Self { interfaces }
     }
 
-    pub fn interfaces(&self) -> &[ContractMessageAttr] {
-        &self.interfaces
-    }
-
     pub fn emit_querier_from_impl(&self, contract_generics: &[&GenericParam]) -> Vec<TokenStream> {
         let sylvia = crate_module();
 
@@ -73,19 +69,17 @@ impl Interfaces {
                     generics,
                     ..
                 } = interface;
+
                 let generics = if !generics.is_empty() {
                     quote! { < #generics > }
                 } else {
                     quote! {}
                 };
-
                 let interface_enum =
                     quote! { <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> };
-                if msg_ty == &MsgType::Query {
-                    quote! { #variant ( #interface_enum :: Query) }
-                } else {
-                    quote! { #variant ( #interface_enum :: Exec)}
-                }
+                let type_name = msg_ty.as_accessor_name();
+
+                quote! { #variant ( #interface_enum :: #type_name) }
             })
             .collect()
     }
@@ -164,6 +158,30 @@ impl Interfaces {
                         #module ::sv::Remote::borrowed(remote.as_ref())
                     }
                 }
+            }
+        }).collect()
+    }
+
+    pub fn emit_dispatch_arms(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
+        let sylvia = crate_module();
+        let contract_enum_name = msg_ty.emit_msg_wrapper_name();
+
+        self.interfaces.iter().map(|interface| {
+            let ContractMessageAttr {
+                variant,
+                customs,
+                ..
+            } = interface;
+
+            let ctx = msg_ty.emit_ctx_dispatch_values(customs);
+
+            match (msg_ty, customs.has_msg) {
+                (MsgType::Exec, true) | (MsgType::Sudo, true) => quote! {
+                    #contract_enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
+                },
+                _ => quote! {
+                    #contract_enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
+                },
             }
         }).collect()
     }

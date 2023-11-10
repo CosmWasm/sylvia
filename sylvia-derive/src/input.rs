@@ -223,8 +223,10 @@ impl<'a> ImplInput<'a> {
         let migrate = self.emit_struct_msg(MsgType::Migrate);
         let exec_impl = self.emit_enum_msg(MsgType::Exec);
         let query_impl = self.emit_enum_msg(MsgType::Query);
+        let sudo_impl = self.emit_enum_msg(MsgType::Sudo);
         let exec = self.emit_glue_msg(MsgType::Exec);
         let query = self.emit_glue_msg(MsgType::Query);
+        let sudo = self.emit_glue_msg(MsgType::Sudo);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -235,11 +237,15 @@ impl<'a> ImplInput<'a> {
 
                 #query_impl
 
+                #sudo_impl
+
                 #migrate
 
                 #exec
 
                 #query
+
+                #sudo
             }
         }
     }
