@@ -102,6 +102,7 @@ impl<'a> TraitInput<'a> {
     fn emit_messages(&self) -> TokenStream {
         let exec = self.emit_msg(MsgType::Exec);
         let query = self.emit_msg(MsgType::Query);
+        let sudo = self.emit_msg(MsgType::Sudo);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -109,6 +110,8 @@ impl<'a> TraitInput<'a> {
                 #exec
 
                 #query
+
+                #sudo
             }
         }
     }
