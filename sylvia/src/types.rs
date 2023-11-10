@@ -141,6 +141,7 @@ impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 pub trait InterfaceApi {
     type Exec;
     type Query;
+    type Sudo;
     type Querier<'querier>;
 }
 
@@ -151,7 +152,9 @@ pub trait ContractApi {
     type Exec;
     type ContractQuery;
     type ContractExec;
+    type ContractSudo;
     type Migrate;
+    type Sudo;
     type Querier<'querier>;
     type Remote<'remote>;
 }
