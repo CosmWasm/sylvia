@@ -154,6 +154,20 @@ impl MsgType {
         }
     }
 
+    pub fn emit_ctx_dispatch_values(self, customs: &Customs) -> TokenStream {
+        use MsgType::*;
+
+        match (self, customs.has_query) {
+            (Exec, true) => quote! {
+                (ctx.0.into_empty(), ctx.1, ctx.2)
+            },
+            (Query, true) | (Sudo, true) => quote! {
+                (ctx.0.into_empty(), ctx.1)
+            },
+            _ => quote! { ctx },
+        }
+    }
+
     /// Emits type which should be returned by dispatch function for this kind of message
     pub fn emit_result_type(self, msg_type: &Type, err_type: &Type) -> TokenStream {
         use MsgType::*;
@@ -176,6 +190,7 @@ impl MsgType {
         match self {
             MsgType::Exec if is_wrapper => parse_quote! { ContractExecMsg },
             MsgType::Query if is_wrapper => parse_quote! { ContractQueryMsg },
+            MsgType::Sudo if is_wrapper => parse_quote! { ContractSudoMsg },
             MsgType::Exec => parse_quote! { ExecMsg },
             MsgType::Query => parse_quote! { QueryMsg },
             MsgType::Instantiate => parse_quote! { InstantiateMsg },
@@ -189,6 +204,7 @@ impl MsgType {
         match self {
             MsgType::Exec if is_wrapper => Some(parse_quote! { ContractExec }),
             MsgType::Query if is_wrapper => Some(parse_quote! { ContractQuery }),
+            MsgType::Sudo if is_wrapper => Some(parse_quote! { ContractSudo }),
             MsgType::Instantiate => Some(parse_quote! { Instantiate }),
             MsgType::Exec => Some(parse_quote! { Exec }),
             MsgType::Query => Some(parse_quote! { Query }),

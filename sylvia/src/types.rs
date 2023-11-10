@@ -114,6 +114,7 @@ impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 pub trait InterfaceApi {
     type Exec;
     type Query;
+    type Sudo;
 }
 
 pub trait ContractApi {
@@ -122,7 +123,9 @@ pub trait ContractApi {
     type Exec;
     type ContractQuery;
     type ContractExec;
+    type ContractSudo;
     type Migrate;
+    type Sudo;
     type Querier<'querier>;
     type Remote<'remote>;
 }
