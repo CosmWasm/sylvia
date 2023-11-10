@@ -491,7 +491,7 @@ impl<'a> MsgVariant<'a> {
 
         #[cfg(not(tarpaulin_include))]
         match msg_type {
-            Exec => quote! {
+            Exec | Sudo => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(Into::into(ctx), #(#args),*).map_err(Into::into)
@@ -501,8 +501,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => #sylvia ::cw_std::to_json_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate | Migrate | Reply | Sudo => {
-                emit_error!(name.span(), "Instantiation, Reply, Migrate and Sudo messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate | Reply => {
+                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }
