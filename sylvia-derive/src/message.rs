@@ -147,7 +147,6 @@ impl<'a> StructMessage<'a> {
 
 /// Representation of single enum message
 pub struct EnumMessage<'a> {
-    name: &'a Ident,
     trait_name: &'a Ident,
     variants: Vec<MsgVariant<'a>>,
     generics: Vec<&'a GenericParam>,
@@ -162,7 +161,6 @@ pub struct EnumMessage<'a> {
 
 impl<'a> EnumMessage<'a> {
     pub fn new(
-        name: &'a Ident,
         source: &'a ItemTrait,
         ty: MsgType,
         generics: &'a [&'a GenericParam],
@@ -212,7 +210,6 @@ impl<'a> EnumMessage<'a> {
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
 
         Self {
-            name,
             trait_name,
             variants,
             generics: used_generics,
@@ -230,7 +227,6 @@ impl<'a> EnumMessage<'a> {
         let sylvia = crate_module();
 
         let Self {
-            name,
             trait_name,
             variants,
             generics,
@@ -243,6 +239,7 @@ impl<'a> EnumMessage<'a> {
             query_type,
         } = self;
 
+        let msg_name = msg_ty.emit_msg_name(false);
         let match_arms = variants.iter().map(|variant| variant.emit_dispatch_leg());
         let mut msgs: Vec<String> = variants
             .iter()
@@ -292,13 +289,13 @@ impl<'a> EnumMessage<'a> {
 
         let generics = emit_bracketed_generics(generics);
 
-        let unique_enum_name = Ident::new(&format!("{}{}", trait_name, name), name.span());
+        let unique_enum_name = Ident::new(&format!("{}{}", trait_name, msg_name), msg_name.span());
 
         let ep_name = msg_ty.emit_ep_name();
-        let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), name.span());
+        let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), msg_name.span());
 
         #[cfg(not(tarpaulin_include))]
-        let enum_declaration = match name.to_string().as_str() {
+        let enum_declaration = match msg_name.to_string().as_str() {
             "QueryMsg" => {
                 quote! {
                     #[allow(clippy::derive_partial_eq_without_eq)]
@@ -308,7 +305,7 @@ impl<'a> EnumMessage<'a> {
                         #(#variants,)*
                         #phantom
                     }
-                    pub type #name #generics = #unique_enum_name #generics;
+                    pub type #msg_name #generics = #unique_enum_name #generics;
                 }
             }
             _ => {
@@ -320,7 +317,7 @@ impl<'a> EnumMessage<'a> {
                         #(#variants,)*
                         #phantom
                     }
-                    pub type #name #generics = #unique_enum_name #generics;
+                    pub type #msg_name #generics = #unique_enum_name #generics;
                 }
             }
         };
@@ -562,7 +559,7 @@ impl<'a> MsgVariant<'a> {
 
         #[cfg(not(tarpaulin_include))]
         match msg_type {
-            Exec => quote! {
+            Exec | Sudo => quote! {
                 #name {
                     #(#fields,)*
                 } => contract.#function_name(Into::into(ctx), #(#args),*).map_err(Into::into)
@@ -572,8 +569,8 @@ impl<'a> MsgVariant<'a> {
                     #(#fields,)*
                 } => #sylvia ::cw_std::to_json_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
-            Instantiate | Migrate | Reply | Sudo => {
-                emit_error!(name.span(), "Instantiation, Reply, Migrate and Sudo messages not supported on traits, they should be defined on contracts directly");
+            Instantiate | Migrate | Reply => {
+                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
                 quote! {}
             }
         }

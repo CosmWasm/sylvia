@@ -96,6 +96,12 @@ impl<'a, C: CustomQuery> From<(Deps<'a, C>, Env)> for QueryCtx<'a, C> {
     }
 }
 
+impl<'a, C: CustomQuery> From<(DepsMut<'a, C>, Env)> for SudoCtx<'a, C> {
+    fn from((deps, env): (DepsMut<'a, C>, Env)) -> Self {
+        Self { deps, env }
+    }
+}
+
 pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
 
 impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
