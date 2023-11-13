@@ -2,7 +2,18 @@
 
 This guide explains what is needed to upgrade contracts when migrating over major releases of `sylvia`. Note that you can also view the [complete CHANGELOG](https://github.com/CosmWasm/sylvia/blob/main/CHANGELOG.md) to understand the differences.
 
-## 0.5.0 -> Unreleased
+## 0.8.1 -> 0.9.0
+
+### `sv` module
+
+Sylvia from now on will generate all the code in the `sv` module. This means that you will need to update your imports to use the new module.
+
+### Implementing non-custom interface on custom contract
+
+In Sylvia `0.8.x` there was missing check for the `,` in `#[messages(cw1 as Cw1: custom(msg query))]`.
+Since `0.9.0` Sylvia expects user to split `msg` and `query` with `,` as such `#[messages(cw1 as Cw1: custom(msg, query))]`.
+
+## 0.5.0 -> 0.6.0
 
 ### Context distinction
 

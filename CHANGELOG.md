@@ -4,6 +4,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.8.1...sylvia-derive-v0.9.0) - 2023-11-13
+
+### Added
+- Support generic types in entry points
+- Impl ContractApi extension trait
+- Wrap contract types in `sv` module
+- Wrap impl types in `sv` module
+- Hide generated interface types in `sv` module
+- Move `messages` method out of EnumMsg
+- Support generics on every message type
+- Support generic contract for simple contract
+- Support generic contract for simple contract
+- Support generics on `messages` attribute in main `contract` macro
+- Support generic interface implemented on contract
+- Emit InterfaceTypes
+- Check interfaces return type for used generics
+- Add support for generics in interface
+
+### Fixed
+- [**breaking**] Expect `,` in `:custom(msg, query)`
+
 ## [0.8.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.8.0...sylvia-derive-v0.8.1) - 2023-09-18
 
 ### Added
