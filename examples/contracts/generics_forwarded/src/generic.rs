@@ -3,29 +3,35 @@ use generic::Generic;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
+use sylvia::types::{CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
-#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
-    Generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
-    for crate::contract::GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
+#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
+impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
+    Generic<ExecT, QueryT, SvCustomMsg>
+    for crate::contract::GenericsForwardedContract<
+        InstantiateT,
+        ExecT,
+        QueryT,
+        MigrateT,
+        CustomMsgT,
+        CustomQueryT,
+        FieldT,
+    >
 where
     for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
     ExecT: CustomMsg + DeserializeOwned + 'static,
     QueryT: CustomMsg + DeserializeOwned + 'static,
     MigrateT: CustomMsg + DeserializeOwned + 'static,
+    CustomMsgT: CustomMsg + DeserializeOwned + 'static,
+    CustomQueryT: CustomQuery + 'static,
     FieldT: 'static,
 {
     type Error = StdError;
 
     #[msg(exec)]
-    fn generic_exec(
-        &self,
-        _ctx: ExecCtx,
-        _msgs: Vec<CosmosMsg<SvCustomMsg>>,
-    ) -> StdResult<Response> {
+    fn generic_exec(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg<ExecT>>) -> StdResult<Response> {
         Ok(Response::new())
     }
 
@@ -38,11 +44,7 @@ where
     // F.e. if we this query would return `SvCustomMsg` and we would pass
     // `sylvia::types::SvCustomMsg` to the `Generic` trait paths would not match.
     #[msg(query)]
-    fn generic_query(
-        &self,
-        _ctx: QueryCtx,
-        _msg: SvCustomMsg,
-    ) -> StdResult<sylvia::types::SvCustomMsg> {
+    fn generic_query(&self, _ctx: QueryCtx, _msg: QueryT) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
 }
@@ -63,6 +65,8 @@ mod tests {
             sylvia::types::SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            sylvia::types::SvCustomMsg,
+            SvCustomQuery,
             String,
             _,
         > = CodeId::store_code(&app);
