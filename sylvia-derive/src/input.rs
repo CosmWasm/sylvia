@@ -209,7 +209,8 @@ impl<'a> ImplInput<'a> {
         let messages = self.emit_messages();
         let remote = Remote::new(&self.interfaces).emit();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
-        let contract_api = ContractApi::new(item, generics, custom).emit();
+        let contract_api =
+            ContractApi::new(item, generics, &item.generics.where_clause, custom).emit();
 
         #[cfg(not(tarpaulin_include))]
         {

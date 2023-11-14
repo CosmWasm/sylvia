@@ -3,7 +3,8 @@ use cw_storage_plus::Item;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{
-    CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SvCustomMsg,
+    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SvCustomMsg,
+    SvCustomQuery,
 };
 use sylvia::{contract, schemars};
 
@@ -16,6 +17,7 @@ pub struct GenericContract<
     QueryParam,
     MigrateParam,
     RetType,
+    CtxType,
     FieldType,
 > {
     _field: Item<'static, FieldType>,
@@ -25,23 +27,33 @@ pub struct GenericContract<
         QueryParam,
         MigrateParam,
         RetType,
+        CtxType,
     )>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg, String>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg, SvCustomQuery, String>))]
 #[contract]
-#[messages(cw1 as Cw1: custom(msg))]
-#[messages(generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as Generic: custom(msg))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
-#[sv::custom(msg=SvCustomMsg)]
-impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
-    GenericContract<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
+#[messages(cw1 as Cw1: custom(msg, query))]
+#[messages(generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
+impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, CtxQuery, FieldType>
+    GenericContract<
+        InstantiateParam,
+        ExecParam,
+        QueryParam,
+        MigrateParam,
+        RetType,
+        CtxQuery,
+        FieldType,
+    >
 where
     for<'msg_de> InstantiateParam: CustomMsg + Deserialize<'msg_de> + 'msg_de,
     ExecParam: CustomMsg + DeserializeOwned + 'static,
     QueryParam: CustomMsg + DeserializeOwned + 'static,
     MigrateParam: CustomMsg + DeserializeOwned + 'static,
     RetType: CustomMsg + DeserializeOwned + 'static,
+    CtxQuery: CustomQuery + 'static,
     FieldType: 'static,
 {
     pub const fn new() -> Self {
@@ -54,7 +66,7 @@ where
     #[msg(instantiate)]
     pub fn instantiate(
         &self,
-        _ctx: InstantiateCtx,
+        _ctx: InstantiateCtx<SvCustomQuery>,
         _msg: InstantiateParam,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
@@ -63,7 +75,7 @@ where
     #[msg(exec)]
     pub fn contract_execute(
         &self,
-        _ctx: ExecCtx,
+        _ctx: ExecCtx<SvCustomQuery>,
         _msg: ExecParam,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
@@ -72,16 +84,16 @@ where
     #[msg(query)]
     pub fn contract_query(
         &self,
-        _ctx: QueryCtx,
+        _ctx: QueryCtx<SvCustomQuery>,
         _msg: QueryParam,
-    ) -> StdResult<Response<SvCustomMsg>> {
-        Ok(Response::new())
+    ) -> StdResult<String> {
+        Ok(String::default())
     }
 
     #[msg(migrate)]
     pub fn migrate(
         &self,
-        _ctx: MigrateCtx,
+        _ctx: MigrateCtx<SvCustomQuery>,
         _msg: MigrateParam,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
@@ -89,7 +101,11 @@ where
 
     #[allow(dead_code)]
     #[msg(reply)]
-    fn reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response<SvCustomMsg>> {
+    fn reply(
+        &self,
+        _ctx: ReplyCtx<SvCustomQuery>,
+        _reply: Reply,
+    ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }
 }
@@ -98,17 +114,18 @@ where
 mod tests {
     use super::sv::multitest_utils::CodeId;
     use sylvia::multitest::App;
-    use sylvia::types::SvCustomMsg;
+    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn generic_contract() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg>>::custom(|_, _, _| {});
+        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id: CodeId<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             super::SvCustomMsg,
             super::SvCustomMsg,
+            SvCustomQuery,
             String,
             _,
         > = CodeId::store_code(&app);

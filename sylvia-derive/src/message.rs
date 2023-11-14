@@ -398,9 +398,9 @@ impl<'a> ContractEnumMessage<'a> {
         let enum_name = msg_ty.emit_msg_name(false);
         let match_arms = variants.emit_dispatch_legs();
         let unused_generics = variants.unused_generics();
-        let unused_generics = emit_bracketed_generics(unused_generics);
+        let bracketed_unused_generics = emit_bracketed_generics(unused_generics);
         let used_generics = variants.used_generics();
-        let used_generics = emit_bracketed_generics(used_generics);
+        let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let mut variant_names = variants.as_names_snake_cased();
         variant_names.sort();
@@ -419,22 +419,49 @@ impl<'a> ContractEnumMessage<'a> {
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
 
+        let phantom = if used_generics.is_empty() {
+            quote! {}
+        } else if MsgType::Query == *msg_ty {
+            quote! {
+                #[serde(skip)]
+                #[returns((#(#used_generics,)*))]
+                _Phantom(std::marker::PhantomData<( #(#used_generics,)* )>),
+            }
+        } else {
+            quote! {
+                #[serde(skip)]
+                _Phantom(std::marker::PhantomData<( #(#used_generics,)* )>),
+            }
+        };
+
+        let match_arms = if !used_generics.is_empty() {
+            quote! {
+                #(#match_arms,)*
+                _Phantom(_) => Err(#sylvia ::cw_std::StdError::generic_err("Phantom message should not be constructed.")).map_err(Into::into),
+            }
+        } else {
+            quote! {
+                #(#match_arms,)*
+            }
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
                 #[serde(rename_all="snake_case")]
-                pub enum #enum_name #used_generics {
+                pub enum #enum_name #bracketed_used_generics {
                     #(#variants,)*
+                    #phantom
                 }
 
-                impl #used_generics #enum_name #used_generics {
-                    pub fn dispatch #unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
+                impl #bracketed_used_generics #enum_name #bracketed_used_generics {
+                    pub fn dispatch #bracketed_unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
                         use #enum_name::*;
 
                         match self {
-                            #(#match_arms,)*
+                            #match_arms
                         }
                     }
 
@@ -1443,6 +1470,7 @@ pub struct ContractApi<'a> {
     instantiate_variants: MsgVariants<'a, GenericParam>,
     migrate_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
+    where_clause: &'a Option<WhereClause>,
     custom: &'a Custom<'a>,
 }
 
@@ -1450,6 +1478,7 @@ impl<'a> ContractApi<'a> {
     pub fn new(
         source: &'a ItemImpl,
         generics: &'a [&'a GenericParam],
+        where_clause: &'a Option<WhereClause>,
         custom: &'a Custom<'a>,
     ) -> Self {
         let exec_variants = MsgVariants::new(
@@ -1487,6 +1516,7 @@ impl<'a> ContractApi<'a> {
             instantiate_variants,
             migrate_variants,
             generics,
+            where_clause,
             custom,
         }
     }
@@ -1500,6 +1530,7 @@ impl<'a> ContractApi<'a> {
             instantiate_variants,
             migrate_variants,
             generics,
+            where_clause,
             custom,
         } = self;
 
@@ -1522,7 +1553,7 @@ impl<'a> ContractApi<'a> {
         let custom_query = custom.query_or_default();
 
         quote! {
-            impl #bracket_generics #sylvia ::types::ContractApi for #contract_name {
+            impl #bracket_generics #sylvia ::types::ContractApi for #contract_name #where_clause {
                 type ContractExec = ContractExecMsg #exec_bracketed_generics;
                 type ContractQuery = ContractQueryMsg #query_bracketed_generics;
                 type Exec = ExecMsg #exec_bracketed_generics;

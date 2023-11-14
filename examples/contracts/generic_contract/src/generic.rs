@@ -6,7 +6,7 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg)]
-impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
+impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, CtxQuery, FieldType>
     Generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
     for crate::contract::GenericContract<
         InstantiateParam,
@@ -14,6 +14,7 @@ impl<InstantiateParam, ExecParam, QueryParam, MigrateParam, RetType, FieldType>
         QueryParam,
         MigrateParam,
         RetType,
+        CtxQuery,
         FieldType,
     >
 {
@@ -48,17 +49,18 @@ mod tests {
     use crate::contract::sv::multitest_utils::CodeId;
     use cosmwasm_std::CosmosMsg;
     use sylvia::multitest::App;
-    use sylvia::types::SvCustomMsg;
+    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn proxy_methods() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg>>::custom(|_, _, _| {});
+        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id: CodeId<
             SvCustomMsg,
             sylvia::types::SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             sylvia::types::SvCustomMsg,
+            SvCustomQuery,
             String,
             _,
         > = CodeId::store_code(&app);

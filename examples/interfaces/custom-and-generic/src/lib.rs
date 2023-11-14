@@ -6,11 +6,12 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=RetType)]
-pub trait CustomAndGeneric<ExecParam, QueryParam, RetType>
+#[sv::custom(msg=RetType, query=CtxQuery)]
+pub trait CustomAndGeneric<ExecParam, QueryParam, CtxQuery, RetType>
 where
     for<'msg_de> ExecParam: CustomMsg + Deserialize<'msg_de>,
     QueryParam: sylvia::types::CustomMsg,
+    CtxQuery: sylvia::types::CustomQuery,
     RetType: CustomMsg + DeserializeOwned,
 {
     type Error: From<StdError>;
@@ -18,14 +19,14 @@ where
     #[msg(exec)]
     fn custom_generic_execute(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<CtxQuery>,
         msgs: Vec<CosmosMsg<ExecParam>>,
     ) -> Result<Response<RetType>, Self::Error>;
 
     #[msg(query)]
     fn custom_generic_query(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<CtxQuery>,
         param: QueryParam,
     ) -> Result<RetType, Self::Error>;
 }
@@ -34,7 +35,7 @@ where
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::{InterfaceApi, SvCustomMsg};
+    use sylvia::types::{InterfaceApi, SvCustomMsg, SvCustomQuery};
 
     use crate::sv::Querier;
 
@@ -58,11 +59,11 @@ mod tests {
 
         // Construct messages with Interface extension
         let _ =
-            <super::sv::Api<SvCustomMsg, _, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
+            <super::sv::Api<SvCustomMsg, _, SvCustomQuery, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
                 SvCustomMsg {},
             );
         let _=
-            <super::sv::Api<_, SvCustomMsg, cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
+            <super::sv::Api<_, SvCustomMsg, SvCustomQuery,cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
             vec![ CosmosMsg::Custom(SvCustomMsg{}),
             ]);
     }
