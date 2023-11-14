@@ -1,14 +1,16 @@
 use convert_case::{Case, Casing};
+use itertools::Itertools;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
-use syn::{parse_quote, ImplItem, ItemImpl, ItemTrait, Path, Type};
+use quote::quote;
+use syn::visit::Visit;
+use syn::{parse_quote, GenericArgument, GenericParam, ImplItem, ItemImpl, ItemTrait, Path, Type};
 
-use crate::check_generics::GetPath;
+use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{MsgVariant, MsgVariants};
-use crate::parser::{Custom, MsgType, OverrideEntryPoint, OverrideEntryPoints};
-use crate::utils::emit_bracketed_generics;
+use crate::parser::{ContractErrorAttr, Custom, MsgType, OverrideEntryPoint, OverrideEntryPoints};
+use crate::utils::{emit_bracketed_generics, filter_wheres, is_trait};
 use crate::variant_descs::AsVariantDescs;
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -30,94 +32,91 @@ fn extract_contract_name(contract: &Type) -> &Ident {
     };
     let segments = &type_path.path.segments;
     assert!(!segments.is_empty());
-    let segment = &segments[0];
+    let segment = &segments.last().unwrap();
     &segment.ident
 }
 
-pub struct MultitestHelpers<'a, Generics> {
+pub struct MultitestHelpers<'a> {
     error_type: Type,
     contract: &'a Type,
-    is_trait: bool,
     source: &'a ItemImpl,
-    generics: &'a [&'a Generics],
+    generic_params: &'a [&'a GenericParam],
+    generic_args: &'a [&'a GenericArgument],
     where_clause: &'a Option<syn::WhereClause>,
     contract_name: &'a Ident,
     proxy_name: Ident,
     custom: &'a Custom<'a>,
     override_entry_points: &'a OverrideEntryPoints,
     interfaces: &'a Interfaces,
-    instantiate_variants: MsgVariants<'a, Generics>,
-    exec_variants: MsgVariants<'a, Generics>,
-    query_variants: MsgVariants<'a, Generics>,
-    migrate_variants: MsgVariants<'a, Generics>,
-    reply_variants: MsgVariants<'a, Generics>,
+    instantiate_variants: MsgVariants<'a, GenericParam>,
+    exec_variants: MsgVariants<'a, GenericParam>,
+    query_variants: MsgVariants<'a, GenericParam>,
+    migrate_variants: MsgVariants<'a, GenericParam>,
+    reply_variants: MsgVariants<'a, GenericParam>,
+    contract_module: &'a Option<&'a Path>,
 }
 
-impl<'a, Generics> MultitestHelpers<'a, Generics>
-where
-    Generics: ToTokens + PartialEq + GetPath,
-{
+impl<'a> MultitestHelpers<'a> {
     pub fn new(
         source: &'a ItemImpl,
-        is_trait: bool,
-        contract_error: &'a Type,
-        generics: &'a [&'a Generics],
+        generic_params: &'a [&'a GenericParam],
+        generic_args: &'a [&'a GenericArgument],
         custom: &'a Custom,
         override_entry_points: &'a OverrideEntryPoints,
         interfaces: &'a Interfaces,
+        contract_module: &'a Option<&'a Path>,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
         let instantiate_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Instantiate,
-            generics,
+            generic_params,
             where_clause,
         );
-        let exec_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Exec, generics, where_clause);
-        let query_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Query, generics, where_clause);
+        let exec_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Exec,
+            generic_params,
+            where_clause,
+        );
+        let query_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Query,
+            generic_params,
+            where_clause,
+        );
         let migrate_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Migrate,
-            generics,
+            generic_params,
             where_clause,
         );
-        let reply_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Reply, generics, where_clause);
+        let reply_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Reply,
+            generic_params,
+            where_clause,
+        );
 
-        let error_type: Type = if is_trait {
-            let error_type: Vec<_> = source
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    ImplItem::Type(ty) if ty.ident == "Error" => {
-                        let ty = &ty.ty;
-                        let segments = match ty {
-                            Type::Path(path) => &path.path.segments,
-                            _ => {
-                                unreachable!();
-                            }
-                        };
-                        assert!(!segments.is_empty());
-
-                        Some(&segments[0].ident)
-                    }
-                    _ => None,
-                })
-                .collect();
-
-            assert!(!error_type.is_empty());
-            let error_type = error_type[0];
-            parse_quote! {#error_type}
+        let error_type: Type = if is_trait(source) {
+            let associated_error = source.items.iter().find_map(|item| match item {
+                ImplItem::Type(ty) if ty.ident == "Error" => Some(&ty.ty),
+                _ => None,
+            });
+            match associated_error {
+                Some(error) => parse_quote!(#error),
+                // This should never happen as the `interface` macro requires the trait to have an associated `Error` type
+                None => unreachable!(),
+            }
         } else {
-            parse_quote! {#contract_error}
+            let error = ContractErrorAttr::new(source).error;
+            parse_quote! { #error }
         };
 
         let contract = &source.self_ty;
         let contract_name = extract_contract_name(contract);
 
-        let proxy_name = if is_trait {
+        let proxy_name = if is_trait(source) {
             let interface_name = interface_name(source);
             Ident::new(&format!("{}Proxy", interface_name), interface_name.span())
         } else {
@@ -127,9 +126,9 @@ where
         Self {
             error_type,
             contract,
-            is_trait,
             source,
-            generics,
+            generic_params,
+            generic_args,
             where_clause,
             contract_name,
             proxy_name,
@@ -141,26 +140,27 @@ where
             query_variants,
             migrate_variants,
             reply_variants,
+            contract_module,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
         let Self {
+            source,
             error_type,
             proxy_name,
-            is_trait,
             custom,
             interfaces,
             exec_variants,
             query_variants,
             migrate_variants,
-            generics,
+            generic_params,
             where_clause,
             ..
         } = self;
         let sylvia = crate_module();
 
-        if *is_trait {
+        if is_trait(source) {
             return self.impl_trait_on_proxy();
         }
 
@@ -204,14 +204,14 @@ where
 
                     #[derive(Derivative)]
                     #[derivative(Debug)]
-                    pub struct #proxy_name <'app, MtApp, #(#generics,)* > {
+                    pub struct #proxy_name <'app, MtApp, #(#generic_params,)* > {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         #[derivative(Debug="ignore")]
                         pub app: &'app #sylvia ::multitest::App<MtApp>,
-                        _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+                        _phantom: std::marker::PhantomData<( #(#generic_params,)* )>,
                     }
 
-                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > #proxy_name <'app, #mt_app, #(#generics,)* >
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #proxy_name <'app, #mt_app, #(#generic_params,)* >
                         where
                             CustomT: #sylvia ::cw_multi_test::Module,
                             CustomT::ExecT: std::fmt::Debug
@@ -242,12 +242,12 @@ where
                         #( #proxy_accessors )*
                     }
 
-                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generics,)* >
+                    impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
                         From<(
                             #sylvia ::cw_std::Addr,
                             &'app #sylvia ::multitest::App<#mt_app>,
                         )>
-                        for #proxy_name <'app, #mt_app, #(#generics,)* >
+                        for #proxy_name <'app, #mt_app, #(#generic_params,)* >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         CustomT::ExecT: std::fmt::Debug
@@ -269,7 +269,7 @@ where
                         #where_predicates
                     {
                         fn from(input: (#sylvia ::cw_std::Addr, &'app #sylvia ::multitest::App< #mt_app >))
-                            -> #proxy_name<'app, #mt_app, #(#generics,)* > {
+                            -> #proxy_name<'app, #mt_app, #(#generic_params,)* > {
                             #proxy_name::new(input.0, input.1)
                         }
                     }
@@ -285,9 +285,13 @@ where
             error_type,
             custom,
             interfaces,
-            generics,
+            generic_params,
+            generic_args,
             exec_variants,
             query_variants,
+            where_clause,
+            contract_module,
+            contract_name,
             ..
         } = self;
 
@@ -322,7 +326,7 @@ where
             >
         };
 
-        let bracketed_generics = emit_bracketed_generics(generics);
+        let bracketed_generics = emit_bracketed_generics(generic_args);
         let interface_enum =
             quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
 
@@ -330,14 +334,14 @@ where
             &custom_msg,
             &mt_app,
             error_type,
-            generics,
+            generic_args,
             &module,
         );
         let query_methods = query_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
             &mt_app,
             error_type,
-            generics,
+            generic_args,
             &module,
         );
         let exec_methods_declarations =
@@ -347,6 +351,37 @@ where
             error_type,
             &interface_enum,
         );
+        let exec_generics = exec_variants.used_generics();
+        let query_generics = query_variants.used_generics();
+
+        // Check if custom_msg is a generic type
+
+        let mut generics_checker = CheckGenerics::new(generic_params);
+        generics_checker.visit_type(&custom_msg);
+        let (custom_generic, _) = generics_checker.used_unused();
+        let custom_generic = custom_generic.first();
+        let custom_where_predicate = match custom_generic {
+            Some(generic) => filter_wheres(where_clause, generic_params, &[generic]),
+            None => vec![],
+        };
+        let exec_where_predicates = filter_wheres(where_clause, generic_params, exec_generics);
+        let query_where_predicates = filter_wheres(where_clause, generic_params, query_generics);
+        let trait_where_clause = if !exec_where_predicates.is_empty() {
+            quote! { where #(#exec_where_predicates,)* }
+        } else {
+            quote! {}
+        };
+        let contract_module = match contract_module {
+            Some(contract_module) => quote! { #contract_module :: },
+            None => quote! {},
+        };
+        let contract_proxy = Ident::new(&format!("{}Proxy", contract_name), contract_name.span());
+        let contract_generics: Vec<_> = exec_generics
+            .iter()
+            .chain(query_generics.iter())
+            .chain(generic_params.iter())
+            .unique()
+            .collect();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -354,12 +389,12 @@ where
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name<MtApp> {
+                    pub trait #trait_name<MtApp, #(#exec_generics,)* #(#query_generics,)* #custom_generic > #trait_where_clause {
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#exec_generics,)* #(#query_generics,)* #custom_generic> #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #custom_generic > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -378,7 +413,38 @@ where
                             + #sylvia ::serde::de::DeserializeOwned
                             + 'static,
                         CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
-                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >
+                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
+                        #(#custom_where_predicate,)*
+                        #(#exec_where_predicates,)*
+                        #(#query_where_predicates,)*
+                    {
+                        #(#query_methods)*
+                        #(#exec_methods)*
+                    }
+
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #custom_generic > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
+                    where
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                        CustomT::ExecT: Clone
+                            + std::fmt::Debug
+                            + PartialEq
+                            + #sylvia ::schemars::JsonSchema
+                            + #sylvia ::serde::de::DeserializeOwned
+                            + 'static,
+                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
+                        #(#custom_where_predicate,)*
+                        #(#exec_where_predicates,)*
+                        #(#query_where_predicates,)*
                     {
                         #(#query_methods)*
                         #(#exec_methods)*
@@ -392,18 +458,13 @@ where
         let sylvia = crate_module();
         let Self {
             error_type,
-            is_trait,
-            generics,
+            generic_params,
             where_clause,
             contract_name,
             proxy_name,
             instantiate_variants,
             ..
         } = self;
-
-        if *is_trait {
-            return quote! {};
-        }
 
         let fields_names = instantiate_variants
             .get_only_variant()
@@ -421,8 +482,8 @@ where
         let where_predicates = where_clause
             .as_ref()
             .map(|where_clause| &where_clause.predicates);
-        let contract = if !generics.is_empty() {
-            quote! { #contract_name ::< #(#generics,)* > }
+        let contract = if !generic_params.is_empty() {
+            quote! { #contract_name ::< #(#generic_params,)* > }
         } else {
             quote! { #contract_name }
         };
@@ -511,14 +572,14 @@ where
             quote! {
                 #impl_contract
 
-                pub struct CodeId<'app, #(#generics,)* MtApp> {
+                pub struct CodeId<'app, #(#generic_params,)* MtApp> {
                     code_id: u64,
                     app: &'app #sylvia ::multitest::App<MtApp>,
-                    _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+                    _phantom: std::marker::PhantomData<( #(#generic_params,)* )>,
 
                 }
 
-                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generics,)* > CodeId<'app, #(#generics,)* #mt_app >
+                impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > CodeId<'app, #(#generic_params,)* #mt_app >
                     where
                         BankT: #sylvia ::cw_multi_test::Bank,
                         ApiT: #sylvia ::cw_std::Api,
@@ -545,9 +606,9 @@ where
 
                     pub fn instantiate(
                         &self, #(#fields,)*
-                    ) -> InstantiateProxy<'_, 'app, #(#generics,)* #mt_app > {
+                    ) -> InstantiateProxy<'_, 'app, #(#generic_params,)* #mt_app > {
                         let msg = #instantiate_msg {#(#fields_names,)*};
-                        InstantiateProxy::< #(#generics,)* _> {
+                        InstantiateProxy::< #(#generic_params,)* _> {
                             code_id: self,
                             funds: &[],
                             label: "Contract",
@@ -558,8 +619,8 @@ where
                     }
                 }
 
-                pub struct InstantiateProxy<'proxy, 'app, #(#generics,)* MtApp> {
-                    code_id: &'proxy CodeId <'app, #(#generics,)* MtApp>,
+                pub struct InstantiateProxy<'proxy, 'app, #(#generic_params,)* MtApp> {
+                    code_id: &'proxy CodeId <'app, #(#generic_params,)* MtApp>,
                     funds: &'proxy [#sylvia ::cw_std::Coin],
                     label: &'proxy str,
                     admin: Option<String>,
@@ -567,7 +628,7 @@ where
                     msg: InstantiateMsg #bracketed_used_generics,
                 }
 
-                impl<'proxy, 'app, #(#generics,)* MtApp> InstantiateProxy<'proxy, 'app, #(#generics,)* MtApp>
+                impl<'proxy, 'app, #(#generic_params,)* MtApp> InstantiateProxy<'proxy, 'app, #(#generic_params,)* MtApp>
                     where
                         MtApp: Executor< #custom_msg >,
                         #where_predicates
@@ -591,7 +652,7 @@ where
                     }
 
                     #[track_caller]
-                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp, #(#generics,)* >, #error_type> {
+                    pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp, #(#generic_params,)* >, #error_type> {
                         let Self {code_id, funds, label, admin, salt, msg} = self;
 
                         match salt {
@@ -627,32 +688,29 @@ where
             contract,
             custom,
             override_entry_points,
-            generics,
-            instantiate_variants,
-            exec_variants,
-            query_variants,
+            generic_params,
             migrate_variants,
             reply_variants,
             ..
         } = self;
         let sylvia = crate_module();
 
-        let bracketed_generics = emit_bracketed_generics(generics);
+        let bracketed_generics = emit_bracketed_generics(generic_params);
         let full_where_clause = &source.generics.where_clause;
         let instantiate_body = override_entry_points
             .get_entry_point(MsgType::Instantiate)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
-            .unwrap_or_else(|| instantiate_variants.emit_multitest_default_dispatch());
+            .unwrap_or_else(|| emit_default_dispatch(&MsgType::Instantiate, contract));
 
         let exec_body = override_entry_points
             .get_entry_point(MsgType::Exec)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
-            .unwrap_or_else(|| exec_variants.emit_multitest_default_dispatch());
+            .unwrap_or_else(|| emit_default_dispatch(&MsgType::Exec, contract));
 
         let query_body = override_entry_points
             .get_entry_point(MsgType::Query)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
-            .unwrap_or_else(|| query_variants.emit_multitest_default_dispatch());
+            .unwrap_or_else(|| emit_default_dispatch(&MsgType::Query, contract));
 
         let sudo_body = override_entry_points
             .get_entry_point(MsgType::Sudo)
@@ -666,7 +724,7 @@ where
         let migrate_body = match override_entry_points.get_entry_point(MsgType::Migrate) {
             Some(entry_point) => entry_point.emit_multitest_dispatch(),
             None if migrate_variants.get_only_variant().is_some() => {
-                migrate_variants.emit_multitest_default_dispatch()
+                emit_default_dispatch(&MsgType::Migrate, contract)
             }
             None => quote! {
                 #sylvia ::anyhow::bail!("migrate not implemented for contract")
@@ -760,6 +818,20 @@ where
                 }
             }
         }
+    }
+}
+
+fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream {
+    let sylvia = crate_module();
+
+    let values = msg_ty.emit_ctx_values();
+    let msg_name = msg_ty.as_accessor_name(true);
+    let api_msg = quote! { < #contract_name as #sylvia ::types::ContractApi> :: #msg_name };
+
+    quote! {
+        #sylvia ::cw_std::from_json::< #api_msg >(&msg)?
+            .dispatch(self, ( #values ))
+            .map_err(Into::into)
     }
 }
 

@@ -6,8 +6,8 @@ use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, parse_quote, Attribute, GenericArgument, Ident, ImplItem, ImplItemMethod,
-    ItemImpl, ItemTrait, Path, PathArguments, Result, Token, TraitItem, Type,
+    parenthesized, parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItem,
+    ImplItemMethod, ItemImpl, ItemTrait, Path, PathArguments, Result, Token, TraitItem, Type,
 };
 
 use crate::crate_module;
@@ -196,6 +196,21 @@ impl MsgType {
             MsgType::Reply => Some(parse_quote! { Reply }),
         }
     }
+
+    pub fn emit_phantom_variant(&self, generics: &[&GenericParam]) -> TokenStream {
+        match self {
+            _ if generics.is_empty() => quote! {},
+            MsgType::Query => quote! {
+                #[serde(skip)]
+                #[returns(( #(#generics,)* ))]
+                _Phantom(std::marker::PhantomData<( #(#generics,)* )>),
+            },
+            _ => quote! {
+                #[serde(skip)]
+                _Phantom(std::marker::PhantomData<( #(#generics,)* )>),
+            },
+        }
+    }
 }
 
 impl PartialEq<MsgType> for MsgAttr {
@@ -260,6 +275,29 @@ impl Parse for MsgAttr {
 #[derive(Debug)]
 pub struct ContractErrorAttr {
     pub error: Type,
+}
+
+impl ContractErrorAttr {
+    pub fn new(item: &ItemImpl) -> Self {
+        let sylvia = crate_module();
+
+        item.attrs
+            .iter()
+            .find(|attr| attr.path.is_ident("error"))
+            .and_then(
+                |attr| match ContractErrorAttr::parse.parse2(attr.tokens.clone()) {
+                    Ok(error) => Some(error),
+                    Err(err) => {
+                        emit_error!(attr.span(), err);
+                        None
+                    }
+                },
+            )
+            .unwrap_or_else(|| {
+                let error = parse_quote! { #sylvia ::cw_std::StdError };
+                Self { error }
+            })
+    }
 }
 
 #[cfg(not(tarpaulin_include))]

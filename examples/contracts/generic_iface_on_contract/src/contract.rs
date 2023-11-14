@@ -1,5 +1,5 @@
 use cosmwasm_std::{Response, StdResult};
-use sylvia::types::{InstantiateCtx, SvCustomMsg};
+use sylvia::types::{InstantiateCtx, SvCustomMsg, SvCustomQuery};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -9,18 +9,21 @@ pub struct NonGenericContract;
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(generic<SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
-#[messages(cw1 as Cw1: custom(msg))]
+#[messages(generic<SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
-#[sv::custom(msg=SvCustomMsg)]
+#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl NonGenericContract {
     pub const fn new() -> Self {
         Self
     }
 
     #[msg(instantiate)]
-    pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response<SvCustomMsg>> {
+    pub fn instantiate(
+        &self,
+        _ctx: InstantiateCtx<SvCustomQuery>,
+    ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }
 }
@@ -28,6 +31,7 @@ impl NonGenericContract {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{CosmosMsg, Empty};
+    use sylvia::types::SvCustomQuery;
     use sylvia::{multitest::App, types::SvCustomMsg};
 
     use super::NonGenericContract;
@@ -38,7 +42,7 @@ mod tests {
     #[test]
     fn mt_helpers() {
         let _ = NonGenericContract::new();
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg>>::custom(|_, _, _| {});
+        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = super::sv::multitest_utils::CodeId::store_code(&app);
 
         let owner = "owner";
