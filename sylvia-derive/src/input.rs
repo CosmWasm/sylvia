@@ -1,15 +1,8 @@
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
-use quote::{quote, ToTokens};
-use syn::parse::{Parse, Parser};
-use syn::spanned::Spanned;
-use syn::{
-    parse_quote, GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, PathArguments,
-    TraitItem, Type,
-};
+use quote::quote;
+use syn::{GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, PathArguments, TraitItem};
 
-use crate::check_generics::GetPath;
-use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -18,6 +11,7 @@ use crate::message::{
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::remote::Remote;
+use crate::utils::is_trait;
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
@@ -30,7 +24,7 @@ pub struct TraitInput<'a> {
 /// Preprocessed `contract` macro input for non-trait impl block
 pub struct ImplInput<'a> {
     attributes: &'a ContractArgs,
-    error: Type,
+    error: ContractErrorAttr,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
     custom: Custom<'a>,
@@ -129,29 +123,8 @@ impl<'a> TraitInput<'a> {
 
 impl<'a> ImplInput<'a> {
     pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
-        let sylvia = crate_module();
-
         let generics = item.generics.params.iter().collect();
-
-        let error = item
-            .attrs
-            .iter()
-            .find(|attr| attr.path().is_ident("error"))
-            .and_then(|attr| {
-                match attr
-                    .meta
-                    .require_list()
-                    .and_then(|meta| ContractErrorAttr::parse.parse2(meta.tokens.clone()))
-                {
-                    Ok(error) => Some(error.error),
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        None
-                    }
-                }
-            })
-            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
-
+        let error = ContractErrorAttr::new(item);
         let custom = Custom::new(&item.attrs);
         let override_entry_points = OverrideEntryPoints::new(&item.attrs);
         let interfaces = Interfaces::new(item);
@@ -168,17 +141,14 @@ impl<'a> ImplInput<'a> {
     }
 
     pub fn process(&self) -> TokenStream {
-        let is_trait = self.item.trait_.is_some();
-
-        match is_trait {
+        match is_trait(self.item) {
             true => self.process_interface(),
             false => self.process_contract(),
         }
     }
 
     fn process_interface(&self) -> TokenStream {
-        let interface_generics = self.extract_generic_argument();
-        let multitest_helpers = self.emit_multitest_helpers(&interface_generics);
+        let multitest_helpers = self.emit_multitest_helpers();
         let querier_bound_for_impl = self.emit_querier_for_bound_impl();
 
         #[cfg(not(tarpaulin_include))]
@@ -198,9 +168,10 @@ impl<'a> ImplInput<'a> {
             item,
             generics,
             custom,
+            interfaces,
             ..
         } = self;
-        let multitest_helpers = self.emit_multitest_helpers(generics);
+        let multitest_helpers = self.emit_multitest_helpers();
         let where_clause = &item.generics.where_clause;
 
         let querier = MsgVariants::new(
@@ -213,7 +184,7 @@ impl<'a> ImplInput<'a> {
         let messages = self.emit_messages();
         let remote = Remote::new(&self.interfaces).emit();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
-        let contract_api = ContractApi::new(item, generics, custom).emit();
+        let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -310,41 +281,52 @@ impl<'a> ImplInput<'a> {
             .get_only_interface()
             .map(|interface| &interface.module);
         let contract_module = self.attributes.module.as_ref();
-        let generics = self.extract_generic_argument();
 
-        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Query, &generics, &None);
+        let generic_args = self.extract_generic_argument();
+        let where_clause = &self.item.generics.where_clause;
 
-        variants.emit_querier_for_bound_impl(trait_module, contract_module)
+        let variants_args = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Query,
+            &generic_args,
+            where_clause,
+        );
+        let variants_params = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Query,
+            &self.generics,
+            where_clause,
+        );
+        let generic_args = variants_args.used_generics();
+
+        variants_params.emit_querier_for_bound_impl(trait_module, contract_module, generic_args)
     }
 
-    fn emit_multitest_helpers<Generic>(&self, generics: &[&Generic]) -> TokenStream
-    where
-        Generic: ToTokens + PartialEq + GetPath,
-    {
+    fn emit_multitest_helpers(&self) -> TokenStream {
+        if !cfg!(feature = "mt") {
+            return quote! {};
+        }
+
         let Self {
             item,
-            error,
             custom,
             override_entry_points,
             interfaces,
             ..
         } = self;
+        let contract_module = self.attributes.module.as_ref();
+        let generic_args = self.extract_generic_argument();
+        let generic_params = &self.generics;
 
-        let is_trait = self.item.trait_.is_some();
-
-        if cfg!(feature = "mt") {
-            MultitestHelpers::new(
-                item,
-                is_trait,
-                error,
-                generics,
-                custom,
-                override_entry_points,
-                interfaces,
-            )
-            .emit()
-        } else {
-            quote! {}
-        }
+        MultitestHelpers::new(
+            item,
+            generic_params,
+            &generic_args,
+            custom,
+            override_entry_points,
+            interfaces,
+            &contract_module,
+        )
+        .emit()
     }
 }
