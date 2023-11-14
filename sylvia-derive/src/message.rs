@@ -7,10 +7,12 @@ use crate::parser::{
 };
 use crate::strip_generics::StripGenerics;
 use crate::utils::{
-    as_where_clause, emit_bracketed_generics, extract_return_type, filter_wheres, process_fields,
+    as_where_clause, emit_bracketed_generics, extract_return_type, filter_generics, filter_wheres,
+    process_fields,
 };
 use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
+use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
@@ -363,7 +365,7 @@ pub struct ContractEnumMessage<'a> {
     variants: MsgVariants<'a, GenericParam>,
     msg_ty: MsgType,
     contract: &'a Type,
-    error: &'a Type,
+    error: &'a ContractErrorAttr,
     custom: &'a Custom<'a>,
     where_clause: &'a Option<WhereClause>,
 }
@@ -373,7 +375,7 @@ impl<'a> ContractEnumMessage<'a> {
         source: &'a ItemImpl,
         msg_ty: MsgType,
         generics: &'a [&'a GenericParam],
-        error: &'a Type,
+        error: &'a ContractErrorAttr,
         custom: &'a Custom,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
@@ -405,9 +407,9 @@ impl<'a> ContractEnumMessage<'a> {
         let enum_name = msg_ty.emit_msg_name(false);
         let match_arms = variants.emit_dispatch_legs();
         let unused_generics = variants.unused_generics();
-        let unused_generics = emit_bracketed_generics(unused_generics);
+        let bracketed_unused_generics = emit_bracketed_generics(unused_generics);
         let used_generics = variants.used_generics();
-        let used_generics = emit_bracketed_generics(used_generics);
+        let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let mut variant_names = variants.as_names_snake_cased();
         variant_names.sort();
@@ -416,7 +418,7 @@ impl<'a> ContractEnumMessage<'a> {
         let variants = variants.emit();
 
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
-        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
+        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), &error.error);
 
         let derive_query = match msg_ty {
             MsgType::Query => quote! { #sylvia ::cw_schema::QueryResponses },
@@ -426,22 +428,32 @@ impl<'a> ContractEnumMessage<'a> {
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
 
+        let phantom_variant = msg_ty.emit_phantom_variant(used_generics);
+        let phantom_match_arm = match !used_generics.is_empty() {
+            true => quote! {
+                _Phantom(_) => Err(#sylvia ::cw_std::StdError::generic_err("Phantom message should not be constructed.")).map_err(Into::into),
+            },
+            false => quote! {},
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
                 #[serde(rename_all="snake_case")]
-                pub enum #enum_name #used_generics {
+                pub enum #enum_name #bracketed_used_generics {
                     #(#variants,)*
+                    #phantom_variant
                 }
 
-                impl #used_generics #enum_name #used_generics {
-                    pub fn dispatch #unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
+                impl #bracketed_used_generics #enum_name #bracketed_used_generics {
+                    pub fn dispatch #bracketed_unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
                         use #enum_name::*;
 
                         match self {
                             #(#match_arms,)*
+                            #phantom_match_arm
                         }
                     }
 
@@ -973,6 +985,7 @@ where
         &self,
         trait_module: Option<&Path>,
         contract_module: Option<&Path>,
+        generic_args: &Vec<&GenericArgument>,
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
@@ -985,7 +998,7 @@ where
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl(trait_module, used_generics));
+            .map(|variant| variant.emit_querier_impl(trait_module, generic_args));
 
         let querier = trait_module
             .map(|module| quote! { #module ::sv::Querier })
@@ -994,8 +1007,8 @@ where
             .map(|module| quote! { #module ::sv::BoundQuerier})
             .unwrap_or_else(|| quote! { sv::BoundQuerier });
 
-        let querier = if !used_generics.is_empty() {
-            quote! { #querier < #(#used_generics,)* > }
+        let querier = if !generic_args.is_empty() {
+            quote! { #querier < #(#generic_args,)* > }
         } else {
             quote! { #querier }
         };
@@ -1003,29 +1016,10 @@ where
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
-                impl <'a, C: #sylvia ::cw_std::CustomQuery> #querier for #bound_querier<'a, C > #where_clause {
+                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#used_generics,)* > #querier for #bound_querier<'a, C > #where_clause {
                     #(#methods_impl)*
                 }
             }
-        }
-    }
-
-    pub fn emit_multitest_default_dispatch(&self) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            msg_ty,
-            used_generics,
-            ..
-        } = self;
-
-        let values = msg_ty.emit_ctx_values();
-        let msg_name = msg_ty.emit_msg_name(true);
-        let bracketed_generics = emit_bracketed_generics(used_generics);
-
-        quote! {
-            #sylvia ::cw_std::from_json::< #msg_name #bracketed_generics >(&msg)?
-                .dispatch(self, ( #values ))
-                .map_err(Into::into)
         }
     }
 
@@ -1240,7 +1234,7 @@ pub struct GlueMessage<'a> {
     source: &'a ItemImpl,
     contract: &'a Type,
     msg_ty: MsgType,
-    error: &'a Type,
+    error: &'a ContractErrorAttr,
     custom: &'a Custom<'a>,
     interfaces: &'a Interfaces,
     variants: MsgVariants<'a, GenericParam>,
@@ -1250,7 +1244,7 @@ impl<'a> GlueMessage<'a> {
     pub fn new(
         source: &'a ItemImpl,
         msg_ty: MsgType,
-        error: &'a Type,
+        error: &'a ContractErrorAttr,
         custom: &'a Custom,
         interfaces: &'a Interfaces,
         variants: MsgVariants<'a, GenericParam>,
@@ -1278,16 +1272,41 @@ impl<'a> GlueMessage<'a> {
             variants,
         } = self;
 
+        let generics: Vec<_> = source.generics.params.iter().collect();
+        let interface_generic_args = interfaces.as_generic_args();
+        let interface_used_generics = filter_generics(&generics, &interface_generic_args);
         let used_generics = variants.used_generics();
-        let unused_generics = variants.unused_generics();
+
+        let used_wrapper_generics: Vec<_> = interface_used_generics
+            .iter()
+            .chain(used_generics.iter())
+            .unique()
+            .copied()
+            .collect();
+
+        let unused_generics: Vec<_> = variants
+            .unused_generics()
+            .iter()
+            .filter(|unused| !used_wrapper_generics.iter().any(|used| used == *unused))
+            .collect();
+
         let where_clause = variants.as_where_clause();
         let full_where_clause = &source.generics.where_clause;
+        let query_responses_where_clause =
+            filter_wheres(full_where_clause, &generics, &used_wrapper_generics);
+        let query_responses_where_clause = if !query_responses_where_clause.is_empty() {
+            quote! { where #(#query_responses_where_clause,)* }
+        } else {
+            quote! {}
+        };
+
+        let unused_generics = emit_bracketed_generics(&unused_generics);
+        let bracketed_used_generics = emit_bracketed_generics(used_generics);
+        let bracketed_used_wrapper_generics = emit_bracketed_generics(&used_wrapper_generics);
 
         let contract_enum_name = msg_ty.emit_msg_name(true);
         let enum_name = msg_ty.emit_msg_name(false);
         let contract_name = StripGenerics.fold_type((*contract).clone());
-        let unused_generics = emit_bracketed_generics(unused_generics);
-        let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let variants = interfaces.emit_glue_message_variants(msg_ty);
 
@@ -1348,7 +1367,7 @@ impl<'a> GlueMessage<'a> {
         };
 
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
-        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), error);
+        let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), &error.error);
 
         let mut response_schemas_calls = interfaces.emit_response_schemas_calls(msg_ty);
         response_schemas_calls
@@ -1360,7 +1379,7 @@ impl<'a> GlueMessage<'a> {
                 {
                     quote! {
                         #[cfg(not(target_arch = "wasm32"))]
-                        impl #bracketed_used_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_used_generics #where_clause {
+                        impl #bracketed_used_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_used_wrapper_generics #query_responses_where_clause {
                             fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                                 let responses = [#(#response_schemas_calls),*];
                                 responses.into_iter().flatten().collect()
@@ -1380,12 +1399,12 @@ impl<'a> GlueMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case", untagged)]
-                pub enum #contract_enum_name #bracketed_used_generics {
+                pub enum #contract_enum_name #bracketed_used_wrapper_generics {
                     #(#variants,)*
                     #contract_variant
                 }
 
-                impl #bracketed_used_generics #contract_enum_name #bracketed_used_generics {
+                impl #bracketed_used_wrapper_generics #contract_enum_name #bracketed_used_wrapper_generics {
                     pub fn dispatch #unused_generics (
                         self,
                         contract: &#contract,
@@ -1405,7 +1424,7 @@ impl<'a> GlueMessage<'a> {
 
                 #response_schemas
 
-                impl<'de, #(#used_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_used_generics #where_clause {
+                impl<'de, #(#used_wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_used_wrapper_generics #where_clause {
                     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                         where D: serde::Deserializer<'de>,
                     {
@@ -1455,6 +1474,7 @@ pub struct ContractApi<'a> {
     migrate_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
     custom: &'a Custom<'a>,
+    interfaces: &'a Interfaces,
 }
 
 impl<'a> ContractApi<'a> {
@@ -1462,6 +1482,7 @@ impl<'a> ContractApi<'a> {
         source: &'a ItemImpl,
         generics: &'a [&'a GenericParam],
         custom: &'a Custom<'a>,
+        interfaces: &'a Interfaces,
     ) -> Self {
         let exec_variants = MsgVariants::new(
             source.as_variants(),
@@ -1499,6 +1520,7 @@ impl<'a> ContractApi<'a> {
             migrate_variants,
             generics,
             custom,
+            interfaces,
         }
     }
 
@@ -1512,19 +1534,37 @@ impl<'a> ContractApi<'a> {
             migrate_variants,
             generics,
             custom,
+            interfaces,
         } = self;
 
+        let where_clause = &source.generics.where_clause;
         let contract_name = &source.self_ty;
         let exec_generics = &exec_variants.used_generics;
         let query_generics = &query_variants.used_generics;
         let instantiate_generics = &instantiate_variants.used_generics;
         let migrate_generics = &migrate_variants.used_generics;
 
+        let interface_generics = interfaces.as_generic_args();
+        let interface_generics = filter_generics(generics, &interface_generics);
+
+        let contract_exec_generics: Vec<_> = interface_generics
+            .iter()
+            .chain(exec_generics.iter())
+            .unique()
+            .collect();
+        let contract_query_generics: Vec<_> = interface_generics
+            .iter()
+            .chain(query_generics.iter())
+            .unique()
+            .collect();
+
         let bracket_generics = emit_bracketed_generics(generics);
         let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
         let query_bracketed_generics = emit_bracketed_generics(query_generics);
         let instantiate_bracketed_generics = emit_bracketed_generics(instantiate_generics);
         let migrate_bracketed_generics = emit_bracketed_generics(migrate_generics);
+        let contract_exec_bracketed_generics = emit_bracketed_generics(&contract_exec_generics);
+        let contract_query_bracketed_generics = emit_bracketed_generics(&contract_query_generics);
 
         let migrate_type = match !migrate_variants.variants().is_empty() {
             true => quote! { type Migrate = MigrateMsg #migrate_bracketed_generics; },
@@ -1533,9 +1573,9 @@ impl<'a> ContractApi<'a> {
         let custom_query = custom.query_or_default();
 
         quote! {
-            impl #bracket_generics #sylvia ::types::ContractApi for #contract_name {
-                type ContractExec = ContractExecMsg #exec_bracketed_generics;
-                type ContractQuery = ContractQueryMsg #query_bracketed_generics;
+            impl #bracket_generics #sylvia ::types::ContractApi for #contract_name #where_clause {
+                type ContractExec = ContractExecMsg #contract_exec_bracketed_generics;
+                type ContractQuery = ContractQueryMsg #contract_query_bracketed_generics;
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
                 type Instantiate = InstantiateMsg #instantiate_bracketed_generics;

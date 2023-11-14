@@ -4,7 +4,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{ItemImpl, Path, Type};
+use syn::{GenericArgument, ItemImpl, Path, Type};
 
 use crate::crate_module;
 use crate::parser::{ContractMessageAttr, MsgType};
@@ -175,6 +175,13 @@ impl Interfaces {
         self.interfaces.iter().map(|interface| &interface.module)
     }
 
+    pub fn as_generic_args(&self) -> Vec<&GenericArgument> {
+        self.interfaces
+            .iter()
+            .flat_map(|interface| &interface.generics)
+            .collect()
+    }
+
     pub fn get_only_interface(&self) -> Option<&ContractMessageAttr> {
         let interfaces = &self.interfaces;
         match interfaces.len() {
@@ -184,9 +191,9 @@ impl Interfaces {
                 let first = &interfaces[0];
                 for redefined in &interfaces[1..] {
                     emit_error!(
-                      redefined.module, "The attribute `messages` is redefined";
-                      note = first.module.span() => "Previous definition of the attribute `messsages`";
-                      note = "Only one `messages` attribute can exist on an interface implementation on contract"
+                        redefined.module, "The attribute `messages` is redefined";
+                        note = first.module.span() => "Previous definition of the attribute `messsages`";
+                        note = "Only one `messages` attribute can exist on an interface implementation on contract"
                     );
                 }
                 None

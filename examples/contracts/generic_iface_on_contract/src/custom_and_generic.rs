@@ -1,12 +1,12 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use custom_and_generic::CustomAndGeneric;
 use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
+use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg, SvCustomQuery};
 
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
-#[sv::custom(msg=sylvia::types::SvCustomMsg)]
-impl CustomAndGeneric<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
+#[sv::custom(msg=sylvia::types::SvCustomMsg, query=SvCustomQuery)]
+impl CustomAndGeneric<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg>
     for crate::contract::NonGenericContract
 {
     type Error = StdError;
@@ -14,7 +14,7 @@ impl CustomAndGeneric<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
     #[msg(exec)]
     fn custom_generic_execute(
         &self,
-        _ctx: ExecCtx,
+        _ctx: ExecCtx<SvCustomQuery>,
         _msgs: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
@@ -23,7 +23,7 @@ impl CustomAndGeneric<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
     #[msg(query)]
     fn custom_generic_query(
         &self,
-        _ctx: QueryCtx,
+        _ctx: QueryCtx<SvCustomQuery>,
         _msg: sylvia::types::SvCustomMsg,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})

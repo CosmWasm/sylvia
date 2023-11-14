@@ -5,11 +5,11 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-pub trait Generic<ExecParam, QueryParam, RetType>
+pub trait Generic<ExecT, QueryT, RetT>
 where
-    for<'msg_de> ExecParam: CustomMsg + Deserialize<'msg_de>,
-    QueryParam: sylvia::types::CustomMsg,
-    RetType: CustomMsg + DeserializeOwned,
+    for<'msg_de> ExecT: CustomMsg + Deserialize<'msg_de>,
+    QueryT: sylvia::types::CustomMsg,
+    RetT: CustomMsg + DeserializeOwned,
 {
     type Error: From<StdError>;
 
@@ -17,11 +17,11 @@ where
     fn generic_exec(
         &self,
         ctx: ExecCtx,
-        msgs: Vec<CosmosMsg<ExecParam>>,
+        msgs: Vec<CosmosMsg<ExecT>>,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn generic_query(&self, ctx: QueryCtx, param: QueryParam) -> Result<RetType, Self::Error>;
+    fn generic_query(&self, ctx: QueryCtx, param: QueryT) -> Result<RetT, Self::Error>;
 }
 
 #[cfg(test)]
