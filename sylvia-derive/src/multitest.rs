@@ -496,6 +496,17 @@ where
         };
 
         #[cfg(not(tarpaulin_include))]
+        let code_info = if cfg!(feature = "cosmwasm_1_2") {
+            quote! {
+                pub fn code_info(&self) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::CodeInfoResponse> {
+                    self.app.app().wrap().query_wasm_code_info(self.code_id)
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 #impl_contract
@@ -529,6 +540,8 @@ where
                     pub fn code_id(&self) -> u64 {
                         self.code_id
                     }
+
+                    #code_info
 
                     pub fn instantiate(
                         &self, #(#fields,)*

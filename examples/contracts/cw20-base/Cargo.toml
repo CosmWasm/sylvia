@@ -28,7 +28,7 @@ cw20-marketing = { path = "../../interfaces/cw20-marketing" }
 cw20-minting = { path = "../../interfaces/cw20-minting" }
 getrandom = { workspace = true, features = ["js"] }
 semver = { workspace = true }
-serde = { workspace = true, default-features = false, features = ["derive"] }
+serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 thiserror = { workspace = true }
 
