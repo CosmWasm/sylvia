@@ -21,16 +21,16 @@ pub trait Whitelist {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_binary, from_slice, to_binary};
+    use cosmwasm_std::{from_json, to_json_binary};
 
     use super::*;
 
     #[test]
-    fn exec_from_binary() {
+    fn execs() {
         let original = sv::ExecMsg::Freeze {};
 
-        let serialized = to_binary(&original).unwrap();
-        let deserialized = from_binary(&serialized).unwrap();
+        let serialized = to_json_binary(&original).unwrap();
+        let deserialized = from_json(serialized).unwrap();
 
         assert_eq!(original, deserialized);
 
@@ -38,19 +38,18 @@ mod tests {
             admins: vec!["new_admin".to_owned()],
         };
 
-        let serialized = to_binary(&original).unwrap();
-        let deserialized = from_binary(&serialized).unwrap();
+        let serialized = to_json_binary(&original).unwrap();
+        let deserialized = from_json(serialized).unwrap();
 
         assert_eq!(original, deserialized);
     }
 
     #[test]
-    fn exec_from_slice() {
-        let deserialized = from_slice(br#"{"freeze": { }}"#).unwrap();
+    fn execs_from_json() {
+        let deserialized = from_json(br#"{"freeze": { }}"#).unwrap();
         assert_eq!(sv::ExecMsg::Freeze {}, deserialized);
 
-        let deserialized =
-            from_slice(br#"{"update_admins": { "admins": ["new_admin"] }}"#).unwrap();
+        let deserialized = from_json(br#"{"update_admins": { "admins": ["new_admin"] }}"#).unwrap();
         assert_eq!(
             sv::ExecMsg::UpdateAdmins {
                 admins: vec!["new_admin".to_owned()]
@@ -60,17 +59,17 @@ mod tests {
     }
 
     #[test]
-    fn query_from_binary() {
+    fn query() {
         let original = sv::QueryMsg::AdminList {};
-        let serialized = to_binary(&original).unwrap();
-        let deserialized = from_binary(&serialized).unwrap();
+        let serialized = to_json_binary(&original).unwrap();
+        let deserialized = from_json(serialized).unwrap();
 
         assert_eq!(original, deserialized);
     }
 
     #[test]
-    fn query_from_slice() {
-        let deserialized = from_slice(br#"{"admin_list": {}}"#).unwrap();
+    fn query_from_json() {
+        let deserialized = from_json(br#"{"admin_list": {}}"#).unwrap();
         assert_eq!(sv::QueryMsg::AdminList {}, deserialized);
     }
 }
