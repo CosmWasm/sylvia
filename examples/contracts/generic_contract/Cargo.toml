@@ -22,7 +22,7 @@ cosmwasm-std = { workspace = true, features = ["staking"] }
 cw-multi-test = { workspace = true, optional = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
-serde = { workspace = true, default-features = false, features = ["derive"] }
+serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 cw1 = { path = "../../interfaces/cw1" }
 generic = { path = "../../interfaces/generic" }

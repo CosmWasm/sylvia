@@ -35,6 +35,6 @@ cw-utils = "1.0.2"
 cw2 = "1.1.1"
 getrandom = "0.2.11"
 semver = "1.0.20"
-serde = "1.0.192"
+serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 thiserror = "1.0.50"
 assert_matches = "1.5.0"
