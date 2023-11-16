@@ -24,3 +24,17 @@ resolver = "2"
 [workspace.package]
 version = "0.5.0"
 edition = "2021"
+
+[workspace.dependencies]
+anyhow = "1.0.75"
+cosmwasm-schema = "1.5.0"
+cosmwasm-std = "1.5.0"
+cw-multi-test = "0.18.0"
+cw-storage-plus = "1.2.0"
+cw-utils = "1.0.2"
+cw2 = "1.1.1"
+getrandom = "0.2.11"
+semver = "1.0.20"
+serde = "1.0.192"
+thiserror = "1.0.50"
+assert_matches = "1.5.0"

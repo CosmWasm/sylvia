@@ -545,7 +545,7 @@ impl OverrideEntryPoint {
         let values = msg_type.emit_ctx_values();
 
         quote! {
-            #entry_point ( #values .into(), #sylvia ::cw_std::from_slice::< #msg_name >(&msg)?)
+            #entry_point ( #values .into(), #sylvia ::cw_std::from_json::< #msg_name >(&msg)?)
                 .map_err(Into::into)
         }
     }

@@ -570,7 +570,7 @@ impl<'a> MsgVariant<'a> {
             Query => quote! {
                 #name {
                     #(#fields,)*
-                } => #sylvia ::cw_std::to_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
+                } => #sylvia ::cw_std::to_json_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
             },
             Instantiate | Migrate | Reply | Sudo => {
                 emit_error!(name.span(), "Instantiation, Reply, Migrate and Sudo messages not supported on traits, they should be defined on contracts directly");
@@ -1012,7 +1012,7 @@ where
         let bracketed_generics = emit_bracketed_generics(used_generics);
 
         quote! {
-            #sylvia ::cw_std::from_slice::< #msg_name #bracketed_generics >(&msg)?
+            #sylvia ::cw_std::from_json::< #msg_name #bracketed_generics >(&msg)?
                 .dispatch(self, ( #values ))
                 .map_err(Into::into)
         }

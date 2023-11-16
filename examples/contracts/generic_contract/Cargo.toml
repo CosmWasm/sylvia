@@ -16,19 +16,19 @@ library = []
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
-anyhow = { version = "1.0", optional = true }
-cosmwasm-schema = "1.2"
-cosmwasm-std = { version = "1.3", features = ["staking"] }
-cw-multi-test = { version = "0.16", optional = true }
-cw-storage-plus = "1.0"
-cw-utils = "1.0"
-serde = { version = "1.0", default-features = false, features = ["derive"] }
+anyhow = { workspace = true, optional = true }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true, features = ["staking"] }
+cw-multi-test = { workspace = true, optional = true }
+cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
+serde = { workspace = true, default-features = false, features = ["derive"] }
 sylvia = { path = "../../../sylvia" }
 cw1 = { path = "../../interfaces/cw1" }
 generic = { path = "../../interfaces/generic" }
 custom-and-generic = { path = "../../interfaces/custom-and-generic" }
 
 [dev-dependencies]
-anyhow = "1.0"
-cw-multi-test = "0.16"
+anyhow = { workspace = true }
+cw-multi-test = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }

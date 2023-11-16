@@ -498,13 +498,13 @@ Going through the doc, you will see that all messages are generated in their str
 modules. To send messages to the contract, we can just use them:
 
 ```rust
-use sylvia::cw_std::{WasmMsg, to_binary};
+use sylvia::cw_std::{WasmMsg, to_json_binary};
 
 fn some_handler(my_contract_addr: String) -> StdResult<Response> {
     let msg = my_contract_crate::ExecMsg::Increment {};
     let msg = WasmMsg::ExecMsg {
         contract_addr: my_contract_addr,
-        msg: to_binary(&msg)?,
+        msg: to_json_binary(&msg)?,
         funds: vec![],
     }
 

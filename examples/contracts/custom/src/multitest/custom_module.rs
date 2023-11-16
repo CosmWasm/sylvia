@@ -1,6 +1,6 @@
 use cosmwasm_schema::schemars::JsonSchema;
 use cosmwasm_std::{
-    to_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
+    to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
     Storage,
 };
 use cw_multi_test::{AppResponse, CosmosRouter, Module};
@@ -82,7 +82,7 @@ impl Module for CustomModule {
             CounterQuery::Count {} => {
                 let count = self.counter.load(storage)?;
                 let res = CountResponse { count };
-                to_binary(&res).map_err(Into::into)
+                to_json_binary(&res).map_err(Into::into)
             }
         }
     }

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{to_binary, WasmMsg};
+    use cosmwasm_std::{to_json_binary, WasmMsg};
     use whitelist::responses::AdminListResponse;
 
     use crate::contract::sv::multitest_utils::CodeId;
@@ -32,7 +32,7 @@ mod test {
         let freeze = whitelist::sv::ExecMsg::Freeze {};
         let freeze = WasmMsg::Execute {
             contract_addr: second_contract.contract_addr.to_string(),
-            msg: to_binary(&freeze).unwrap(),
+            msg: to_json_binary(&freeze).unwrap(),
             funds: vec![],
         };
 

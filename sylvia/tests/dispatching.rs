@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Decimal, Response};
+use cosmwasm_std::{from_json, Addr, Decimal, Response};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -162,14 +162,14 @@ fn dispatch() {
     let resp = interface::sv::QueryMsg::NoArgsQuery {}
         .dispatch(&contract, (deps.as_ref(), env.clone()))
         .unwrap();
-    let _resp: EmptyQueryResponse = from_binary(&resp).unwrap();
+    let _resp: EmptyQueryResponse = from_json(resp).unwrap();
 
     let resp = interface::sv::QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("addr2"),
     }
     .dispatch(&contract, (deps.as_ref(), env))
     .unwrap();
-    let resp: QueryResponse = from_binary(&resp).unwrap();
+    let resp: QueryResponse = from_json(resp).unwrap();
     assert_eq!(
         resp,
         QueryResponse {

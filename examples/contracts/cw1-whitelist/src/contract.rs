@@ -57,7 +57,9 @@ impl Cw1WhitelistContract<'_> {
 mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coin, coins, to_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg};
+    use cosmwasm_std::{
+        coin, coins, to_json_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg,
+    };
     use cw1::Cw1;
     use whitelist::responses::AdminListResponse;
     use whitelist::Whitelist;
@@ -190,7 +192,7 @@ mod tests {
             .into(),
             WasmMsg::Execute {
                 contract_addr: "some contract".into(),
-                msg: to_binary(&freeze).unwrap(),
+                msg: to_json_binary(&freeze).unwrap(),
                 funds: vec![],
             }
             .into(),
@@ -288,22 +290,22 @@ mod tests {
     }
 
     mod msgs {
-        use cosmwasm_std::{from_binary, from_slice, to_binary, BankMsg};
+        use cosmwasm_std::{from_json, to_json_binary, BankMsg};
 
         use crate::contract::sv::{ContractExecMsg, ContractQueryMsg};
 
         #[test]
         fn freeze() {
             let original = whitelist::sv::ExecMsg::Freeze {};
-            let serialized = to_binary(&original).unwrap();
-            let deserialized = from_binary(&serialized).unwrap();
+            let serialized = to_json_binary(&original).unwrap();
+            let deserialized = from_json(serialized).unwrap();
 
             assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "freeze": {}
             }"#;
-            let deserialized = from_slice(json).unwrap();
+            let deserialized = from_json(json).unwrap();
 
             assert_eq!(
                 ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::Freeze {}),
@@ -316,8 +318,8 @@ mod tests {
             let original = whitelist::sv::ExecMsg::UpdateAdmins {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
-            let serialized = to_binary(&original).unwrap();
-            let deserialized = from_binary(&serialized).unwrap();
+            let serialized = to_json_binary(&original).unwrap();
+            let deserialized = from_json(serialized).unwrap();
 
             assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
@@ -326,7 +328,7 @@ mod tests {
                     "admins": ["admin1", "admin3"]
                 }
             }"#;
-            let deserialized = from_slice(json).unwrap();
+            let deserialized = from_json(json).unwrap();
 
             assert_eq!(
                 ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::UpdateAdmins {
@@ -339,15 +341,15 @@ mod tests {
         #[test]
         fn admin_list() {
             let original = whitelist::sv::QueryMsg::AdminList {};
-            let serialized = to_binary(&original).unwrap();
-            let deserialized = from_binary(&serialized).unwrap();
+            let serialized = to_json_binary(&original).unwrap();
+            let deserialized = from_json(serialized).unwrap();
 
             assert_eq!(ContractQueryMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "admin_list": {}
             }"#;
-            let deserialized = from_slice(json).unwrap();
+            let deserialized = from_json(json).unwrap();
 
             assert_eq!(
                 ContractQueryMsg::Whitelist(whitelist::sv::QueryMsg::AdminList {}),
@@ -364,8 +366,8 @@ mod tests {
                 }
                 .into()],
             };
-            let serialized = to_binary(&original).unwrap();
-            let deserialized = from_binary(&serialized).unwrap();
+            let serialized = to_json_binary(&original).unwrap();
+            let deserialized = from_json(serialized).unwrap();
             assert_eq!(ContractExecMsg::Cw1(original), deserialized);
         }
 
@@ -379,8 +381,8 @@ mod tests {
                 }
                 .into(),
             };
-            let serialized = to_binary(&original).unwrap();
-            let deserialized = from_binary(&serialized).unwrap();
+            let serialized = to_json_binary(&original).unwrap();
+            let deserialized = from_json(serialized).unwrap();
             assert_eq!(ContractQueryMsg::Cw1(original), deserialized);
         }
     }
