@@ -489,7 +489,7 @@ where
                     }
 
                     pub fn instantiate(
-                        &self,#(#fields,)*
+                        &self, #(#fields,)*
                     ) -> InstantiateProxy<'_, 'app, #(#generics,)* #mt_app > {
                         let msg = #instantiate_msg {#(#fields_names,)*};
                         InstantiateProxy::< #(#generics,)* _> {
@@ -497,6 +497,7 @@ where
                             funds: &[],
                             label: "Contract",
                             admin: None,
+                            salt: None,
                             msg,
                         }
                     }
@@ -507,6 +508,7 @@ where
                     funds: &'proxy [#sylvia ::cw_std::Coin],
                     label: &'proxy str,
                     admin: Option<String>,
+                    salt: Option<&'proxy [u8]>,
                     msg: InstantiateMsg #bracketed_used_generics,
                 }
 
@@ -528,24 +530,59 @@ where
                         Self { admin, ..self }
                     }
 
+                    pub fn with_salt(self, salt: impl Into<Option<&'proxy [u8]>>) -> Self {
+                        let salt = salt.into();
+                        Self { salt, ..self }
+                    }
+
                     #[track_caller]
                     pub fn call(self, sender: &str) -> Result<#proxy_name<'app, MtApp, #(#generics,)* >, #error_type> {
-                        (*self.code_id.app)
-                            .app_mut()
-                            .instantiate_contract(
-                                self.code_id.code_id,
-                                #sylvia ::cw_std::Addr::unchecked(sender),
-                                &self.msg,
-                                self.funds,
-                                self.label,
-                                self.admin,
-                            )
-                            .map_err(|err| err.downcast().unwrap())
-                            .map(|addr| #proxy_name {
-                                contract_addr: addr,
-                                app: self.code_id.app,
-                                _phantom: std::marker::PhantomData::default(),
-                            })
+                        let Self {code_id, funds, label, admin, salt, msg} = self;
+
+                        match salt {
+                            Some(salt) => {
+                                let msg = #sylvia ::cw_std::to_json_binary(&msg)
+                                    .map_err(Into::< #error_type >::into)?;
+                                let sender = #sylvia ::cw_std::Addr::unchecked(sender);
+
+                                let msg = #sylvia ::cw_std::WasmMsg::Instantiate2 {
+                                    admin,
+                                    code_id: code_id.code_id,
+                                    msg,
+                                    funds: funds.to_owned(),
+                                    label: label.to_owned(),
+                                    salt: salt.into(),
+                                };
+                                let app_response = (*code_id.app)
+                                    .app_mut()
+                                    .execute(sender.clone(), msg.into())
+                                    .map_err(|err| err.downcast::< #error_type >().unwrap())?;
+
+                                #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
+                                    .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
+                                    .map(|data| #proxy_name {
+                                        contract_addr: #sylvia ::cw_std::Addr::unchecked(data.contract_address),
+                                        app: code_id.app,
+                                        _phantom: std::marker::PhantomData::default(),
+                                    })
+                            },
+                            None => (*code_id.app)
+                                .app_mut()
+                                .instantiate_contract(
+                                    code_id.code_id,
+                                    #sylvia ::cw_std::Addr::unchecked(sender),
+                                    &msg,
+                                    funds,
+                                    label,
+                                    admin,
+                                )
+                                .map_err(|err| err.downcast().unwrap())
+                                .map(|addr| #proxy_name {
+                                    contract_addr: addr,
+                                    app: code_id.app,
+                                    _phantom: std::marker::PhantomData::default(),
+                                }),
+                        }
                     }
                 }
             }
