@@ -22,7 +22,7 @@ whitelist = { path = "../../interfaces/whitelist" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = { workspace = true }
 getrandom = { workspace = true, features = ["js"] }
-serde = { workspace = true, features = ["derive"] }
+serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 thiserror = { workspace = true }
 

@@ -5,6 +5,8 @@ use std::marker::PhantomData;
 use cosmwasm_std::{
     Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
 };
+#[cfg(feature = "cosmwasm_1_2")]
+use cosmwasm_std::{CodeInfoResponse, StdResult};
 use cw_multi_test::{
     Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov, Ibc, Module,
     Router, StakeKeeper, Staking, Wasm, WasmKeeper,
@@ -93,6 +95,11 @@ where
 
     pub fn update_block<F: Fn(&mut BlockInfo)>(&self, action: F) {
         self.app.borrow_mut().update_block(action)
+    }
+
+    #[cfg(feature = "cosmwasm_1_2")]
+    pub fn code_info(&self, code_id: u64) -> StdResult<CodeInfoResponse> {
+        self.app.borrow().wrap().query_wasm_code_info(code_id)
     }
 }
 

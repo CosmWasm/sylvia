@@ -20,7 +20,7 @@ cw1 = { path = "../../interfaces/cw1" }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true, features = ["staking"] }
 cw-storage-plus = { workspace = true }
-serde = { workspace = true, default-features = false, features = ["derive"] }
+serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 cw-multi-test = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
