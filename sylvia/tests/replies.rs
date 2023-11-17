@@ -1,5 +1,5 @@
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
-use sylvia::cw_std::{from_binary, Reply, SubMsgResponse, SubMsgResult};
+use sylvia::cw_std::{from_json, Reply, SubMsgResponse, SubMsgResult};
 
 #[allow(dead_code)]
 mod noop_contract {
@@ -33,7 +33,7 @@ mod reply_contract {
     use sylvia::types::{ExecCtx, InstantiateCtx, ReplyCtx};
     use sylvia::{contract, entry_points};
 
-    use sylvia::cw_std::{to_binary, Reply, Response, StdResult, SubMsg, WasmMsg};
+    use sylvia::cw_std::{to_json_binary, Reply, Response, StdResult, SubMsg, WasmMsg};
 
     use super::noop_contract;
 
@@ -58,7 +58,7 @@ mod reply_contract {
             let msg = noop_contract::sv::ExecMsg::Noop {};
             let msg = WasmMsg::Execute {
                 contract_addr: noop,
-                msg: to_binary(&msg)?,
+                msg: to_json_binary(&msg)?,
                 funds: vec![],
             };
             let msg = SubMsg::reply_always(msg, 1);
@@ -69,7 +69,7 @@ mod reply_contract {
 
         #[msg(reply)]
         fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> StdResult<Response> {
-            let resp = Response::new().set_data(to_binary("data")?);
+            let resp = Response::new().set_data(to_json_binary("data")?);
             Ok(resp)
         }
     }
@@ -88,7 +88,7 @@ fn entry_point_generation() {
     let env = mock_env();
 
     let resp = reply_contract::entry_points::reply(deps.as_mut(), env, msg).unwrap();
-    let data: String = from_binary(&resp.data.unwrap()).unwrap();
+    let data: String = from_json(resp.data.unwrap()).unwrap();
 
     assert_eq!(data, "data");
 }
@@ -110,7 +110,7 @@ fn mt_helper_generation() {
         .call(owner)
         .unwrap();
 
-    let data: String = from_binary(&resp.data.unwrap()).unwrap();
+    let data: String = from_json(&resp.data.unwrap()).unwrap();
 
     assert_eq!(data, "data");
 }

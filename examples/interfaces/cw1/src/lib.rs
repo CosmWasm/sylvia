@@ -34,7 +34,7 @@ pub trait Cw1 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_binary, from_slice, to_binary, BankMsg};
+    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg};
 
     #[test]
     fn execute() {
@@ -46,15 +46,15 @@ mod tests {
             .into()],
         };
 
-        let serialized = to_binary(&original).unwrap();
-        let deserialized = from_binary(&serialized).unwrap();
+        let serialized = to_json_binary(&original).unwrap();
+        let deserialized = from_json(serialized).unwrap();
 
         assert_eq!(original, deserialized);
     }
 
     #[test]
-    fn execute_from_slice() {
-        let deserialized = from_slice(br#"{"execute": { "msgs": [] }}"#).unwrap();
+    fn execute_from_json() {
+        let deserialized = from_json(br#"{"execute": { "msgs": [] }}"#).unwrap();
         assert_eq!(super::sv::ExecMsg::Execute { msgs: vec![] }, deserialized);
     }
 
@@ -69,15 +69,15 @@ mod tests {
             .into(),
         };
 
-        let serialized = to_binary(&original).unwrap();
-        let deserialized = from_binary(&serialized).unwrap();
+        let serialized = to_json_binary(&original).unwrap();
+        let deserialized = from_json(serialized).unwrap();
 
         assert_eq!(original, deserialized);
     }
 
     #[test]
-    fn query_from_slice() {
-        let deserialized = from_slice(
+    fn query_from_json() {
+        let deserialized = from_json(
             br#"{"can_execute": {
                 "sender": "address",
                 "msg": {

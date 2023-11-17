@@ -37,7 +37,7 @@ pub trait Cw4 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_binary, from_slice, to_binary};
+    use cosmwasm_std::{from_json, to_json_binary};
 
     use super::sv::*;
 
@@ -47,8 +47,8 @@ mod tests {
             admin: "admin_name".to_owned(),
         };
 
-        let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: Cw4ExecMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg = to_json_binary(&original_msg).unwrap();
+        let serialized_msg: Cw4ExecMsg = from_json(serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
@@ -57,16 +57,16 @@ mod tests {
     fn query() {
         let original_msg = Cw4QueryMsg::Admin {};
 
-        let serialized_msg = to_binary(&original_msg).unwrap();
-        let serialized_msg: Cw4QueryMsg = from_binary(&serialized_msg).unwrap();
+        let serialized_msg = to_json_binary(&original_msg).unwrap();
+        let serialized_msg: Cw4QueryMsg = from_json(serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
 
     #[test]
-    fn execute_from_slice() {
+    fn execute_from_json() {
         let deserialized: Cw4ExecMsg =
-            from_slice(br#"{"update_admin": {"admin": "admin_name"}}"#).unwrap();
+            from_json(br#"{"update_admin": {"admin": "admin_name"}}"#).unwrap();
         assert_eq!(
             deserialized,
             Cw4ExecMsg::UpdateAdmin {
@@ -76,8 +76,8 @@ mod tests {
     }
 
     #[test]
-    fn query_from_slice() {
-        let deserialized: Cw4QueryMsg = from_slice(br#"{"admin": {}}"#).unwrap();
+    fn query_from_json() {
+        let deserialized: Cw4QueryMsg = from_json(br#"{"admin": {}}"#).unwrap();
         assert_eq!(deserialized, Cw4QueryMsg::Admin {});
     }
 

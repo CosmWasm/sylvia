@@ -16,30 +16,30 @@ library = []
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
-anyhow = { version = "1.0", optional = true }
-cosmwasm-schema = "1.2"
-cosmwasm-std = { version = "1.3", features = ["staking"] }
-cw-multi-test = { version = "0.16", optional = true }
-cw-storage-plus = "1.0"
-cw-utils = "1.0"
-cw2 = "1.0"
+anyhow = { workspace = true, optional = true }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true, features = ["staking"] }
+cw-multi-test = { workspace = true, optional = true }
+cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
+cw2 = { workspace = true }
 cw20-allowances = { path = "../../interfaces/cw20-allowances" }
 cw20-marketing = { path = "../../interfaces/cw20-marketing" }
 cw20-minting = { path = "../../interfaces/cw20-minting" }
-getrandom = { version = "0.2.8", features = ["js"] }
-semver = "1.0"
-serde = { version = "1.0", default-features = false, features = ["derive"] }
+getrandom = { workspace = true, features = ["js"] }
+semver = { workspace = true }
+serde = { workspace = true, default-features = false, features = ["derive"] }
 sylvia = { path = "../../../sylvia" }
-thiserror = { version = "1.0" }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-anyhow = "1.0"
-assert_matches = "1.5.0"
-cw-multi-test = "0.16"
-cw-utils = "1.0"
+anyhow = { workspace = true }
+assert_matches = { workspace = true }
+cw-multi-test = { workspace = true }
+cw-utils = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }
 cw20-allowances = { path = "../../interfaces/cw20-allowances", features = [
-  "mt",
+    "mt",
 ] }
 cw20-marketing = { path = "../../interfaces/cw20-marketing", features = ["mt"] }
 cw20-minting = { path = "../../interfaces/cw20-minting", features = ["mt"] }

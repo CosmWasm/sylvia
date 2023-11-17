@@ -11,24 +11,24 @@ library = []
 tests = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
-anyhow = { version = "1.0.68", optional = true }
-cosmwasm-schema = "1.2"
-cosmwasm-std = { version = "1.3", features = ["staking"] }
-cw-multi-test = { version = "0.16.2", optional = true }
-cw-storage-plus = "1.0"
-cw-utils = "1.0"
+anyhow = { workspace = true, optional = true }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true, features = ["staking"] }
+cw-multi-test = { workspace = true, optional = true }
+cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
 cw1 = { path = "../../interfaces/cw1" }
 whitelist = { path = "../../interfaces/whitelist" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
-cw2 = "1.0"
-getrandom = { version = "0.2.8", features = ["js"] }
-serde = { version = "1.0.152", features = ["derive"] }
+cw2 = { workspace = true }
+getrandom = { workspace = true, features = ["js"] }
+serde = { workspace = true, features = ["derive"] }
 sylvia = { path = "../../../sylvia" }
-thiserror = "1.0.38"
+thiserror = { workspace = true }
 
 [dev-dependencies]
-anyhow = "1.0.68"
-cw-multi-test = "0.16"
+anyhow = { workspace = true }
+cw-multi-test = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library", "mt"] }
 cw1 = { path = "../../interfaces/cw1", features = ["mt"] }
