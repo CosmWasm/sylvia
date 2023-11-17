@@ -453,6 +453,48 @@ where
             >
         };
 
+        let instantiate2 = if cfg!(feature = "cosmwasm_1_2") {
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    let msg = #sylvia ::cw_std::to_json_binary(&msg)
+                        .map_err(Into::< #error_type >::into)?;
+                    let sender = #sylvia ::cw_std::Addr::unchecked(sender);
+
+                    let msg = #sylvia ::cw_std::WasmMsg::Instantiate2 {
+                        admin,
+                        code_id: code_id.code_id,
+                        msg,
+                        funds: funds.to_owned(),
+                        label: label.to_owned(),
+                        salt: salt.into(),
+                    };
+                    let app_response = (*code_id.app)
+                        .app_mut()
+                        .execute(sender.clone(), msg.into())
+                        .map_err(|err| err.downcast::< #error_type >().unwrap())?;
+
+                    #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
+                        .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
+                        .map(|data| #proxy_name {
+                            contract_addr: #sylvia ::cw_std::Addr::unchecked(data.contract_address),
+                            app: code_id.app,
+                            _phantom: std::marker::PhantomData::default(),
+                        })
+                }
+            }
+        } else {
+            #[cfg(not(tarpaulin_include))]
+            {
+                quote! {
+                    let err = #sylvia ::cw_std::StdError::generic_err(
+                        "`with_salt` was called, but it requires `cosmwasm_1_2` feature enabled. Consider removing `with_salt` or adding the `cosmwasm_1_2` feature."
+                    );
+                    Err(Into::into(err))
+                }
+            }
+        };
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -541,30 +583,7 @@ where
 
                         match salt {
                             Some(salt) => {
-                                let msg = #sylvia ::cw_std::to_json_binary(&msg)
-                                    .map_err(Into::< #error_type >::into)?;
-                                let sender = #sylvia ::cw_std::Addr::unchecked(sender);
-
-                                let msg = #sylvia ::cw_std::WasmMsg::Instantiate2 {
-                                    admin,
-                                    code_id: code_id.code_id,
-                                    msg,
-                                    funds: funds.to_owned(),
-                                    label: label.to_owned(),
-                                    salt: salt.into(),
-                                };
-                                let app_response = (*code_id.app)
-                                    .app_mut()
-                                    .execute(sender.clone(), msg.into())
-                                    .map_err(|err| err.downcast::< #error_type >().unwrap())?;
-
-                                #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
-                                    .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
-                                    .map(|data| #proxy_name {
-                                        contract_addr: #sylvia ::cw_std::Addr::unchecked(data.contract_address),
-                                        app: code_id.app,
-                                        _phantom: std::marker::PhantomData::default(),
-                                    })
+                                #instantiate2
                             },
                             None => (*code_id.app)
                                 .app_mut()
