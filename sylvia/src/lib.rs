@@ -14,7 +14,7 @@ pub use cosmwasm_schema as cw_schema;
 pub use cosmwasm_std as cw_std;
 #[cfg(feature = "mt")]
 pub use cw_multi_test;
-#[cfg(feature = "mt")]
+#[cfg(feature = "cosmwasm_1_2")]
 pub use cw_utils;
 #[cfg(feature = "mt")]
 pub use derivative;

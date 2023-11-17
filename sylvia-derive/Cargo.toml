@@ -12,6 +12,7 @@ categories = ["api-bindings", "wasm"]
 
 [features]
 mt = []
+cosmwasm_1_2 = []
 
 [lib]
 proc-macro = true
