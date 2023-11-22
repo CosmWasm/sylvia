@@ -25,6 +25,7 @@ cw-utils = { workspace = true }
 serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 generic = { path = "../../interfaces/generic" }
+custom-and-generic = { path = "../../interfaces/custom-and-generic/" }
 
 [dev-dependencies]
 anyhow = { workspace = true }
