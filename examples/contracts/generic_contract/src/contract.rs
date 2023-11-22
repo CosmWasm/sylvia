@@ -19,7 +19,7 @@ pub struct GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT> {
 #[contract]
 #[messages(cw1 as Cw1: custom(msg, query))]
 #[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg,SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
     GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>

@@ -1,5 +1,6 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
+use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 
 pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
@@ -102,9 +103,9 @@ pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
 
 impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
 
-pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned {}
+pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
-impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned {}
+impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
 #[cw_serde]
 pub struct SvCustomMsg;
