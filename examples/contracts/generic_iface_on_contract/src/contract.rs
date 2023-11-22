@@ -10,7 +10,7 @@ pub struct NonGenericContract;
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
 #[messages(generic<SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg,SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
 #[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]

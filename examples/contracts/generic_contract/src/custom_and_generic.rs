@@ -10,8 +10,9 @@ impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
     CustomAndGeneric<
         SvCustomMsg,
         SvCustomMsg,
-        sylvia::types::SvCustomQuery,
+        SvCustomMsg,
         sylvia::types::SvCustomMsg,
+        sylvia::types::SvCustomQuery,
     > for crate::contract::GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
 {
     type Error = StdError;
