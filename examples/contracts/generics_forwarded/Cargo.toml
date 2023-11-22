@@ -26,6 +26,7 @@ serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 generic = { path = "../../interfaces/generic" }
 custom-and-generic = { path = "../../interfaces/custom-and-generic/" }
+cw1 = { path = "../../interfaces/cw1/" }
 
 [dev-dependencies]
 anyhow = { workspace = true }
