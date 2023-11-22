@@ -310,6 +310,7 @@ impl<'a> MultitestHelpers<'a> {
             .unwrap_or(quote! {});
 
         let custom_msg = custom.msg_or_default();
+        let custom_query = custom.query_or_default();
 
         #[cfg(not(tarpaulin_include))]
         let mt_app = parse_quote! {
@@ -358,12 +359,9 @@ impl<'a> MultitestHelpers<'a> {
 
         let mut generics_checker = CheckGenerics::new(generic_params);
         generics_checker.visit_type(&custom_msg);
-        let (custom_generic, _) = generics_checker.used_unused();
-        let custom_generic = custom_generic.first();
-        let custom_where_predicate = match custom_generic {
-            Some(generic) => filter_wheres(where_clause, generic_params, &[generic]),
-            None => vec![],
-        };
+        generics_checker.visit_type(&custom_query);
+        let (custom_generics, _) = generics_checker.used_unused();
+        let custom_where_predicate = filter_wheres(where_clause, generic_params, &custom_generics);
         let exec_where_predicates = filter_wheres(where_clause, generic_params, exec_generics);
         let query_where_predicates = filter_wheres(where_clause, generic_params, query_generics);
         let trait_where_clause = if !exec_where_predicates.is_empty() {
@@ -389,12 +387,12 @@ impl<'a> MultitestHelpers<'a> {
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name<MtApp, #(#exec_generics,)* #(#query_generics,)* #custom_generic > #trait_where_clause {
+                    pub trait #trait_name<MtApp, #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > #trait_where_clause {
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#exec_generics,)* #(#query_generics,)* #custom_generic> #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #custom_generic > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)*> #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -422,7 +420,7 @@ impl<'a> MultitestHelpers<'a> {
                         #(#exec_methods)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #custom_generic > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,

@@ -640,6 +640,7 @@ dependencies = [
  "anyhow",
  "cosmwasm-schema",
  "cosmwasm-std",
+ "custom-and-generic",
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",

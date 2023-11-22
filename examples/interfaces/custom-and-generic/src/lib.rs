@@ -6,29 +6,30 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=RetType, query=CtxQuery)]
-pub trait CustomAndGeneric<ExecParam, QueryParam, CtxQuery, RetType>
+#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
+pub trait CustomAndGeneric<ExecT, QueryT, RetT, CustomMsgT, CustomQueryT>
 where
-    for<'msg_de> ExecParam: CustomMsg + Deserialize<'msg_de>,
-    QueryParam: sylvia::types::CustomMsg,
-    CtxQuery: sylvia::types::CustomQuery,
-    RetType: CustomMsg + DeserializeOwned,
+    for<'msg_de> ExecT: CustomMsg + Deserialize<'msg_de>,
+    QueryT: sylvia::types::CustomMsg,
+    RetT: CustomMsg + DeserializeOwned,
+    CustomMsgT: CustomMsg + DeserializeOwned,
+    CustomQueryT: sylvia::types::CustomQuery,
 {
     type Error: From<StdError>;
 
     #[msg(exec)]
     fn custom_generic_execute(
         &self,
-        ctx: ExecCtx<CtxQuery>,
-        msgs: Vec<CosmosMsg<ExecParam>>,
-    ) -> Result<Response<RetType>, Self::Error>;
+        ctx: ExecCtx<CustomQueryT>,
+        msgs: Vec<CosmosMsg<ExecT>>,
+    ) -> Result<Response<CustomMsgT>, Self::Error>;
 
     #[msg(query)]
     fn custom_generic_query(
         &self,
-        ctx: QueryCtx<CtxQuery>,
-        param: QueryParam,
-    ) -> Result<RetType, Self::Error>;
+        ctx: QueryCtx<CustomQueryT>,
+        param: QueryT,
+    ) -> Result<RetT, Self::Error>;
 }
 
 #[cfg(test)]
@@ -59,11 +60,11 @@ mod tests {
 
         // Construct messages with Interface extension
         let _ =
-            <super::sv::Api<SvCustomMsg, _, SvCustomQuery, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
+            <super::sv::Api<SvCustomMsg, _, SvCustomMsg, SvCustomQuery, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
                 SvCustomMsg {},
             );
         let _=
-            <super::sv::Api<_, SvCustomMsg, SvCustomQuery,cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
+            <super::sv::Api<_, SvCustomMsg,SvCustomMsg, SvCustomQuery,cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
             vec![ CosmosMsg::Custom(SvCustomMsg{}),
             ]);
     }
