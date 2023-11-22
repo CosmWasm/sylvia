@@ -6,8 +6,14 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg, SvCustomQuery};
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=sylvia::types::SvCustomMsg, query=SvCustomQuery)]
-impl CustomAndGeneric<SvCustomMsg, SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg>
-    for crate::contract::NonGenericContract
+impl
+    CustomAndGeneric<
+        SvCustomMsg,
+        SvCustomMsg,
+        SvCustomMsg,
+        sylvia::types::SvCustomMsg,
+        SvCustomQuery,
+    > for crate::contract::NonGenericContract
 {
     type Error = StdError;
 

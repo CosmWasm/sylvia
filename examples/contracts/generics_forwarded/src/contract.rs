@@ -1,6 +1,5 @@
 use cosmwasm_std::{Reply, Response, StdResult};
 use cw_storage_plus::Item;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SvCustomMsg,
@@ -29,6 +28,7 @@ pub struct GenericsForwardedContract<
 
 #[contract]
 #[messages(generic<ExecT, QueryT, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<ExecT, QueryT, SvCustomMsg,CustomMsgT, CustomQueryT> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
     GenericsForwardedContract<
@@ -41,11 +41,11 @@ impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
         FieldT,
     >
 where
-    for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    ExecT: CustomMsg + DeserializeOwned + 'static,
-    QueryT: CustomMsg + DeserializeOwned + 'static,
-    MigrateT: CustomMsg + DeserializeOwned + 'static,
-    CustomMsgT: CustomMsg + DeserializeOwned + 'static,
+    for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
+    ExecT: CustomMsg + 'static,
+    QueryT: CustomMsg + 'static,
+    MigrateT: CustomMsg + 'static,
+    CustomMsgT: CustomMsg + 'static,
     CustomQueryT: CustomQuery + 'static,
     FieldT: 'static,
 {
