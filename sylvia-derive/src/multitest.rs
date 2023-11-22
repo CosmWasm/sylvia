@@ -381,18 +381,25 @@ impl<'a> MultitestHelpers<'a> {
             .unique()
             .collect();
 
+        let trait_generics: Vec<_> = exec_generics
+            .iter()
+            .chain(query_generics.iter())
+            .chain(custom_generics.iter())
+            .unique()
+            .collect();
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name<MtApp, #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > #trait_where_clause {
+                    pub trait #trait_name<MtApp, #(#trait_generics,)* > #trait_where_clause {
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)*> #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#trait_generics,)* > #trait_name< #mt_app , #(#trait_generics,)* > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -420,7 +427,7 @@ impl<'a> MultitestHelpers<'a> {
                         #(#exec_methods)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#exec_generics,)* #(#query_generics,)* #(#custom_generics,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#trait_generics,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,

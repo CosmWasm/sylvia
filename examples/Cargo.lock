@@ -646,6 +646,7 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
+ "cw1",
  "generic",
  "serde",
  "sylvia",

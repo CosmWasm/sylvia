@@ -28,6 +28,7 @@ pub struct GenericsForwardedContract<
 
 #[contract]
 #[messages(generic<ExecT, QueryT, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(cw1 as Cw1: custom(msg, query))]
 #[messages(custom_and_generic<ExecT, QueryT, SvCustomMsg,CustomMsgT, CustomQueryT> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
