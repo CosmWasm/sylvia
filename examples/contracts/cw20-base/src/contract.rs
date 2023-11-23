@@ -6,13 +6,12 @@ use cosmwasm_std::{
     ensure, Addr, Binary, BlockInfo, DepsMut, Order, Response, StdError, StdResult, Storage,
     Uint128,
 };
-use cw2::set_contract_version;
+use cw2::{ensure_from_older_version, set_contract_version};
 use cw20_allowances::responses::AllowanceResponse;
 use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
 use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
-use cw_utils::ensure_from_older_version;
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
