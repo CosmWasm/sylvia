@@ -73,9 +73,7 @@ where
             .iter()
             .find(|gen| gen.get_path().as_ref() == Some(p))
         {
-            if !self.used.contains(gen) {
-                self.used.push(gen);
-            }
+            self.used.push(gen);
         }
 
         // Default visit implementation - visiting path deeper

@@ -35,14 +35,6 @@ where
         Ok(Response::new())
     }
 
-    // Sylvia will fail if single type is used to match against two different generics
-    // It's because we have to map unique generics used as they can be used multiple times.
-    // If for some reason like here one type would be used in place of two generics either full
-    // path or some alias has to be used.
-    //
-    // Sylvia will fail to recognize generic used if their path is different.
-    // F.e. if we this query would return `SvCustomMsg` and we would pass
-    // `sylvia::types::SvCustomMsg` to the `Generic` trait paths would not match.
     #[msg(query)]
     fn generic_query(&self, _ctx: QueryCtx, _msg: QueryT) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
