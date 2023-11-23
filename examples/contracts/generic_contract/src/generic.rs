@@ -8,8 +8,7 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
-    Generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
+impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT> Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg>
     for crate::contract::GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
 where
     for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
@@ -38,11 +37,7 @@ where
     // F.e. if we this query would return `SvCustomMsg` and we would pass
     // `sylvia::types::SvCustomMsg` to the `Generic` trait paths would not match.
     #[msg(query)]
-    fn generic_query(
-        &self,
-        _ctx: QueryCtx,
-        _msg: SvCustomMsg,
-    ) -> StdResult<sylvia::types::SvCustomMsg> {
+    fn generic_query(&self, _ctx: QueryCtx, _msg: SvCustomMsg) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
 }
