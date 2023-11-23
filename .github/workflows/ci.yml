@@ -92,11 +92,14 @@ jobs:
       - name: Build custom
         working-directory: examples/contracts/custom
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build generic_contract 
+      - name: Build generic_contract
         working-directory: examples/contracts/generic_contract
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build generic_iface_on_contract 
+      - name: Build generic_iface_on_contract
         working-directory: examples/contracts/generic_iface_on_contract
+        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build generics_forwarded
+        working-directory: examples/contracts/generics_forwarded
         run: cargo build --release --target wasm32-unknown-unknown --locked --lib
 
       - name: Install cosmwasm-check
@@ -125,6 +128,9 @@ jobs:
       - name: generic_iface_on_contract schema
         working-directory: examples/contracts/generic_iface_on_contract
         run: cargo schema
+      - name: generics_forwarded schema
+        working-directory: examples/contracts/generics_forwarded
+        run: cargo schema
 
       - name: Cw1-whitelist ts-codegen 
         working-directory: examples/contracts/cw1-whitelist/
@@ -143,10 +149,13 @@ jobs:
         run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
       - name: Generic_contract ts-codegen
         working-directory: examples/contracts/generic_contract/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name generic_contract --no-bundle
       - name: Generic_iface_on_contract ts-codegen
         working-directory: examples/contracts/generic_iface_on_contract
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name generic_iface_on_contract --no-bundle
+      - name: Generics_forwarded ts-codegen
+        working-directory: examples/contracts/generics_forwarded
+        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name generics_forwarded --no-bundle
 
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
@@ -160,6 +169,7 @@ jobs:
             examples/contracts/custom/schema/custom.json
             examples/contracts/generic_contract/schema/generic_contract.json
             examples/contracts/generic_iface_on_contract/schema/generic_iface_on_contract.json
+            examples/contracts/generics_forwarded/schema/generics_forwarded.json
 
   coverage:
     name: Code coverage
