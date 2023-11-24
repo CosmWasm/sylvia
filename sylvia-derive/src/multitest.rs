@@ -51,6 +51,7 @@ pub struct MultitestHelpers<'a, Generics> {
     query_variants: MsgVariants<'a, Generics>,
     migrate_variants: MsgVariants<'a, Generics>,
     reply_variants: MsgVariants<'a, Generics>,
+    sudo_variants: MsgVariants<'a, Generics>,
 }
 
 impl<'a, Generics> MultitestHelpers<'a, Generics>
@@ -77,6 +78,8 @@ where
             MsgVariants::new(source.as_variants(), MsgType::Exec, generics, where_clause);
         let query_variants =
             MsgVariants::new(source.as_variants(), MsgType::Query, generics, where_clause);
+        let sudo_variants =
+            MsgVariants::new(source.as_variants(), MsgType::Sudo, generics, where_clause);
         let migrate_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Migrate,
@@ -139,6 +142,7 @@ where
             instantiate_variants,
             exec_variants,
             query_variants,
+            sudo_variants,
             migrate_variants,
             reply_variants,
         }
@@ -154,6 +158,7 @@ where
             exec_variants,
             query_variants,
             migrate_variants,
+            sudo_variants,
             generics,
             where_clause,
             ..
@@ -184,6 +189,8 @@ where
             exec_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let query_methods =
             query_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+        let sudo_methods =
+            sudo_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let migrate_methods =
             migrate_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let where_predicates = where_clause
@@ -239,6 +246,7 @@ where
                         #( #exec_methods )*
                         #( #migrate_methods )*
                         #( #query_methods )*
+                        #( #sudo_methods )*
                         #( #proxy_accessors )*
                     }
 
@@ -288,6 +296,7 @@ where
             generics,
             exec_variants,
             query_variants,
+            sudo_variants,
             ..
         } = self;
 
@@ -295,7 +304,6 @@ where
 
         let interface_name = interface_name(self.source);
         let proxy_name = &self.proxy_name;
-        let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
 
         let module = interfaces
             .get_only_interface()
@@ -340,6 +348,13 @@ where
             generics,
             &module,
         );
+        let sudo_methods = sudo_variants.emit_interface_multitest_proxy_methods(
+            &custom_msg,
+            &mt_app,
+            error_type,
+            generics,
+            &module,
+        );
         let exec_methods_declarations =
             exec_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_enum);
         let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
@@ -347,6 +362,8 @@ where
             error_type,
             &interface_enum,
         );
+        let sudo_methods_declarations =
+            sudo_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_enum);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -354,12 +371,13 @@ where
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name<MtApp> {
+                    pub trait #interface_name <MtApp> {
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
+                        #(#sudo_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT> #interface_name < #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -382,6 +400,7 @@ where
                     {
                         #(#query_methods)*
                         #(#exec_methods)*
+                        #(#sudo_methods)*
                     }
                 }
             }
@@ -631,6 +650,7 @@ where
             instantiate_variants,
             exec_variants,
             query_variants,
+            sudo_variants,
             migrate_variants,
             reply_variants,
             ..
@@ -639,6 +659,7 @@ where
 
         let bracketed_generics = emit_bracketed_generics(generics);
         let full_where_clause = &source.generics.where_clause;
+
         let instantiate_body = override_entry_points
             .get_entry_point(MsgType::Instantiate)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
@@ -657,20 +678,14 @@ where
         let sudo_body = override_entry_points
             .get_entry_point(MsgType::Sudo)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
-            .unwrap_or_else(|| {
-                quote! {
-                    #sylvia ::anyhow::bail!("sudo not implemented for contract")
-                }
-            });
+            .unwrap_or_else(|| sudo_variants.emit_multitest_default_dispatch());
 
         let migrate_body = match override_entry_points.get_entry_point(MsgType::Migrate) {
             Some(entry_point) => entry_point.emit_multitest_dispatch(),
             None if migrate_variants.get_only_variant().is_some() => {
                 migrate_variants.emit_multitest_default_dispatch()
             }
-            None => quote! {
-                #sylvia ::anyhow::bail!("migrate not implemented for contract")
-            },
+            None => quote! { #sylvia ::anyhow::bail!("migrate not implemented for contract") },
         };
 
         let reply_body = match override_entry_points.get_entry_point(MsgType::Reply) {
