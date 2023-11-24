@@ -666,6 +666,16 @@ impl<'a> MsgVariant<'a> {
                         .map_err(Into::into)
                 }
             },
+            MsgType::Sudo => quote! {
+                pub fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                    let msg = #enum_name :: #name ( #(#arguments),* );
+
+                    (*self.app)
+                        .app_mut()
+                        .wasm_sudo(self.contract_addr.clone(), &msg)
+                        .map_err(|err| err.downcast().unwrap())
+                }
+            },
             _ => quote! {},
         }
     }
@@ -719,6 +729,16 @@ impl<'a> MsgVariant<'a> {
                     }
                 }
             }
+            MsgType::Sudo => quote! {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
+
+                    (*self.app)
+                        .app_mut()
+                        .wasm_sudo(self.contract_addr.clone(), &msg)
+                        .map_err(|err| err.downcast().unwrap())
+                }
+            },
             _ => quote! {},
         }
     }
@@ -757,6 +777,10 @@ impl<'a> MsgVariant<'a> {
                     fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
                 }
             }
+            ,
+            MsgType::Sudo => quote! {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
+            },
             _ => quote! {},
         }
     }
@@ -1665,20 +1689,25 @@ impl<'a> EntryPoints<'a> {
 
         #[cfg(not(tarpaulin_include))]
         {
-            let entry_points = [instantiate_variants, exec_variants, query_variants]
-                .into_iter()
-                .map(
-                    |variants| match override_entry_points.get_entry_point(variants.msg_ty) {
-                        Some(_) => quote! {},
-                        None => variants.emit_default_entry_point(
-                            &custom_msg,
-                            &custom_query,
-                            name,
-                            error,
-                            &attrs.generics,
-                        ),
-                    },
-                );
+            let entry_points = [
+                instantiate_variants,
+                exec_variants,
+                query_variants,
+                sudo_variants,
+            ]
+            .into_iter()
+            .map(|variants| {
+                match override_entry_points.get_entry_point(variants.msg_ty) {
+                    Some(_) => quote! {},
+                    None => variants.emit_default_entry_point(
+                        &custom_msg,
+                        &custom_query,
+                        name,
+                        error,
+                        &attrs.generics,
+                    ),
+                }
+            });
 
             let migrate_not_overridden = override_entry_points
                 .get_entry_point(MsgType::Migrate)
@@ -1714,19 +1743,6 @@ impl<'a> EntryPoints<'a> {
                     _ => quote! {},
                 });
 
-            let sudo = override_entry_points
-                .get_entry_point(MsgType::Sudo)
-                .map(|_| quote! {})
-                .unwrap_or_else(|| {
-                    sudo_variants.emit_default_entry_point(
-                        &custom_msg,
-                        &custom_query,
-                        name,
-                        error,
-                        &attrs.generics,
-                    )
-                });
-
             quote! {
                 pub mod entry_points {
                     use super::*;
@@ -1736,8 +1752,6 @@ impl<'a> EntryPoints<'a> {
                     #migrate
 
                     #reply_ep
-
-                    #sudo
                 }
             }
         }

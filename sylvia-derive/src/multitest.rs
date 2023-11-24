@@ -49,6 +49,7 @@ pub struct ContractMtHelpers<'a> {
     query_variants: MsgVariants<'a, GenericParam>,
     migrate_variants: MsgVariants<'a, GenericParam>,
     reply_variants: MsgVariants<'a, GenericParam>,
+    sudo_variants: MsgVariants<'a, GenericParam>,
 }
 
 impl<'a> ContractMtHelpers<'a> {
@@ -89,6 +90,12 @@ impl<'a> ContractMtHelpers<'a> {
             generic_params,
             where_clause,
         );
+        let sudo_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Sudo,
+            generic_params,
+            where_clause,
+        );
 
         let error_type: Type = if is_trait(source) {
             let associated_error = source.items.iter().find_map(|item| match item {
@@ -123,6 +130,7 @@ impl<'a> ContractMtHelpers<'a> {
             instantiate_variants,
             exec_variants,
             query_variants,
+            sudo_variants,
             migrate_variants,
             reply_variants,
         }
@@ -136,6 +144,7 @@ impl<'a> ContractMtHelpers<'a> {
             exec_variants,
             query_variants,
             migrate_variants,
+            sudo_variants,
             generic_params,
             where_clause,
             ..
@@ -162,6 +171,8 @@ impl<'a> ContractMtHelpers<'a> {
             exec_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let query_methods =
             query_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+        let sudo_methods =
+            sudo_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let migrate_methods =
             migrate_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
         let where_predicates = where_clause
@@ -215,6 +226,7 @@ impl<'a> ContractMtHelpers<'a> {
                         #( #exec_methods )*
                         #( #migrate_methods )*
                         #( #query_methods )*
+                        #( #sudo_methods )*
                     }
 
                     impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
@@ -498,6 +510,7 @@ impl<'a> ContractMtHelpers<'a> {
 
         let bracketed_generics = emit_bracketed_generics(generic_params);
         let full_where_clause = &source.generics.where_clause;
+
         let instantiate_body = override_entry_points
             .get_entry_point(MsgType::Instantiate)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
@@ -516,20 +529,14 @@ impl<'a> ContractMtHelpers<'a> {
         let sudo_body = override_entry_points
             .get_entry_point(MsgType::Sudo)
             .map(OverrideEntryPoint::emit_multitest_dispatch)
-            .unwrap_or_else(|| {
-                quote! {
-                    #sylvia ::anyhow::bail!("sudo not implemented for contract")
-                }
-            });
+            .unwrap_or_else(|| emit_default_dispatch(&MsgType::Sudo, contract));
 
         let migrate_body = match override_entry_points.get_entry_point(MsgType::Migrate) {
             Some(entry_point) => entry_point.emit_multitest_dispatch(),
             None if migrate_variants.get_only_variant().is_some() => {
                 emit_default_dispatch(&MsgType::Migrate, contract)
             }
-            None => quote! {
-                #sylvia ::anyhow::bail!("migrate not implemented for contract")
-            },
+            None => quote! { #sylvia ::anyhow::bail!("migrate not implemented for contract") },
         };
 
         let reply_body = match override_entry_points.get_entry_point(MsgType::Reply) {
@@ -630,6 +637,7 @@ pub struct ImplMtHelpers<'a> {
     generic_params: &'a [&'a GenericParam],
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
+    sudo_variants: MsgVariants<'a, GenericParam>,
     where_clause: &'a Option<syn::WhereClause>,
     contract_module: &'a Option<&'a Path>,
     contract_name: &'a Ident,
@@ -656,6 +664,12 @@ impl<'a> ImplMtHelpers<'a> {
             generic_params,
             where_clause,
         );
+        let sudo_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Sudo,
+            generic_params,
+            where_clause,
+        );
         let associated_error = source.items.iter().find_map(|item| match item {
             ImplItem::Type(ty) if ty.ident == "Error" => Some(&ty.ty),
             _ => None,
@@ -679,6 +693,7 @@ impl<'a> ImplMtHelpers<'a> {
             interfaces,
             exec_variants,
             query_variants,
+            sudo_variants,
             contract_module,
         }
     }
@@ -692,6 +707,7 @@ impl<'a> ImplMtHelpers<'a> {
             generic_params,
             exec_variants,
             query_variants,
+            sudo_variants,
             where_clause,
             contract_module,
             contract_name,
@@ -753,6 +769,13 @@ impl<'a> ImplMtHelpers<'a> {
             &interface_api,
             &associated_items,
         );
+        let sudo_methods = sudo_variants.emit_interface_multitest_proxy_methods(
+            &custom_msg,
+            &mt_app,
+            error_type,
+            &interface_api,
+            &associated_items,
+        );
         let exec_methods_declarations = exec_variants.emit_proxy_methods_declarations(
             &custom_msg,
             error_type,
@@ -760,6 +783,12 @@ impl<'a> ImplMtHelpers<'a> {
             &associated_items,
         );
         let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            error_type,
+            &interface_api,
+            &associated_items,
+        );
+        let sudo_methods_declarations = sudo_variants.emit_proxy_methods_declarations(
             &custom_msg,
             error_type,
             &interface_api,
@@ -785,6 +814,7 @@ impl<'a> ImplMtHelpers<'a> {
                     pub trait #trait_name<MtApp, #(#generic_params,)* > #where_clause {
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
+                        #(#sudo_methods_declarations)*
                     }
 
                     impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #trait_name< #mt_app, #(#generic_params,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
@@ -811,6 +841,7 @@ impl<'a> ImplMtHelpers<'a> {
                     {
                         #(#query_methods)*
                         #(#exec_methods)*
+                        #(#sudo_methods)*
                     }
                 }
             }
