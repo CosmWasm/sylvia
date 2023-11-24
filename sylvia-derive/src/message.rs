@@ -1686,6 +1686,8 @@ impl<'a> EntryPoints<'a> {
                 .iter()
                 .map(|variant| variant.function_name.clone())
                 .next();
+        let sudo_variants =
+            MsgVariants::new(source.as_variants(), MsgType::Sudo, generics, where_clause);
         let contract_generics = match &attrs.generics {
             Some(generics) => quote! { ::< #generics > },
             None => quote! {},
@@ -1742,6 +1744,19 @@ impl<'a> EntryPoints<'a> {
                     _ => quote! {},
                 });
 
+            let sudo = override_entry_points
+                .get_entry_point(MsgType::Sudo)
+                .map(|_| quote! {})
+                .unwrap_or_else(|| {
+                    sudo_variants.emit_default_entry_point(
+                        &custom_msg,
+                        &custom_query,
+                        name,
+                        error,
+                        &attrs.generics,
+                    )
+                });
+
             quote! {
                 pub mod entry_points {
                     use super::*;
@@ -1751,6 +1766,8 @@ impl<'a> EntryPoints<'a> {
                     #migrate
 
                     #reply_ep
+
+                    #sudo
                 }
             }
         }
