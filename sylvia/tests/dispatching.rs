@@ -135,7 +135,7 @@ mod contract {
     use cosmwasm_std::{Addr, Response, StdError, StdResult};
     use cw_storage_plus::{Item, Map};
     use sylvia::types::{InstantiateCtx, SudoCtx};
-    use sylvia_derive::contract;
+    use sylvia_derive::{contract, entry_points};
 
     use crate::QueryResponse;
 
@@ -147,6 +147,7 @@ mod contract {
         pub(crate) data: Map<'static, Addr, QueryResponse>,
     }
 
+    #[entry_points]
     #[allow(dead_code)]
     #[cfg(not(tarpaulin_include))]
     #[contract]

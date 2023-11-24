@@ -1,19 +1,55 @@
 use contract::sv::ContractExecMsg;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Coin;
-use cw_storage_plus::Item;
 
 #[cw_serde]
 pub struct CountResponse {
     pub count: u32,
 }
 
-#[cw_serde]
-pub enum SudoMsg {
-    MoveFunds {
-        recipient: String,
-        amount: Vec<Coin>,
-    },
+pub mod sudo {
+    use cosmwasm_schema::cw_serde;
+    use cosmwasm_std::{Coin, DepsMut, Env, Response, StdError, StdResult};
+    use sylvia::types::SudoCtx;
+
+    #[cw_serde]
+    pub enum SudoMsg {
+        MoveFunds {
+            recipient: String,
+            amount: Vec<Coin>,
+        },
+    }
+
+    impl SudoMsg {
+        pub fn dispatch(
+            self,
+            contract: &crate::contract::Contract,
+            ctx: SudoCtx,
+        ) -> StdResult<Response> {
+            contract
+                .sudos
+                .update(ctx.deps.storage, |count| -> Result<u32, StdError> {
+                    Ok(count + 1)
+                })?;
+            Ok(Response::new())
+        }
+    }
+
+    #[cw_serde]
+    pub enum SudoWrapperMsg {
+        CustomSudo(SudoMsg),
+        ContractSudo(crate::contract::sv::ContractSudoMsg),
+    }
+
+    impl SudoWrapperMsg {
+        pub fn dispatch(self, ctx: (DepsMut, Env)) -> StdResult<Response> {
+            use SudoWrapperMsg::*;
+
+            match self {
+                ContractSudo(msg) => msg.dispatch(&crate::contract::Contract::new(), ctx),
+                CustomSudo(msg) => msg.dispatch(&crate::contract::Contract::new(), Into::into(ctx)),
+            }
+        }
+    }
 }
 
 pub mod migrate {
@@ -28,15 +64,19 @@ pub mod exec {
     use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
     use sylvia::types::ExecCtx;
 
+    use crate::contract::Contract;
+
     #[cw_serde]
     pub enum UserExecMsg {
         IncreaseByOne {},
     }
 
     pub fn increase_by_one(ctx: ExecCtx) -> StdResult<Response> {
-        crate::COUNTER.update(ctx.deps.storage, |count| -> Result<u32, StdError> {
-            Ok(count + 1)
-        })?;
+        Contract::new()
+            .execs
+            .update(ctx.deps.storage, |count| -> Result<u32, StdError> {
+                Ok(count + 1)
+            })?;
         Ok(Response::new())
     }
 
@@ -58,24 +98,26 @@ pub mod exec {
     }
 }
 
-const COUNTER: Item<u32> = Item::new("counter");
-
 pub mod entry_points {
-    use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
+    use crate::contract::Contract;
     use crate::exec::CustomExecMsg;
     use crate::migrate::MigrateMsg;
-    use crate::{SudoMsg, COUNTER};
+    use crate::sudo::SudoWrapperMsg;
 
     #[entry_point]
-    pub fn sudo(deps: DepsMut, _env: Env, _msg: SudoMsg) -> StdResult<Response> {
-        COUNTER.save(deps.storage, &3)?;
-        Ok(Response::new())
+    pub fn sudo(deps: DepsMut, env: Env, msg: SudoWrapperMsg) -> StdResult<Response> {
+        msg.dispatch((deps, env))
     }
 
     #[entry_point]
     pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-        COUNTER.save(deps.storage, &5)?;
+        Contract::new()
+            .migrates
+            .update(deps.storage, |count| -> Result<u32, StdError> {
+                Ok(count + 1)
+            })?;
         Ok(Response::new())
     }
 
@@ -92,16 +134,21 @@ pub mod entry_points {
 
 mod contract {
     use cosmwasm_std::{Response, StdError, StdResult};
+    use cw_storage_plus::Item;
     use sylvia::contract;
-    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 
-    use crate::{CountResponse, COUNTER};
+    use crate::CountResponse;
 
-    pub struct Contract {}
+    pub struct Contract {
+        pub(crate) execs: Item<'static, u32>,
+        pub(crate) sudos: Item<'static, u32>,
+        pub(crate) migrates: Item<'static, u32>,
+    }
 
     #[cfg(not(tarpaulin_include))]
     #[contract]
-    #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::SudoMsg))]
+    #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::sudo::SudoWrapperMsg))]
     #[sv::override_entry_point(migrate=crate::entry_points::migrate(crate::migrate::MigrateMsg))]
     #[sv::override_entry_point(exec=crate::entry_points::execute(crate::exec::CustomExecMsg))]
     #[allow(dead_code)]
@@ -109,12 +156,18 @@ mod contract {
         #[allow(clippy::new_without_default)]
         #[allow(dead_code)]
         pub fn new() -> Self {
-            Self {}
+            Self {
+                execs: Item::new("execs"),
+                sudos: Item::new("sudos"),
+                migrates: Item::new("migrates"),
+            }
         }
 
         #[msg(instantiate)]
         pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
-            COUNTER.save(ctx.deps.storage, &0)?;
+            self.execs.save(ctx.deps.storage, &0)?;
+            self.migrates.save(ctx.deps.storage, &0)?;
+            self.sudos.save(ctx.deps.storage, &0)?;
             Ok(Response::new())
         }
 
@@ -123,17 +176,35 @@ mod contract {
             Ok(Response::new())
         }
 
+        #[msg(exec)]
+        pub fn increase_by_two(&self, ctx: ExecCtx) -> StdResult<Response> {
+            self.execs
+                .update(ctx.deps.storage, |count| -> Result<u32, StdError> {
+                    Ok(count + 2)
+                })?;
+            Ok(Response::new())
+        }
+
         #[msg(query)]
-        pub fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
-            let count = COUNTER.load(ctx.deps.storage)?;
+        pub fn execs(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
+            let count = self.execs.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[msg(exec)]
-        pub fn increase_by_two(&self, ctx: ExecCtx) -> StdResult<Response> {
-            crate::COUNTER.update(ctx.deps.storage, |count| -> Result<u32, StdError> {
-                Ok(count + 2)
-            })?;
+        #[msg(query)]
+        pub fn sudos(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
+            let count = self.sudos.load(ctx.deps.storage)?;
+            Ok(CountResponse { count })
+        }
+
+        #[msg(query)]
+        pub fn migrates(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
+            let count = self.migrates.load(ctx.deps.storage)?;
+            Ok(CountResponse { count })
+        }
+
+        #[msg(sudo)]
+        pub fn sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
     }
@@ -148,7 +219,7 @@ mod tests {
     use crate::contract::sv::multitest_utils::CodeId;
     use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::exec::{CustomExecMsg, UserExecMsg};
-    use crate::SudoMsg;
+    use crate::sudo::SudoWrapperMsg;
 
     #[test]
     fn overriden_entry_points_in_mt() {
@@ -164,13 +235,10 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        let count = contract.count().unwrap().count;
-        assert_eq!(count, 0);
-
-        let msg = SudoMsg::MoveFunds {
+        let msg = SudoWrapperMsg::CustomSudo(crate::sudo::SudoMsg::MoveFunds {
             recipient: "recipient".to_string(),
             amount: vec![],
-        };
+        });
 
         contract
             .app
@@ -178,12 +246,12 @@ mod tests {
             .wasm_sudo(contract.contract_addr.clone(), &msg)
             .unwrap();
 
-        let count = contract.count().unwrap().count;
-        assert_eq!(count, 3);
+        let count = contract.sudos().unwrap().count;
+        assert_eq!(count, 1);
 
         contract.migrate().call(owner, code_id.code_id()).unwrap();
-        let count = contract.count().unwrap().count;
-        assert_eq!(count, 5);
+        let count = contract.migrates().unwrap().count;
+        assert_eq!(count, 1);
 
         // custom ExecMsg
         let msg = CustomExecMsg::CustomExec(UserExecMsg::IncreaseByOne {});
@@ -197,8 +265,8 @@ mod tests {
             )
             .unwrap();
 
-        let count = contract.count().unwrap().count;
-        assert_eq!(count, 6);
+        let count = contract.execs().unwrap().count;
+        assert_eq!(count, 1);
 
         // custom ExecMsg
         let msg =
@@ -213,7 +281,7 @@ mod tests {
             )
             .unwrap();
 
-        let count = contract.count().unwrap().count;
-        assert_eq!(count, 8);
+        let count = contract.execs().unwrap().count;
+        assert_eq!(count, 3);
     }
 }
