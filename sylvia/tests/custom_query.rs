@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{CustomQuery, Response, StdResult};
 use sylvia::contract;
-use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 
 #[cw_serde]
 pub struct MyQuery;
@@ -21,7 +21,7 @@ pub struct SomeResponse;
 mod interface {
     use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -38,12 +38,16 @@ mod interface {
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(sudo)]
+        fn interface_sudo(&self, ctx: SudoCtx<MyQuery>) -> StdResult<Response>;
     }
 }
 
 mod impl_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia_derive::contract;
 
     use crate::{MyQuery, OtherQuery, SomeResponse};
@@ -64,13 +68,18 @@ mod impl_interface {
         fn interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
+
+        #[msg(sudo)]
+        fn interface_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
+            Ok(Response::default())
+        }
     }
 }
 
 mod some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -86,12 +95,16 @@ mod some_interface {
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
         fn some_interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(sudo)]
+        fn some_interface_sudo(&self, ctx: SudoCtx<MyQuery>) -> StdResult<Response>;
     }
 }
 
 mod impl_some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia_derive::contract;
 
     use crate::{MyQuery, SomeResponse};
@@ -111,13 +124,18 @@ mod impl_some_interface {
         fn some_interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
+
+        #[msg(sudo)]
+        fn some_interface_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
+            Ok(Response::default())
+        }
     }
 }
 
 mod associated_type_interface {
     use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
@@ -133,13 +151,17 @@ mod associated_type_interface {
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx<Self::QueryC>) -> StdResult<Response>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(sudo)]
+        fn associated_sudo(&self, ctx: SudoCtx<Self::QueryC>) -> StdResult<Response>;
     }
 }
 
 mod impl_associated_type_interface {
     use crate::{associated_type_interface::AssociatedTypeInterface, MyQuery, SomeResponse};
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia_derive::contract;
 
     #[contract(module=crate)]
@@ -157,13 +179,18 @@ mod impl_associated_type_interface {
         fn associated_exec(&self, _ctx: ExecCtx<Self::QueryC>) -> StdResult<Response> {
             Ok(Response::default())
         }
+
+        #[msg(sudo)]
+        fn associated_sudo(&self, _ctx: SudoCtx<Self::QueryC>) -> StdResult<Response> {
+            Ok(Response::default())
+        }
     }
 }
 
 mod default_query_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
@@ -178,13 +205,17 @@ mod default_query_interface {
         #[cfg(not(tarpaulin_include))]
         #[msg(exec)]
         fn default_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
+
+        #[cfg(not(tarpaulin_include))]
+        #[msg(sudo)]
+        fn default_sudo(&self, ctx: SudoCtx) -> StdResult<Response>;
     }
 }
 
 mod impl_default_query_interface {
     use crate::{default_query_interface::DefaultQueryInterface, SomeResponse};
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia_derive::contract;
 
     #[contract(module=crate)]
@@ -200,6 +231,11 @@ mod impl_default_query_interface {
 
         #[msg(exec)]
         fn default_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            Ok(Response::default())
+        }
+
+        #[msg(sudo)]
+        fn default_sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::default())
         }
     }
@@ -232,9 +268,13 @@ impl MyContract {
         Ok(SomeResponse)
     }
 
-    #[cfg(not(tarpaulin_include))]
     #[msg(migrate)]
     pub fn some_migrate(&self, _ctx: MigrateCtx<MyQuery>) -> StdResult<Response> {
+        Ok(Response::default())
+    }
+
+    #[msg(sudo)]
+    pub fn some_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
         Ok(Response::default())
     }
 }
@@ -261,26 +301,36 @@ mod tests {
         let contract = code_id
             .instantiate()
             .with_label("MyContract")
+            .with_admin(owner)
             .call(owner)
             .unwrap();
 
         contract.some_exec().call(owner).unwrap();
         contract.some_query().unwrap();
+        contract.some_sudo().unwrap();
+        contract
+            .some_migrate()
+            .call(owner, code_id.code_id())
+            .unwrap();
 
         // `sv::custom` attribute interface
         contract.some_interface_query().unwrap();
         contract.some_interface_exec().call(owner).unwrap();
+        contract.some_interface_sudo().unwrap();
 
         // Associated tyoe interface messages
         contract.associated_query().unwrap();
         contract.associated_exec().call(owner).unwrap();
+        contract.associated_sudo().unwrap();
 
         // `sv::custom` attribute and associated type interface
         contract.interface_query().unwrap();
         contract.interface_exec().call(owner).unwrap();
+        contract.interface_sudo().unwrap();
 
         // Neither `custom` attribute nor associated type
         contract.default_query().unwrap();
         contract.default_exec().call(owner).unwrap();
+        contract.default_sudo().unwrap();
     }
 }
