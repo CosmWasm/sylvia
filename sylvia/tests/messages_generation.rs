@@ -14,10 +14,8 @@ impl CustomQuery for MyQuery {}
 
 mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
-    use sylvia::{
-        interface,
-        types::{ExecCtx, QueryCtx, SudoCtx},
-    };
+    use sylvia::interface;
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::QueryResult;
 
