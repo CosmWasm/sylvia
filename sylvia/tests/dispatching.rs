@@ -19,7 +19,7 @@ pub struct QueryResponse {
 mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
@@ -45,12 +45,18 @@ mod interface {
         #[msg(query)]
         fn argumented_query(&self, ctx: QueryCtx, user: Addr)
             -> Result<QueryResponse, Self::Error>;
+
+        #[msg(sudo)]
+        fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error>;
+
+        #[msg(sudo)]
+        fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error>;
     }
 }
 
 mod impl_interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
@@ -60,24 +66,29 @@ mod impl_interface {
         type Error = StdError;
 
         #[msg(exec)]
-        fn no_args_execution(&self, _: ExecCtx) -> Result<Response, StdError> {
-            *self.execs.borrow_mut() += 1;
+        fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, StdError> {
+            self.execs
+                .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
+                    Ok(count + 1)
+                })?;
             Ok(Response::new())
         }
 
         #[msg(exec)]
         fn argumented_execution(
             &self,
-            _: ExecCtx,
+            ctx: ExecCtx,
             addr: Addr,
             coef: Decimal,
             desc: String,
         ) -> Result<Response, Self::Error> {
-            *self.execs.borrow_mut() += 1;
-
+            self.execs
+                .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
+                    Ok(count + 1)
+                })?;
             self.data
-                .borrow_mut()
-                .insert(addr, QueryResponse { coef, desc });
+                .save(ctx.deps.storage, addr, &QueryResponse { coef, desc })?;
+
             Ok(Response::new())
         }
 
@@ -88,28 +99,52 @@ mod impl_interface {
         }
 
         #[msg(query)]
-        fn argumented_query(&self, _: QueryCtx, user: Addr) -> Result<QueryResponse, Self::Error> {
+        fn argumented_query(
+            &self,
+            ctx: QueryCtx,
+            user: Addr,
+        ) -> Result<QueryResponse, Self::Error> {
             *self.queries.borrow_mut() += 1;
-            Ok(self.data.borrow().get(&user).unwrap().clone())
+            Ok(self.data.load(ctx.deps.storage, user).unwrap())
+        }
+
+        #[msg(sudo)]
+        fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error> {
+            self.sudos
+                .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
+                    Ok(count + 1)
+                })?;
+            Ok(Response::new())
+        }
+
+        #[msg(sudo)]
+        fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error> {
+            self.sudos
+                .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
+                    Ok(count + 1)
+                })?;
+            let resp = Response::new().add_attribute("user", user);
+            Ok(resp)
         }
     }
 }
 
 mod contract {
-    use std::{cell::RefCell, collections::HashMap};
+    use std::cell::RefCell;
 
-    use cosmwasm_std::{Addr, Response, StdResult};
-    use sylvia::types::ExecCtx;
+    use cosmwasm_std::{Addr, Response, StdError, StdResult};
+    use cw_storage_plus::{Item, Map};
+    use sylvia::types::{InstantiateCtx, SudoCtx};
     use sylvia_derive::contract;
 
     use crate::QueryResponse;
 
-    #[derive(Default)]
     pub struct Contract {
-        pub(crate) execs: RefCell<u64>,
+        pub(crate) execs: Item<'static, u64>,
         pub(crate) queries: RefCell<u64>,
+        pub(crate) sudos: Item<'static, u64>,
 
-        pub(crate) data: RefCell<HashMap<Addr, QueryResponse>>,
+        pub(crate) data: Map<'static, Addr, QueryResponse>,
     }
 
     #[allow(dead_code)]
@@ -117,12 +152,28 @@ mod contract {
     #[contract]
     #[messages(crate::interface)]
     impl Contract {
-        fn new() -> Self {
-            Self::default()
+        pub fn new() -> Self {
+            Self {
+                execs: Item::new("execs"),
+                queries: RefCell::default(),
+                sudos: Item::new("sudos"),
+                data: Map::new("data"),
+            }
         }
 
         #[msg(instantiate)]
-        fn instanciate(&self, _: ExecCtx) -> StdResult<Response> {
+        fn instanciate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
+            self.execs.save(ctx.deps.storage, &0)?;
+            self.sudos.save(ctx.deps.storage, &0)?;
+            Ok(Response::new())
+        }
+
+        #[msg(sudo)]
+        fn contract_sudo(&self, ctx: SudoCtx) -> StdResult<Response> {
+            self.sudos
+                .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
+                    Ok(count + 1)
+                })?;
             Ok(Response::new())
         }
     }
@@ -130,12 +181,19 @@ mod contract {
 
 #[test]
 fn dispatch() {
-    let contract = Contract::default();
+    let contract = Contract::new();
 
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info("owner", &[]);
 
+    // Instantiate the contract
+    let resp = contract::sv::InstantiateMsg {}
+        .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
+        .unwrap();
+    assert_eq!(resp, Response::new());
+
+    // Execs
     let resp = interface::sv::ExecMsg::NoArgsExecution {}
         .dispatch(&contract, (deps.as_mut(), env.clone(), info.clone()))
         .unwrap();
@@ -159,6 +217,7 @@ fn dispatch() {
     .unwrap();
     assert_eq!(resp, Response::new());
 
+    // Queries
     let resp = interface::sv::QueryMsg::NoArgsQuery {}
         .dispatch(&contract, (deps.as_ref(), env.clone()))
         .unwrap();
@@ -167,7 +226,7 @@ fn dispatch() {
     let resp = interface::sv::QueryMsg::ArgumentedQuery {
         user: Addr::unchecked("addr2"),
     }
-    .dispatch(&contract, (deps.as_ref(), env))
+    .dispatch(&contract, (deps.as_ref(), env.clone()))
     .unwrap();
     let resp: QueryResponse = from_json(resp).unwrap();
     assert_eq!(
@@ -178,6 +237,28 @@ fn dispatch() {
         }
     );
 
-    assert_eq!(*contract.execs.borrow(), 3);
+    // Sudos
+    let resp = interface::sv::SudoMsg::NoArgsSudo {}
+        .dispatch(&contract, (deps.as_mut(), env.clone()))
+        .unwrap();
+    assert_eq!(resp, Response::new());
+
+    let resp = interface::sv::SudoMsg::ArgumentedSudo {
+        user: Addr::unchecked("addr2"),
+    }
+    .dispatch(&contract, (deps.as_mut(), env.clone()))
+    .unwrap();
+    assert_eq!(
+        resp,
+        Response::new().add_attribute("user", "addr2".to_owned())
+    );
+
+    let resp = contract::sv::SudoMsg::ContractSudo {}
+        .dispatch(&contract, (deps.as_mut(), env))
+        .unwrap();
+    assert_eq!(resp, Response::new());
+
+    assert_eq!(contract.execs.load(&deps.storage).unwrap(), 3);
     assert_eq!(*contract.queries.borrow(), 2);
+    assert_eq!(contract.sudos.load(&deps.storage).unwrap(), 3);
 }
