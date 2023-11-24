@@ -204,5 +204,6 @@ fn entry_points_generation() {
         entry_points::query,
     )
     .with_migrate(entry_points::migrate)
-    .with_reply(entry_points::reply);
+    .with_reply(entry_points::reply)
+    .with_sudo(entry_points::sudo);
 }
