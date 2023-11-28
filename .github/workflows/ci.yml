@@ -77,89 +77,29 @@ jobs:
         working-directory: examples
         run: cargo fmt --check
 
-      - name: Build cw20-base example
-        working-directory: examples/contracts/cw20-base
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build cw1-subkeys
-        working-directory: examples/contracts/cw1-subkeys
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build cw1-whitelist
-        working-directory: examples/contracts/cw1-whitelist
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build entry-points-overriding
-        working-directory: examples/contracts/entry-points-overriding
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build custom
-        working-directory: examples/contracts/custom
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build generic_contract 
-        working-directory: examples/contracts/generic_contract
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
-      - name: Build generic_iface_on_contract 
-        working-directory: examples/contracts/generic_iface_on_contract
-        run: cargo build --release --target wasm32-unknown-unknown --locked --lib
+      - name: Build contracts
+        working-directory: examples/contracts/
+        run: ../../ci_contracts.sh "cargo wasm"
 
       - name: Install cosmwasm-check
         run: cargo install cosmwasm-check --force
       - name: Check contracts
         run: find examples/target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
 
-      - name: Cw1-whitelist schema
-        working-directory: examples/contracts/cw1-whitelist/
-        run: cargo schema
-      - name: Cw1-subkeys schema
-        working-directory: examples/contracts/cw1-subkeys
-        run: cargo schema
-      - name: Cw20-base schema
-        working-directory: examples/contracts/cw20-base
-        run: cargo schema
-      - name: Entry-points-overriding schema
-        working-directory: examples/contracts/entry-points-overriding
-        run: cargo schema
-      - name: Custom schema
-        working-directory: examples/contracts/custom
-        run: cargo schema
-      - name: Generic_contract schema
-        working-directory: examples/contracts/generic_contract
-        run: cargo schema
-      - name: generic_iface_on_contract schema
-        working-directory: examples/contracts/generic_iface_on_contract
-        run: cargo schema
+      - name: Create contracts schema
+        working-directory: examples/contracts/
+        run: ../../ci_contracts.sh "cargo schema"
 
-      - name: Cw1-whitelist ts-codegen 
-        working-directory: examples/contracts/cw1-whitelist/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-whitelist --no-bundle
-      - name: Cw1-subkeys ts-codegen 
-        working-directory: examples/contracts/cw1-subkeys/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw1-subkeys --no-bundle
-      - name: Cw20-base ts-codegen 
-        working-directory: examples/contracts/cw20-base/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name cw20-base --no-bundle
-      - name: Entry-points-overriding ts-codegen
-        working-directory: examples/contracts/entry-points-overriding
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name entry-points-overriding --no-bundle
-      - name: Custom ts-codegen
-        working-directory: examples/contracts/custom/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
-      - name: Generic_contract ts-codegen
-        working-directory: examples/contracts/generic_contract/
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
-      - name: Generic_iface_on_contract ts-codegen
-        working-directory: examples/contracts/generic_iface_on_contract
-        run: cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name custom --no-bundle
+      - name: Run ts-codegen for contracts
+        working-directory: examples/contracts/
+        run: ../../ci_contracts.sh "cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name ${command} --no-bundle"
 
       - name: Archive schema artifats
         uses: actions/upload-artifact@v3
         with:
           name: schema-json
           path: |
-            examples/contracts/cw1-subkeys/schema/cw1-subkeys.json
-            examples/contracts/cw1-whitelist/schema/cw1-whitelist.json
-            examples/contracts/cw20-base/schema/cw20-base.json
-            examples/contracts/entry-points-overriding/schema/entry-points-overriding.json
-            examples/contracts/custom/schema/custom.json
-            examples/contracts/generic_contract/schema/generic_contract.json
-            examples/contracts/generic_iface_on_contract/schema/generic_iface_on_contract.json
+            examples/contracts/**/schema/*.json
 
   coverage:
     name: Code coverage
