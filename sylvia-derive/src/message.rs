@@ -830,6 +830,13 @@ impl<'a> MsgVariant<'a> {
     }
 }
 
+// TODO: This could be made msg_type agnostic and stores map of msg_ty/variants.
+// This could nicely increase maintainability as we create `MsgVariants` tens of times
+// during the macro call.
+// Next step would be to create a `Context` type, init it in `input.rs` and then pass
+// to messages/multitest.
+// It would however require another type to bind the `variants`, `generics` and `predicates`
+// and we already have the `MsgVariants` and `MsgVariant`.
 #[derive(Debug)]
 pub struct MsgVariants<'a, Generic> {
     variants: Vec<MsgVariant<'a>>,
