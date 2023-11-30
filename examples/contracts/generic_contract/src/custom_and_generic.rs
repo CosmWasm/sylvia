@@ -6,22 +6,44 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg, SvCustomQuery};
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
     CustomAndGeneric<
+        SvCustomMsg,
+        SvCustomMsg,
         SvCustomMsg,
         SvCustomMsg,
         SvCustomMsg,
         sylvia::types::SvCustomMsg,
         sylvia::types::SvCustomQuery,
-    > for crate::contract::GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
+    >
+    for crate::contract::GenericContract<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        QueryT,
+        MigrateT,
+        FieldT,
+    >
 {
     type Error = StdError;
 
     #[msg(exec)]
-    fn custom_generic_execute(
+    fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<SvCustomQuery>,
-        _msgs: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+    ) -> StdResult<Response<SvCustomMsg>> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    fn custom_generic_execute_two(
+        &self,
+        _ctx: ExecCtx<SvCustomQuery>,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }
@@ -50,6 +72,8 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             sylvia::types::SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -66,7 +90,14 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        contract.custom_generic_execute(vec![]).call(owner).unwrap();
+        contract
+            .custom_generic_execute_one(vec![], vec![])
+            .call(owner)
+            .unwrap();
+        contract
+            .custom_generic_execute_two(vec![], vec![])
+            .call(owner)
+            .unwrap();
         contract.custom_generic_query(SvCustomMsg {}).unwrap();
     }
 }

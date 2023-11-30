@@ -7,11 +7,13 @@ use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
-    CustomAndGeneric<ExecT, QueryT, SvCustomMsg, CustomMsgT, CustomQueryT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
+    CustomAndGeneric<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg, CustomMsgT, CustomQueryT>
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
-        ExecT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
         QueryT,
         MigrateT,
         CustomMsgT,
@@ -20,7 +22,9 @@ impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
     >
 where
     for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    ExecT: CustomMsg + 'static,
+    Exec1T: CustomMsg + 'static,
+    Exec2T: CustomMsg + 'static,
+    Exec3T: CustomMsg + 'static,
     QueryT: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
@@ -30,10 +34,21 @@ where
     type Error = StdError;
 
     #[msg(exec)]
-    fn custom_generic_execute(
+    fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<CustomQueryT>,
-        _msgs: Vec<CosmosMsg<ExecT>>,
+        _msgs1: Vec<CosmosMsg<Exec1T>>,
+        _msgs2: Vec<CosmosMsg<Exec2T>>,
+    ) -> StdResult<Response<CustomMsgT>> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    fn custom_generic_execute_two(
+        &self,
+        _ctx: ExecCtx<CustomQueryT>,
+        _msgs2: Vec<CosmosMsg<Exec2T>>,
+        _msgs1: Vec<CosmosMsg<Exec3T>>,
     ) -> StdResult<Response<CustomMsgT>> {
         Ok(Response::new())
     }
@@ -60,6 +75,8 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             sylvia::types::SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -78,7 +95,14 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        contract.custom_generic_execute(vec![]).call(owner).unwrap();
+        contract
+            .custom_generic_execute_one(vec![], vec![])
+            .call(owner)
+            .unwrap();
+        contract
+            .custom_generic_execute_two(vec![], vec![])
+            .call(owner)
+            .unwrap();
         contract.custom_generic_query(SvCustomMsg {}).unwrap();
     }
 }
