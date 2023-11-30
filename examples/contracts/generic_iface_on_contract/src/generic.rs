@@ -6,16 +6,27 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg = SvCustomMsg)]
-impl Generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
+impl Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
     for crate::contract::NonGenericContract
 {
     type Error = StdError;
 
     #[msg(exec)]
-    fn generic_exec(
+    fn generic_exec_one(
         &self,
         _ctx: ExecCtx,
-        _msgs: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+    ) -> StdResult<Response> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    fn generic_exec_two(
+        &self,
+        _ctx: ExecCtx,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }

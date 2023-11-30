@@ -120,6 +120,7 @@ impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 pub trait InterfaceApi {
     type Exec;
     type Query;
+    type Querier<'querier>;
 }
 
 pub trait ContractApi {

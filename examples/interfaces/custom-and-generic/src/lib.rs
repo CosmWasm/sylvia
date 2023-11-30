@@ -7,21 +7,32 @@ use sylvia::{interface, schemars};
 
 #[interface]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-pub trait CustomAndGeneric<ExecT, QueryT, RetT, CustomMsgT, CustomQueryT>
+pub trait CustomAndGeneric<Exec1T, Exec2T, Exec3T, QueryT, RetT, CustomMsgT, CustomQueryT>
 where
-    for<'msg_de> ExecT: CustomMsg + Deserialize<'msg_de>,
+    for<'msg_de> Exec1T: CustomMsg + Deserialize<'msg_de>,
+    Exec2T: sylvia::types::CustomMsg,
+    Exec3T: sylvia::types::CustomMsg,
     QueryT: sylvia::types::CustomMsg,
     RetT: CustomMsg + DeserializeOwned,
     CustomMsgT: CustomMsg + DeserializeOwned,
-    CustomQueryT: sylvia::types::CustomQuery,
+    CustomQueryT: sylvia::types::CustomQuery + 'static,
 {
     type Error: From<StdError>;
 
     #[msg(exec)]
-    fn custom_generic_execute(
+    fn custom_generic_execute_one(
         &self,
         ctx: ExecCtx<CustomQueryT>,
-        msgs: Vec<CosmosMsg<ExecT>>,
+        msgs1: Vec<CosmosMsg<Exec1T>>,
+        msgs2: Vec<CosmosMsg<Exec2T>>,
+    ) -> Result<Response<CustomMsgT>, Self::Error>;
+
+    #[msg(exec)]
+    fn custom_generic_execute_two(
+        &self,
+        ctx: ExecCtx<CustomQueryT>,
+        msgs1: Vec<CosmosMsg<Exec2T>>,
+        msgs2: Vec<CosmosMsg<Exec3T>>,
     ) -> Result<Response<CustomMsgT>, Self::Error>;
 
     #[msg(query)]
@@ -46,8 +57,14 @@ mod tests {
 
         // Direct message construction
         let _ = super::sv::QueryMsg::<_, Empty>::custom_generic_query(SvCustomMsg {});
-        let _ = super::sv::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
-        let _ = super::sv::ExecMsg::custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})]);
+        let _ = super::sv::ExecMsg::<_, _, SvCustomMsg>::custom_generic_execute_one(
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+        );
+        let _ = super::sv::ExecMsg::<SvCustomMsg, _, _>::custom_generic_execute_two(
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+        );
 
         // Querier
         let deps = mock_dependencies();
@@ -59,13 +76,40 @@ mod tests {
         let _: Result<SvCustomMsg, _> = querier.custom_generic_query(SvCustomMsg {});
 
         // Construct messages with Interface extension
-        let _ =
-            <super::sv::Api<SvCustomMsg, _, SvCustomMsg, SvCustomQuery, SvCustomMsg> as InterfaceApi>::Query::custom_generic_query(
-                SvCustomMsg {},
-            );
-        let _=
-            <super::sv::Api<_, SvCustomMsg,SvCustomMsg, SvCustomQuery,cosmwasm_std::Empty> as InterfaceApi>::Exec::custom_generic_execute(
-            vec![ CosmosMsg::Custom(SvCustomMsg{}),
-            ]);
+        let _ = <super::sv::Api<
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            _,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomQuery,
+        > as InterfaceApi>::Query::custom_generic_query(SvCustomMsg {});
+
+        let _ = <super::sv::Api<
+            _,
+            _,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            cosmwasm_std::Empty,
+            SvCustomQuery,
+        > as InterfaceApi>::Exec::custom_generic_execute_one(
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+        );
+
+        let _ = <super::sv::Api<
+            SvCustomMsg,
+            _,
+            _,
+            SvCustomMsg,
+            SvCustomMsg,
+            cosmwasm_std::Empty,
+            SvCustomQuery,
+        > as InterfaceApi>::Exec::custom_generic_execute_two(
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+            vec![CosmosMsg::Custom(SvCustomMsg {})],
+        );
     }
 }

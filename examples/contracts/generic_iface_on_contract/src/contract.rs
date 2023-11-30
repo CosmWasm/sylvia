@@ -9,8 +9,8 @@ pub struct NonGenericContract;
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(generic<SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg,SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
@@ -71,7 +71,18 @@ mod tests {
             .unwrap();
         contract
             .generic_proxy()
-            .generic_exec(vec![CosmosMsg::Custom(SvCustomMsg {})])
+            .generic_exec_one(
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+            )
+            .call(owner)
+            .unwrap();
+        contract
+            .generic_proxy()
+            .generic_exec_two(
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+            )
             .call(owner)
             .unwrap();
 
@@ -82,7 +93,18 @@ mod tests {
             .unwrap();
         contract
             .custom_and_generic_proxy()
-            .custom_generic_execute(vec![CosmosMsg::Custom(SvCustomMsg {})])
+            .custom_generic_execute_one(
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+            )
+            .call(owner)
+            .unwrap();
+        contract
+            .custom_and_generic_proxy()
+            .custom_generic_execute_two(
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+                vec![CosmosMsg::Custom(SvCustomMsg {})],
+            )
             .call(owner)
             .unwrap();
     }
