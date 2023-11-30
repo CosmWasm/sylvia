@@ -11,6 +11,8 @@ impl
         SvCustomMsg,
         SvCustomMsg,
         SvCustomMsg,
+        SvCustomMsg,
+        SvCustomMsg,
         sylvia::types::SvCustomMsg,
         SvCustomQuery,
     > for crate::contract::NonGenericContract
@@ -18,10 +20,21 @@ impl
     type Error = StdError;
 
     #[msg(exec)]
-    fn custom_generic_execute(
+    fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<SvCustomQuery>,
-        _msgs: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+    ) -> StdResult<Response<SvCustomMsg>> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    fn custom_generic_execute_two(
+        &self,
+        _ctx: ExecCtx<SvCustomQuery>,
+        _msgs1: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs2: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }

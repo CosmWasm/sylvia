@@ -72,7 +72,7 @@ impl<'a> TraitInput<'a> {
         )
         .emit_querier();
 
-        let interface_messages = InterfaceApi::new(self.item, &self.generics).emit();
+        let interface_messages = InterfaceApi::new(self.item, &self.generics, &self.custom).emit();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -291,6 +291,7 @@ impl<'a> ImplInput<'a> {
             &generic_args,
             where_clause,
         );
+
         let variants_params = MsgVariants::new(
             self.item.as_variants(),
             MsgType::Query,

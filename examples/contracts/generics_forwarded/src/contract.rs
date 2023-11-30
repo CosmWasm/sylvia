@@ -8,7 +8,9 @@ use sylvia::{contract, schemars};
 
 pub struct GenericsForwardedContract<
     InstantiateT,
-    ExecT,
+    Exec1T,
+    Exec2T,
+    Exec3T,
     QueryT,
     MigrateT,
     CustomMsgT,
@@ -16,9 +18,12 @@ pub struct GenericsForwardedContract<
     FieldT,
 > {
     _field: Item<'static, FieldT>,
+    #[allow(clippy::type_complexity)]
     _phantom: std::marker::PhantomData<(
         InstantiateT,
-        ExecT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
         QueryT,
         MigrateT,
         CustomMsgT,
@@ -27,14 +32,16 @@ pub struct GenericsForwardedContract<
 }
 
 #[contract]
-#[messages(generic<ExecT, QueryT, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(generic<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(custom_and_generic<ExecT, QueryT, SvCustomMsg,CustomMsgT, CustomQueryT> as CustomAndGeneric)]
+#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg, CustomMsgT, CustomQueryT> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
     GenericsForwardedContract<
         InstantiateT,
-        ExecT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
         QueryT,
         MigrateT,
         CustomMsgT,
@@ -43,7 +50,9 @@ impl<InstantiateT, ExecT, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
     >
 where
     for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    ExecT: CustomMsg + 'static,
+    Exec1T: CustomMsg + 'static,
+    Exec2T: CustomMsg + 'static,
+    Exec3T: CustomMsg + 'static,
     QueryT: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
@@ -67,10 +76,21 @@ where
     }
 
     #[msg(exec)]
-    pub fn contract_execute(
+    pub fn contract_execute_one(
         &self,
         _ctx: ExecCtx<CustomQueryT>,
-        _msg: ExecT,
+        _msg1: Exec1T,
+        _msg2: Exec2T,
+    ) -> StdResult<Response<CustomMsgT>> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    pub fn contract_execute_two(
+        &self,
+        _ctx: ExecCtx<CustomQueryT>,
+        _msg1: Exec2T,
+        _msg2: Exec3T,
     ) -> StdResult<Response<CustomMsgT>> {
         Ok(Response::new())
     }
@@ -113,6 +133,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             super::SvCustomMsg,
             super::SvCustomMsg,
             SvCustomQuery,
@@ -129,7 +151,14 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        contract.contract_execute(SvCustomMsg).call(owner).unwrap();
+        contract
+            .contract_execute_one(SvCustomMsg, SvCustomMsg)
+            .call(owner)
+            .unwrap();
+        contract
+            .contract_execute_two(SvCustomMsg, SvCustomMsg)
+            .call(owner)
+            .unwrap();
         contract.contract_query(SvCustomMsg).unwrap();
         contract
             .migrate(SvCustomMsg)

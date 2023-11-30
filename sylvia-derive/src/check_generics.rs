@@ -1,6 +1,8 @@
 use syn::visit::Visit;
 use syn::{parse_quote, GenericArgument, GenericParam, Type};
 
+/// Provides method extracting `syn::Path`.
+/// Inteded to be used with `syn::GenericParam` and `syn::GenericArgument`.
 pub trait GetPath {
     fn get_path(&self) -> Option<syn::Path>;
 }
@@ -29,6 +31,7 @@ impl GetPath for GenericArgument {
     }
 }
 
+/// Traverses AST tree and checks if generics are used in method signatures.
 #[derive(Debug)]
 pub struct CheckGenerics<'g, Generic> {
     generics: &'g [&'g Generic],
@@ -73,7 +76,9 @@ where
             .iter()
             .find(|gen| gen.get_path().as_ref() == Some(p))
         {
-            self.used.push(gen);
+            if !self.used.contains(gen) {
+                self.used.push(gen);
+            }
         }
 
         // Default visit implementation - visiting path deeper
