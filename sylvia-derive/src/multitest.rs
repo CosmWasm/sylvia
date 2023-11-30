@@ -364,11 +364,6 @@ impl<'a> MultitestHelpers<'a> {
         let custom_where_predicate = filter_wheres(where_clause, generic_params, &custom_generics);
         let exec_where_predicates = filter_wheres(where_clause, generic_params, exec_generics);
         let query_where_predicates = filter_wheres(where_clause, generic_params, query_generics);
-        let trait_where_clause = if !exec_where_predicates.is_empty() {
-            quote! { where #(#exec_where_predicates,)* }
-        } else {
-            quote! {}
-        };
         let contract_module = match contract_module {
             Some(contract_module) => quote! { #contract_module :: },
             None => quote! {},
@@ -386,7 +381,15 @@ impl<'a> MultitestHelpers<'a> {
             .chain(query_generics.iter())
             .chain(custom_generics.iter())
             .unique()
+            .copied()
             .collect();
+
+        let trait_where_predicates = filter_wheres(where_clause, generic_params, &trait_generics);
+        let trait_where_clause = if !trait_where_predicates.is_empty() {
+            quote! { where #(#trait_where_predicates,)* }
+        } else {
+            quote! {}
+        };
 
         #[cfg(not(tarpaulin_include))]
         {

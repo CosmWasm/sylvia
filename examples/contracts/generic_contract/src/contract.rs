@@ -10,22 +10,32 @@ use sylvia::{contract, schemars};
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
 
-pub struct GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT> {
+pub struct GenericContract<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT> {
     _field: Item<'static, FieldT>,
-    _phantom: std::marker::PhantomData<(InstantiateT, ExecT, QueryT, MigrateT)>,
+    _phantom: std::marker::PhantomData<(
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        QueryT,
+        MigrateT,
+        FieldT,
+    )>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
 #[contract]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg,SvCustomMsg, SvCustomQuery, sylvia::types::SvCustomMsg> as CustomAndGeneric)]
+#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
-    GenericContract<InstantiateT, ExecT, QueryT, MigrateT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
+    GenericContract<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
 where
     for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    ExecT: CustomMsg + DeserializeOwned + 'static,
+    Exec1T: CustomMsg + DeserializeOwned + 'static,
+    Exec2T: CustomMsg + DeserializeOwned + 'static,
+    Exec3T: CustomMsg + DeserializeOwned + 'static,
     QueryT: CustomMsg + DeserializeOwned + 'static,
     MigrateT: CustomMsg + DeserializeOwned + 'static,
     FieldT: 'static,
@@ -47,10 +57,21 @@ where
     }
 
     #[msg(exec)]
-    pub fn contract_execute(
+    pub fn contract_execute_one(
         &self,
         _ctx: ExecCtx<SvCustomQuery>,
-        _msg: ExecT,
+        _msg1: Exec1T,
+        _msg2: Exec2T,
+    ) -> StdResult<Response<SvCustomMsg>> {
+        Ok(Response::new())
+    }
+
+    #[msg(exec)]
+    pub fn contract_execute_two(
+        &self,
+        _ctx: ExecCtx<SvCustomQuery>,
+        _msg1: Exec2T,
+        _msg2: Exec3T,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }
@@ -89,8 +110,16 @@ mod tests {
     #[test]
     fn generic_contract() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
-        let code_id: CodeId<SvCustomMsg, SvCustomMsg, SvCustomMsg, super::SvCustomMsg, String, _> =
-            CodeId::store_code(&app);
+        let code_id: CodeId<
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            super::SvCustomMsg,
+            String,
+            _,
+        > = CodeId::store_code(&app);
 
         let owner = "owner";
 
@@ -101,7 +130,14 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        contract.contract_execute(SvCustomMsg).call(owner).unwrap();
+        contract
+            .contract_execute_one(SvCustomMsg, SvCustomMsg)
+            .call(owner)
+            .unwrap();
+        contract
+            .contract_execute_two(SvCustomMsg, SvCustomMsg)
+            .call(owner)
+            .unwrap();
         contract.contract_query(SvCustomMsg).unwrap();
         contract
             .migrate(SvCustomMsg)

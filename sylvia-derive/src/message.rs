@@ -917,15 +917,6 @@ where
         &self.unused_generics
     }
 
-    pub fn as_where_clause(&'a self) -> Option<WhereClause> {
-        let where_predicates = &self.where_predicates;
-        if !where_predicates.is_empty() {
-            Some(parse_quote!( where #(#where_predicates,)* ))
-        } else {
-            None
-        }
-    }
-
     pub fn emit_querier(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
@@ -1277,7 +1268,7 @@ impl<'a> GlueMessage<'a> {
         let interface_used_generics = filter_generics(&generics, &interface_generic_args);
         let used_generics = variants.used_generics();
 
-        let used_wrapper_generics: Vec<_> = interface_used_generics
+        let wrapper_generics: Vec<_> = interface_used_generics
             .iter()
             .chain(used_generics.iter())
             .unique()
@@ -1287,22 +1278,20 @@ impl<'a> GlueMessage<'a> {
         let unused_generics: Vec<_> = variants
             .unused_generics()
             .iter()
-            .filter(|unused| !used_wrapper_generics.iter().any(|used| used == *unused))
+            .filter(|unused| !wrapper_generics.iter().any(|used| used == *unused))
             .collect();
 
-        let where_clause = variants.as_where_clause();
         let full_where_clause = &source.generics.where_clause;
-        let query_responses_where_clause =
-            filter_wheres(full_where_clause, &generics, &used_wrapper_generics);
-        let query_responses_where_clause = if !query_responses_where_clause.is_empty() {
-            quote! { where #(#query_responses_where_clause,)* }
+        let wrapper_predicates = filter_wheres(full_where_clause, &generics, &wrapper_generics);
+        let wrapper_where_clause = if !wrapper_predicates.is_empty() {
+            quote! { where #(#wrapper_predicates,)* }
         } else {
             quote! {}
         };
 
         let unused_generics = emit_bracketed_generics(&unused_generics);
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
-        let bracketed_used_wrapper_generics = emit_bracketed_generics(&used_wrapper_generics);
+        let bracketed_wrapper_generics = emit_bracketed_generics(&wrapper_generics);
 
         let contract_enum_name = msg_ty.emit_msg_name(true);
         let enum_name = msg_ty.emit_msg_name(false);
@@ -1379,7 +1368,7 @@ impl<'a> GlueMessage<'a> {
                 {
                     quote! {
                         #[cfg(not(target_arch = "wasm32"))]
-                        impl #bracketed_used_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_used_wrapper_generics #query_responses_where_clause {
+                        impl #bracketed_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
                             fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                                 let responses = [#(#response_schemas_calls),*];
                                 responses.into_iter().flatten().collect()
@@ -1399,12 +1388,12 @@ impl<'a> GlueMessage<'a> {
                 #[allow(clippy::derive_partial_eq_without_eq)]
                 #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[serde(rename_all="snake_case", untagged)]
-                pub enum #contract_enum_name #bracketed_used_wrapper_generics {
+                pub enum #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
                     #(#variants,)*
                     #contract_variant
                 }
 
-                impl #bracketed_used_wrapper_generics #contract_enum_name #bracketed_used_wrapper_generics {
+                impl #bracketed_wrapper_generics #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
                     pub fn dispatch #unused_generics (
                         self,
                         contract: &#contract,
@@ -1424,7 +1413,7 @@ impl<'a> GlueMessage<'a> {
 
                 #response_schemas
 
-                impl<'de, #(#used_wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_used_wrapper_generics #where_clause {
+                impl<'de, #(#wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
                     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                         where D: serde::Deserializer<'de>,
                     {
@@ -1588,13 +1577,19 @@ impl<'a> ContractApi<'a> {
 }
 
 pub struct InterfaceApi<'a> {
+    source: &'a ItemTrait,
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
+    custom: &'a Custom<'a>,
 }
 
 impl<'a> InterfaceApi<'a> {
-    pub fn new(source: &'a ItemTrait, generics: &'a [&'a GenericParam]) -> Self {
+    pub fn new(
+        source: &'a ItemTrait,
+        generics: &'a [&'a GenericParam],
+        custom: &'a Custom<'a>,
+    ) -> Self {
         let exec_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Exec,
@@ -1610,20 +1605,26 @@ impl<'a> InterfaceApi<'a> {
         );
 
         Self {
+            source,
             exec_variants,
             query_variants,
             generics,
+            custom,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
+            source,
             exec_variants,
             query_variants,
             generics,
+            custom,
         } = self;
 
+        let where_clause = &source.generics.where_clause;
+        let custom_query = custom.query_or_default();
         let exec_generics = &exec_variants.used_generics;
         let query_generics = &query_variants.used_generics;
 
@@ -1644,9 +1645,10 @@ impl<'a> InterfaceApi<'a> {
                 #phantom
             }
 
-            impl #bracket_generics #sylvia ::types::InterfaceApi for Api #bracket_generics {
+            impl #bracket_generics #sylvia ::types::InterfaceApi for Api #bracket_generics #where_clause {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
+                type Querier<'querier> = BoundQuerier<'querier, #custom_query >;
             }
         }
     }
