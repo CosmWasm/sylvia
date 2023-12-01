@@ -21,4 +21,6 @@ fn main() {
         execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
         query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,  SvCustomMsg, SvCustomMsg, SvCustomQuery>,
     }
-}
+}    
+        
+    
