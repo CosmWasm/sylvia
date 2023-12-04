@@ -9,13 +9,27 @@ use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
 #[contract(module = crate::contract)]
 #[messages(cw1 as Cw1)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT> Cw1
+impl<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        MigrateT,
+        CustomMsgT,
+        CustomQueryT,
+        FieldT,
+    > Cw1
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -26,7 +40,9 @@ where
     Exec1T: CustomMsg + DeserializeOwned + 'static,
     Exec2T: CustomMsg + DeserializeOwned + 'static,
     Exec3T: CustomMsg + DeserializeOwned + 'static,
-    QueryT: CustomMsg + DeserializeOwned + 'static,
+    Query1T: sylvia::types::CustomMsg + 'static,
+    Query2T: sylvia::types::CustomMsg + 'static,
+    Query3T: sylvia::types::CustomMsg + 'static,
     MigrateT: CustomMsg + DeserializeOwned + 'static,
     CustomMsgT: CustomMsg + DeserializeOwned + 'static,
     CustomQueryT: CustomQuery + JsonSchema + 'static,
@@ -64,6 +80,8 @@ mod tests {
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
