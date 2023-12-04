@@ -1,31 +1,34 @@
-use cosmwasm_std::{CosmosMsg, CustomMsg, Response, StdError, StdResult};
+use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use generic::Generic;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
+use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
     Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
     for crate::contract::GenericContract<
         InstantiateT,
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         FieldT,
     >
 where
-    for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    Exec1T: sylvia::types::CustomMsg + 'static,
-    Exec2T: sylvia::types::CustomMsg + 'static,
-    Exec3T: sylvia::types::CustomMsg + 'static,
-    QueryT: CustomMsg + DeserializeOwned + 'static,
-    MigrateT: CustomMsg + DeserializeOwned + 'static,
+    for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
+    Exec1T: CustomMsg + 'static,
+    Exec2T: CustomMsg + 'static,
+    Exec3T: CustomMsg + 'static,
+    Query1T: CustomMsg + 'static,
+    Query2T: CustomMsg + 'static,
+    Query3T: CustomMsg + 'static,
+    MigrateT: CustomMsg + 'static,
     FieldT: 'static,
 {
     type Error = StdError;
@@ -80,6 +83,8 @@ mod tests {
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id: CodeId<
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

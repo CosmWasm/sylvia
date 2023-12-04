@@ -6,7 +6,7 @@ use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg, SvCustomQuery};
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
     CustomAndGeneric<
         SvCustomMsg,
         SvCustomMsg,
@@ -21,7 +21,9 @@ impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         FieldT,
     >
@@ -71,6 +73,8 @@ mod tests {
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

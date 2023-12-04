@@ -1,6 +1,5 @@
 use cosmwasm_std::{Reply, Response, StdResult};
 use cw_storage_plus::Item;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{
     CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SvCustomMsg, SvCustomQuery,
@@ -10,34 +9,59 @@ use sylvia::{contract, schemars};
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
 
-pub struct GenericContract<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT> {
+pub struct GenericContract<
+    InstantiateT,
+    Exec1T,
+    Exec2T,
+    Exec3T,
+    Query1T,
+    Query2T,
+    Query3T,
+    MigrateT,
+    FieldT,
+> {
     _field: Item<'static, FieldT>,
+    #[allow(clippy::type_complexity)]
     _phantom: std::marker::PhantomData<(
         InstantiateT,
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         FieldT,
     )>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
 #[contract]
 #[messages(cw1 as Cw1: custom(msg, query))]
 #[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
-    GenericContract<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, FieldT>
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
+    GenericContract<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        MigrateT,
+        FieldT,
+    >
 where
     for<'msg_de> InstantiateT: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    Exec1T: CustomMsg + DeserializeOwned + 'static,
-    Exec2T: CustomMsg + DeserializeOwned + 'static,
-    Exec3T: CustomMsg + DeserializeOwned + 'static,
-    QueryT: CustomMsg + DeserializeOwned + 'static,
-    MigrateT: CustomMsg + DeserializeOwned + 'static,
+    Exec1T: CustomMsg + 'static,
+    Exec2T: CustomMsg + 'static,
+    Exec3T: CustomMsg + 'static,
+    Query1T: CustomMsg + 'static,
+    Query2T: CustomMsg + 'static,
+    Query3T: CustomMsg + 'static,
+    MigrateT: CustomMsg + 'static,
     FieldT: 'static,
 {
     pub const fn new() -> Self {
@@ -77,7 +101,22 @@ where
     }
 
     #[msg(query)]
-    pub fn contract_query(&self, _ctx: QueryCtx<SvCustomQuery>, _msg: QueryT) -> StdResult<String> {
+    pub fn contract_query_one(
+        &self,
+        _ctx: QueryCtx<SvCustomQuery>,
+        _msg1: Query1T,
+        _msg2: Query1T,
+    ) -> StdResult<String> {
+        Ok(String::default())
+    }
+
+    #[msg(query)]
+    pub fn contract_query_two(
+        &self,
+        _ctx: QueryCtx<SvCustomQuery>,
+        _msg1: Query1T,
+        _msg2: Query1T,
+    ) -> StdResult<String> {
         Ok(String::default())
     }
 
@@ -116,6 +155,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             super::SvCustomMsg,
             String,
             _,
@@ -138,7 +179,12 @@ mod tests {
             .contract_execute_two(SvCustomMsg, SvCustomMsg)
             .call(owner)
             .unwrap();
-        contract.contract_query(SvCustomMsg).unwrap();
+        contract
+            .contract_query_one(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .contract_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
         contract
             .migrate(SvCustomMsg)
             .call(owner, code_id.code_id())

@@ -35,6 +35,7 @@ pub struct GenericsForwardedContract<
     )>,
 }
 
+// TODO: Add entry points call.
 #[contract]
 #[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]
