@@ -7,14 +7,27 @@ use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
-    CustomAndGeneric<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg, CustomMsgT, CustomQueryT>
+impl<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        MigrateT,
+        CustomMsgT,
+        CustomQueryT,
+        FieldT,
+    > CustomAndGeneric<Exec1T, Exec2T, Exec3T, Query1T, SvCustomMsg, CustomMsgT, CustomQueryT>
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -25,7 +38,9 @@ where
     Exec1T: CustomMsg + 'static,
     Exec2T: CustomMsg + 'static,
     Exec3T: CustomMsg + 'static,
-    QueryT: CustomMsg + 'static,
+    Query1T: CustomMsg + 'static,
+    Query2T: CustomMsg + 'static,
+    Query3T: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
     CustomQueryT: CustomQuery + 'static,
@@ -57,7 +72,7 @@ where
     fn custom_generic_query(
         &self,
         _ctx: QueryCtx<CustomQueryT>,
-        _msg: QueryT,
+        _msg: Query1T,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
@@ -74,6 +89,8 @@ mod tests {
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

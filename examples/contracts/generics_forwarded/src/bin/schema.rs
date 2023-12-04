@@ -19,6 +19,6 @@ fn main() {
         // schema.
         // execute: <GenericForwardedContract as ContractApi>::ContractExec,
         execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
-        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
+        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, SvCustomMsg, SvCustomMsg>,
     }
 }
