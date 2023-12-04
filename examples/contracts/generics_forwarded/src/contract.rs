@@ -11,7 +11,9 @@ pub struct GenericsForwardedContract<
     Exec1T,
     Exec2T,
     Exec3T,
-    QueryT,
+    Query1T,
+    Query2T,
+    Query3T,
     MigrateT,
     CustomMsgT,
     CustomQueryT,
@@ -24,7 +26,9 @@ pub struct GenericsForwardedContract<
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -32,17 +36,31 @@ pub struct GenericsForwardedContract<
 }
 
 #[contract]
-#[messages(generic<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, QueryT, SvCustomMsg, CustomMsgT, CustomQueryT> as CustomAndGeneric)]
+#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, SvCustomMsg, CustomMsgT, CustomQueryT> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, QueryT, MigrateT, CustomMsgT, CustomQueryT, FieldT>
+impl<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        MigrateT,
+        CustomMsgT,
+        CustomQueryT,
+        FieldT,
+    >
     GenericsForwardedContract<
         InstantiateT,
         Exec1T,
         Exec2T,
         Exec3T,
-        QueryT,
+        Query1T,
+        Query2T,
+        Query3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -53,7 +71,9 @@ where
     Exec1T: CustomMsg + 'static,
     Exec2T: CustomMsg + 'static,
     Exec3T: CustomMsg + 'static,
-    QueryT: CustomMsg + 'static,
+    Query1T: CustomMsg + 'static,
+    Query2T: CustomMsg + 'static,
+    Query3T: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
     CustomQueryT: CustomQuery + 'static,
@@ -96,7 +116,22 @@ where
     }
 
     #[msg(query)]
-    pub fn contract_query(&self, _ctx: QueryCtx<CustomQueryT>, _msg: QueryT) -> StdResult<String> {
+    pub fn contract_query_one(
+        &self,
+        _ctx: QueryCtx<CustomQueryT>,
+        _msg1: Query1T,
+        _msg2: Query2T,
+    ) -> StdResult<String> {
+        Ok(String::default())
+    }
+
+    #[msg(query)]
+    pub fn contract_query_two(
+        &self,
+        _ctx: QueryCtx<CustomQueryT>,
+        _msg1: Query2T,
+        _msg2: Query3T,
+    ) -> StdResult<String> {
         Ok(String::default())
     }
 
@@ -135,6 +170,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             super::SvCustomMsg,
             super::SvCustomMsg,
             SvCustomQuery,
@@ -159,7 +196,12 @@ mod tests {
             .contract_execute_two(SvCustomMsg, SvCustomMsg)
             .call(owner)
             .unwrap();
-        contract.contract_query(SvCustomMsg).unwrap();
+        contract
+            .contract_query_one(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .contract_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
         contract
             .migrate(SvCustomMsg)
             .call(owner, code_id.code_id())
