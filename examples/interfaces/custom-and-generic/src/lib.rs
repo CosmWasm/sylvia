@@ -7,12 +7,23 @@ use sylvia::{interface, schemars};
 
 #[interface]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
-pub trait CustomAndGeneric<Exec1T, Exec2T, Exec3T, QueryT, RetT, CustomMsgT, CustomQueryT>
-where
+pub trait CustomAndGeneric<
+    Exec1T,
+    Exec2T,
+    Exec3T,
+    Query1T,
+    Query2T,
+    Query3T,
+    RetT,
+    CustomMsgT,
+    CustomQueryT,
+> where
     for<'msg_de> Exec1T: CustomMsg + Deserialize<'msg_de>,
     Exec2T: sylvia::types::CustomMsg,
     Exec3T: sylvia::types::CustomMsg,
-    QueryT: sylvia::types::CustomMsg,
+    Query1T: sylvia::types::CustomMsg,
+    Query2T: sylvia::types::CustomMsg,
+    Query3T: sylvia::types::CustomMsg,
     RetT: CustomMsg + DeserializeOwned,
     CustomMsgT: CustomMsg + DeserializeOwned,
     CustomQueryT: sylvia::types::CustomQuery + 'static,
@@ -36,10 +47,19 @@ where
     ) -> Result<Response<CustomMsgT>, Self::Error>;
 
     #[msg(query)]
-    fn custom_generic_query(
+    fn custom_generic_query_one(
         &self,
         ctx: QueryCtx<CustomQueryT>,
-        param: QueryT,
+        param1: Query1T,
+        param2: Query2T,
+    ) -> Result<RetT, Self::Error>;
+
+    #[msg(query)]
+    fn custom_generic_query_two(
+        &self,
+        ctx: QueryCtx<CustomQueryT>,
+        param1: Query2T,
+        param2: Query3T,
     ) -> Result<RetT, Self::Error>;
 }
 
@@ -49,14 +69,20 @@ mod tests {
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
     use sylvia::types::{InterfaceApi, SvCustomMsg, SvCustomQuery};
 
-    use crate::sv::Querier;
-
     #[test]
     fn construct_messages() {
         let contract = Addr::unchecked("contract");
 
         // Direct message construction
-        let _ = super::sv::QueryMsg::<_, Empty>::custom_generic_query(SvCustomMsg {});
+        let _ = super::sv::QueryMsg::<_, _, Empty, SvCustomMsg>::custom_generic_query_one(
+            SvCustomMsg {},
+            SvCustomMsg {},
+        );
+        let _ = super::sv::QueryMsg::<SvCustomMsg, _, Empty, _>::custom_generic_query_two(
+            SvCustomMsg {},
+            SvCustomMsg {},
+        );
+
         let _ = super::sv::ExecMsg::<_, _, SvCustomMsg>::custom_generic_execute_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -71,24 +97,51 @@ mod tests {
         let querier_wrapper: QuerierWrapper = QuerierWrapper::new(&deps.querier);
 
         let querier = super::sv::BoundQuerier::borrowed(&contract, &querier_wrapper);
+
+        // TODO: Allow generic querier calls without fully qualified path.
+        // ISSUE: BoundQuerier is a non generic type. We try to use method from a generic trait
+        // Querier. Because of that generic values are unknown at the time we call these methods.
+        // This issue is present when we have multiple queries using different generic types and
+        // Rust compiler cannot deduce types of these generics while constructing `QueryMsg`.
+        // FIX: Solution might be to change the `BoundQuerier` to be generic over the same types as
+        // `Querier`. I think this should be possible with `BoundQuerier` exposed via `InterfaceApi`.
         let _: Result<SvCustomMsg, _> =
-            super::sv::Querier::custom_generic_query(&querier, SvCustomMsg {});
-        let _: Result<SvCustomMsg, _> = querier.custom_generic_query(SvCustomMsg {});
+            super::sv::Querier::<_, _, _, SvCustomMsg>::custom_generic_query_one(
+                &querier,
+                SvCustomMsg {},
+                SvCustomMsg {},
+            );
+        // let _: Result<SvCustomMsg, _> =
+        //     querier.custom_generic_query_one(SvCustomMsg {}, SvCustomMsg {});
+        let _: Result<SvCustomMsg, _> =
+            super::sv::Querier::<SvCustomMsg, _, _, _>::custom_generic_query_two(
+                &querier,
+                SvCustomMsg {},
+                SvCustomMsg {},
+            );
+        // let _: Result<SvCustomMsg, _> =
+        //     querier.custom_generic_query_two(SvCustomMsg {}, SvCustomMsg {});
 
         // Construct messages with Interface extension
         let _ = <super::sv::Api<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            _,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomQuery,
-        > as InterfaceApi>::Query::custom_generic_query(SvCustomMsg {});
+        > as InterfaceApi>::Query::custom_generic_query_one(
+            SvCustomMsg {}, SvCustomMsg {}
+        );
 
         let _ = <super::sv::Api<
             _,
             _,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -103,6 +156,8 @@ mod tests {
             SvCustomMsg,
             _,
             _,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             cosmwasm_std::Empty,
