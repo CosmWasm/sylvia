@@ -10,7 +10,7 @@ pub struct NonGenericContract;
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
 #[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
@@ -89,7 +89,11 @@ mod tests {
         // Custom generic Interface
         contract
             .custom_and_generic_proxy()
-            .custom_generic_query(SvCustomMsg {})
+            .custom_generic_query_one(SvCustomMsg {}, SvCustomMsg {})
+            .unwrap();
+        contract
+            .custom_and_generic_proxy()
+            .custom_generic_query_two(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
             .custom_and_generic_proxy()
