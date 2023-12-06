@@ -18,7 +18,7 @@ fn main() {
         // This potentially could done with some type alias, not sure how it would affect the
         // schema.
         // execute: <GenericForwardedContract as ContractApi>::ContractExec,
-        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
-        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, SvCustomMsg, SvCustomMsg>,
+        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
+        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,  SvCustomMsg, SvCustomMsg, SvCustomQuery>,
     }
 }
