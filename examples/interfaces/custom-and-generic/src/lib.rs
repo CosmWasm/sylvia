@@ -98,13 +98,6 @@ mod tests {
 
         let querier = super::sv::BoundQuerier::borrowed(&contract, &querier_wrapper);
 
-        // TODO: Allow generic querier calls without fully qualified path.
-        // ISSUE: BoundQuerier is a non generic type. We try to use method from a generic trait
-        // Querier. Because of that generic values are unknown at the time we call these methods.
-        // This issue is present when we have multiple queries using different generic types and
-        // Rust compiler cannot deduce types of these generics while constructing `QueryMsg`.
-        // FIX: Solution might be to change the `BoundQuerier` to be generic over the same types as
-        // `Querier`. I think this should be possible with `BoundQuerier` exposed via `InterfaceApi`.
         let _: Result<SvCustomMsg, _> =
             super::sv::Querier::<_, _, _, SvCustomMsg>::custom_generic_query_one(
                 &querier,

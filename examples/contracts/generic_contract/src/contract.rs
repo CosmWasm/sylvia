@@ -38,7 +38,7 @@ pub struct GenericContract<
 #[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
 #[contract]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>

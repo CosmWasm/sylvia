@@ -4,11 +4,23 @@ use serde::Deserialize;
 use sylvia::contract;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SvCustomMsg};
 
+type QueryAlias1 = SvCustomMsg;
+type QueryAlias2 = SvCustomMsg;
+type QueryAlias3 = SvCustomMsg;
+
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
-    Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
+    Generic<
+        SvCustomMsg,
+        SvCustomMsg,
+        SvCustomMsg,
+        QueryAlias1,
+        QueryAlias2,
+        QueryAlias3,
+        sylvia::types::SvCustomMsg,
+    >
     for crate::contract::GenericContract<
         InstantiateT,
         Exec1T,
@@ -62,10 +74,21 @@ where
     // F.e. if we this query would return `SvCustomMsg` and we would pass
     // `sylvia::types::SvCustomMsg` to the `Generic` trait paths would not match.
     #[msg(query)]
-    fn generic_query(
+    fn generic_query_one(
         &self,
         _ctx: QueryCtx,
-        _msg: SvCustomMsg,
+        _msg1: QueryAlias1,
+        _msg2: QueryAlias2,
+    ) -> StdResult<sylvia::types::SvCustomMsg> {
+        Ok(SvCustomMsg {})
+    }
+
+    #[msg(query)]
+    fn generic_query_two(
+        &self,
+        _ctx: QueryCtx,
+        _msg1: QueryAlias2,
+        _msg2: QueryAlias3,
     ) -> StdResult<sylvia::types::SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
@@ -118,6 +141,11 @@ mod tests {
             )
             .call(owner)
             .unwrap();
-        contract.generic_query(SvCustomMsg).unwrap();
+        contract
+            .generic_query_one(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .generic_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
     }
 }
