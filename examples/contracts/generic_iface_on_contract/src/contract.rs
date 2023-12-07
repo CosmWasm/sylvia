@@ -9,7 +9,7 @@ pub struct NonGenericContract;
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomQuery> as CustomAndGeneric)]
 #[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
@@ -67,7 +67,11 @@ mod tests {
         // Non-Custom generic Interface
         contract
             .generic_proxy()
-            .generic_query(SvCustomMsg {})
+            .generic_query_one(SvCustomMsg {}, SvCustomMsg {})
+            .unwrap();
+        contract
+            .generic_proxy()
+            .generic_query_two(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
             .generic_proxy()

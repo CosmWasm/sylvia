@@ -19,7 +19,7 @@ impl<
         CustomMsgT,
         CustomQueryT,
         FieldT,
-    > Generic<Exec1T, Exec2T, Exec3T, Query1T, SvCustomMsg>
+    > Generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg>
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
         Exec1T,
@@ -69,7 +69,22 @@ where
     }
 
     #[msg(query)]
-    fn generic_query(&self, _ctx: QueryCtx, _msg: Query1T) -> StdResult<SvCustomMsg> {
+    fn generic_query_one(
+        &self,
+        _ctx: QueryCtx,
+        _msg1: Query1T,
+        _msg2: Query2T,
+    ) -> StdResult<SvCustomMsg> {
+        Ok(SvCustomMsg {})
+    }
+
+    #[msg(query)]
+    fn generic_query_two(
+        &self,
+        _ctx: QueryCtx,
+        _msg1: Query2T,
+        _msg2: Query3T,
+    ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
 }
@@ -124,6 +139,11 @@ mod tests {
             )
             .call(owner)
             .unwrap();
-        contract.generic_query(SvCustomMsg).unwrap();
+        contract
+            .generic_query_one(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .generic_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
     }
 }
