@@ -6,6 +6,9 @@ use sylvia::types::{
 };
 use sylvia::{contract, schemars};
 
+#[cfg(not(feature = "library"))]
+use sylvia::types::SvCustomQuery;
+
 pub struct GenericsForwardedContract<
     InstantiateT,
     Exec1T,
@@ -35,7 +38,7 @@ pub struct GenericsForwardedContract<
     )>,
 }
 
-// TODO: Add entry points call.
+#[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
 #[contract]
 #[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]

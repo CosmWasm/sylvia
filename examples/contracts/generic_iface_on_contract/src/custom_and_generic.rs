@@ -19,7 +19,7 @@ impl
         QueryAlias2,
         QueryAlias3,
         sylvia::types::SvCustomMsg,
-        syfvia::types::SvCustomMsg,
+        sylvia::types::SvCustomMsg,
         SvCustomQuery,
     > for crate::contract::NonGenericContract
 {
