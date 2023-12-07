@@ -49,27 +49,49 @@ impl Parse for ContractArgs {
 }
 
 /// Parsed arguments for `entry_points` macro
-pub struct EntryPointArgs {
+#[derive(Default)]
+pub struct EntryPointArgs<'a> {
     /// Types used in place of contracts generics.
     pub generics: Option<Punctuated<GenericArgument, Token![,]>>,
+    /// Custom msg/query used in place of contracts generic ones.
+    pub custom: Option<Custom<'a>>,
 }
 
-impl Parse for EntryPointArgs {
+impl<'a> Parse for EntryPointArgs<'a> {
     fn parse(input: ParseStream) -> Result<Self> {
+        let mut entry_points_args = Self::default();
         if input.is_empty() {
-            return Ok(Self { generics: None });
+            return Ok(entry_points_args);
         }
 
-        let path: Path = input.parse()?;
+        let generics: Path = input.parse()?;
+        match generics.segments.last() {
+            Some(segment) if segment.ident == "generics" => {
+                entry_points_args.generics = Some(extract_generics_from_path(&generics))
+            }
+            _ => return Err(Error::new(generics.span(), "Expected `generics`.")),
+        };
 
-        let generics = match path.segments.last() {
-            Some(segment) if segment.ident == "generics" => Some(extract_generics_from_path(&path)),
-            _ => return Err(Error::new(path.span(), "Expected `generics`")),
+        let comma: Option<Token![,]> = input.parse().ok();
+        if comma.is_none() {
+            return Ok(entry_points_args);
+        }
+
+        let custom: Option<Path> = input.parse().ok();
+        match custom {
+            Some(custom)
+                if custom.get_ident().map(|custom| custom.to_string())
+                    == Some("custom".to_owned()) =>
+            {
+                entry_points_args.custom = Some(Custom::parse.parse2(input.parse()?)?);
+            }
+            Some(attr) => return Err(Error::new(attr.span(), "Expected `custom`.")),
+            _ => (),
         };
 
         let _: Nothing = input.parse()?;
 
-        Ok(Self { generics })
+        Ok(entry_points_args)
     }
 }
 
