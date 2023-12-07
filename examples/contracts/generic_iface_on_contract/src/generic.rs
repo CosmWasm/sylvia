@@ -3,11 +3,23 @@ use generic::Generic;
 use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
 
+type QueryAlias1 = SvCustomMsg;
+type QueryAlias2 = SvCustomMsg;
+type QueryAlias3 = SvCustomMsg;
+
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg = SvCustomMsg)]
-impl Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
-    for crate::contract::NonGenericContract
+impl
+    Generic<
+        SvCustomMsg,
+        SvCustomMsg,
+        SvCustomMsg,
+        QueryAlias1,
+        QueryAlias2,
+        QueryAlias3,
+        sylvia::types::SvCustomMsg,
+    > for crate::contract::NonGenericContract
 {
     type Error = StdError;
 
@@ -36,10 +48,21 @@ impl Generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::
     // If for some reason like here one type would be used in place of two generics either full
     // path or some alias has to be used.
     #[msg(query)]
-    fn generic_query(
+    fn generic_query_one(
         &self,
         _ctx: QueryCtx,
-        _msg: sylvia::types::SvCustomMsg,
+        _msg1: QueryAlias1,
+        _msg2: QueryAlias2,
+    ) -> StdResult<SvCustomMsg> {
+        Ok(SvCustomMsg {})
+    }
+
+    #[msg(query)]
+    fn generic_query_two(
+        &self,
+        _ctx: QueryCtx,
+        _msg1: QueryAlias2,
+        _msg2: QueryAlias3,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
