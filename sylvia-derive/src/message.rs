@@ -1662,11 +1662,11 @@ pub struct EntryPoints<'a> {
     override_entry_points: OverrideEntryPoints,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
-    attrs: EntryPointArgs,
+    attrs: EntryPointArgs<'a>,
 }
 
 impl<'a> EntryPoints<'a> {
-    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs) -> Self {
+    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs<'a>) -> Self {
         let sylvia = crate_module();
         let name = StripGenerics.fold_type(*source.self_ty.clone());
         let override_entry_points = OverrideEntryPoints::new(&source.attrs);
@@ -1718,6 +1718,11 @@ impl<'a> EntryPoints<'a> {
             attrs,
         } = self;
         let sylvia = crate_module();
+
+        let custom = match &attrs.custom {
+            Some(custom) => custom,
+            None => custom,
+        };
 
         let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
