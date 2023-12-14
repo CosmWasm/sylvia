@@ -1,16 +1,19 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::ToTokens;
+use syn::GenericParam;
 use syn::ItemImpl;
 use syn::Path;
 
 use crate::associated_types::AssociatedTypes;
+use crate::associated_types::EmitAssociated;
 use crate::associated_types::ImplAssociatedTypes;
 use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
-use crate::message::{MsgVariant, MsgVariants};
+use crate::message::MsgVariants;
 use crate::parser::MsgType;
+use crate::variant_descs::AsVariantDescs;
 
 pub struct TraitQuerier<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
@@ -39,17 +42,17 @@ where
             ..
         } = self;
 
+        let generics = associated_types.as_names();
         let methods_impl = variants
             .variants()
             .iter()
-            .map(|variant| variant.emit_trait_querier_impl(&associated_types.as_names()));
+            .map(|variant| variant.emit_trait_querier_impl(&generics));
 
         let methods_declaration = variants
             .variants()
             .iter()
-            .map(MsgVariant::emit_querier_declaration);
+            .map(|variant| variant.emit_querier_declaration(&generics));
 
-        let generics = associated_types.as_names();
         let types_declaration = associated_types.as_types_declaration();
         let types_definition = associated_types.emit_types_definition();
         let where_clause = associated_types.as_where_clause();
@@ -169,6 +172,98 @@ where
 
                     #(#methods_impl)*
                 }
+            }
+        }
+    }
+}
+
+pub struct ContractQuerier<'a> {
+    source: &'a ItemImpl,
+    variants: MsgVariants<'a, GenericParam>,
+    interfaces: &'a Interfaces,
+}
+
+impl<'a> ContractQuerier<'a> {
+    pub fn new(source: &'a ItemImpl, interfaces: &'a Interfaces) -> Self {
+        let variants = MsgVariants::new(source.as_variants(), MsgType::Query, &[], &None);
+        Self {
+            source,
+            variants,
+            interfaces,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            source,
+            variants,
+            interfaces,
+        } = self;
+
+        let where_clause = &source.generics.where_clause;
+        let generics: Vec<_> = source.generics.params.iter().collect();
+        let contract = &source.self_ty;
+
+        let accessor = MsgType::Query.as_accessor_name(false);
+        let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
+        let methods_impl = variants
+            .variants()
+            .iter()
+            .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path, &generics));
+
+        let methods_declaration = variants
+            .variants()
+            .iter()
+            .map(|variant| variant.emit_querier_declaration(&generics));
+
+        let types_declaration = where_clause
+            .as_ref()
+            .map(EmitAssociated::emit_declaration)
+            .unwrap_or(vec![]);
+
+        let types_implementation = where_clause
+            .as_ref()
+            .map(EmitAssociated::emit_implementation)
+            .unwrap_or(vec![]);
+        let from_implementations = interfaces.emit_querier_from_impl(&generics);
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > {
+                    contract: &'a #sylvia ::cw_std::Addr,
+                    querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
+                    _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+                }
+
+                impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
+                    pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
+                        self.querier
+                    }
+
+                    pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
+                        self.contract
+                    }
+
+                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
+                        Self {contract, querier, _phantom: std::marker::PhantomData}
+                    }
+                }
+
+                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > Querier for BoundQuerier<'a, C, #(#generics,)* > #where_clause {
+                    #(#types_implementation)*
+
+                    #(#methods_impl)*
+                }
+
+                pub trait Querier {
+                    #(#types_declaration)*
+
+                    #(#methods_declaration)*
+                }
+
+                #(#from_implementations)*
             }
         }
     }

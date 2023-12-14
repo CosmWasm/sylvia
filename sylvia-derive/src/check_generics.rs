@@ -45,6 +45,15 @@ impl GetPath for Ident {
     }
 }
 
+impl GetPath for Type {
+    fn get_path(&self) -> Option<Path> {
+        match self {
+            Type::Path(path) => Some(path.path.clone()),
+            _ => None,
+        }
+    }
+}
+
 /// Traverses AST tree and checks if generics are used in method signatures.
 #[derive(Debug)]
 pub struct CheckGenerics<'g, Generic> {
