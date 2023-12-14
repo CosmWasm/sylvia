@@ -1,8 +1,9 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, PathArguments, TraitItem};
 
+use crate::associated_types::AssociatedTypes;
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -10,6 +11,7 @@ use crate::message::{
 };
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
+use crate::querier::Querier;
 use crate::remote::Remote;
 use crate::utils::is_trait;
 use crate::variant_descs::AsVariantDescs;
@@ -17,8 +19,8 @@ use crate::variant_descs::AsVariantDescs;
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
     item: &'a ItemTrait,
-    generics: Vec<&'a GenericParam>,
     custom: Custom<'a>,
+    associated_types: AssociatedTypes<'a>,
 }
 
 /// Preprocessed `contract` macro input for non-trait impl block
@@ -34,9 +36,13 @@ pub struct ImplInput<'a> {
 
 impl<'a> TraitInput<'a> {
     #[cfg(not(tarpaulin_include))]
-    // This requires invalid implementation which would fail at compile time and making it impossible to test
     pub fn new(item: &'a ItemTrait) -> Self {
-        let generics = item.generics.params.iter().collect();
+        if !item.generics.params.is_empty() {
+            emit_error!(
+                item.ident.span(), "Generics on traits are not supported. Use associated types instead.";
+                note = "Sylvia interfaces can be implemented only a single time per contract.";
+            );
+        }
 
         if !item
             .items
@@ -51,28 +57,31 @@ impl<'a> TraitInput<'a> {
         }
 
         let custom = Custom::new(&item.attrs);
+        let associated_types = AssociatedTypes::new(item);
 
         Self {
             item,
-            generics,
             custom,
+            associated_types,
         }
     }
 
     pub fn process(&self) -> TokenStream {
+        let Self {
+            associated_types,
+            item,
+            custom,
+        } = self;
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::new(&Interfaces::default()).emit();
+        let remote = Remote::new(&Interfaces::default(), associated_types).emit();
+        let associated_names = associated_types.as_names();
 
-        let querier = MsgVariants::new(
-            self.item.as_variants(),
-            MsgType::Query,
-            &self.generics,
-            &self.item.generics.where_clause,
-        )
-        .emit_querier();
+        let query_variants =
+            MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
+        let querier = Querier::new(&query_variants, associated_types).emit_trait_querier();
 
-        let interface_messages = InterfaceApi::new(self.item, &self.generics, &self.custom).emit();
+        let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -103,8 +112,8 @@ impl<'a> TraitInput<'a> {
     }
 
     fn emit_messages(&self) -> TokenStream {
-        let exec = self.emit_msg(&Ident::new("ExecMsg", Span::mixed_site()), MsgType::Exec);
-        let query = self.emit_msg(&Ident::new("QueryMsg", Span::mixed_site()), MsgType::Query);
+        let exec = self.emit_msg(MsgType::Exec);
+        let query = self.emit_msg(MsgType::Query);
 
         #[cfg(not(tarpaulin_include))]
         {
@@ -116,8 +125,24 @@ impl<'a> TraitInput<'a> {
         }
     }
 
-    fn emit_msg(&self, name: &Ident, msg_ty: MsgType) -> TokenStream {
-        EnumMessage::new(name, self.item, msg_ty, &self.generics, &self.custom).emit()
+    fn emit_msg(&self, msg_ty: MsgType) -> TokenStream {
+        let where_clause = &self.associated_types.as_where_clause();
+        let associated_names = self.associated_types.as_names();
+        let variants = MsgVariants::new(
+            self.item.as_variants(),
+            msg_ty,
+            &associated_names,
+            where_clause,
+        );
+
+        EnumMessage::new(
+            self.item,
+            msg_ty,
+            &self.custom,
+            variants,
+            &self.associated_types,
+        )
+        .emit()
     }
 }
 
@@ -182,7 +207,7 @@ impl<'a> ImplInput<'a> {
         )
         .emit_querier();
         let messages = self.emit_messages();
-        let remote = Remote::new(&self.interfaces).emit();
+        let remote = Remote::new(&self.interfaces, &Default::default()).emit();
         let querier_from_impl = self.interfaces.emit_querier_from_impl();
         let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
 

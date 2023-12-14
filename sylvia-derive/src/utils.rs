@@ -120,7 +120,7 @@ pub fn as_where_clause(where_predicates: &[&WherePredicate]) -> Option<WhereClau
     }
 }
 
-pub fn emit_bracketed_generics<Generic: ToTokens>(unbonded_generics: &[&Generic]) -> TokenStream {
+pub fn emit_bracketed_generics(unbonded_generics: &[impl ToTokens]) -> TokenStream {
     match unbonded_generics.is_empty() {
         true => quote! {},
         false => quote! { < #(#unbonded_generics,)* > },

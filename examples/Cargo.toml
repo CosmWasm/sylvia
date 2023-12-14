@@ -16,9 +16,9 @@ members = [
     "contracts/cw20-base",
     "contracts/entry-points-overriding",
     "contracts/custom",
-    "contracts/generic_contract",
-    "contracts/generics_forwarded",
-    "contracts/generic_iface_on_contract",
+    # "contracts/generic_contract",
+    # "contracts/generics_forwarded",
+    # "contracts/generic_iface_on_contract",
 ]
 resolver = "2"
 

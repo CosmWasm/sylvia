@@ -194,7 +194,7 @@ impl MsgType {
         }
     }
 
-    pub fn emit_msg_name(&self, is_wrapper: bool) -> Type {
+    pub fn emit_msg_name(&self, is_wrapper: bool) -> Ident {
         match self {
             MsgType::Exec if is_wrapper => parse_quote! { ContractExecMsg },
             MsgType::Query if is_wrapper => parse_quote! { ContractQueryMsg },
@@ -231,6 +231,18 @@ impl MsgType {
             _ => quote! {
                 #[serde(skip)]
                 _Phantom(std::marker::PhantomData<( #(#generics,)* )>),
+            },
+        }
+    }
+
+    pub fn emit_derive_call(&self) -> TokenStream {
+        let sylvia = crate_module();
+        match self {
+            MsgType::Query => quote! {
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_schema::QueryResponses)]
+            },
+            _ => quote! {
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             },
         }
     }
@@ -501,7 +513,7 @@ pub fn parse_associated_custom_type(source: &ItemTrait, type_name: &str) -> Opti
     source.items.iter().find_map(|item| match item {
         TraitItem::Type(ty) if ty.ident == type_name => {
             let type_name = Ident::new(type_name, ty.span());
-            Some(parse_quote! { <C as #trait_name>:: #type_name})
+            Some(parse_quote! { <ContractT as #trait_name>:: #type_name})
         }
         _ => None,
     })
