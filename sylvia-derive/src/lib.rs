@@ -6,15 +6,18 @@ use quote::quote;
 use syn::fold::Fold;
 use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
+mod associated_types;
 pub(crate) mod check_generics;
 mod input;
 mod interfaces;
 mod message;
 mod multitest;
 mod parser;
+mod querier;
 mod remote;
 mod strip_generics;
 mod strip_input;
+mod strip_self_path;
 mod utils;
 mod variant_descs;
 
