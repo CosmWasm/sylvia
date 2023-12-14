@@ -2,14 +2,13 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-use cosmwasm_std::{
-    Addr, Api, BlockInfo, Coin, CustomQuery, Empty, GovMsg, IbcMsg, IbcQuery, Storage,
-};
+use cosmwasm_std::{Addr, Api, BlockInfo, Coin, CustomQuery, Empty, Storage};
 #[cfg(feature = "cosmwasm_1_2")]
 use cosmwasm_std::{CodeInfoResponse, StdResult};
 use cw_multi_test::{
-    Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov, Ibc, Module,
-    Router, StakeKeeper, Staking, Wasm, WasmKeeper,
+    Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov,
+    GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, StargateFailing,
+    Wasm, WasmKeeper,
 };
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -41,8 +40,9 @@ impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
                 WasmKeeper<ExecC, QueryC>,
                 StakeKeeper,
                 DistributionKeeper,
-                FailingModule<IbcMsg, IbcQuery, Empty>,
-                FailingModule<GovMsg, Empty, Empty>,
+                IbcFailingModule,
+                GovFailingModule,
+                StargateFailing,
             >,
             &dyn Api,
             &mut dyn Storage,
