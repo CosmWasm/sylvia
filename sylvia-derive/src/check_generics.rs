@@ -1,14 +1,15 @@
+use proc_macro2::Ident;
 use syn::visit::Visit;
-use syn::{parse_quote, GenericArgument, GenericParam, Type};
+use syn::{parse_quote, GenericArgument, GenericParam, Path, TraitItemType, Type};
 
 /// Provides method extracting `syn::Path`.
 /// Inteded to be used with `syn::GenericParam` and `syn::GenericArgument`.
 pub trait GetPath {
-    fn get_path(&self) -> Option<syn::Path>;
+    fn get_path(&self) -> Option<Path>;
 }
 
 impl GetPath for GenericParam {
-    fn get_path(&self) -> Option<syn::Path> {
+    fn get_path(&self) -> Option<Path> {
         match self {
             GenericParam::Type(ty) => {
                 let ident = &ty.ident;
@@ -20,7 +21,7 @@ impl GetPath for GenericParam {
 }
 
 impl GetPath for GenericArgument {
-    fn get_path(&self) -> Option<syn::Path> {
+    fn get_path(&self) -> Option<Path> {
         match self {
             GenericArgument::Type(Type::Path(path)) => {
                 let path = &path.path;
@@ -28,6 +29,19 @@ impl GetPath for GenericArgument {
             }
             _ => None,
         }
+    }
+}
+
+impl GetPath for TraitItemType {
+    fn get_path(&self) -> Option<Path> {
+        let ident = &self.ident;
+        Some(parse_quote!(#ident))
+    }
+}
+
+impl GetPath for Ident {
+    fn get_path(&self) -> Option<Path> {
+        Some(parse_quote! { #self })
     }
 }
 
