@@ -4,7 +4,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{GenericArgument, ItemImpl, Type};
+use syn::{GenericArgument, GenericParam, ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::{ContractMessageAttr, MsgType};
@@ -44,7 +44,7 @@ impl Interfaces {
         &self.interfaces
     }
 
-    pub fn emit_querier_from_impl(&self) -> Vec<TokenStream> {
+    pub fn emit_querier_from_impl(&self, contract_generics: &[&GenericParam]) -> Vec<TokenStream> {
         let sylvia = crate_module();
 
         self.interfaces
@@ -52,8 +52,8 @@ impl Interfaces {
             .map(|interface| {
                 let ContractMessageAttr { module, generics ,..} = interface;
                 quote! {
-                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::sv::BoundQuerier<'a, C, #generics > {
-                        fn from(querier: &'a BoundQuerier<'a, C>) -> Self {
+                    impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#contract_generics,)* > From<&'a BoundQuerier<'a, C, #(#contract_generics,)* >> for #module ::sv::BoundQuerier<'a, C, #generics > {
+                        fn from(querier: &'a BoundQuerier<'a, C, #(#contract_generics,)* >) -> Self {
                             Self::borrowed(querier.contract(),  querier.querier())
                         }
                     }
@@ -172,6 +172,22 @@ impl Interfaces {
                 }
             })
             .collect()
+    }
+
+    pub fn emit_remote_from_impl(&self, contract_generics: &[&GenericParam]) -> Vec<TokenStream> {
+        self.interfaces.iter().map(|interface| {
+            let ContractMessageAttr {
+                module, generics, ..
+            } = interface;
+
+            quote! {
+                impl<'a, #(#contract_generics,)* > From<&'a Remote<'a, #(#contract_generics,)* >> for #module ::sv::Remote<'a, #generics > {
+                    fn from(remote: &'a Remote<'a, #(#contract_generics,)* >) -> Self {
+                        #module ::sv::Remote::borrowed(remote.as_ref())
+                    }
+                }
+            }
+        }).collect()
     }
 
     pub fn as_generic_args(&self) -> Vec<&GenericArgument> {
