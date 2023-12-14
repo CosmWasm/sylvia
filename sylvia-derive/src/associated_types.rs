@@ -117,3 +117,45 @@ impl<'a> ImplAssociatedTypes<'a> {
             .collect()
     }
 }
+
+pub trait EmitAssociated {
+    fn emit_declaration(&self) -> Vec<TokenStream>;
+    fn emit_implementation(&self) -> Vec<TokenStream>;
+}
+
+impl EmitAssociated for WhereClause {
+    fn emit_declaration(&self) -> Vec<TokenStream> {
+        self.predicates
+            .iter()
+            .filter_map(|predicate| match predicate {
+                WherePredicate::Type(predicate) => {
+                    let bounded_ty = &predicate.bounded_ty;
+                    let bounds = &predicate.bounds;
+                    let lifetimes = &predicate.lifetimes.as_ref().map(|lf| {
+                        let lf = &lf.lifetimes;
+                        quote! { < #lf > }
+                    });
+                    Some(quote! { type #bounded_ty #lifetimes: #bounds; })
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn emit_implementation(&self) -> Vec<TokenStream> {
+        self.predicates
+            .iter()
+            .filter_map(|predicate| match predicate {
+                WherePredicate::Type(predicate) => {
+                    let bounded_ty = &predicate.bounded_ty;
+                    let lifetimes = &predicate.lifetimes.as_ref().map(|lf| {
+                        let lf = &lf.lifetimes;
+                        quote! { < #lf > }
+                    });
+                    Some(quote! { type #bounded_ty #lifetimes = #bounded_ty; })
+                }
+                _ => None,
+            })
+            .collect()
+    }
+}

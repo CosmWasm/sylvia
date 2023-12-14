@@ -6,7 +6,7 @@ use syn::visit::Visit;
 use syn::{parse_quote, GenericParam, ImplItem, ItemImpl, ItemTrait, Path, Type};
 
 use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
-use crate::check_generics::CheckGenerics;
+use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{MsgVariant, MsgVariants};
@@ -383,20 +383,16 @@ impl<'a> MultitestHelpers<'a> {
             .unique()
             .collect();
 
-        let trait_generics: Vec<_> = exec_generics
+        let trait_generics: Vec<_> = generic_params
             .iter()
-            .chain(query_generics.iter())
-            .chain(custom_generics.iter())
-            .unique()
+            .filter(|&generic| {
+                associated_args
+                    .iter()
+                    .any(|name| name.get_path() == (*generic).get_path())
+            })
             .copied()
             .collect();
-
         let trait_where_predicates = filter_wheres(where_clause, generic_params, &trait_generics);
-        let trait_where_clause = if !trait_where_predicates.is_empty() {
-            quote! { where #(#trait_where_predicates,)* }
-        } else {
-            quote! {}
-        };
 
         let associated_types_declaration = associated_types.emit_types_declaration();
         let associated_types_definition = associated_types.as_item_types();
@@ -407,7 +403,7 @@ impl<'a> MultitestHelpers<'a> {
                 pub mod test_utils {
                     use super::*;
 
-                    pub trait #trait_name<MtApp, #(#trait_generics,)* > #trait_where_clause {
+                    pub trait #trait_name<MtApp> {
                         #(#associated_types_declaration)*
 
                         #(#query_methods_declarations)*
@@ -434,9 +430,7 @@ impl<'a> MultitestHelpers<'a> {
                             + 'static,
                         CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
                         #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
-                        #(#custom_where_predicate,)*
-                        #(#exec_where_predicates,)*
-                        #(#query_where_predicates,)*
+                        #(#trait_where_predicates,)*
                     {
                         #(#associated_types_definition)*
 
@@ -444,7 +438,7 @@ impl<'a> MultitestHelpers<'a> {
                         #(#exec_methods)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app , #(#trait_generics,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
