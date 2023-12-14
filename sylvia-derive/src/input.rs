@@ -11,8 +11,8 @@ use crate::message::{
 };
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
-use crate::querier::{ImplQuerier, TraitQuerier};
-use crate::remote::Remote;
+use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
+use crate::remote::{ContractRemote, InterfaceRemote};
 use crate::utils::is_trait;
 use crate::variant_descs::AsVariantDescs;
 
@@ -74,7 +74,7 @@ impl<'a> TraitInput<'a> {
         } = self;
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
-        let remote = Remote::new(&Interfaces::default(), associated_types).emit();
+        let remote = InterfaceRemote::new(associated_types).emit();
         let associated_names = associated_types.as_names();
 
         let query_variants =
@@ -197,18 +197,10 @@ impl<'a> ImplInput<'a> {
             ..
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
-        let where_clause = &item.generics.where_clause;
 
-        let querier = MsgVariants::new(
-            self.item.as_variants(),
-            MsgType::Query,
-            generics,
-            where_clause,
-        )
-        .emit_querier();
+        let querier = ContractQuerier::new(item, interfaces).emit();
         let messages = self.emit_messages();
-        let remote = Remote::new(&self.interfaces, &Default::default()).emit();
-        let querier_from_impl = self.interfaces.emit_querier_from_impl();
+        let remote = ContractRemote::new(item, interfaces).emit();
         let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
 
         #[cfg(not(tarpaulin_include))]
@@ -224,8 +216,6 @@ impl<'a> ImplInput<'a> {
                     #remote
 
                     #querier
-
-                    #(#querier_from_impl)*
 
                     #contract_api
                 }

@@ -104,7 +104,12 @@ mod tests {
             query
         );
 
-        let _: crate::sv::Remote<'_> = <SomeContract<
+        let _: crate::sv::Remote<'_,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,> = <SomeContract<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -114,7 +119,12 @@ mod tests {
 
         let deps = mock_dependencies();
         let querier_wrapper: QuerierWrapper = QuerierWrapper::new(&deps.querier);
-        let _: crate::sv::BoundQuerier<'_, cosmwasm_std::Empty> = <SomeContract<
+        let _: crate::sv::BoundQuerier<'_, cosmwasm_std::Empty,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,> = <SomeContract<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

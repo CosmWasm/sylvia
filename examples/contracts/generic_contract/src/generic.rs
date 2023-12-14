@@ -4,23 +4,10 @@ use serde::Deserialize;
 use sylvia::contract;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SvCustomMsg};
 
-type QueryAlias1 = SvCustomMsg;
-type QueryAlias2 = SvCustomMsg;
-type QueryAlias3 = SvCustomMsg;
-
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
-    Generic<
-        SvCustomMsg,
-        SvCustomMsg,
-        SvCustomMsg,
-        QueryAlias1,
-        QueryAlias2,
-        QueryAlias3,
-        sylvia::types::SvCustomMsg,
-    >
+impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT> Generic
     for crate::contract::GenericContract<
         InstantiateT,
         Exec1T,
@@ -44,13 +31,20 @@ where
     FieldT: 'static,
 {
     type Error = StdError;
+    type Exec1T = SvCustomMsg;
+    type Exec2T = SvCustomMsg;
+    type Exec3T = SvCustomMsg;
+    type Query1T = SvCustomMsg;
+    type Query2T = SvCustomMsg;
+    type Query3T = SvCustomMsg;
+    type RetT = SvCustomMsg;
 
     #[msg(exec)]
     fn generic_exec_one(
         &self,
         _ctx: ExecCtx,
-        _msgs1: Vec<CosmosMsg<SvCustomMsg>>,
-        _msgs2: Vec<CosmosMsg<SvCustomMsg>>,
+        _msgs1: Vec<CosmosMsg<Self::Exec1T>>,
+        _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -59,27 +53,19 @@ where
     fn generic_exec_two(
         &self,
         _ctx: ExecCtx,
-        _msgs1: Vec<CosmosMsg<SvCustomMsg>>,
-        _msgs2: Vec<CosmosMsg<SvCustomMsg>>,
+        _msgs1: Vec<CosmosMsg<Self::Exec2T>>,
+        _msgs2: Vec<CosmosMsg<Self::Exec3T>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    // Sylvia will fail if single type is used to match against two different generics
-    // It's because we have to map unique generics used as they can be used multiple times.
-    // If for some reason like here one type would be used in place of two generics either full
-    // path or some alias has to be used.
-    //
-    // Sylvia will fail to recognize generic used if their path is different.
-    // F.e. if we this query would return `SvCustomMsg` and we would pass
-    // `sylvia::types::SvCustomMsg` to the `Generic` trait paths would not match.
     #[msg(query)]
     fn generic_query_one(
         &self,
         _ctx: QueryCtx,
-        _msg1: QueryAlias1,
-        _msg2: QueryAlias2,
-    ) -> StdResult<sylvia::types::SvCustomMsg> {
+        _msg1: Self::Query1T,
+        _msg2: Self::Query2T,
+    ) -> StdResult<Self::RetT> {
         Ok(SvCustomMsg {})
     }
 
@@ -87,9 +73,9 @@ where
     fn generic_query_two(
         &self,
         _ctx: QueryCtx,
-        _msg1: QueryAlias2,
-        _msg2: QueryAlias3,
-    ) -> StdResult<sylvia::types::SvCustomMsg> {
+        _msg1: Self::Query2T,
+        _msg2: Self::Query3T,
+    ) -> StdResult<Self::RetT> {
         Ok(SvCustomMsg {})
     }
 }

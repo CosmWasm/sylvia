@@ -580,7 +580,10 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_declaration(&self) -> TokenStream {
+    pub fn emit_querier_declaration<Generic>(&self, generics: &[&Generic]) -> TokenStream
+    where
+        Generic: ToTokens + GetPath,
+    {
         let sylvia = crate_module();
         let Self {
             name,
@@ -589,7 +592,9 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let parameters = fields.iter().map(MsgField::emit_querier_method_field);
+        let parameters = fields
+            .iter()
+            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         #[cfg(not(tarpaulin_include))]
@@ -838,67 +843,6 @@ where
         &self.unused_generics
     }
 
-    pub fn emit_querier(&self) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            variants,
-            used_generics,
-            ..
-        } = self;
-        let where_clause = self.where_clause();
-
-        let msg = if !used_generics.is_empty() {
-            quote! { QueryMsg ::< #(#used_generics,)* > }
-        } else {
-            quote! { QueryMsg }
-        };
-        let methods_impl = variants
-            .iter()
-            .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl::<Generic>(&msg, &[]));
-
-        let methods_declaration = variants
-            .iter()
-            .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(MsgVariant::emit_querier_declaration);
-
-        let braced_generics = emit_bracketed_generics(used_generics);
-        let querier = quote! { Querier #braced_generics };
-
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery> {
-                    contract: &'a #sylvia ::cw_std::Addr,
-                    querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
-                    _phantom: std::marker::PhantomData<()>,
-                }
-
-                impl<'a, C: #sylvia ::cw_std::CustomQuery> BoundQuerier<'a, C> {
-                    pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
-                        self.querier
-                    }
-
-                    pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
-                        self.contract
-                    }
-
-                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
-                        Self {contract, querier, _phantom: std::marker::PhantomData}
-                    }
-                }
-
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#used_generics,)*> #querier for BoundQuerier<'a, C> #where_clause {
-                    #(#methods_impl)*
-                }
-
-                pub trait #querier {
-                    #(#methods_declaration)*
-                }
-            }
-        }
-    }
-
     pub fn emit_default_entry_point(
         &self,
         custom_msg: &Type,
@@ -1131,18 +1075,6 @@ impl<'a> MsgField<'a> {
             quote! {
                 #(#attrs)*
                 #name: #stripped_ty
-            }
-        }
-    }
-
-    /// Emits message field
-    pub fn emit_querier_method_field(&self) -> TokenStream {
-        let Self { name, ty, .. } = self;
-
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #name: #ty
             }
         }
     }
@@ -1537,8 +1469,8 @@ impl<'a> ContractApi<'a> {
                 type Query = QueryMsg #query_bracketed_generics;
                 type Instantiate = InstantiateMsg #instantiate_bracketed_generics;
                 #migrate_type
-                type Remote<'remote> = Remote<'remote>;
-                type Querier<'querier> = BoundQuerier<'querier, #custom_query >;
+                type Remote<'remote> = Remote<'remote, #(#generics,)* >;
+                type Querier<'querier> = BoundQuerier<'querier, #custom_query, #(#generics,)* >;
             }
         }
     }
