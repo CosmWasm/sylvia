@@ -7,7 +7,7 @@ use crate::parser::{
     Custom, EntryPointArgs, MsgAttr, MsgType, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
-use crate::strip_self_path::StripSelfPath;
+use crate::strip_self_path::{AddSelfPath, StripSelfPath};
 use crate::utils::{
     as_where_clause, emit_bracketed_generics, extract_return_type, filter_generics, filter_wheres,
     process_fields,
@@ -25,7 +25,7 @@ use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
     parse_quote, Attribute, GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, Pat,
-    PatType, Path, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
+    PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -547,11 +547,14 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_impl<Generic: ToTokens>(
+    pub fn emit_querier_impl<Generic>(
         &self,
-        trait_module: Option<&Path>,
-        generics: &Vec<&Generic>,
-    ) -> TokenStream {
+        api_path: &TokenStream,
+        generics: &[&Generic],
+    ) -> TokenStream
+    where
+        Generic: ToTokens + GetPath,
+    {
         let sylvia = crate_module();
         let Self {
             name,
@@ -560,29 +563,17 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let parameters = fields.iter().map(MsgField::emit_method_field);
+        let parameters = fields
+            .iter()
+            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-
-        // This method is called for `impl Contract` and `impl Trait for Contract`
-        // In case of first one, `trait_module` will always be `None`.
-        // In case of the second one, `module` on interface is not an `Option` so it will always be
-        // `Some` or the compilation will fail earlier.
-        let msg = trait_module
-            .map(|module| quote! { #module ::sv::QueryMsg })
-            .unwrap_or_else(|| quote! { QueryMsg });
-
-        let msg = if !generics.is_empty() {
-            quote! { #msg ::< #(#generics,)* > }
-        } else {
-            quote! { #msg }
-        };
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                    let query = #msg :: #variant_name (#(#fields_names),*);
+                    let query = #api_path :: #variant_name (#(#fields_names),*);
                     self.querier().query_wasm_smart(self.contract(), &query)
                 }
             }
@@ -677,39 +668,38 @@ impl<'a> MsgVariant<'a> {
         mt_app: &Type,
         error_type: &Type,
         generics: &[&Generics],
-        module: &TokenStream,
+        interface_api: &TokenStream,
     ) -> TokenStream
     where
-        Generics: ToTokens,
+        Generics: ToTokens + GetPath,
     {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            stripped_return_type,
+            return_type,
             ..
         } = self;
 
-        let params = fields.iter().map(|field| field.emit_method_field());
+        let params = fields
+            .iter()
+            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
         let arguments = fields.iter().map(MsgField::name);
-        let bracketed_generics = emit_bracketed_generics(generics);
-        let interface_enum =
-            quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
         let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, #mt_app, #custom_msg> {
-                    let msg = #interface_enum :: #type_name :: #name ( #(#arguments),* );
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_api :: #type_name, #mt_app, #custom_msg> {
+                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type> {
-                    let msg = #interface_enum :: #type_name :: #name ( #(#arguments),* );
+                fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                     (*self.app)
                         .app()
@@ -722,26 +712,25 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn is_of_type(&self, msg_type: MsgType) -> bool {
-        self.msg_type == msg_type
-    }
-
     pub fn emit_proxy_methods_declarations(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
+        generics: &[&Ident],
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            stripped_return_type,
+            return_type,
             ..
         } = self;
 
-        let params = fields.iter().map(|field| field.emit_method_field());
+        let params = fields
+            .iter()
+            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
         let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -750,7 +739,7 @@ impl<'a> MsgVariant<'a> {
                 fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
             },
             MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type>;
+                fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
             },
             _ => quote! {},
         }
@@ -858,10 +847,15 @@ where
         } = self;
         let where_clause = self.where_clause();
 
+        let msg = if !used_generics.is_empty() {
+            quote! { QueryMsg ::< #(#used_generics,)* > }
+        } else {
+            quote! { QueryMsg }
+        };
         let methods_impl = variants
             .iter()
             .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl(None, used_generics));
+            .map(|variant| variant.emit_querier_impl::<Generic>(&msg, &[]));
 
         let methods_declaration = variants
             .iter()
@@ -900,48 +894,6 @@ where
 
                 pub trait #querier {
                     #(#methods_declaration)*
-                }
-            }
-        }
-    }
-
-    pub fn emit_querier_for_bound_impl(
-        &self,
-        trait_module: Option<&Path>,
-        contract_module: Option<&Path>,
-        generic_args: &Vec<&GenericArgument>,
-    ) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            variants,
-            used_generics,
-            ..
-        } = self;
-        let where_clause = self.where_clause();
-
-        let methods_impl = variants
-            .iter()
-            .filter(|variant| variant.msg_type == MsgType::Query)
-            .map(|variant| variant.emit_querier_impl(trait_module, generic_args));
-
-        let querier = trait_module
-            .map(|module| quote! { #module ::sv::Querier })
-            .unwrap_or_else(|| quote! { sv::Querier });
-        let bound_querier = contract_module
-            .map(|module| quote! { #module ::sv::BoundQuerier})
-            .unwrap_or_else(|| quote! { sv::BoundQuerier });
-
-        let querier = if !generic_args.is_empty() {
-            quote! { #querier < #(#generic_args,)* > }
-        } else {
-            quote! { #querier }
-        };
-
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#used_generics,)* > #querier for #bound_querier<'a, C > #where_clause {
-                    #(#methods_impl)*
                 }
             }
         }
@@ -1007,10 +959,10 @@ where
         mt_app: &Type,
         error_type: &Type,
         generics: &[&Generics],
-        module: &TokenStream,
+        interface_api: &TokenStream,
     ) -> Vec<TokenStream>
     where
-        Generics: ToTokens,
+        Generics: ToTokens + GetPath,
     {
         self.variants
             .iter()
@@ -1021,7 +973,7 @@ where
                     mt_app,
                     error_type,
                     generics,
-                    module,
+                    interface_api,
                 )
             })
             .collect()
@@ -1032,6 +984,7 @@ where
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
+        generics: &[&Ident],
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
@@ -1041,6 +994,7 @@ where
                     custom_msg,
                     error_type,
                     interface_enum,
+                    generics,
                 )
             })
             .collect()
@@ -1203,6 +1157,27 @@ impl<'a> MsgField<'a> {
         {
             quote! {
                 #name: #stripped_ty
+            }
+        }
+    }
+
+    pub fn emit_method_field_with_self<GenericT: GetPath>(
+        &self,
+        add_self: Option<AddSelfPath<GenericT>>,
+    ) -> TokenStream {
+        let Self {
+            name, stripped_ty, ..
+        } = self;
+
+        let ty = match add_self {
+            Some(mut add_self) => add_self.fold_type((*stripped_ty).clone()),
+            None => stripped_ty.clone(),
+        };
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                #name: #ty
             }
         }
     }
