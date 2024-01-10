@@ -110,7 +110,7 @@ fn mt_helper_generation() {
         .call(owner)
         .unwrap();
 
-    let data: String = from_json(&resp.data.unwrap()).unwrap();
+    let data: String = from_json(resp.data.unwrap()).unwrap();
 
     assert_eq!(data, "data");
 }

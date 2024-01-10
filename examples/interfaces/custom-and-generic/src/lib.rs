@@ -13,9 +13,9 @@ pub trait CustomAndGeneric {
     type Query1T: CustomMsg;
     type Query2T: CustomMsg;
     type Query3T: CustomMsg;
-    type RetT: CustomMsg;
     type CustomMsgT: CustomMsg;
     type CustomQueryT: CustomQuery + 'static;
+    type RetT: CustomMsg;
 
     #[msg(exec)]
     fn custom_generic_execute_one(
@@ -94,8 +94,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomMsg,
             SvCustomQuery,
+            SvCustomMsg,
         >::borrowed(&contract, &querier_wrapper);
 
         let _: Result<SvCustomMsg, _> =
@@ -116,8 +116,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomMsg,
             SvCustomQuery,
+            SvCustomMsg,
         > as InterfaceApi>::Query::custom_generic_query_one(
             SvCustomMsg {}, SvCustomMsg {}
         );
@@ -130,8 +130,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            cosmwasm_std::Empty,
             SvCustomQuery,
+            cosmwasm_std::Empty,
         > as InterfaceApi>::Exec::custom_generic_execute_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -145,8 +145,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            cosmwasm_std::Empty,
             SvCustomQuery,
+            cosmwasm_std::Empty,
         > as InterfaceApi>::Exec::custom_generic_execute_two(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
