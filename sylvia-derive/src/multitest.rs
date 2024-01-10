@@ -3,8 +3,9 @@ use itertools::Itertools;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::visit::Visit;
-use syn::{parse_quote, GenericArgument, GenericParam, ImplItem, ItemImpl, ItemTrait, Path, Type};
+use syn::{parse_quote, GenericParam, ImplItem, ItemImpl, ItemTrait, Path, Type};
 
+use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
 use crate::check_generics::CheckGenerics;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -41,7 +42,6 @@ pub struct MultitestHelpers<'a> {
     contract: &'a Type,
     source: &'a ItemImpl,
     generic_params: &'a [&'a GenericParam],
-    generic_args: &'a [&'a GenericArgument],
     where_clause: &'a Option<syn::WhereClause>,
     contract_name: &'a Ident,
     proxy_name: Ident,
@@ -60,7 +60,6 @@ impl<'a> MultitestHelpers<'a> {
     pub fn new(
         source: &'a ItemImpl,
         generic_params: &'a [&'a GenericParam],
-        generic_args: &'a [&'a GenericArgument],
         custom: &'a Custom,
         override_entry_points: &'a OverrideEntryPoints,
         interfaces: &'a Interfaces,
@@ -128,7 +127,6 @@ impl<'a> MultitestHelpers<'a> {
             contract,
             source,
             generic_params,
-            generic_args,
             where_clause,
             contract_name,
             proxy_name,
@@ -282,11 +280,11 @@ impl<'a> MultitestHelpers<'a> {
 
     fn impl_trait_on_proxy(&self) -> TokenStream {
         let Self {
+            source,
             error_type,
             custom,
             interfaces,
             generic_params,
-            generic_args,
             exec_variants,
             query_variants,
             where_clause,
@@ -297,6 +295,7 @@ impl<'a> MultitestHelpers<'a> {
 
         let sylvia = crate_module();
 
+        let associated_types = ImplAssociatedTypes::new(source);
         let interface_name = interface_name(self.source);
         let proxy_name = &self.proxy_name;
         let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
@@ -327,30 +326,38 @@ impl<'a> MultitestHelpers<'a> {
             >
         };
 
-        let bracketed_generics = emit_bracketed_generics(generic_args);
-        let interface_enum =
+        let associated_names = associated_types.as_names();
+        let associated_args = associated_types.as_types();
+
+        let bracketed_generics = emit_bracketed_generics(&associated_args);
+        let interface_api =
             quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
 
         let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
             &mt_app,
             error_type,
-            generic_args,
-            &module,
+            &associated_names,
+            &interface_api,
         );
         let query_methods = query_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
             &mt_app,
             error_type,
-            generic_args,
-            &module,
+            &associated_names,
+            &interface_api,
         );
-        let exec_methods_declarations =
-            exec_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_enum);
+        let exec_methods_declarations = exec_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            error_type,
+            &interface_api,
+            &associated_names,
+        );
         let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
             &custom_msg,
             error_type,
-            &interface_enum,
+            &interface_api,
+            &associated_names,
         );
         let exec_generics = exec_variants.used_generics();
         let query_generics = query_variants.used_generics();
@@ -391,6 +398,9 @@ impl<'a> MultitestHelpers<'a> {
             quote! {}
         };
 
+        let associated_types_declaration = associated_types.emit_types_declaration();
+        let associated_types_definition = associated_types.as_item_types();
+
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
@@ -398,11 +408,13 @@ impl<'a> MultitestHelpers<'a> {
                     use super::*;
 
                     pub trait #trait_name<MtApp, #(#trait_generics,)* > #trait_where_clause {
+                        #(#associated_types_declaration)*
+
                         #(#query_methods_declarations)*
                         #(#exec_methods_declarations)*
                     }
 
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#trait_generics,)* > #trait_name< #mt_app , #(#trait_generics,)* > for #module sv::trait_utils:: #proxy_name<'_, #mt_app >
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#trait_generics,)* > #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app, #(#associated_args,)*>
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -426,6 +438,8 @@ impl<'a> MultitestHelpers<'a> {
                         #(#exec_where_predicates,)*
                         #(#query_where_predicates,)*
                     {
+                        #(#associated_types_definition)*
+
                         #(#query_methods)*
                         #(#exec_methods)*
                     }
@@ -454,6 +468,8 @@ impl<'a> MultitestHelpers<'a> {
                         #(#exec_where_predicates,)*
                         #(#query_where_predicates,)*
                     {
+                        #(#associated_types_definition)*
+
                         #(#query_methods)*
                         #(#exec_methods)*
                     }
@@ -845,12 +861,14 @@ fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream 
 
 pub struct TraitMultitestHelpers<'a> {
     trait_name: &'a Ident,
+    associated_types: &'a AssociatedTypes<'a>,
 }
 
 impl<'a> TraitMultitestHelpers<'a> {
-    pub fn new(source: &'a ItemTrait) -> Self {
+    pub fn new(source: &'a ItemTrait, associated_types: &'a AssociatedTypes<'a>) -> Self {
         Self {
             trait_name: &source.ident,
+            associated_types,
         }
     }
 
@@ -858,22 +876,28 @@ impl<'a> TraitMultitestHelpers<'a> {
         let trait_name = self.trait_name;
         let sylvia = crate_module();
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
+        let generics = self.associated_types.as_names();
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod trait_utils {
-                    pub struct #proxy_name <'app, MtApp> {
+                    pub struct #proxy_name <'app, MtApp, #(#generics,)* > {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         pub app: &'app #sylvia ::multitest::App <MtApp>,
+                        _phantom: std::marker::PhantomData<( #(#generics,)* )>,
                     }
-                    impl<'app, MtApp> #proxy_name <'app, MtApp> {
+                    impl<'app, MtApp, #(#generics,)*> #proxy_name <'app, MtApp, #(#generics,)*> {
                         pub fn new(contract_addr: #sylvia ::cw_std::Addr, app: &'app #sylvia ::multitest::App < MtApp >) -> Self {
-                            #proxy_name { contract_addr, app }
+                            #proxy_name {
+                                contract_addr,
+                                app,
+                                _phantom: std::marker::PhantomData
+                            }
                         }
                     }
                     #[allow(clippy::from_over_into)]
-                    impl<MtApp> Into<#sylvia ::cw_std::Addr> for #proxy_name <'_, MtApp> {
+                    impl<MtApp, #(#generics,)*> Into<#sylvia ::cw_std::Addr> for #proxy_name <'_, MtApp, #(#generics,)*> {
                         fn into(self) -> #sylvia ::cw_std::Addr {
                             self.contract_addr
                         }

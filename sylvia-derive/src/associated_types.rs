@@ -1,6 +1,9 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{parse_quote, ItemTrait, TraitItem, TraitItemType, WhereClause, WherePredicate};
+use syn::{
+    parse_quote, ImplItem, ImplItemType, ItemImpl, ItemTrait, TraitItem, TraitItemType, Type,
+    WhereClause, WherePredicate,
+};
 
 const RESERVED_TYPES: [&str; 3] = ["Error", "QueryC", "ExecC"];
 
@@ -73,5 +76,44 @@ impl<'a> AssociatedTypes<'a> {
         quote! {
             #predicate < #(#bounds,)* >
         }
+    }
+}
+
+#[derive(Default)]
+pub struct ImplAssociatedTypes<'a>(Vec<&'a ImplItemType>);
+
+impl<'a> ImplAssociatedTypes<'a> {
+    pub fn new(source: &'a ItemImpl) -> Self {
+        let associated_types: Vec<_> = source
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                ImplItem::Type(ty) if !RESERVED_TYPES.contains(&ty.ident.to_string().as_str()) => {
+                    Some(ty)
+                }
+                _ => None,
+            })
+            .collect();
+
+        Self(associated_types)
+    }
+
+    pub fn as_names(&self) -> Vec<&Ident> {
+        self.0.iter().map(|associated| &associated.ident).collect()
+    }
+
+    pub fn as_types(&self) -> Vec<&Type> {
+        self.0.iter().map(|associated| &associated.ty).collect()
+    }
+
+    pub fn as_item_types(&self) -> &Vec<&ImplItemType> {
+        &self.0
+    }
+
+    pub fn emit_types_declaration(&self) -> Vec<TokenStream> {
+        self.as_names()
+            .iter()
+            .map(|name| quote! { type #name; })
+            .collect()
     }
 }
