@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, PathArguments, TraitItem};
+use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::associated_types::AssociatedTypes;
+use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -11,7 +11,7 @@ use crate::message::{
 };
 use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
-use crate::querier::Querier;
+use crate::querier::{ImplQuerier, TraitQuerier};
 use crate::remote::Remote;
 use crate::utils::is_trait;
 use crate::variant_descs::AsVariantDescs;
@@ -79,7 +79,7 @@ impl<'a> TraitInput<'a> {
 
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
-        let querier = Querier::new(&query_variants, associated_types).emit_trait_querier();
+        let querier = TraitQuerier::new(&query_variants, associated_types).emit_trait_querier();
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
@@ -104,7 +104,7 @@ impl<'a> TraitInput<'a> {
 
     fn emit_helpers(&self) -> TokenStream {
         if cfg!(feature = "mt") {
-            let multitest_helpers = TraitMultitestHelpers::new(self.item);
+            let multitest_helpers = TraitMultitestHelpers::new(self.item, &self.associated_types);
             multitest_helpers.emit()
         } else {
             quote! {}
@@ -174,7 +174,7 @@ impl<'a> ImplInput<'a> {
 
     fn process_interface(&self) -> TokenStream {
         let multitest_helpers = self.emit_multitest_helpers();
-        let querier_bound_for_impl = self.emit_querier_for_bound_impl();
+        let querier = self.emit_querier_for_bound_impl();
 
         #[cfg(not(tarpaulin_include))]
         quote! {
@@ -183,7 +183,7 @@ impl<'a> ImplInput<'a> {
 
                 #multitest_helpers
 
-                #querier_bound_for_impl
+                #querier
             }
         }
     }
@@ -284,48 +284,19 @@ impl<'a> ImplInput<'a> {
         .emit()
     }
 
-    /// This method should only be called for trait impl block
-    fn extract_generic_argument(&self) -> Vec<&GenericArgument> {
-        let interface_generics = &self.item.trait_.as_ref();
-        let args = match interface_generics {
-            Some((_, path, _)) => path.segments.last().map(|segment| &segment.arguments),
-            None => None,
-        };
-
-        match args {
-            Some(PathArguments::AngleBracketed(args)) => {
-                args.args.pairs().map(|pair| *pair.value()).collect()
-            }
-            _ => vec![],
-        }
-    }
-
     fn emit_querier_for_bound_impl(&self) -> TokenStream {
-        let trait_module = self
-            .interfaces
-            .get_only_interface()
-            .map(|interface| &interface.module);
         let contract_module = self.attributes.module.as_ref();
-
-        let generic_args = self.extract_generic_argument();
-        let where_clause = &self.item.generics.where_clause;
-
-        let variants_args = MsgVariants::new(
-            self.item.as_variants(),
-            MsgType::Query,
-            &generic_args,
-            where_clause,
-        );
-
-        let variants_params = MsgVariants::new(
-            self.item.as_variants(),
-            MsgType::Query,
-            &self.generics,
-            where_clause,
-        );
-        let generic_args = variants_args.used_generics();
-
-        variants_params.emit_querier_for_bound_impl(trait_module, contract_module, generic_args)
+        let variants_args =
+            MsgVariants::<GenericParam>::new(self.item.as_variants(), MsgType::Query, &[], &None);
+        let associated_types = ImplAssociatedTypes::new(self.item);
+        ImplQuerier::new(
+            self.item,
+            &variants_args,
+            &associated_types,
+            &self.interfaces,
+            &contract_module,
+        )
+        .emit()
     }
 
     fn emit_multitest_helpers(&self) -> TokenStream {
@@ -341,13 +312,11 @@ impl<'a> ImplInput<'a> {
             ..
         } = self;
         let contract_module = self.attributes.module.as_ref();
-        let generic_args = self.extract_generic_argument();
         let generic_params = &self.generics;
 
         MultitestHelpers::new(
             item,
             generic_params,
-            &generic_args,
             custom,
             override_entry_points,
             interfaces,

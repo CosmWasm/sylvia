@@ -4,7 +4,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{GenericArgument, ItemImpl, Path, Type};
+use syn::{GenericArgument, ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::{ContractMessageAttr, MsgType};
@@ -47,10 +47,12 @@ impl Interfaces {
     pub fn emit_querier_from_impl(&self) -> Vec<TokenStream> {
         let sylvia = crate_module();
 
-        self.as_modules()
-            .map(|module| {
+        self.interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, generics ,..} = interface;
                 quote! {
-                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::sv::BoundQuerier<'a, C> {
+                    impl<'a, C: #sylvia ::cw_std::CustomQuery> From<&'a BoundQuerier<'a, C>> for #module ::sv::BoundQuerier<'a, C, #generics > {
                         fn from(querier: &'a BoundQuerier<'a, C>) -> Self {
                             Self::borrowed(querier.contract(),  querier.querier())
                         }
@@ -61,10 +63,11 @@ impl Interfaces {
     }
 
     pub fn emit_proxy_accessors(&self, mt_app: &Type) -> Vec<TokenStream> {
-        self.as_modules()
-            .map(|module| {
+        self.interfaces.iter()
+            .map(|interface| {
                 // ContractMessageAttr will fail to parse empty `#[messsages()]` attribute so we can safely unwrap here
-                let module_name = &module.segments.last().unwrap().ident;
+                let ContractMessageAttr { module,  generics ,..} = interface;
+                let module_name = &interface.module.segments.last().unwrap().ident;
                 let method_name = Ident::new(&format!("{}_proxy", module_name), module_name.span());
                 let proxy_name = Ident::new(
                     &format!("{}Proxy", module_name.to_string().to_case(Case::UpperCamel)),
@@ -72,7 +75,7 @@ impl Interfaces {
                 );
 
                 quote! {
-                    pub fn #method_name (&self) -> #module ::sv::trait_utils:: #proxy_name <'app, #mt_app> {
+                    pub fn #method_name (&self) -> #module ::sv::trait_utils:: #proxy_name <'app, #mt_app, #generics > {
                         #module ::sv::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
                     }
                 }
@@ -169,10 +172,6 @@ impl Interfaces {
                 }
             })
             .collect()
-    }
-
-    pub fn as_modules(&self) -> impl Iterator<Item = &Path> {
-        self.interfaces.iter().map(|interface| &interface.module)
     }
 
     pub fn as_generic_args(&self) -> Vec<&GenericArgument> {
