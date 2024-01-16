@@ -548,6 +548,13 @@ impl<'a> Custom<'a> {
         self.msg.clone().unwrap_or_else(Self::default_type)
     }
 
+    pub fn self_msg_or_default(&self) -> Type {
+        self.msg
+            .clone()
+            .map(|msg| parse_quote! { Self:: #msg })
+            .unwrap_or_else(Self::default_type)
+    }
+
     pub fn query_or_default(&self) -> Type {
         self.query.clone().unwrap_or_else(Self::default_type)
     }

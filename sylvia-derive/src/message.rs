@@ -717,14 +717,17 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_proxy_methods_declarations(
+    pub fn emit_proxy_methods_declarations<Generic>(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        generics: &[&Ident],
-    ) -> TokenStream {
+        generics: &[&Generic],
+    ) -> TokenStream
+    where
+        Generic: GetPath + ToTokens,
+    {
         let sylvia = crate_module();
         let Self {
             name,
@@ -924,7 +927,7 @@ where
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        generics: &[&Ident],
+        generics: &[&Generic],
     ) -> Vec<TokenStream> {
         self.variants
             .iter()

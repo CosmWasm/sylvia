@@ -1,15 +1,15 @@
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
+use syn::{GenericParam, ItemImpl, ItemTrait};
 
-use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
+use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes, TraitErrorType};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
     StructMessage,
 };
-use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
+use crate::multitest::{ImplMultitestHelpers, MultitestHelpers, TraitMultitestHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
 use crate::remote::{ContractRemote, InterfaceRemote};
@@ -21,6 +21,7 @@ pub struct TraitInput<'a> {
     item: &'a ItemTrait,
     custom: Custom<'a>,
     associated_types: AssociatedTypes<'a>,
+    error: TraitErrorType<'a>,
 }
 
 /// Preprocessed `contract` macro input for non-trait impl block
@@ -44,18 +45,7 @@ impl<'a> TraitInput<'a> {
             );
         }
 
-        if !item
-            .items
-            .iter()
-            .any(|item| matches!(item, TraitItem::Type(ty) if ty.ident == Ident::new("Error", ty.ident.span())))
-        {
-            emit_error!(
-                item.ident.span(), "Missing `Error` type defined for trait.";
-                note = "Error is an error type returned by generated types dispatch function. Messages handling function have to return an error type convertible to this Error type.";
-                note = "A trait error type should be bound to implement `From<cosmwasm_std::StdError>`.";
-            );
-        }
-
+        let error = TraitErrorType::new(item);
         let custom = Custom::new(&item.attrs);
         let associated_types = AssociatedTypes::new(item);
 
@@ -63,6 +53,7 @@ impl<'a> TraitInput<'a> {
             item,
             custom,
             associated_types,
+            error,
         }
     }
 
@@ -71,6 +62,7 @@ impl<'a> TraitInput<'a> {
             associated_types,
             item,
             custom,
+            ..
         } = self;
         let messages = self.emit_messages();
         let multitest_helpers = self.emit_helpers();
@@ -88,6 +80,7 @@ impl<'a> TraitInput<'a> {
             quote! {
                 pub mod sv {
                     use super::*;
+
                     #messages
 
                     #multitest_helpers
@@ -104,7 +97,12 @@ impl<'a> TraitInput<'a> {
 
     fn emit_helpers(&self) -> TokenStream {
         if cfg!(feature = "mt") {
-            let multitest_helpers = TraitMultitestHelpers::new(self.item, &self.associated_types);
+            let multitest_helpers = TraitMultitestHelpers::new(
+                self.item,
+                &self.associated_types,
+                &self.custom,
+                &self.error,
+            );
             multitest_helpers.emit()
         } else {
             quote! {}
@@ -304,14 +302,23 @@ impl<'a> ImplInput<'a> {
         let contract_module = self.attributes.module.as_ref();
         let generic_params = &self.generics;
 
-        MultitestHelpers::new(
-            item,
-            generic_params,
-            custom,
-            override_entry_points,
-            interfaces,
-            &contract_module,
-        )
-        .emit()
+        match is_trait(self.item) {
+            true => ImplMultitestHelpers::new(
+                item,
+                interfaces,
+                custom,
+                generic_params,
+                &contract_module,
+            )
+            .emit(),
+            false => MultitestHelpers::new(
+                item,
+                generic_params,
+                custom,
+                override_entry_points,
+                interfaces,
+            )
+            .emit(),
+        }
     }
 }

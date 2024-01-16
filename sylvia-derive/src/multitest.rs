@@ -1,11 +1,12 @@
 use convert_case::{Case, Casing};
-use itertools::Itertools;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::visit::Visit;
 use syn::{parse_quote, GenericParam, ImplItem, ItemImpl, ItemTrait, Path, Type};
 
-use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
+use crate::associated_types::{
+    AssociatedTypes, ImplAssociatedTypes, ImplErrorType, TraitErrorType,
+};
 use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -53,7 +54,6 @@ pub struct MultitestHelpers<'a> {
     query_variants: MsgVariants<'a, GenericParam>,
     migrate_variants: MsgVariants<'a, GenericParam>,
     reply_variants: MsgVariants<'a, GenericParam>,
-    contract_module: &'a Option<&'a Path>,
 }
 
 impl<'a> MultitestHelpers<'a> {
@@ -63,7 +63,6 @@ impl<'a> MultitestHelpers<'a> {
         custom: &'a Custom,
         override_entry_points: &'a OverrideEntryPoints,
         interfaces: &'a Interfaces,
-        contract_module: &'a Option<&'a Path>,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
         let instantiate_variants = MsgVariants::new(
@@ -138,13 +137,11 @@ impl<'a> MultitestHelpers<'a> {
             query_variants,
             migrate_variants,
             reply_variants,
-            contract_module,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
         let Self {
-            source,
             error_type,
             proxy_name,
             custom,
@@ -157,10 +154,6 @@ impl<'a> MultitestHelpers<'a> {
             ..
         } = self;
         let sylvia = crate_module();
-
-        if is_trait(source) {
-            return self.impl_trait_on_proxy();
-        }
 
         let custom_msg = custom.msg_or_default();
         #[cfg(not(tarpaulin_include))]
@@ -273,200 +266,6 @@ impl<'a> MultitestHelpers<'a> {
                     }
 
                     #contract_block
-                }
-            }
-        }
-    }
-
-    fn impl_trait_on_proxy(&self) -> TokenStream {
-        let Self {
-            source,
-            error_type,
-            custom,
-            interfaces,
-            generic_params,
-            exec_variants,
-            query_variants,
-            where_clause,
-            contract_module,
-            contract_name,
-            ..
-        } = self;
-
-        let sylvia = crate_module();
-
-        let associated_types = ImplAssociatedTypes::new(source);
-        let interface_name = interface_name(self.source);
-        let proxy_name = &self.proxy_name;
-        let trait_name = Ident::new(&format!("{}", interface_name), interface_name.span());
-
-        let module = interfaces
-            .get_only_interface()
-            .map(|interface| {
-                let module = &interface.module;
-                quote! { #module :: }
-            })
-            .unwrap_or(quote! {});
-
-        let custom_msg = custom.msg_or_default();
-        let custom_query = custom.query_or_default();
-
-        #[cfg(not(tarpaulin_include))]
-        let mt_app = parse_quote! {
-            #sylvia ::cw_multi_test::App<
-                BankT,
-                ApiT,
-                StorageT,
-                CustomT,
-                WasmT,
-                StakingT,
-                DistrT,
-                IbcT,
-                GovT,
-            >
-        };
-
-        let associated_names = associated_types.as_names();
-        let associated_args = associated_types.as_types();
-
-        let bracketed_generics = emit_bracketed_generics(&associated_args);
-        let interface_api =
-            quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
-
-        let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
-            &custom_msg,
-            &mt_app,
-            error_type,
-            &associated_names,
-            &interface_api,
-        );
-        let query_methods = query_variants.emit_interface_multitest_proxy_methods(
-            &custom_msg,
-            &mt_app,
-            error_type,
-            &associated_names,
-            &interface_api,
-        );
-        let exec_methods_declarations = exec_variants.emit_proxy_methods_declarations(
-            &custom_msg,
-            error_type,
-            &interface_api,
-            &associated_names,
-        );
-        let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
-            &custom_msg,
-            error_type,
-            &interface_api,
-            &associated_names,
-        );
-        let exec_generics = exec_variants.used_generics();
-        let query_generics = query_variants.used_generics();
-
-        // Check if custom_msg is a generic type
-
-        let mut generics_checker = CheckGenerics::new(generic_params);
-        generics_checker.visit_type(&custom_msg);
-        generics_checker.visit_type(&custom_query);
-        let (custom_generics, _) = generics_checker.used_unused();
-        let custom_where_predicate = filter_wheres(where_clause, generic_params, &custom_generics);
-        let exec_where_predicates = filter_wheres(where_clause, generic_params, exec_generics);
-        let query_where_predicates = filter_wheres(where_clause, generic_params, query_generics);
-        let contract_module = match contract_module {
-            Some(contract_module) => quote! { #contract_module :: },
-            None => quote! {},
-        };
-        let contract_proxy = Ident::new(&format!("{}Proxy", contract_name), contract_name.span());
-        let contract_generics: Vec<_> = exec_generics
-            .iter()
-            .chain(query_generics.iter())
-            .chain(generic_params.iter())
-            .unique()
-            .collect();
-
-        let trait_generics: Vec<_> = generic_params
-            .iter()
-            .filter(|&generic| {
-                associated_args
-                    .iter()
-                    .any(|name| name.get_path() == (*generic).get_path())
-            })
-            .copied()
-            .collect();
-        let trait_where_predicates = filter_wheres(where_clause, generic_params, &trait_generics);
-
-        let associated_types_declaration = associated_types.emit_types_declaration();
-        let associated_types_definition = associated_types.as_item_types();
-
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub mod test_utils {
-                    use super::*;
-
-                    pub trait #trait_name<MtApp> {
-                        #(#associated_types_declaration)*
-
-                        #(#query_methods_declarations)*
-                        #(#exec_methods_declarations)*
-                    }
-
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#trait_generics,)* > #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app, #(#associated_args,)*>
-                    where
-                        CustomT: #sylvia ::cw_multi_test::Module,
-                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
-                        BankT: #sylvia ::cw_multi_test::Bank,
-                        ApiT: #sylvia ::cw_std::Api,
-                        StorageT: #sylvia ::cw_std::Storage,
-                        CustomT: #sylvia ::cw_multi_test::Module,
-                        StakingT: #sylvia ::cw_multi_test::Staking,
-                        DistrT: #sylvia ::cw_multi_test::Distribution,
-                        IbcT: #sylvia ::cw_multi_test::Ibc,
-                        GovT: #sylvia ::cw_multi_test::Gov,
-                        CustomT::ExecT: Clone
-                            + std::fmt::Debug
-                            + PartialEq
-                            + #sylvia ::schemars::JsonSchema
-                            + #sylvia ::serde::de::DeserializeOwned
-                            + 'static,
-                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
-                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
-                        #(#trait_where_predicates,)*
-                    {
-                        #(#associated_types_definition)*
-
-                        #(#query_methods)*
-                        #(#exec_methods)*
-                    }
-
-                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#contract_generics,)* > #trait_name< #mt_app > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#contract_generics,)* >
-                    where
-                        CustomT: #sylvia ::cw_multi_test::Module,
-                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
-                        BankT: #sylvia ::cw_multi_test::Bank,
-                        ApiT: #sylvia ::cw_std::Api,
-                        StorageT: #sylvia ::cw_std::Storage,
-                        CustomT: #sylvia ::cw_multi_test::Module,
-                        StakingT: #sylvia ::cw_multi_test::Staking,
-                        DistrT: #sylvia ::cw_multi_test::Distribution,
-                        IbcT: #sylvia ::cw_multi_test::Ibc,
-                        GovT: #sylvia ::cw_multi_test::Gov,
-                        CustomT::ExecT: Clone
-                            + std::fmt::Debug
-                            + PartialEq
-                            + #sylvia ::schemars::JsonSchema
-                            + #sylvia ::serde::de::DeserializeOwned
-                            + 'static,
-                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
-                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
-                        #(#custom_where_predicate,)*
-                        #(#exec_where_predicates,)*
-                        #(#query_where_predicates,)*
-                    {
-                        #(#associated_types_definition)*
-
-                        #(#query_methods)*
-                        #(#exec_methods)*
-                    }
                 }
             }
         }
@@ -853,29 +652,306 @@ fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream 
     }
 }
 
-pub struct TraitMultitestHelpers<'a> {
-    trait_name: &'a Ident,
-    associated_types: &'a AssociatedTypes<'a>,
+pub struct ImplMultitestHelpers<'a> {
+    source: &'a ItemImpl,
+    associated_types: ImplAssociatedTypes<'a>,
+    interfaces: &'a Interfaces,
+    custom: &'a Custom<'a>,
+    error: ImplErrorType<'a>,
+    generic_params: &'a [&'a GenericParam],
+    contract_module: &'a Option<&'a Path>,
 }
 
-impl<'a> TraitMultitestHelpers<'a> {
-    pub fn new(source: &'a ItemTrait, associated_types: &'a AssociatedTypes<'a>) -> Self {
+impl<'a> ImplMultitestHelpers<'a> {
+    pub fn new(
+        source: &'a ItemImpl,
+        interfaces: &'a Interfaces,
+        custom: &'a Custom<'a>,
+        generic_params: &'a [&'a GenericParam],
+        contract_module: &'a Option<&'a Path>,
+    ) -> Self {
+        let error = ImplErrorType::new(source);
+        let associated_types = ImplAssociatedTypes::new(source);
         Self {
-            trait_name: &source.ident,
+            source,
             associated_types,
+            interfaces,
+            custom,
+            error,
+            generic_params,
+            contract_module,
         }
     }
 
     pub fn emit(&self) -> TokenStream {
-        let trait_name = self.trait_name;
+        let Self {
+            source,
+            associated_types,
+            interfaces,
+            custom,
+            error,
+            generic_params,
+            contract_module,
+        } = self;
+
         let sylvia = crate_module();
+        let trait_name = interface_name(self.source);
         let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
-        let generics = self.associated_types.as_names();
+
+        let module = interfaces
+            .get_only_interface()
+            .map(|interface| {
+                let module = &interface.module;
+                quote! { #module :: }
+            })
+            .unwrap_or(quote! {});
+
+        let custom_msg = custom.msg_or_default();
+        let custom_query = custom.query_or_default();
+        let associated_names = associated_types.as_names();
+        let associated_args = associated_types.as_types();
+        let where_clause = &source.generics.where_clause;
+        let error_type = error.as_type();
+        let contract = &source.self_ty;
+        let contract_name = extract_contract_name(contract);
+
+        #[cfg(not(tarpaulin_include))]
+        let mt_app = parse_quote! {
+            #sylvia ::cw_multi_test::App<
+                BankT,
+                ApiT,
+                StorageT,
+                CustomT,
+                WasmT,
+                StakingT,
+                DistrT,
+                IbcT,
+                GovT,
+            >
+        };
+        let exec_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Exec,
+            &associated_names,
+            where_clause,
+        );
+        let query_variants = MsgVariants::new(
+            source.as_variants(),
+            MsgType::Query,
+            &associated_names,
+            where_clause,
+        );
+
+        let bracketed_generics = emit_bracketed_generics(&associated_args);
+        let interface_api =
+            quote! { < #module sv::Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
+
+        let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
+            &custom_msg,
+            &mt_app,
+            &error_type,
+            &associated_names,
+            &interface_api,
+        );
+        let query_methods = query_variants.emit_interface_multitest_proxy_methods(
+            &custom_msg,
+            &mt_app,
+            &error_type,
+            &associated_names,
+            &interface_api,
+        );
+        let exec_methods_declarations = exec_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            &error_type,
+            &interface_api,
+            &associated_names,
+        );
+        let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            &error_type,
+            &interface_api,
+            &associated_names,
+        );
+        let exec_generics = exec_variants.used_generics();
+        let query_generics = query_variants.used_generics();
+
+        // Check if custom_msg is a generic type
+        let mut generics_checker = CheckGenerics::new(&associated_names);
+        generics_checker.visit_type(&custom_msg);
+        generics_checker.visit_type(&custom_query);
+        let (custom_generics, _) = generics_checker.used_unused();
+        let custom_where_predicate = filter_wheres(where_clause, generic_params, &custom_generics);
+        let exec_where_predicates = filter_wheres(where_clause, generic_params, exec_generics);
+        let query_where_predicates = filter_wheres(where_clause, generic_params, query_generics);
+        let contract_module = match contract_module {
+            Some(contract_module) => quote! { #contract_module :: },
+            None => quote! {},
+        };
+        let contract_proxy = Ident::new(&format!("{}Proxy", contract_name), contract_name.span());
+
+        let trait_generics: Vec<_> = generic_params
+            .iter()
+            .filter(|&generic| {
+                associated_args
+                    .iter()
+                    .any(|name| name.get_path() == (*generic).get_path())
+            })
+            .copied()
+            .collect();
+        let trait_where_predicates = filter_wheres(where_clause, generic_params, &trait_generics);
+
+        let associated_types_declaration = associated_types.emit_types_declaration();
+        let associated_types_definition = associated_types.as_item_types();
+
+        #[cfg(not(tarpaulin_include))]
+        {
+            quote! {
+                pub mod test_utils {
+                    use super::*;
+
+                    pub trait #trait_name<MtApp> {
+                        #(#associated_types_declaration)*
+
+                        #(#query_methods_declarations)*
+                        #(#exec_methods_declarations)*
+                    }
+
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#trait_generics,)* > #trait_name< #mt_app > for #module sv::trait_utils:: #proxy_name<'_, #mt_app, #(#associated_args,)*>
+                    where
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                        CustomT::ExecT: Clone
+                            + std::fmt::Debug
+                            + PartialEq
+                            + #sylvia ::schemars::JsonSchema
+                            + #sylvia ::serde::de::DeserializeOwned
+                            + 'static,
+                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
+                        #(#trait_where_predicates,)*
+                    {
+                        #(#associated_types_definition)*
+
+                        #(#query_methods)*
+                        #(#exec_methods)*
+                    }
+
+                    impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #trait_name< #mt_app > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
+                    where
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
+                        BankT: #sylvia ::cw_multi_test::Bank,
+                        ApiT: #sylvia ::cw_std::Api,
+                        StorageT: #sylvia ::cw_std::Storage,
+                        CustomT: #sylvia ::cw_multi_test::Module,
+                        StakingT: #sylvia ::cw_multi_test::Staking,
+                        DistrT: #sylvia ::cw_multi_test::Distribution,
+                        IbcT: #sylvia ::cw_multi_test::Ibc,
+                        GovT: #sylvia ::cw_multi_test::Gov,
+                        CustomT::ExecT: Clone
+                            + std::fmt::Debug
+                            + PartialEq
+                            + #sylvia ::schemars::JsonSchema
+                            + #sylvia ::serde::de::DeserializeOwned
+                            + 'static,
+                        CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
+                        #(#custom_where_predicate,)*
+                        #(#exec_where_predicates,)*
+                        #(#query_where_predicates,)*
+                    {
+                        #(#associated_types_definition)*
+
+                        #(#query_methods)*
+                        #(#exec_methods)*
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub struct TraitMultitestHelpers<'a> {
+    source: &'a ItemTrait,
+    associated_types: &'a AssociatedTypes<'a>,
+    custom: &'a Custom<'a>,
+    error: &'a TraitErrorType<'a>,
+    query_variants: MsgVariants<'a, Ident>,
+    exec_variants: MsgVariants<'a, Ident>,
+}
+
+impl<'a> TraitMultitestHelpers<'a> {
+    pub fn new(
+        source: &'a ItemTrait,
+        associated_types: &'a AssociatedTypes<'a>,
+        custom: &'a Custom<'a>,
+        error: &'a TraitErrorType<'a>,
+    ) -> Self {
+        let query_variants =
+            MsgVariants::<Ident>::new(source.as_variants(), MsgType::Query, &[], &None);
+        let exec_variants =
+            MsgVariants::<Ident>::new(source.as_variants(), MsgType::Exec, &[], &None);
+
+        Self {
+            source,
+            associated_types,
+            custom,
+            error,
+            exec_variants,
+            query_variants,
+        }
+    }
+
+    pub fn emit(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            source,
+            associated_types,
+            custom,
+            error,
+            exec_variants,
+            query_variants,
+        } = self;
+
+        let trait_name = &source.ident;
+        let proxy_name = Ident::new(&format!("{}Proxy", trait_name), trait_name.span());
+        let custom_msg = custom.self_msg_or_default();
+        let error_type = error.as_self_type();
+        let error_item_type = error.as_item_type();
+
+        let generics = associated_types.as_names();
+        let self_generics = associated_types.as_self_names();
+        let bracketed_generics = emit_bracketed_generics(&self_generics);
+        let associated_types_declaration = associated_types.as_types_declaration();
+
+        let interface_api = quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
+        let exec_methods_declarations = exec_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            &error_type,
+            &interface_api,
+            &generics,
+        );
+        let query_methods_declarations = query_variants.emit_proxy_methods_declarations(
+            &custom_msg,
+            &error_type,
+            &interface_api,
+            &generics,
+        );
 
         #[cfg(not(tarpaulin_include))]
         {
             quote! {
                 pub mod trait_utils {
+                    use super::*;
+
                     pub struct #proxy_name <'app, MtApp, #(#generics,)* > {
                         pub contract_addr: #sylvia ::cw_std::Addr,
                         pub app: &'app #sylvia ::multitest::App <MtApp>,
@@ -895,6 +971,14 @@ impl<'a> TraitMultitestHelpers<'a> {
                         fn into(self) -> #sylvia ::cw_std::Addr {
                             self.contract_addr
                         }
+                    }
+
+                    pub trait #trait_name<MtApp> {
+                        #error_item_type
+                        #(#associated_types_declaration)*
+
+                        #(#query_methods_declarations)*
+                        #(#exec_methods_declarations)*
                     }
                 }
             }

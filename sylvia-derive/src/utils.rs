@@ -12,11 +12,15 @@ use crate::check_generics::{CheckGenerics, GetPath};
 use crate::message::MsgField;
 
 #[cfg(not(tarpaulin_include))]
-pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
+pub fn filter_wheres<'a, GenericT, UsedGenericT>(
     clause: &'a Option<WhereClause>,
-    generics: &[&Generic],
-    used_generics: &[&Generic],
-) -> Vec<&'a WherePredicate> {
+    generics: &[&GenericT],
+    used_generics: &[&UsedGenericT],
+) -> Vec<&'a WherePredicate>
+where
+    GenericT: GetPath + PartialEq,
+    UsedGenericT: GetPath + PartialEq,
+{
     clause
         .as_ref()
         .map(|clause| {
@@ -26,10 +30,11 @@ pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
                 .filter(|pred| {
                     let mut generics_checker = CheckGenerics::new(generics);
                     generics_checker.visit_where_predicate(pred);
-                    generics_checker
-                        .used()
-                        .into_iter()
-                        .all(|gen| used_generics.contains(&gen))
+                    generics_checker.used().into_iter().all(|gen| {
+                        used_generics
+                            .iter()
+                            .any(|used| used.get_path() == gen.get_path())
+                    })
                 })
                 .collect()
         })
