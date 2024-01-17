@@ -1,8 +1,7 @@
 use syn::fold::{self, Fold};
 use syn::punctuated::Punctuated;
 use syn::{
-    FnArg, ImplItemMethod, ItemImpl, ItemTrait, PatType, Receiver, Signature, Token,
-    TraitItemMethod,
+    FnArg, ImplItemFn, ItemImpl, ItemTrait, PatType, Receiver, Signature, Token, TraitItemFn,
 };
 
 use crate::parser::sylvia_attribute;
@@ -34,28 +33,28 @@ fn remove_input_attr(inputs: Punctuated<FnArg, Token![,]>) -> Punctuated<FnArg, 
 }
 
 impl Fold for StripInput {
-    fn fold_trait_item_method(&mut self, i: TraitItemMethod) -> TraitItemMethod {
+    fn fold_trait_item_fn(&mut self, i: TraitItemFn) -> TraitItemFn {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !attr.path.is_ident("msg"))
+            .filter(|attr| !attr.path().is_ident("msg"))
             .collect();
 
         let inputs = remove_input_attr(i.sig.inputs);
         let sig = Signature { inputs, ..i.sig };
-        fold::fold_trait_item_method(self, TraitItemMethod { attrs, sig, ..i })
+        fold::fold_trait_item_fn(self, TraitItemFn { attrs, sig, ..i })
     }
 
-    fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
+    fn fold_impl_item_fn(&mut self, i: ImplItemFn) -> ImplItemFn {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !attr.path.is_ident("msg"))
+            .filter(|attr| !attr.path().is_ident("msg"))
             .collect();
 
         let inputs = remove_input_attr(i.sig.inputs);
         let sig = Signature { inputs, ..i.sig };
-        fold::fold_impl_item_method(self, ImplItemMethod { attrs, sig, ..i })
+        fold::fold_impl_item_fn(self, ImplItemFn { attrs, sig, ..i })
     }
 
     fn fold_item_trait(&mut self, i: ItemTrait) -> ItemTrait {
@@ -73,8 +72,8 @@ impl Fold for StripInput {
             .attrs
             .into_iter()
             .filter(|attr| {
-                !(attr.path.is_ident("messages")
-                    || attr.path.is_ident("error")
+                !(attr.path().is_ident("messages")
+                    || attr.path().is_ident("error")
                     || sylvia_attribute(attr).is_some())
             })
             .collect();

@@ -6,8 +6,8 @@ use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parenthesized, parse_quote, Attribute, GenericArgument, Ident, ImplItem, ImplItemMethod,
-    ItemImpl, ItemTrait, Path, PathArguments, Result, Token, TraitItem, Type,
+    parenthesized, parse_quote, Attribute, GenericArgument, Ident, ImplItem, ImplItemFn, ItemImpl,
+    ItemTrait, Path, PathArguments, Result, Token, TraitItem, Type,
 };
 
 use crate::crate_module;
@@ -205,7 +205,7 @@ impl PartialEq<MsgType> for MsgAttr {
 }
 
 impl MsgAttr {
-    fn parse_query(content: ParseBuffer) -> Result<Self> {
+    fn parse_query(content: &ParseBuffer) -> Result<Self> {
         if content.peek2(Ident) {
             let _: Punct = content.parse()?;
             let _: Ident = content.parse()?;
@@ -232,25 +232,23 @@ impl MsgAttr {
 
 impl Parse for MsgAttr {
     fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        parenthesized!(content in input);
+        let ty: Ident = input.parse()?;
 
-        let ty: Ident = content.parse()?;
         if ty == "exec" {
             Ok(Self::Exec)
         } else if ty == "query" {
-            Self::parse_query(content)
+            Self::parse_query(input)
         } else if ty == "instantiate" {
-            let name = Ident::new("InstantiateMsg", content.span());
+            let name = Ident::new("InstantiateMsg", input.span());
             Ok(Self::Instantiate { name })
         } else if ty == "migrate" {
-            let name = Ident::new("MigrateMsg", content.span());
+            let name = Ident::new("MigrateMsg", input.span());
             Ok(Self::Migrate { name })
         } else if ty == "reply" {
             Ok(Self::Reply)
         } else {
             Err(Error::new(
-                ty.span(),
+                input.span(),
                 "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`",
             ))
         }
@@ -266,10 +264,7 @@ pub struct ContractErrorAttr {
 // False negative. It is being called in closure
 impl Parse for ContractErrorAttr {
     fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        parenthesized!(content in input);
-
-        content.parse().map(|error| Self { error })
+        input.parse().map(|error| Self { error })
     }
 }
 
@@ -350,21 +345,18 @@ fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Toke
 // False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        parenthesized!(content in input);
-
-        let module = content.parse()?;
+        let module = input.parse()?;
         let generics = extract_generics_from_path(&module);
         let module = StripGenerics.fold_path(module);
 
-        let _: Token![as] = content.parse()?;
-        let variant = content.parse()?;
+        let _: Token![as] = input.parse()?;
+        let variant = input.parse()?;
 
-        let customs = interface_has_custom(&content)?;
+        let customs = interface_has_custom(input)?;
 
-        if !content.is_empty() {
+        if !input.is_empty() {
             return Err(Error::new(
-                content.span(),
+                input.span(),
                 "Unexpected token on the end of `message` attribtue",
             ));
         }
@@ -378,11 +370,19 @@ impl Parse for ContractMessageAttr {
     }
 }
 
-pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemMethod, MsgAttr)> {
+pub fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemFn, MsgAttr)> {
     let mut methods = source.items.iter().filter_map(|item| match item {
-        ImplItem::Method(method) => {
-            let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-            let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+        ImplItem::Fn(method) => {
+            let msg_attr = method
+                .attrs
+                .iter()
+                .find(|attr| attr.path().is_ident("msg"))?;
+
+            let attr = match msg_attr
+                .meta
+                .require_list()
+                .and_then(|meta| MsgAttr::parse.parse2(meta.tokens.clone()))
+            {
                 Ok(attr) => attr,
                 Err(err) => {
                     emit_error!(method.span(), err);
@@ -444,7 +444,11 @@ impl<'a> Custom<'a> {
                 None => false,
             })
             .filter_map(|attr| {
-                let custom = match Custom::parse.parse2(attr.tokens.clone()) {
+                let custom = match attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| Custom::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(mut custom) => {
                         custom.input_attr = Some(attr);
                         custom
@@ -498,27 +502,25 @@ impl<'a> Custom<'a> {
 // False negative. It is being called in closure
 impl Parse for Custom<'_> {
     fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        parenthesized!(content in input);
         let mut custom = Self::default();
 
-        while !content.is_empty() {
-            let ty: Ident = content.parse()?;
-            let _: Token![=] = content.parse()?;
+        while !input.is_empty() {
+            let ty: Ident = input.parse()?;
+            let _: Token![=] = input.parse()?;
             if ty == "msg" {
-                custom.msg = Some(content.parse()?)
+                custom.msg = Some(input.parse()?)
             } else if ty == "query" {
-                custom.query = Some(content.parse()?)
+                custom.query = Some(input.parse()?)
             } else {
                 return Err(Error::new(
                     ty.span(),
                     "Invalid custom type. Expected msg or query",
                 ));
             };
-            if !content.peek(Token![,]) {
+            if !input.peek(Token![,]) {
                 break;
             }
-            let _: Token![,] = content.parse()?;
+            let _: Token![,] = input.parse()?;
         }
 
         Ok(custom)
@@ -562,15 +564,19 @@ impl OverrideEntryPoints {
                 Some(attr) => attr == "override_entry_point",
                 None => false,
             })
-            .filter_map(
-                |attr| match OverrideEntryPoint::parse.parse2(attr.tokens.clone()) {
+            .filter_map(|attr| {
+                match attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| OverrideEntryPoint::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(entry_point) => Some(entry_point),
                     Err(err) => {
                         emit_error!(attr.span(), err);
                         None
                     }
-                },
-            )
+                }
+            })
             .collect();
 
         Self(entry_points)
@@ -585,15 +591,12 @@ impl OverrideEntryPoints {
 // False negative. It is being called in closure
 impl Parse for OverrideEntryPoint {
     fn parse(input: ParseStream) -> Result<Self> {
-        let content;
-        parenthesized!(content in input);
-
-        let ty: Ident = content.parse()?;
-        let _: Token![=] = content.parse()?;
-        let entry_point = content.parse()?;
+        let ty: Ident = input.parse()?;
+        let _: Token![=] = input.parse()?;
+        let entry_point = input.parse()?;
 
         let msg_content;
-        parenthesized!(msg_content in content);
+        parenthesized!(msg_content in input);
 
         let msg_name = msg_content.parse()?;
 
@@ -621,8 +624,8 @@ impl Parse for OverrideEntryPoint {
 }
 
 pub fn sylvia_attribute(attr: &Attribute) -> Option<&Ident> {
-    if attr.path.segments.len() == 2 && attr.path.segments[0].ident == "sv" {
-        Some(&attr.path.segments[1].ident)
+    if attr.path().segments.len() == 2 && attr.path().segments[0].ident == "sv" {
+        Some(&attr.path().segments[1].ident)
     } else {
         None
     }

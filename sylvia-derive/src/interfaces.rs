@@ -19,9 +19,13 @@ impl Interfaces {
         let interfaces: Vec<_> = source
             .attrs
             .iter()
-            .filter(|attr| attr.path.is_ident("messages"))
+            .filter(|attr| attr.path().is_ident("messages"))
             .filter_map(|attr| {
-                let interface = match ContractMessageAttr::parse.parse2(attr.tokens.clone()) {
+                let interface = match attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| ContractMessageAttr::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(interface) => interface,
                     Err(err) => {
                         emit_error!(attr.span(), err);

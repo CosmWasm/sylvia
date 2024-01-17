@@ -18,12 +18,10 @@ impl<'a> VariantDesc<'a> {
     }
 
     pub fn attr_msg(&self) -> Option<&Attribute> {
-        self.attrs.iter().find(|attr| attr.path.is_ident("msg"))
+        self.attrs.iter().find(|attr| attr.path().is_ident("msg"))
     }
-}
 
-impl Spanned for VariantDesc<'_> {
-    fn span(&self) -> Span {
+    pub fn span(&self) -> Span {
         self.span
     }
 }
@@ -46,7 +44,7 @@ impl AsVariantDescs for ItemImpl {
 
     fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
-            ImplItem::Method(method) => {
+            ImplItem::Fn(method) => {
                 Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
             }
             _ => None,
@@ -59,7 +57,7 @@ impl AsVariantDescs for ItemTrait {
 
     fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
-            TraitItem::Method(method) => {
+            TraitItem::Fn(method) => {
                 Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
             }
             _ => None,
