@@ -50,7 +50,7 @@ mod impl_some_interface {
     use crate::{MyMsg, SomeResponse};
 
     #[contract(module=crate)]
-    #[messages(crate::some_interface as SomeInterface)]
+    #[messages(crate::some_interface)]
     #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
@@ -93,7 +93,7 @@ mod impl_interface {
     use sylvia::types::ExecCtx;
 
     #[contract(module=crate)]
-    #[messages(crate::interface as Interface)]
+    #[messages(crate::interface)]
     #[sv::custom(msg=MyMsg)]
     impl Interface for crate::MyContract {
         type Error = StdError;
@@ -127,7 +127,7 @@ mod impl_other_interface {
     use sylvia::types::ExecCtx;
 
     #[contract(module=crate)]
-    #[messages(crate::other_interface as OtherInterface)]
+    #[messages(crate::other_interface)]
     #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
@@ -162,7 +162,7 @@ mod impl_associated_interface {
     use sylvia::types::ExecCtx;
 
     #[contract(module=crate)]
-    #[messages(crate::associated_interface as AssociatedInterface)]
+    #[messages(crate::associated_interface)]
     #[sv::custom(msg=MyMsg)]
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;
@@ -176,10 +176,10 @@ mod impl_associated_interface {
 }
 
 #[contract]
-#[messages(some_interface as SomeInterface)]
-#[messages(other_interface as OtherInterface: custom(msg))]
-#[messages(associated_interface as AssociatedInterface)]
-#[messages(interface as Interface)]
+#[messages(some_interface)]
+#[messages(other_interface: custom(msg))]
+#[messages(associated_interface)]
+#[messages(interface)]
 #[sv::custom(msg=MyMsg)]
 impl MyContract {
     #[allow(clippy::new_without_default)]

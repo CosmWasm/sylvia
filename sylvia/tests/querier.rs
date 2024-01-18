@@ -46,7 +46,7 @@ pub mod impl_counter {
     use sylvia::types::{ExecCtx, QueryCtx};
 
     #[contract(module=crate)]
-    #[messages(crate::counter as Counter)]
+    #[messages(crate::counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
@@ -98,7 +98,7 @@ pub struct CounterContract<'a> {
 }
 
 #[contract]
-#[messages(counter as Counter)]
+#[messages(counter)]
 impl CounterContract<'_> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {

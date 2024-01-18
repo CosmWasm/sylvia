@@ -55,7 +55,7 @@ mod impl_interface {
     use crate::{EmptyQueryResponse, QueryResponse};
 
     #[sylvia::contract(module = crate::contract)]
-    #[messages(crate::interface as Interface)]
+    #[messages(crate::interface)]
     impl crate::interface::Interface for crate::contract::Contract {
         type Error = StdError;
 
@@ -115,7 +115,7 @@ mod contract {
     #[allow(dead_code)]
     #[cfg(not(tarpaulin_include))]
     #[contract]
-    #[messages(crate::interface as Interface)]
+    #[messages(crate::interface)]
     impl Contract {
         fn new() -> Self {
             Self::default()

@@ -49,7 +49,7 @@ mod impl_interface {
     use crate::{MyQuery, OtherQuery, SomeResponse};
 
     #[contract(module=crate)]
-    #[messages(crate::interface as Interface)]
+    #[messages(crate::interface)]
     #[sv::custom(query=MyQuery)]
     impl crate::interface::Interface for crate::MyContract {
         type Error = StdError;
@@ -97,7 +97,7 @@ mod impl_some_interface {
     use crate::{MyQuery, SomeResponse};
 
     #[contract(module=crate)]
-    #[messages(crate::some_interface as SomeInterface)]
+    #[messages(crate::some_interface)]
     #[sv::custom(query=MyQuery)]
     impl super::some_interface::SomeInterface for crate::MyContract {
         type Error = StdError;
@@ -143,7 +143,7 @@ mod impl_associated_type_interface {
     use sylvia_derive::contract;
 
     #[contract(module=crate)]
-    #[messages(crate::associated_type_interface as AssociatedTypeInterface)]
+    #[messages(crate::associated_type_interface)]
     impl AssociatedTypeInterface for crate::MyContract {
         type Error = StdError;
         type QueryC = MyQuery;
@@ -188,7 +188,7 @@ mod impl_default_query_interface {
     use sylvia_derive::contract;
 
     #[contract(module=crate)]
-    #[messages(crate::default_query_interface as DefaultQueryInterface)]
+    #[messages(crate::default_query_interface)]
     #[sv::custom(query=MyQuery)]
     impl DefaultQueryInterface for crate::MyContract {
         type Error = StdError;
@@ -206,10 +206,10 @@ mod impl_default_query_interface {
 }
 
 #[contract]
-#[messages(some_interface as SomeInterface)]
-#[messages(associated_type_interface as AssociatedTypeInterface)]
-#[messages(interface as Interface)]
-#[messages(default_query_interface as DefaultQueryInterface: custom(query))]
+#[messages(some_interface)]
+#[messages(associated_type_interface)]
+#[messages(interface)]
+#[messages(default_query_interface: custom(query))]
 #[sv::custom(query=MyQuery)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
