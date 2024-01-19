@@ -37,7 +37,6 @@ fn update_unauthorised() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .update_marketing(
             Some("New project".to_owned()),
             Some("Better description".to_owned()),
@@ -49,7 +48,7 @@ fn update_unauthorised() {
     assert_eq!(err, ContractError::Unauthorized);
 
     // Ensure marketing didn't change
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -62,7 +61,7 @@ fn update_unauthorised() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -96,12 +95,11 @@ fn update_project() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(Some("New project".to_owned()), None, None)
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -114,7 +112,7 @@ fn update_project() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -148,12 +146,11 @@ fn clear_project() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(Some("".to_owned()), None, None)
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -165,7 +162,7 @@ fn clear_project() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -199,12 +196,11 @@ fn update_description() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(None, Some("Better description".to_owned()), None)
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -216,7 +212,7 @@ fn update_description() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -250,12 +246,11 @@ fn clear_description() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(None, Some("".to_owned()), None)
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -268,7 +263,7 @@ fn clear_description() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -302,12 +297,11 @@ fn update_marketing() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(None, None, Some("marketing".to_owned()))
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -320,7 +314,7 @@ fn update_marketing() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -354,7 +348,6 @@ fn update_marketing_invalid() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .update_marketing(None, None, Some("m".to_owned()))
         .call(owner)
         .unwrap_err();
@@ -365,7 +358,7 @@ fn update_marketing_invalid() {
         err
     );
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -378,7 +371,7 @@ fn update_marketing_invalid() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -412,12 +405,11 @@ fn clear_marketing() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .update_marketing(None, None, Some("".to_owned()))
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -429,7 +421,7 @@ fn clear_marketing() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -463,12 +455,11 @@ fn update_logo_url() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Url("new_url".to_owned()))
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -481,7 +472,7 @@ fn update_logo_url() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -515,12 +506,11 @@ fn update_logo_png() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(PNG_HEADER.into())))
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -532,7 +522,7 @@ fn update_logo_png() {
         }
     );
 
-    let resp = contract.cw20_marketing_proxy().download_logo().unwrap();
+    let resp = contract.download_logo().unwrap();
     assert_eq!(
         resp,
         DownloadLogoResponse {
@@ -570,12 +560,11 @@ fn update_logo_svg() {
         .unwrap();
 
     contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
         .call(owner)
         .unwrap();
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -587,7 +576,7 @@ fn update_logo_svg() {
         }
     );
 
-    let resp = contract.cw20_marketing_proxy().download_logo().unwrap();
+    let resp = contract.download_logo().unwrap();
     assert_eq!(
         resp,
         DownloadLogoResponse {
@@ -625,14 +614,13 @@ fn update_logo_png_oversized() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
         .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig);
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
 
     assert_eq!(
         resp,
@@ -645,7 +633,7 @@ fn update_logo_png_oversized() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -686,14 +674,13 @@ fn update_logo_svg_oversized() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
         .call(owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig);
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -705,7 +692,7 @@ fn update_logo_svg_oversized() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -740,13 +727,12 @@ fn update_logo_png_invalid() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
         .call(owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidPngHeader);
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -758,7 +744,7 @@ fn update_logo_png_invalid() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
     assert_eq!(
         err,
         StdError::generic_err("Querier contract error: logo not found").into()
@@ -793,13 +779,12 @@ fn update_logo_svg_invalid() {
         .unwrap();
 
     let err = contract
-        .cw20_marketing_proxy()
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
         .call(owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidXmlPreamble);
 
-    let resp = contract.cw20_marketing_proxy().marketing_info().unwrap();
+    let resp = contract.marketing_info().unwrap();
     assert_eq!(
         resp,
         MarketingInfoResponse {
@@ -811,7 +796,7 @@ fn update_logo_svg_invalid() {
     );
 
     // Due to QuerierWrapper impl it will return generic error instead of forwarding ContractError
-    let err = contract.cw20_marketing_proxy().download_logo().unwrap_err();
+    let err = contract.download_logo().unwrap_err();
 
     assert_eq!(
         err,

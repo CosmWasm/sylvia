@@ -268,44 +268,19 @@ mod tests {
         contract.some_query().unwrap();
 
         // `sv::custom` attribute interface
-        contract
-            .some_interface_proxy()
-            .some_interface_query()
-            .unwrap();
-        contract
-            .some_interface_proxy()
-            .some_interface_exec()
-            .call(owner)
-            .unwrap();
+        contract.some_interface_query().unwrap();
+        contract.some_interface_exec().call(owner).unwrap();
 
         // Associated tyoe interface messages
-        contract
-            .associated_type_interface_proxy()
-            .associated_query()
-            .unwrap();
-        contract
-            .associated_type_interface_proxy()
-            .associated_exec()
-            .call(owner)
-            .unwrap();
+        contract.associated_query().unwrap();
+        contract.associated_exec().call(owner).unwrap();
 
         // `sv::custom` attribute and associated type interface
-        contract.interface_proxy().interface_query().unwrap();
-        contract
-            .interface_proxy()
-            .interface_exec()
-            .call(owner)
-            .unwrap();
+        contract.interface_query().unwrap();
+        contract.interface_exec().call(owner).unwrap();
 
         // Neither `custom` attribute nor associated type
-        contract
-            .default_query_interface_proxy()
-            .default_query()
-            .unwrap();
-        contract
-            .default_query_interface_proxy()
-            .default_exec()
-            .call(owner)
-            .unwrap();
+        contract.default_query().unwrap();
+        contract.default_exec().call(owner).unwrap();
     }
 }

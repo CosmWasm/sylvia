@@ -397,14 +397,12 @@ mod cw1_execute {
         };
 
         let resp = contract
-            .cw1_proxy()
             .can_execute(admin.to_string(), msg.clone().into())
             .unwrap();
 
         assert!(resp.can_execute);
 
         let resp = contract
-            .cw1_proxy()
             .can_execute(non_admin.to_string(), msg.into())
             .unwrap();
 
@@ -444,14 +442,12 @@ mod cw1_execute {
         };
 
         contract
-            .cw1_proxy()
             .execute(vec![msg.clone().into()])
             .with_funds(&[coin(2345, ATOM)])
             .call(admin)
             .unwrap();
 
         contract
-            .cw1_proxy()
             .execute(vec![msg.into()])
             .with_funds(&[coin(2345, ATOM)])
             .call(non_admin)
