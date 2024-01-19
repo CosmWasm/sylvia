@@ -62,7 +62,7 @@ fn mintable() {
     assert_eq!(resp.balance, Uint128::new(0));
 
     // get minter
-    let resp = contract.cw20_minting_proxy().minter().unwrap();
+    let resp = contract.minter().unwrap();
 
     assert_eq!(
         resp,
@@ -143,14 +143,12 @@ fn can_mint_by_minter() {
 
     // minter can mint coins to some winner
     contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), prize)
         .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::zero())
         .call(minter)
         .unwrap_err();
@@ -160,7 +158,6 @@ fn can_mint_by_minter() {
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
     let err = contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::new(333_222_222))
         .call(minter)
         .unwrap_err();
@@ -202,14 +199,12 @@ fn others_cannot_mint() {
 
     // minter can mint coins to some winner
     contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), prize)
         .call(minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::zero())
         .call(minter)
         .unwrap_err();
@@ -219,7 +214,6 @@ fn others_cannot_mint() {
     // but if it exceeds cap (even over multiple rounds), it fails
     // cap is enforced
     let err = contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), Uint128::new(333_222_222))
         .call(minter)
         .unwrap_err();
@@ -260,12 +254,11 @@ fn minter_can_update_minter_but_not_cap() {
 
     // minter can mint coins to some winner
     contract
-        .cw20_minting_proxy()
         .update_minter(Some(new_minter.to_string()))
         .call(minter)
         .unwrap();
 
-    let resp = contract.cw20_minting_proxy().minter().unwrap().unwrap();
+    let resp = contract.minter().unwrap().unwrap();
     assert_eq!(
         resp,
         MinterResponse {
@@ -306,7 +299,6 @@ fn others_cannot_update_minter() {
         .unwrap();
 
     let err = contract
-        .cw20_minting_proxy()
         .update_minter(Some(new_minter.to_string()))
         .call(new_minter)
         .unwrap_err();
@@ -344,18 +336,13 @@ fn unset_minter() {
         .unwrap();
 
     // Unset minter
-    contract
-        .cw20_minting_proxy()
-        .update_minter(None)
-        .call(minter)
-        .unwrap();
+    contract.update_minter(None).call(minter).unwrap();
 
-    let resp = contract.cw20_minting_proxy().minter().unwrap();
+    let resp = contract.minter().unwrap();
     assert_eq!(resp, None);
 
     // Old minter can no longer mint
     let err = contract
-        .cw20_minting_proxy()
         .mint(winner.to_string(), amount)
         .call(minter)
         .unwrap_err();

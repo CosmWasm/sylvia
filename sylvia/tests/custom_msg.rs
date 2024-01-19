@@ -237,28 +237,16 @@ mod tests {
         contract.some_query().unwrap();
 
         // Interface messsages
-        contract.some_interface_proxy().interface_query().unwrap();
-        contract
-            .some_interface_proxy()
-            .interface_exec()
-            .call(owner)
-            .unwrap();
+        contract.interface_query().unwrap();
+        contract.interface_exec().call(owner).unwrap();
 
         // Other interface messages
-        contract
-            .other_interface_proxy()
-            .other_interface_exec()
-            .call(owner)
-            .unwrap();
+        contract.other_interface_exec().call(owner).unwrap();
 
         // Associated interface messages
-        contract
-            .associated_interface_proxy()
-            .associated_exec()
-            .call(owner)
-            .unwrap();
+        contract.associated_exec().call(owner).unwrap();
 
         // Both associated type and custom attr used
-        contract.interface_proxy().exec().call(owner).unwrap();
+        contract.exec().call(owner).unwrap();
     }
 }
