@@ -55,26 +55,21 @@ mod tests {
 
         // Non custom non generic interface
         contract
-            .cw1_proxy()
             .can_execute("sender".to_owned(), CosmosMsg::Custom(Empty {}))
             .unwrap();
         contract
-            .cw1_proxy()
             .execute(vec![CosmosMsg::Custom(Empty {})])
             .call(owner)
             .unwrap();
 
         // Non-Custom generic Interface
         contract
-            .generic_proxy()
             .generic_query_one(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
-            .generic_proxy()
             .generic_query_two(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
-            .generic_proxy()
             .generic_exec_one(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -82,7 +77,6 @@ mod tests {
             .call(owner)
             .unwrap();
         contract
-            .generic_proxy()
             .generic_exec_two(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -92,15 +86,12 @@ mod tests {
 
         // Custom generic Interface
         contract
-            .custom_and_generic_proxy()
             .custom_generic_query_one(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
-            .custom_and_generic_proxy()
             .custom_generic_query_two(SvCustomMsg {}, SvCustomMsg {})
             .unwrap();
         contract
-            .custom_and_generic_proxy()
             .custom_generic_execute_one(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -108,7 +99,6 @@ mod tests {
             .call(owner)
             .unwrap();
         contract
-            .custom_and_generic_proxy()
             .custom_generic_execute_two(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],

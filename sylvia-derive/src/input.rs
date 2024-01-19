@@ -9,7 +9,7 @@ use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
     StructMessage,
 };
-use crate::multitest::{MultitestHelpers, TraitMultitestHelpers};
+use crate::multitest::MultitestHelpers;
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
 use crate::remote::{ContractRemote, InterfaceRemote};
@@ -73,7 +73,6 @@ impl<'a> TraitInput<'a> {
             custom,
         } = self;
         let messages = self.emit_messages();
-        let multitest_helpers = self.emit_helpers();
         let remote = InterfaceRemote::new(associated_types).emit();
         let associated_names = associated_types.as_names();
 
@@ -90,8 +89,6 @@ impl<'a> TraitInput<'a> {
                     use super::*;
                     #messages
 
-                    #multitest_helpers
-
                     #remote
 
                     #querier
@@ -99,15 +96,6 @@ impl<'a> TraitInput<'a> {
                     #interface_messages
                 }
             }
-        }
-    }
-
-    fn emit_helpers(&self) -> TokenStream {
-        if cfg!(feature = "mt") {
-            let multitest_helpers = TraitMultitestHelpers::new(self.item, &self.associated_types);
-            multitest_helpers.emit()
-        } else {
-            quote! {}
         }
     }
 

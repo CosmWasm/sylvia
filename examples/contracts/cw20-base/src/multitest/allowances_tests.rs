@@ -41,7 +41,6 @@ fn increase_decrease_allowances() {
 
     // no allowance to start
     let allowances = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowances, AllowanceResponse::default());
@@ -50,14 +49,12 @@ fn increase_decrease_allowances() {
     let allowance = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap();
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -67,13 +64,11 @@ fn increase_decrease_allowances() {
     let lower = Uint128::new(4444);
     let allowance = allowance.checked_sub(lower).unwrap();
     contract
-        .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), lower, None)
         .call(owner)
         .unwrap();
 
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -84,26 +79,22 @@ fn increase_decrease_allowances() {
     let allowance = allowance + raise;
     let expires = Expiration::AtTime(Timestamp::from_seconds(8888888888));
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), raise, Some(expires))
         .call(owner)
         .unwrap();
 
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowance_resp, AllowanceResponse { allowance, expires });
 
     // decrease it below 0
     contract
-        .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), Uint128::new(99988647623876347), None)
         .call(owner)
         .unwrap();
 
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowance_resp, AllowanceResponse::default());
@@ -137,13 +128,11 @@ fn allowances_independent() {
 
     // no allowance to start
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowance_resp, AllowanceResponse::default());
 
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender2.to_string())
         .unwrap();
     assert_eq!(allowance_resp, AllowanceResponse::default());
@@ -152,7 +141,6 @@ fn allowances_independent() {
     let allowance = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap();
@@ -160,7 +148,6 @@ fn allowances_independent() {
     // set other allowance with no expiration
     let allowance2 = Uint128::new(87654);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allowance2, None)
         .call(owner)
         .unwrap();
@@ -172,13 +159,11 @@ fn allowances_independent() {
         expires: Expiration::Never {},
     };
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_one);
 
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender2.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_two);
@@ -187,7 +172,6 @@ fn allowances_independent() {
     let allowance3 = Uint128::new(1821);
     let expires3 = Expiration::AtTime(Timestamp::from_seconds(3767626296));
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allowance3, Some(expires3))
         .call(spender)
         .unwrap();
@@ -197,17 +181,14 @@ fn allowances_independent() {
         expires: expires3,
     };
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_one);
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender2.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_two);
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(spender.to_string(), spender2.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_three);
@@ -239,7 +220,6 @@ fn no_self_allowance() {
 
     // self-allowance
     let err = contract
-        .cw20_allowances_proxy()
         .increase_allowance(owner.to_string(), Uint128::new(7777), None)
         .call(owner)
         .unwrap_err();
@@ -248,7 +228,6 @@ fn no_self_allowance() {
 
     // decrease self-allowance
     let err = contract
-        .cw20_allowances_proxy()
         .decrease_allowance(owner.to_string(), Uint128::new(7777), None)
         .call(owner)
         .unwrap_err();
@@ -284,7 +263,6 @@ fn transfer_from_self_to_self() {
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
-        .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), owner.to_string(), transfer)
         .call(owner)
         .unwrap();
@@ -323,7 +301,6 @@ fn transfer_from_owner_requires_no_allowance() {
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
-        .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
         .call(owner)
         .unwrap();
@@ -369,7 +346,6 @@ fn transfer_from_respects_limits() {
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
         .call(owner)
         .unwrap();
@@ -377,7 +353,6 @@ fn transfer_from_respects_limits() {
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
-        .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
         .call(spender)
         .unwrap();
@@ -394,7 +369,6 @@ fn transfer_from_respects_limits() {
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
     assert_eq!(
@@ -407,7 +381,6 @@ fn transfer_from_respects_limits() {
 
     // cannot send more than the allowance
     let err = contract
-        .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
@@ -416,7 +389,6 @@ fn transfer_from_respects_limits() {
     // let us increase limit, but set the expiration to expire in the next block
     let next_block_height = app.block_info().height + 1;
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(
             spender.to_string(),
             Uint128::new(1000),
@@ -430,7 +402,6 @@ fn transfer_from_respects_limits() {
 
     // we should now get the expiration error
     let err = contract
-        .cw20_allowances_proxy()
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
@@ -466,7 +437,6 @@ fn burn_from_respects_limits() {
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
         .call(owner)
         .unwrap();
@@ -474,7 +444,6 @@ fn burn_from_respects_limits() {
     // valid burn of part of the allowance
     let transfer = Uint128::new(44444);
     contract
-        .cw20_allowances_proxy()
         .burn_from(owner.to_string(), transfer)
         .call(spender)
         .unwrap();
@@ -488,7 +457,6 @@ fn burn_from_respects_limits() {
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -502,7 +470,6 @@ fn burn_from_respects_limits() {
 
     // cannot burn more than the allowance
     let err = contract
-        .cw20_allowances_proxy()
         .burn_from(owner.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
@@ -512,7 +479,6 @@ fn burn_from_respects_limits() {
     // let us increase limit, but set the expiration to expire in the next block
     let next_block_height = app.block_info().height + 1;
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(
             spender.to_string(),
             Uint128::new(1000),
@@ -526,7 +492,6 @@ fn burn_from_respects_limits() {
 
     // we should now get the expiration error
     let err = contract
-        .cw20_allowances_proxy()
         .burn_from(owner.to_string(), Uint128::new(33443))
         .call(spender)
         .unwrap_err();
@@ -572,7 +537,6 @@ fn send_from_respects_limits() {
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
         .call(owner)
         .unwrap();
@@ -580,7 +544,6 @@ fn send_from_respects_limits() {
     // valid send of part of the allowance
     let transfer = Uint128::new(44444);
     contract
-        .cw20_allowances_proxy()
         .send_from(
             owner.to_string(),
             receiver_contract.contract_addr.to_string(),
@@ -599,7 +562,6 @@ fn send_from_respects_limits() {
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -613,7 +575,6 @@ fn send_from_respects_limits() {
 
     // cannot send more than the allowance
     let err = contract
-        .cw20_allowances_proxy()
         .send_from(
             owner.to_string(),
             receiver_contract.contract_addr.to_string(),
@@ -627,7 +588,6 @@ fn send_from_respects_limits() {
     // let us increase limit, but set the expiration to expire in the next block
     let next_block_height = app.block_info().height + 1;
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(
             spender.to_string(),
             Uint128::new(1000),
@@ -641,7 +601,6 @@ fn send_from_respects_limits() {
 
     // we should now get the expiration error
     let err = contract
-        .cw20_allowances_proxy()
         .send_from(
             owner.to_string(),
             receiver_contract.contract_addr.to_string(),
@@ -686,7 +645,6 @@ fn no_past_expiration() {
     let expires = Expiration::AtHeight(block_height);
 
     let err = contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap_err();
@@ -699,7 +657,6 @@ fn no_past_expiration() {
     let expires = Expiration::AtTime(block_time.minus_seconds(1));
 
     let err = contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap_err();
@@ -712,14 +669,12 @@ fn no_past_expiration() {
     let expires = Expiration::AtHeight(block_height);
 
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap();
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -730,14 +685,12 @@ fn no_past_expiration() {
     let expires = Expiration::AtTime(block_time.plus_seconds(10));
 
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap();
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -754,7 +707,6 @@ fn no_past_expiration() {
     let expires = Expiration::AtHeight(block_height);
 
     let err = contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap_err();
@@ -767,14 +719,12 @@ fn no_past_expiration() {
     let expires = Expiration::AtHeight(block_height);
 
     contract
-        .cw20_allowances_proxy()
         .decrease_allowance(spender.to_string(), allowance, Some(expires))
         .call(owner)
         .unwrap();
 
     // ensure it looks good
     let allowance_resp = contract
-        .cw20_allowances_proxy()
         .allowance(owner.to_string(), spender.to_string())
         .unwrap();
 
@@ -811,7 +761,6 @@ fn query_allowances() {
 
     // check all allowances
     let all_allowances_resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
 
@@ -822,14 +771,12 @@ fn query_allowances() {
 
     // increase spender allowances
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allowance, None)
         .call(owner)
         .unwrap();
 
     // check all allowances
     let all_allowances_resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
 
@@ -846,7 +793,6 @@ fn query_allowances() {
 
     // check spender allowances
     let all_spender_allowances_resp = contract
-        .cw20_allowances_proxy()
         .all_spender_allowances(spender.to_string(), None, None)
         .unwrap();
 
@@ -864,14 +810,12 @@ fn query_allowances() {
     // increase spender2 allowances
     let increased_allowances = allowance + allowance;
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), increased_allowances, None)
         .call(owner)
         .unwrap();
 
     // check all allowances
     let all_allowances_resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
 
@@ -895,7 +839,6 @@ fn query_allowances() {
 
     // check all allowances with limit
     let all_allowances_resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, Some(1))
         .unwrap();
 
@@ -940,7 +883,6 @@ fn query_all_allowances_works() {
 
     // no allowance to start
     let resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
     assert_eq!(resp.allowances, vec![]);
@@ -949,7 +891,6 @@ fn query_all_allowances_works() {
     let allow1 = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
         .call(owner)
         .unwrap();
@@ -957,21 +898,18 @@ fn query_all_allowances_works() {
     // set allowance with no expiration
     let allow2 = Uint128::new(54321);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender2.to_string(), allow2, None)
         .call(owner)
         .unwrap();
 
     // query list gets 2
     let resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
     assert_eq!(resp.allowances.len(), 2);
 
     // first one is spender1 (order of CanonicalAddr uncorrelated with String)
     let resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, Some(1))
         .unwrap();
     assert_eq!(
@@ -987,7 +925,6 @@ fn query_all_allowances_works() {
 
     // next one is spender2
     let resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), Some(spender.to_string()), Some(10000))
         .unwrap();
     assert_eq!(
@@ -1031,7 +968,6 @@ fn all_spender_allowances_on_two_contracts() {
 
     // no allowance to start
     let resp = contract
-        .cw20_allowances_proxy()
         .all_spender_allowances(spender.to_string(), None, None)
         .unwrap();
     assert_eq!(resp.allowances, vec![]);
@@ -1040,7 +976,6 @@ fn all_spender_allowances_on_two_contracts() {
     let allow1 = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
         .call(owner)
         .unwrap();
@@ -1064,20 +999,17 @@ fn all_spender_allowances_on_two_contracts() {
 
     let allow2 = Uint128::new(54321);
     contract2
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow2, None)
         .call(owner2)
         .unwrap();
 
     // query list on both contracts
     let resp = contract
-        .cw20_allowances_proxy()
         .all_spender_allowances(spender.to_string(), None, None)
         .unwrap();
     assert_eq!(resp.allowances.len(), 1);
 
     let resp = contract2
-        .cw20_allowances_proxy()
         .all_spender_allowances(spender.to_string(), None, None)
         .unwrap();
     assert_eq!(resp.allowances.len(), 1);
@@ -1133,27 +1065,19 @@ fn query_all_accounts_works() {
         .unwrap();
 
     // make sure we get the proper results
-    let resp = contract
-        .cw20_allowances_proxy()
-        .all_accounts(None, None)
-        .unwrap();
+    let resp = contract.all_accounts(None, None).unwrap();
     assert_eq!(resp.accounts, expected_order);
 
     // let's do pagination
-    let resp = contract
-        .cw20_allowances_proxy()
-        .all_accounts(None, Some(2))
-        .unwrap();
+    let resp = contract.all_accounts(None, Some(2)).unwrap();
     assert_eq!(resp.accounts, expected_order[0..2].to_vec());
 
     let resp = contract
-        .cw20_allowances_proxy()
         .all_accounts(Some(resp.accounts[1].clone()), Some(1))
         .unwrap();
     assert_eq!(resp.accounts, expected_order[2..3].to_vec());
 
     let resp = contract
-        .cw20_allowances_proxy()
         .all_accounts(Some(resp.accounts[0].clone()), Some(777))
         .unwrap();
     assert_eq!(resp.accounts, expected_order[3..].to_vec());

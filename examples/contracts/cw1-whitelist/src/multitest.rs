@@ -37,12 +37,11 @@ mod test {
         };
 
         first_contract
-            .cw1_proxy()
             .execute(vec![freeze.into()])
             .call(owner)
             .unwrap();
 
-        let resp = second_contract.whitelist_proxy().admin_list().unwrap();
+        let resp = second_contract.admin_list().unwrap();
 
         assert_matches!(
             resp,
@@ -66,17 +65,16 @@ mod test {
             .call(owner)
             .unwrap();
 
-        let resp = contract.whitelist_proxy().admin_list().unwrap();
+        let resp = contract.admin_list().unwrap();
         assert_eq!(resp.admins, admins);
 
         admins.push("admin3".to_owned());
         contract
-            .whitelist_proxy()
             .update_admins(admins.clone())
             .call("admin1")
             .unwrap();
 
-        let resp = contract.whitelist_proxy().admin_list().unwrap();
+        let resp = contract.admin_list().unwrap();
         assert_eq!(resp.admins, admins);
     }
 
@@ -93,17 +91,15 @@ mod test {
             .unwrap();
 
         let err = contract
-            .whitelist_proxy()
             .update_admins(vec![owner.to_owned(), "fake_admin".to_owned()])
             .call("fake_admin")
             .unwrap_err();
 
         assert_eq!(err, ContractError::Unauthorized);
 
-        contract.whitelist_proxy().freeze().call(owner).unwrap();
+        contract.freeze().call(owner).unwrap();
 
         let err = contract
-            .whitelist_proxy()
             .update_admins(vec![owner.to_owned(), "admin".to_owned()])
             .call(owner)
             .unwrap_err();

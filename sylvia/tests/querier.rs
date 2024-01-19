@@ -164,31 +164,19 @@ mod tests {
             .call(owner)
             .unwrap();
 
-        first_contract
-            .counter_proxy()
-            .set_count(42)
-            .call(owner)
-            .unwrap();
+        first_contract.set_count(42).call(owner).unwrap();
 
-        let resp = second_contract.counter_proxy().count().unwrap();
+        let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 0);
 
-        second_contract
-            .counter_proxy()
-            .copy_count()
-            .call(owner)
-            .unwrap();
+        second_contract.copy_count().call(owner).unwrap();
 
-        let resp = second_contract.counter_proxy().count().unwrap();
+        let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 42);
 
-        second_contract
-            .counter_proxy()
-            .decrease_by_count()
-            .call(owner)
-            .unwrap();
+        second_contract.decrease_by_count().call(owner).unwrap();
 
-        let resp = second_contract.counter_proxy().count().unwrap();
+        let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 0);
     }
 }
