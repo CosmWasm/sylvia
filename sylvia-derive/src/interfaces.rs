@@ -1,10 +1,9 @@
-use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
-use syn::{GenericArgument, GenericParam, ItemImpl, Type};
+use syn::{GenericArgument, GenericParam, ItemImpl};
 
 use crate::crate_module;
 use crate::parser::{ContractMessageAttr, MsgType};
@@ -56,27 +55,6 @@ impl Interfaces {
                         fn from(querier: &'a BoundQuerier<'a, C, #(#contract_generics,)* >) -> Self {
                             Self::borrowed(querier.contract(),  querier.querier())
                         }
-                    }
-                }
-            })
-            .collect()
-    }
-
-    pub fn emit_proxy_accessors(&self, mt_app: &Type) -> Vec<TokenStream> {
-        self.interfaces.iter()
-            .map(|interface| {
-                // ContractMessageAttr will fail to parse empty `#[messsages()]` attribute so we can safely unwrap here
-                let ContractMessageAttr { module,  generics ,..} = interface;
-                let module_name = &interface.module.segments.last().unwrap().ident;
-                let method_name = Ident::new(&format!("{}_proxy", module_name), module_name.span());
-                let proxy_name = Ident::new(
-                    &format!("{}Proxy", module_name.to_string().to_case(Case::UpperCamel)),
-                    module_name.span(),
-                );
-
-                quote! {
-                    pub fn #method_name (&self) -> #module ::sv::trait_utils:: #proxy_name <'app, #mt_app, #generics > {
-                        #module ::sv::trait_utils:: #proxy_name ::new(self.contract_addr.clone(), self.app)
                     }
                 }
             })

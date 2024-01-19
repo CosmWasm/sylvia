@@ -412,7 +412,6 @@ fn migrate() {
 
     // no allowance to start
     let resp = contract
-        .cw20_allowances_proxy()
         .all_allowances(owner.to_string(), None, None)
         .unwrap();
     assert_eq!(resp, AllAllowancesResponse::default());
@@ -421,7 +420,6 @@ fn migrate() {
     let allow1 = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .cw20_allowances_proxy()
         .increase_allowance(spender.to_string(), allow1, Some(expires))
         .call(owner)
         .unwrap();
@@ -435,7 +433,6 @@ fn migrate() {
 
     // Confirm that the allowance per spender is there
     let resp = contract
-        .cw20_allowances_proxy()
         .all_spender_allowances(spender.to_string(), None, None)
         .unwrap();
     assert_eq!(
