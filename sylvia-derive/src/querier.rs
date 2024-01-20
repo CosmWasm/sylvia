@@ -8,6 +8,7 @@ use syn::Path;
 use crate::associated_types::AssociatedTypes;
 use crate::associated_types::EmitAssociated;
 use crate::associated_types::ImplAssociatedTypes;
+use crate::associated_types::ItemType;
 use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -42,7 +43,10 @@ where
             ..
         } = self;
 
-        let generics = associated_types.as_names();
+        let generics: Vec<_> = associated_types
+            .without_special()
+            .map(ItemType::as_name)
+            .collect();
         let methods_impl = variants
             .variants()
             .iter()

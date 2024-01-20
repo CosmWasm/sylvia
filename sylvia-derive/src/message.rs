@@ -1,4 +1,4 @@
-use crate::associated_types::AssociatedTypes;
+use crate::associated_types::{AssociatedTypes, ItemType};
 use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -217,7 +217,9 @@ impl<'a> EnumMessage<'a> {
 
         let used_generics = variants.used_generics();
         let unused_generics = variants.unused_generics();
-        let where_predicates = associated_types.as_where_predicates();
+        let where_predicates = associated_types
+            .without_error()
+            .map(ItemType::as_where_predicate);
         let where_clause = variants.where_clause();
         let contract_predicate = associated_types.emit_contract_predicate(trait_name);
 
@@ -1503,7 +1505,10 @@ impl<'a> InterfaceApi<'a> {
             associated_types,
         } = self;
 
-        let generics = associated_types.as_names();
+        let generics: Vec<_> = associated_types
+            .without_special()
+            .map(ItemType::as_name)
+            .collect();
         let exec_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Exec,

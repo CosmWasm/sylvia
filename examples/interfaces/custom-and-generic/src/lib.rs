@@ -4,7 +4,6 @@ use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 pub trait CustomAndGeneric {
     type Error: From<StdError>;
     type Exec1T: CustomMsg;
@@ -13,30 +12,30 @@ pub trait CustomAndGeneric {
     type Query1T: CustomMsg;
     type Query2T: CustomMsg;
     type Query3T: CustomMsg;
-    type CustomMsgT: CustomMsg;
-    type CustomQueryT: CustomQuery + 'static;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery + 'static;
     type RetT: CustomMsg;
 
     #[msg(exec)]
     fn custom_generic_execute_one(
         &self,
-        ctx: ExecCtx<Self::CustomQueryT>,
+        ctx: ExecCtx<Self::QueryC>,
         msgs1: Vec<CosmosMsg<Self::Exec1T>>,
         msgs2: Vec<CosmosMsg<Self::Exec2T>>,
-    ) -> Result<Response<Self::CustomMsgT>, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(exec)]
     fn custom_generic_execute_two(
         &self,
-        ctx: ExecCtx<Self::CustomQueryT>,
+        ctx: ExecCtx<Self::QueryC>,
         msgs1: Vec<CosmosMsg<Self::Exec2T>>,
         msgs2: Vec<CosmosMsg<Self::Exec3T>>,
-    ) -> Result<Response<Self::CustomMsgT>, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[msg(query)]
     fn custom_generic_query_one(
         &self,
-        ctx: QueryCtx<Self::CustomQueryT>,
+        ctx: QueryCtx<Self::QueryC>,
         param1: Self::Query1T,
         param2: Self::Query2T,
     ) -> Result<Self::RetT, Self::Error>;
@@ -44,7 +43,7 @@ pub trait CustomAndGeneric {
     #[msg(query)]
     fn custom_generic_query_two(
         &self,
-        ctx: QueryCtx<Self::CustomQueryT>,
+        ctx: QueryCtx<Self::QueryC>,
         param1: Self::Query2T,
         param2: Self::Query3T,
     ) -> Result<Self::RetT, Self::Error>;
@@ -54,7 +53,7 @@ pub trait CustomAndGeneric {
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::{InterfaceApi, SvCustomMsg, SvCustomQuery};
+    use sylvia::types::{InterfaceApi, SvCustomMsg};
 
     use crate::sv::Querier;
 
@@ -87,14 +86,12 @@ mod tests {
 
         let querier = super::sv::BoundQuerier::<
             _,
+            Empty,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomQuery,
             SvCustomMsg,
         >::borrowed(&contract, &querier_wrapper);
 
@@ -116,22 +113,18 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomQuery,
-            SvCustomMsg,
         > as InterfaceApi>::Query::custom_generic_query_one(
             SvCustomMsg {}, SvCustomMsg {}
         );
 
         let _ = <super::sv::Api<
-            _,
-            _,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomQuery,
-            cosmwasm_std::Empty,
+            SvCustomMsg,
+            SvCustomMsg,
         > as InterfaceApi>::Exec::custom_generic_execute_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -139,14 +132,12 @@ mod tests {
 
         let _ = <super::sv::Api<
             SvCustomMsg,
-            _,
-            _,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            SvCustomQuery,
-            cosmwasm_std::Empty,
+            SvCustomMsg,
+            SvCustomMsg,
         > as InterfaceApi>::Exec::custom_generic_execute_two(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
