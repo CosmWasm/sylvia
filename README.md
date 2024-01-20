@@ -61,6 +61,9 @@ To build your contract as wasm you can use:
 $ cargo build --target wasm32-unknown-unknown
 ...
 ```
+## Sylvia Project Template 
+
+streamlined start in building CosmWasm smart contracts with Sylvia, consider the [Syvlia project template.](https://github.com/CosmWasm/sylvia-template) This template is a ready-to-use scaffold, significantly reducing initial setup time. It includes a sample contract and helpful development scripts, enabling you to focus on the unique aspects of your contract right away. Learn more about generating and using the Sylvia project template in its [repository](https://github.com/CosmWasm/sylvia-template).
 
 ## Contract Type
 
