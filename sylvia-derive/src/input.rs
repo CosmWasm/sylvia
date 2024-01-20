@@ -9,7 +9,7 @@ use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
     StructMessage,
 };
-use crate::multitest::MultitestHelpers;
+use crate::multitest::{ContractMtHelpers, ImplMtHelpers};
 use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
 use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
 use crate::remote::{ContractRemote, InterfaceRemote};
@@ -292,14 +292,10 @@ impl<'a> ImplInput<'a> {
         let contract_module = self.attributes.module.as_ref();
         let generic_params = &self.generics;
 
-        MultitestHelpers::new(
-            item,
-            generic_params,
-            custom,
-            override_entry_points,
-            interfaces,
-            &contract_module,
-        )
-        .emit()
+        if is_trait(item) {
+            ImplMtHelpers::new(item, generic_params, custom, interfaces, &contract_module).emit()
+        } else {
+            ContractMtHelpers::new(item, generic_params, custom, override_entry_points).emit()
+        }
     }
 }
