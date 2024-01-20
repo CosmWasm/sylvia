@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes};
+use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes, ItemType};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -115,7 +115,11 @@ impl<'a> TraitInput<'a> {
 
     fn emit_msg(&self, msg_ty: MsgType) -> TokenStream {
         let where_clause = &self.associated_types.as_where_clause();
-        let associated_names = self.associated_types.as_names();
+        let associated_names: Vec<_> = self
+            .associated_types
+            .without_error()
+            .map(ItemType::as_name)
+            .collect();
         let variants = MsgVariants::new(
             self.item.as_variants(),
             msg_ty,
