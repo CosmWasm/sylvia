@@ -7,7 +7,7 @@ use crate::parser::{
     Custom, EntryPointArgs, MsgAttr, MsgType, OverrideEntryPoints,
 };
 use crate::strip_generics::StripGenerics;
-use crate::strip_self_path::{AddSelfPath, StripSelfPath};
+use crate::strip_self_path::{AddSelfPath, ReplaceAssociatedType, StripSelfPath};
 use crate::utils::{
     as_where_clause, emit_bracketed_generics, extract_return_type, filter_generics, filter_wheres,
     process_fields,
@@ -24,8 +24,8 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ItemImpl, ItemTrait, Pat,
-    PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItemType, ItemImpl,
+    ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -565,9 +565,10 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
+        let mut fold = AddSelfPath::new(generics);
         let parameters = fields
             .iter()
-            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
+            .map(|field| field.emit_method_field_folded(&mut fold));
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -594,9 +595,10 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
+        let mut fold = AddSelfPath::new(generics);
         let parameters = fields
             .iter()
-            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
+            .map(|field| field.emit_method_field_folded(&mut fold));
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         #[cfg(not(tarpaulin_include))]
@@ -668,29 +670,28 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_interface_multitest_proxy_methods<Generics>(
+    pub fn emit_interface_multitest_proxy_methods(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         mt_app: &Type,
         error_type: &Type,
-        generics: &[&Generics],
         interface_api: &TokenStream,
-    ) -> TokenStream
-    where
-        Generics: ToTokens + GetPath,
-    {
+        associated_items: &'a [&'a ImplItemType],
+    ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            return_type,
+            stripped_return_type,
             ..
         } = self;
 
-        let params = fields
+        let mut fold = ReplaceAssociatedType::new(associated_items);
+        let params: Vec<_> = fields
             .iter()
-            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
+            .map(|field| field.emit_method_field_folded(&mut fold))
+            .collect();
         let arguments = fields.iter().map(MsgField::name);
         let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
@@ -704,17 +705,20 @@ impl<'a> MsgVariant<'a> {
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
-            MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
+            MsgType::Query => {
+                let return_type = fold.fold_type(parse_quote! { #stripped_return_type });
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
-                    (*self.app)
-                        .app()
-                        .wrap()
-                        .query_wasm_smart(self.contract_addr.clone(), &msg)
-                        .map_err(Into::into)
+                        (*self.app)
+                            .app()
+                            .wrap()
+                            .query_wasm_smart(self.contract_addr.clone(), &msg)
+                            .map_err(Into::into)
+                    }
                 }
-            },
+            }
             _ => quote! {},
         }
     }
@@ -725,19 +729,21 @@ impl<'a> MsgVariant<'a> {
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        generics: &[&Ident],
+        associated_items: &'a [&'a ImplItemType],
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            return_type,
+            stripped_return_type,
             ..
         } = self;
 
-        let params = fields
+        let mut fold = ReplaceAssociatedType::new(associated_items);
+        let params: Vec<_> = fields
             .iter()
-            .map(|field| field.emit_method_field_with_self(Some(AddSelfPath::new(generics))));
+            .map(|field| field.emit_method_field_folded(&mut fold))
+            .collect();
         let type_name = msg_ty.as_accessor_name(false);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -745,9 +751,12 @@ impl<'a> MsgVariant<'a> {
             MsgType::Exec => quote! {
                 fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
             },
-            MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
-            },
+            MsgType::Query => {
+                let return_type = fold.fold_type(parse_quote! { #stripped_return_type });
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
+                }
+            }
             _ => quote! {},
         }
     }
@@ -899,17 +908,14 @@ where
             .collect()
     }
 
-    pub fn emit_interface_multitest_proxy_methods<Generics>(
+    pub fn emit_interface_multitest_proxy_methods(
         &self,
         custom_msg: &Type,
         mt_app: &Type,
         error_type: &Type,
-        generics: &[&Generics],
         interface_api: &TokenStream,
-    ) -> Vec<TokenStream>
-    where
-        Generics: ToTokens + GetPath,
-    {
+        associated_items: &'a [&'a ImplItemType],
+    ) -> Vec<TokenStream> {
         self.variants
             .iter()
             .map(|variant| {
@@ -918,8 +924,8 @@ where
                     custom_msg,
                     mt_app,
                     error_type,
-                    generics,
                     interface_api,
+                    associated_items,
                 )
             })
             .collect()
@@ -930,7 +936,7 @@ where
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        generics: &[&Ident],
+        associated_items: &'a [&'a ImplItemType],
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
@@ -940,7 +946,7 @@ where
                     custom_msg,
                     error_type,
                     interface_enum,
-                    generics,
+                    associated_items,
                 )
             })
             .collect()
@@ -1095,18 +1101,15 @@ impl<'a> MsgField<'a> {
         }
     }
 
-    pub fn emit_method_field_with_self<GenericT: GetPath>(
-        &self,
-        add_self: Option<AddSelfPath<GenericT>>,
-    ) -> TokenStream {
+    pub fn emit_method_field_folded<FoldT>(&self, fold: &mut FoldT) -> TokenStream
+    where
+        FoldT: Fold,
+    {
         let Self {
             name, stripped_ty, ..
         } = self;
 
-        let ty = match add_self {
-            Some(mut add_self) => add_self.fold_type((*stripped_ty).clone()),
-            None => stripped_ty.clone(),
-        };
+        let ty = fold.fold_type((*stripped_ty).clone());
 
         #[cfg(not(tarpaulin_include))]
         {

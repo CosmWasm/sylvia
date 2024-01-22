@@ -3,7 +3,7 @@ use cosmwasm_schema::write_api;
 #[cfg(not(tarpaulin_include))]
 fn main() {
     use generics_forwarded::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
-    use sylvia::types::{SvCustomMsg, SvCustomQuery};
+    use sylvia::types::SvCustomMsg;
 
     write_api! {
         instantiate: InstantiateMsg<SvCustomMsg>,
@@ -18,7 +18,7 @@ fn main() {
         // This potentially could done with some type alias, not sure how it would affect the
         // schema.
         // execute: <GenericForwardedContract as ContractApi>::ContractExec,
-        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery>,
-        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,  SvCustomMsg, SvCustomMsg, SvCustomQuery>,
+        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg>,
+        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg>,
     }
 }

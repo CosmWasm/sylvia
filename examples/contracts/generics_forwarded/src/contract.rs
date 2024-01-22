@@ -42,7 +42,7 @@ pub struct GenericsForwardedContract<
 #[contract]
 #[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg, CustomMsgT, CustomQueryT> as CustomAndGeneric)]
+#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<
         InstantiateT,
