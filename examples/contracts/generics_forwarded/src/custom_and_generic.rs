@@ -6,7 +6,6 @@ use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
-#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<
         InstantiateT,
         Exec1T,
@@ -19,18 +18,7 @@ impl<
         CustomMsgT,
         CustomQueryT,
         FieldT,
-    >
-    CustomAndGeneric<
-        Exec1T,
-        Exec2T,
-        Exec3T,
-        Query1T,
-        Query2T,
-        Query3T,
-        SvCustomMsg,
-        CustomMsgT,
-        CustomQueryT,
-    >
+    > CustomAndGeneric
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
         Exec1T,
@@ -58,33 +46,42 @@ where
     FieldT: 'static,
 {
     type Error = StdError;
+    type Exec1T = Exec1T;
+    type Exec2T = Exec2T;
+    type Exec3T = Exec3T;
+    type Query1T = Query1T;
+    type Query2T = Query2T;
+    type Query3T = Query3T;
+    type ExecC = CustomMsgT;
+    type QueryC = CustomQueryT;
+    type RetT = SvCustomMsg;
 
     #[msg(exec)]
     fn custom_generic_execute_one(
         &self,
-        _ctx: ExecCtx<CustomQueryT>,
-        _msgs1: Vec<CosmosMsg<Exec1T>>,
-        _msgs2: Vec<CosmosMsg<Exec2T>>,
-    ) -> StdResult<Response<CustomMsgT>> {
+        _ctx: ExecCtx<Self::QueryC>,
+        _msgs1: Vec<CosmosMsg<Self::Exec1T>>,
+        _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
+    ) -> StdResult<Response<Self::ExecC>> {
         Ok(Response::new())
     }
 
     #[msg(exec)]
     fn custom_generic_execute_two(
         &self,
-        _ctx: ExecCtx<CustomQueryT>,
-        _msgs2: Vec<CosmosMsg<Exec2T>>,
-        _msgs1: Vec<CosmosMsg<Exec3T>>,
-    ) -> StdResult<Response<CustomMsgT>> {
+        _ctx: ExecCtx<Self::QueryC>,
+        _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
+        _msgs1: Vec<CosmosMsg<Self::Exec3T>>,
+    ) -> StdResult<Response<Self::ExecC>> {
         Ok(Response::new())
     }
 
     #[msg(query)]
     fn custom_generic_query_one(
         &self,
-        _ctx: QueryCtx<CustomQueryT>,
-        _msg1: Query1T,
-        _msg2: Query2T,
+        _ctx: QueryCtx<Self::QueryC>,
+        _msg1: Self::Query1T,
+        _msg2: Self::Query2T,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
@@ -92,9 +89,9 @@ where
     #[msg(query)]
     fn custom_generic_query_two(
         &self,
-        _ctx: QueryCtx<CustomQueryT>,
-        _msg1: Query2T,
-        _msg2: Query3T,
+        _ctx: QueryCtx<Self::QueryC>,
+        _msg1: Self::Query2T,
+        _msg2: Self::Query3T,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
@@ -116,7 +113,7 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            sylvia::types::SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

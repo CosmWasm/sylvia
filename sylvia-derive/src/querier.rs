@@ -70,7 +70,7 @@ where
                     _phantom: std::marker::PhantomData<( #(#generics,)* )>,
                 }
 
-                impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > #where_clause {
+                impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
                     pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
                         self.querier
                     }

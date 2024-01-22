@@ -4,11 +4,11 @@ use cw1::{CanExecuteResp, Cw1};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::contract;
-use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(cw1 as Cw1)]
-#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
+#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
         Exec1T,

@@ -110,9 +110,7 @@ impl<'a> ImplAssociatedTypes<'a> {
             .items
             .iter()
             .filter_map(|item| match item {
-                ImplItem::Type(ty) if !RESERVED_TYPES.contains(&ty.ident.to_string().as_str()) => {
-                    Some(ty)
-                }
+                ImplItem::Type(ty) => Some(ty),
                 _ => None,
             })
             .collect();
@@ -121,22 +119,32 @@ impl<'a> ImplAssociatedTypes<'a> {
     }
 
     pub fn as_names(&self) -> Vec<&Ident> {
-        self.0.iter().map(|associated| &associated.ident).collect()
+        self.filtered()
+            .map(|associated| &associated.ident)
+            .collect()
     }
 
     pub fn as_types(&self) -> Vec<&Type> {
-        self.0.iter().map(|associated| &associated.ty).collect()
+        self.filtered().map(|associated| &associated.ty).collect()
     }
 
-    pub fn as_item_types(&self) -> &Vec<&ImplItemType> {
-        &self.0
+    pub fn as_item_types(&self) -> Vec<&ImplItemType> {
+        self.filtered().copied().collect()
     }
 
-    pub fn emit_types_declaration(&self) -> Vec<TokenStream> {
-        self.as_names()
+    pub fn custom_msg(&self) -> Option<&Type> {
+        self.0
             .iter()
-            .map(|name| quote! { type #name; })
-            .collect()
+            .find(|associated| associated.ident == "ExecC")
+            .map(|associated| &associated.ty)
+    }
+
+    pub fn filtered(&self) -> impl Iterator<Item = &&ImplItemType> {
+        self.0.iter().filter(|associated| {
+            !RESERVED_TYPES
+                .iter()
+                .any(|reserved| reserved == &associated.ident.to_string().as_str())
+        })
     }
 }
 

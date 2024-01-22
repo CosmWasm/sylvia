@@ -636,6 +636,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "generics_forwarded"
+version = "0.5.0"
+dependencies = [
+ "anyhow",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "custom-and-generic",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw1",
+ "generic",
+ "serde",
+ "sylvia",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"

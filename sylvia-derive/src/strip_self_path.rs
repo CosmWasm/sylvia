@@ -1,5 +1,5 @@
 use syn::fold::Fold;
-use syn::{parse_quote, Path};
+use syn::{parse_quote, ImplItemType, Path};
 
 use crate::check_generics::GetPath;
 
@@ -39,5 +39,32 @@ where
         }
 
         syn::fold::fold_path(self, path)
+    }
+}
+
+pub struct ReplaceAssociatedType<'a>(&'a [&'a ImplItemType]);
+
+impl<'a> ReplaceAssociatedType<'a> {
+    pub fn new(associated_types: &'a [&'a ImplItemType]) -> ReplaceAssociatedType<'a> {
+        ReplaceAssociatedType(associated_types)
+    }
+}
+
+impl<'a> Fold for ReplaceAssociatedType<'a> {
+    fn fold_path(&mut self, path: Path) -> Path {
+        let segments = path
+            .segments
+            .into_iter()
+            .map(
+                |segment| match self.0.iter().find(|generic| segment.ident == generic.ident) {
+                    Some(generic) => {
+                        let ty = &generic.ty;
+                        parse_quote! { #ty }
+                    }
+                    None => segment,
+                },
+            )
+            .collect();
+        syn::fold::fold_path(self, Path { segments, ..path })
     }
 }
