@@ -136,16 +136,20 @@ impl<'a> ImplInput<'a> {
         let error = item
             .attrs
             .iter()
-            .find(|attr| attr.path.is_ident("error"))
-            .and_then(
-                |attr| match ContractErrorAttr::parse.parse2(attr.tokens.clone()) {
+            .find(|attr| attr.path().is_ident("error"))
+            .and_then(|attr| {
+                match attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| ContractErrorAttr::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(error) => Some(error.error),
                     Err(err) => {
                         emit_error!(attr.span(), err);
                         None
                     }
-                },
-            )
+                }
+            })
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         let custom = Custom::new(&item.attrs);

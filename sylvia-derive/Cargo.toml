@@ -18,9 +18,7 @@ cosmwasm_1_2 = []
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0.107", features = [
-    "parsing",
-    "derive",
+syn = { version = "2.0.48", features = [
     "fold",
     "visit",
     "full",

@@ -175,9 +175,16 @@ impl<'a> EnumMessage<'a> {
             .items
             .iter()
             .filter_map(|item| match item {
-                TraitItem::Method(method) => {
-                    let msg_attr = method.attrs.iter().find(|attr| attr.path.is_ident("msg"))?;
-                    let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                TraitItem::Fn(method) => {
+                    let msg_attr = method
+                        .attrs
+                        .iter()
+                        .find(|attr: &&Attribute| attr.path().is_ident("msg"))?;
+                    let attr = match msg_attr
+                        .meta
+                        .require_list()
+                        .and_then(|meta| MsgAttr::parse.parse2(meta.tokens.clone()))
+                    {
                         Ok(attr) => attr,
                         Err(err) => {
                             emit_error!(method.span(), err);
@@ -841,7 +848,11 @@ where
         let variants: Vec<_> = source
             .filter_map(|variant_desc| {
                 let msg_attr = variant_desc.attr_msg()?;
-                let attr = match MsgAttr::parse.parse2(msg_attr.tokens.clone()) {
+                let attr = match msg_attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| MsgAttr::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(attr) => attr,
                     Err(err) => {
                         emit_error!(variant_desc.span(), err);
@@ -1621,16 +1632,20 @@ impl<'a> EntryPoints<'a> {
         let error = source
             .attrs
             .iter()
-            .find(|attr| attr.path.is_ident("error"))
-            .and_then(
-                |attr| match ContractErrorAttr::parse.parse2(attr.tokens.clone()) {
+            .find(|attr| attr.path().is_ident("error"))
+            .and_then(|attr| {
+                match attr
+                    .meta
+                    .require_list()
+                    .and_then(|meta| ContractErrorAttr::parse.parse2(meta.tokens.clone()))
+                {
                     Ok(error) => Some(error.error),
                     Err(err) => {
                         emit_error!(attr.span(), err);
                         None
                     }
-                },
-            )
+                }
+            })
             .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
 
         let generics: Vec<_> = source.generics.params.iter().collect();
