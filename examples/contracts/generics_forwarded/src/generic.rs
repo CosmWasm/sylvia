@@ -6,7 +6,7 @@ use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
-#[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
+#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
         Exec1T,
@@ -19,7 +19,7 @@ impl<
         CustomMsgT,
         CustomQueryT,
         FieldT,
-    > Generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg>
+    > Generic
     for crate::contract::GenericsForwardedContract<
         InstantiateT,
         Exec1T,
@@ -47,13 +47,20 @@ where
     FieldT: 'static,
 {
     type Error = StdError;
+    type Exec1T = Exec1T;
+    type Exec2T = Exec2T;
+    type Exec3T = Exec3T;
+    type Query1T = Query1T;
+    type Query2T = Query2T;
+    type Query3T = Query3T;
+    type RetT = SvCustomMsg;
 
     #[msg(exec)]
     fn generic_exec_one(
         &self,
         _ctx: ExecCtx,
-        _msgs1: Vec<CosmosMsg<Exec1T>>,
-        _msgs2: Vec<CosmosMsg<Exec2T>>,
+        _msgs1: Vec<CosmosMsg<Self::Exec1T>>,
+        _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -62,8 +69,8 @@ where
     fn generic_exec_two(
         &self,
         _ctx: ExecCtx,
-        _msgs2: Vec<CosmosMsg<Exec2T>>,
-        _msgs3: Vec<CosmosMsg<Exec3T>>,
+        _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
+        _msgs3: Vec<CosmosMsg<Self::Exec3T>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -72,8 +79,8 @@ where
     fn generic_query_one(
         &self,
         _ctx: QueryCtx,
-        _msg1: Query1T,
-        _msg2: Query2T,
+        _msg1: Self::Query1T,
+        _msg2: Self::Query2T,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
@@ -82,8 +89,8 @@ where
     fn generic_query_two(
         &self,
         _ctx: QueryCtx,
-        _msg1: Query2T,
-        _msg2: Query3T,
+        _msg1: Self::Query2T,
+        _msg2: Self::Query3T,
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
