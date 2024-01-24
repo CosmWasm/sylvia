@@ -108,12 +108,7 @@ impl<'a> ContractMtHelpers<'a> {
         let contract = &source.self_ty;
         let contract_name = extract_contract_name(contract);
 
-        let proxy_name = if is_trait(source) {
-            let interface_name = interface_name(source);
-            Ident::new(&format!("{}Proxy", interface_name), interface_name.span())
-        } else {
-            Ident::new(&format!("{}Proxy", contract_name), contract_name.span())
-        };
+        let proxy_name = Ident::new(&format!("{}Proxy", contract_name), contract_name.span());
 
         Self {
             error_type,
@@ -827,7 +822,7 @@ fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream 
     let sylvia = crate_module();
 
     let values = msg_ty.emit_ctx_values();
-    let msg_name = msg_ty.as_accessor_name(true);
+    let msg_name = msg_ty.as_accessor_wrapper_name();
     let api_msg = quote! { < #contract_name as #sylvia ::types::ContractApi> :: #msg_name };
 
     quote! {

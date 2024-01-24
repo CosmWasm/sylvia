@@ -53,7 +53,7 @@ impl Parse for ContractArgs {
 pub struct EntryPointArgs<'a> {
     /// Types used in place of contracts generics.
     pub generics: Option<Punctuated<GenericArgument, Token![,]>>,
-    /// Custom msg/query used in place of contracts generic ones.
+    /// Concrete custom msg/query used in place of contracts generic ones.
     pub custom: Option<Custom<'a>>,
 }
 
@@ -83,7 +83,9 @@ impl<'a> Parse for EntryPointArgs<'a> {
                 if custom.get_ident().map(|custom| custom.to_string())
                     == Some("custom".to_owned()) =>
             {
-                entry_points_args.custom = Some(Custom::parse.parse2(input.parse()?)?);
+                let content;
+                parenthesized!(content in input);
+                entry_points_args.custom = Some(Custom::parse.parse2(content.parse()?)?);
             }
             Some(attr) => return Err(Error::new(attr.span(), "Expected `custom`.")),
             _ => (),
@@ -194,29 +196,41 @@ impl MsgType {
         }
     }
 
-    pub fn emit_msg_name(&self, is_wrapper: bool) -> Ident {
+    pub fn emit_msg_wrapper_name(&self) -> Ident {
         match self {
-            MsgType::Exec if is_wrapper => parse_quote! { ContractExecMsg },
-            MsgType::Query if is_wrapper => parse_quote! { ContractQueryMsg },
+            MsgType::Exec => parse_quote! { ContractExecMsg },
+            MsgType::Query => parse_quote! { ContractQueryMsg },
+            _ => self.emit_msg_name(),
+        }
+    }
+
+    pub fn emit_msg_name(&self) -> Ident {
+        match self {
             MsgType::Exec => parse_quote! { ExecMsg },
             MsgType::Query => parse_quote! { QueryMsg },
             MsgType::Instantiate => parse_quote! { InstantiateMsg },
             MsgType::Migrate => parse_quote! { MigrateMsg },
             MsgType::Reply => parse_quote! { ReplyMsg },
-            MsgType::Sudo => todo!(),
+            MsgType::Sudo => unimplemented!(),
         }
     }
 
-    pub fn as_accessor_name(&self, is_wrapper: bool) -> Option<Type> {
+    pub fn as_accessor_wrapper_name(&self) -> Type {
         match self {
-            MsgType::Exec if is_wrapper => Some(parse_quote! { ContractExec }),
-            MsgType::Query if is_wrapper => Some(parse_quote! { ContractQuery }),
-            MsgType::Instantiate => Some(parse_quote! { Instantiate }),
-            MsgType::Exec => Some(parse_quote! { Exec }),
-            MsgType::Query => Some(parse_quote! { Query }),
-            MsgType::Migrate => Some(parse_quote! { Migrate }),
-            MsgType::Sudo => Some(parse_quote! { Sudo }),
-            MsgType::Reply => Some(parse_quote! { Reply }),
+            MsgType::Exec => parse_quote! { ContractExec },
+            MsgType::Query => parse_quote! { ContractQuery },
+            _ => self.as_accessor_name(),
+        }
+    }
+
+    pub fn as_accessor_name(&self) -> Type {
+        match self {
+            MsgType::Instantiate => parse_quote! { Instantiate },
+            MsgType::Exec => parse_quote! { Exec },
+            MsgType::Query => parse_quote! { Query },
+            MsgType::Migrate => parse_quote! { Migrate },
+            MsgType::Sudo => parse_quote! { Sudo },
+            MsgType::Reply => parse_quote! { Reply },
         }
     }
 

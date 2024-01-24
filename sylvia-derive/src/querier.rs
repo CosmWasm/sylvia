@@ -1,14 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::ToTokens;
-use syn::GenericParam;
-use syn::ItemImpl;
-use syn::Path;
+use syn::{GenericParam, ItemImpl, Path};
 
-use crate::associated_types::AssociatedTypes;
-use crate::associated_types::EmitAssociated;
-use crate::associated_types::ImplAssociatedTypes;
-use crate::associated_types::ItemType;
+use crate::associated_types::{AssociatedTypes, EmitAssociated, ImplAssociatedTypes, ItemType};
 use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -57,7 +52,7 @@ where
             .iter()
             .map(|variant| variant.emit_querier_declaration(&generics));
 
-        let types_declaration = associated_types.as_types_declaration();
+        let types_declaration = associated_types.filtered();
         let types_definition = associated_types.emit_types_definition();
         let where_clause = associated_types.as_where_clause();
 
@@ -141,7 +136,7 @@ where
         let trait_module = interfaces
             .get_only_interface()
             .map(|interface| &interface.module);
-        let accessor = MsgType::Query.as_accessor_name(false);
+        let accessor = MsgType::Query.as_accessor_name();
 
         let generic_params = &source.generics.params;
         let where_clause = &source.generics.where_clause;
@@ -209,7 +204,7 @@ impl<'a> ContractQuerier<'a> {
         let generics: Vec<_> = source.generics.params.iter().collect();
         let contract = &source.self_ty;
 
-        let accessor = MsgType::Query.as_accessor_name(false);
+        let accessor = MsgType::Query.as_accessor_name();
         let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
         let methods_impl = variants
             .variants()

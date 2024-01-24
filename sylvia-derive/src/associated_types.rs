@@ -5,8 +5,10 @@ use syn::{
     WhereClause, WherePredicate,
 };
 
-const ERROR_TYPE: &str = "Error";
-const RESERVED_TYPES: [&str; 3] = [ERROR_TYPE, "QueryC", "ExecC"];
+pub const ERROR_TYPE: &str = "Error";
+pub const EXEC_TYPE: &str = "ExecC";
+pub const QUERY_TYPE: &str = "QueryC";
+pub const RESERVED_TYPES: [&str; 3] = [ERROR_TYPE, EXEC_TYPE, QUERY_TYPE];
 
 #[derive(Default)]
 pub struct AssociatedTypes<'a>(Vec<&'a TraitItemType>);
@@ -25,18 +27,22 @@ impl<'a> AssociatedTypes<'a> {
         Self(associated_types)
     }
 
-    pub fn without_error(&self) -> impl Iterator<Item = &&TraitItemType> {
+    pub fn without_error(&self) -> impl Iterator<Item = &TraitItemType> {
         self.0
             .iter()
-            .filter(|associated| associated.ident != "Error")
+            .filter(|associated| associated.ident != ERROR_TYPE)
+            .cloned()
     }
 
-    pub fn without_special(&self) -> impl Iterator<Item = &&TraitItemType> {
-        self.0.iter().filter(|associated| {
-            !RESERVED_TYPES
-                .iter()
-                .any(|reserved| reserved == &associated.ident.to_string().as_str())
-        })
+    pub fn without_special(&self) -> impl Iterator<Item = &TraitItemType> {
+        self.0
+            .iter()
+            .filter(|associated| {
+                !RESERVED_TYPES
+                    .iter()
+                    .any(|reserved| reserved == &associated.ident.to_string().as_str())
+            })
+            .cloned()
     }
 
     pub fn as_where_predicates(&self) -> Vec<WherePredicate> {
@@ -59,19 +65,12 @@ impl<'a> AssociatedTypes<'a> {
         }
     }
 
-    pub fn as_names(&self) -> Vec<&Ident> {
-        self.filtered()
-            .map(|associated| &associated.ident)
-            .collect()
-    }
-
-    pub fn as_types_declaration(&self) -> Vec<&&TraitItemType> {
-        self.filtered().collect()
+    pub fn as_names(&self) -> impl Iterator<Item = &Ident> {
+        self.filtered().map(|associated| &associated.ident)
     }
 
     pub fn emit_types_definition(&self) -> Vec<TokenStream> {
         self.as_names()
-            .iter()
             .map(|name| quote! { type #name = #name; })
             .collect()
     }
@@ -92,12 +91,15 @@ impl<'a> AssociatedTypes<'a> {
         }
     }
 
-    pub fn filtered(&self) -> impl Iterator<Item = &&TraitItemType> {
-        self.0.iter().filter(|associated| {
-            !RESERVED_TYPES
-                .iter()
-                .any(|reserved| reserved == &associated.ident.to_string().as_str())
-        })
+    pub fn filtered(&self) -> impl Iterator<Item = &TraitItemType> {
+        self.0
+            .iter()
+            .filter(|associated| {
+                !RESERVED_TYPES
+                    .iter()
+                    .any(|reserved| reserved == &associated.ident.to_string().as_str())
+            })
+            .cloned()
     }
 }
 
@@ -135,7 +137,7 @@ impl<'a> ImplAssociatedTypes<'a> {
     pub fn custom_msg(&self) -> Option<&Type> {
         self.0
             .iter()
-            .find(|associated| associated.ident == "ExecC")
+            .find(|associated| associated.ident == EXEC_TYPE)
             .map(|associated| &associated.ty)
     }
 
@@ -153,7 +155,7 @@ pub trait ItemType {
     fn as_where_predicate(&self) -> WherePredicate;
 }
 
-impl ItemType for &TraitItemType {
+impl ItemType for TraitItemType {
     fn as_name(&self) -> &Ident {
         &self.ident
     }
