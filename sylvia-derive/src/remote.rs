@@ -21,7 +21,7 @@ impl<'a> InterfaceRemote<'a> {
     }
 
     pub fn emit(&self) -> TokenStream {
-        let generics = self.associated_types.as_names();
+        let generics: Vec<_> = self.associated_types.as_names().collect();
 
         emit(&generics)
     }

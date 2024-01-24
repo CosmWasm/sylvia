@@ -74,7 +74,7 @@ impl<'a> TraitInput<'a> {
         } = self;
         let messages = self.emit_messages();
         let remote = InterfaceRemote::new(associated_types).emit();
-        let associated_names = associated_types.as_names();
+        let associated_names: Vec<_> = associated_types.as_names().collect();
 
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
