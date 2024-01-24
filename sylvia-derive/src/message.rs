@@ -1,4 +1,4 @@
-use crate::associated_types::{AssociatedTypes, ItemType};
+use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
 use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
@@ -167,8 +167,8 @@ impl<'a> EnumMessage<'a> {
         variants: MsgVariants<'a, Ident>,
         associated_types: &'a AssociatedTypes<'a>,
     ) -> Self {
-        let associated_exec = parse_associated_custom_type(source, "ExecC");
-        let associated_query = parse_associated_custom_type(source, "QueryC");
+        let associated_exec = parse_associated_custom_type(source, EXEC_TYPE);
+        let associated_query = parse_associated_custom_type(source, QUERY_TYPE);
 
         let resp_type = custom
             .msg()
@@ -201,7 +201,7 @@ impl<'a> EnumMessage<'a> {
         } = self;
 
         let trait_name = &source.ident;
-        let enum_name = msg_ty.emit_msg_name(false);
+        let enum_name = msg_ty.emit_msg_name();
         let unique_enum_name =
             Ident::new(&format!("{}{}", trait_name, enum_name), enum_name.span());
 
@@ -312,7 +312,7 @@ impl<'a> ContractEnumMessage<'a> {
             ..
         } = self;
 
-        let enum_name = msg_ty.emit_msg_name(false);
+        let enum_name = msg_ty.emit_msg_name();
         let match_arms = variants.emit_dispatch_legs();
         let unused_generics = variants.unused_generics();
         let bracketed_unused_generics = emit_bracketed_generics(unused_generics);
@@ -631,7 +631,7 @@ impl<'a> MsgVariant<'a> {
         let params = fields.iter().map(|field| field.emit_method_field());
         let arguments = fields.iter().map(MsgField::name);
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-        let enum_name = msg_ty.emit_msg_name(false);
+        let enum_name = msg_ty.emit_msg_name();
         let enum_name: Type = if !generics.is_empty() {
             parse_quote! { #enum_name ::< #(#generics,)* > }
         } else {
@@ -693,7 +693,7 @@ impl<'a> MsgVariant<'a> {
             .map(|field| field.emit_method_field_folded(&mut fold))
             .collect();
         let arguments = fields.iter().map(MsgField::name);
-        let type_name = msg_ty.as_accessor_name(false);
+        let type_name = msg_ty.as_accessor_name();
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
@@ -744,7 +744,7 @@ impl<'a> MsgVariant<'a> {
             .iter()
             .map(|field| field.emit_method_field_folded(&mut fold))
             .collect();
-        let type_name = msg_ty.as_accessor_name(false);
+        let type_name = msg_ty.as_accessor_name();
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
@@ -876,7 +876,7 @@ where
             Some(generics) => quote! { ::< #generics > },
             None => quote! {},
         };
-        let associated_name = msg_ty.as_accessor_name(true);
+        let associated_name = msg_ty.as_accessor_wrapper_name();
 
         quote! {
             #[#sylvia ::cw_std::entry_point]
@@ -888,6 +888,7 @@ where
             }
         }
     }
+
     pub fn emit_multitest_proxy_methods(
         &self,
         custom_msg: &Type,
@@ -1198,8 +1199,8 @@ impl<'a> GlueMessage<'a> {
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
         let bracketed_wrapper_generics = emit_bracketed_generics(&wrapper_generics);
 
-        let contract_enum_name = msg_ty.emit_msg_name(true);
-        let enum_name = msg_ty.emit_msg_name(false);
+        let contract_enum_name = msg_ty.emit_msg_wrapper_name();
+        let enum_name = msg_ty.emit_msg_name();
         let contract_name = StripGenerics.fold_type((*contract).clone());
 
         let variants = interfaces.emit_glue_message_variants(msg_ty);
