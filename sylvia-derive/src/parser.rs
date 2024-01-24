@@ -359,34 +359,22 @@ impl Parse for ContractMessageAttr {
                     .map(|name| name.ident.to_string().to_case(Case::UpperCamel))
             {
                 emit_warning!(
-                    variant.span(),
-                    "Interface name `as {}` can be omitted, since it's corresponds to the path's last segment.",
-                    variant
+                    variant.span(), "Redundant `as {}`.", variant;
+                    note = "Interface name is a camel case version of the path and can be auto deduced."
                 )
             }
             variant
+        } else if let Some(module_name) = &module.segments.last() {
+            let interface_name = module_name.ident.to_string().to_case(Case::UpperCamel);
+            syn::Ident::new(&interface_name, module.span())
         } else {
-            syn::Ident::new(
-                &module
-                    .segments
-                    .last()
-                    .ok_or_else(|| {
-                        let err =
-                            "#`[message(..)]` attribute without `as TraitName` needs to provide a path";
-                        emit_error!(module.span(), err);
-                        syn::Error::new(module.span(), err)
-                    })?
-                    .ident
-                    .to_string()
-                    .to_case(Case::UpperCamel),
-                    module.span()
-            )
+            Ident::new("", module.span())
         };
         let customs = interface_has_custom(input)?;
         if !input.is_empty() {
             return Err(Error::new(
                 input.span(),
-                "Unexpected token on the end of `message` attribtue",
+                "Unexpected token on the end of `messages` attribtue",
             ));
         }
         Ok(Self {

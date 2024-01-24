@@ -392,6 +392,7 @@ in its own `cross_staking` module (note the underscore). This is a requirement r
 now - Sylvia generates all the messages and boilerplate in this module and will try
 to access them through this module. If the interface's name is a camel-case
 version of the last module path's segment, the `as InterfaceName` can be omitted.
+F.e. `#[messages(cw1 as Cw1)]` can be reduced to `#[messages(cw1)]`
 
 
 Then there is the `Error` type embedded in the trait - it is also needed there,
