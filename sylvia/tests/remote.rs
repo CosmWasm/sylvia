@@ -20,7 +20,7 @@ pub mod some_interface {
 }
 
 #[contract]
-#[messages(some_interface as SomeInterface)]
+#[messages(some_interface)]
 impl SomeContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {

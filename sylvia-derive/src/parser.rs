@@ -1,5 +1,6 @@
+use convert_case::{Case, Casing};
 use proc_macro2::{Punct, TokenStream};
-use proc_macro_error::emit_error;
+use proc_macro_error::{emit_error, emit_warning};
 use quote::quote;
 use syn::fold::Fold;
 use syn::parse::{Error, Nothing, Parse, ParseBuffer, ParseStream, Parser};
@@ -349,18 +350,33 @@ impl Parse for ContractMessageAttr {
         let generics = extract_generics_from_path(&module);
         let module = StripGenerics.fold_path(module);
 
-        let _: Token![as] = input.parse()?;
-        let variant = input.parse()?;
-
+        let variant = if input.parse::<Token![as]>().is_ok() {
+            let variant: Ident = input.parse()?;
+            if Some(variant.to_string())
+                == module
+                    .segments
+                    .last()
+                    .map(|name| name.ident.to_string().to_case(Case::UpperCamel))
+            {
+                emit_warning!(
+                    variant.span(), "Redundant `as {}`.", variant;
+                    note = "Interface name is a camel case version of the path and can be auto deduced."
+                )
+            }
+            variant
+        } else if let Some(module_name) = &module.segments.last() {
+            let interface_name = module_name.ident.to_string().to_case(Case::UpperCamel);
+            syn::Ident::new(&interface_name, module.span())
+        } else {
+            Ident::new("", module.span())
+        };
         let customs = interface_has_custom(input)?;
-
         if !input.is_empty() {
             return Err(Error::new(
                 input.span(),
-                "Unexpected token on the end of `message` attribtue",
+                "Unexpected token on the end of `messages` attribtue",
             ));
         }
-
         Ok(Self {
             module,
             variant,

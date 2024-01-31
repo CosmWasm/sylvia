@@ -350,6 +350,11 @@ pub struct MyContract<'a> {
 
 #[contract]
 #[messages(group as Group)]
+// Alternatively:
+// It's not needed to provide the interface's
+// name if it's corresponds to the last segment
+// of the module path:
+// #[messages(group)]
 impl group::Group for MyContract<'_> {
     type Error = ContractError;
 
@@ -385,7 +390,10 @@ matching the trait name, but written "snake_case" instead of CamelCase. Here I h
 `group` module for the `Group` trait, but the `CrossStaking` trait should be placed
 in its own `cross_staking` module (note the underscore). This is a requirement right
 now - Sylvia generates all the messages and boilerplate in this module and will try
-to access them through this module.
+to access them through this module. If the interface's name is a camel-case
+version of the last module path's segment, the `as InterfaceName` can be omitted.
+F.e. `#[messages(cw1 as Cw1)]` can be reduced to `#[messages(cw1)]`
+
 
 Then there is the `Error` type embedded in the trait - it is also needed there,
 and the trait bound here has to be at least `From<StdError>`, as Sylvia might
