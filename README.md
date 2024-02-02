@@ -352,7 +352,7 @@ pub struct MyContract<'a> {
 #[messages(group as Group)]
 // Alternatively:
 // It's not needed to provide the interface's
-// name if it's corresponds to the last segment
+// name if it corresponds to the last segment
 // of the module path:
 // #[messages(group)]
 impl group::Group for MyContract<'_> {
@@ -489,11 +489,8 @@ will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
 
 ## Single module per macro
 
-Generated items and namespaces may overlap and it is suggested to split all macro calls
-into separate modules.
-This could also improve the project readability as it would end up split between semantical parts
-and save maintainers from possible adjustment in case of new features being introduced in the
-future.
+Sylvia macros generate code in the `sv` module. This means that every single macro call
+has to be done in a separate module, or the generated `sv` modules will overlap.
 
 ## Usage in external crates
 
@@ -839,8 +836,11 @@ is an error type of the contract.
 
 ## Interface items in multitest
 
-Because of implementation restrictions, calling methods from the contract interface
-look slightly different:
+Before `0.10.0` user has to call additional `<trait_name>_proxy()` method before calling
+interfaces methods.
+Since `0.10.0` `interface` macro does not generate it's own Proxy type.
+Instead trait declaring all the interface methods is directly implemented on
+the contracts Proxy type.
 
 ```rust
 use contract::multitest_utils::Group;
@@ -859,22 +859,24 @@ fn member_test() {
         .call(owner);
 
     contract
-        .group_proxy()
         .add_member(member.to_owned())
         .call(owner);
 
     let resp = contract
-        .group_proxy()
         .is_member(member.to_owned())
 
     assert_eq!(resp, group::IsMemberResp { is_member: true });
 }
 ```
 
-Note an additional `group_proxy()` call for executions and queries - it returns an
-extra proxy wrapper that would send the messages from a particular interface. I also
-had to add trait with group-related methods - it is named in the same way as the
-original `Group` trait, but lies in `multitest_utils` module of the contract.
+Pre `0.10.0`:
+
+```diff
+contract
++    .cw1_proxy()
+    .add_member(member.to_owned())
+    .call(owner);
+```
 
 ## CustomQuery and CustomMsg
 
@@ -936,62 +938,36 @@ will be used to determine `CustomMsg` and/or `CustomQuery`.
 
 ## Generics
 
-Since `0.9.0` we can use generics next to the `sylvia` macros.
-It is possible to define both generic contract and generic interface.
+Since `0.9.0` we can use generics in interfaces and contracts.
+Since `0.10.0` support for generics in interfaces was replaced with
+support for associated types. This change was made because only a single implementation
+of interface is allowed per contract. This is a more idiomatic rust approach.
+`0.10.0` introduced also support for generics forwarding. This means that if a contract
+defines some generic types, you can assign them to the associated types while implementing
+an interface.
 
-### Generic interface
+### Interface
 
-Defining generic interface is as simple as defining a generic trait.
+Defining associated types on interface is as simple as defining a them on a regular trait.
 
 ```rust
 #[interface]
-pub trait Generic<ExecParam, QueryParam, RetType>
-where
-    for<'msg_de> ExecParam: CustomMsg + Deserialize<'msg_de>,
-    QueryParam: sylvia::types::CustomMsg,
-    RetType: CustomMsg + DeserializeOwned,
+pub trait Generic
 {
     type Error: From<StdError>;
+    type ExecParam: CustomMsg;
+    type QueryParam: CustomMsg;
+    type RetType: CustomMsg;
 
     #[msg(exec)]
     fn generic_exec(
         &self,
         ctx: ExecCtx,
-        msgs: Vec<CosmosMsg<ExecParam>>,
+        msgs: Vec<CosmosMsg<Self::ExecParam>>,
     ) -> Result<Response, Self::Error>;
 
     #[msg(query)]
-    fn generic_query(&self, ctx: QueryCtx, param: QueryParam) -> Result<RetType, Self::Error>;
-}
-```
-
-We can also use generics with `custom`. In such case we have to provide the generic
-type name to the `sv::custom(..)` attribute.
-
-```rust
-#[interface]
-#[sv::custom(msg=RetType)]
-pub trait CustomAndGeneric<ExecParam, QueryParam, RetType>
-where
-    for<'msg_de> ExecParam: CustomMsg + Deserialize<'msg_de>,
-    QueryParam: sylvia::types::CustomMsg,
-    RetType: CustomMsg + DeserializeOwned,
-{
-    type Error: From<StdError>;
-
-    #[msg(exec)]
-    fn custom_generic_execute(
-        &self,
-        ctx: ExecCtx,
-        msgs: Vec<CosmosMsg<ExecParam>>,
-    ) -> Result<Response<RetType>, Self::Error>;
-
-    #[msg(query)]
-    fn custom_generic_query(
-       &self,
-        ctx: QueryCtx,
-        param: QueryParam,
-    ) -> Result<RetType, Self::Error>;
+    fn generic_query(&self, ctx: QueryCtx, param: Self::QueryParam) -> Result<Self::RetType, Self::Error>;
 }
 ```
 
@@ -1052,15 +1028,15 @@ where
 
 ### Implement interface
 
-To implement generic interface we have to provide solid types for the interface
-generics. No additional attributes are required.
+Rust will force the user to specify the types of the associates during the implementation.
+We can either use some concrete types here or forward the generics defined on contract.
 
 ```rust
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg)]
 impl<InstantiateParam, ExecParam, FieldType>
-    Generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg>
+    Generic
     for crate::contract::GenericContract<
         InstantiateParam,
         ExecParam,
@@ -1068,12 +1044,15 @@ impl<InstantiateParam, ExecParam, FieldType>
     >
 {
     type Error = StdError;
+    type ExecParam = ExecParam;
+    type QueryParam: SvCustomMsg;
+    type RetType = SvCustomMsg;
 
     #[msg(exec)]
     fn generic_exec(
         &self,
         _ctx: ExecCtx,
-        _msgs: Vec<CosmosMsg<sylvia::types::SvCustomMsg>>,
+        _msgs: Vec<CosmosMsg<Self::ExecParam>>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -1082,19 +1061,19 @@ impl<InstantiateParam, ExecParam, FieldType>
     fn generic_query(
         &self,
         _ctx: QueryCtx,
-        _msg: sylvia::types::SvCustomMsg,
-    ) -> StdResult<SvCustomMsg> {
+        _msg: Self::QueryParam,
+    ) -> StdResult<Self::RetType> {
         Ok(SvCustomMsg {})
     }
 }
 ```
 
-Then we have to inform `sylvia` about the generics used while implementing 
+Then we have to inform `sylvia` about the types used while implementing 
 interface in the main `contract` macro call:
 
 ```rust
 #[contract]
-#[messages(generic<SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg> as Generic)]
+#[messages(generic<ExecParam, SvCustomMsg, SvCustomMsg> as Generic)]
 impl<InstantiateParam, ExecParam, FieldType>
     GenericContract<InstantiateParam, ExecParam, FieldType>
 where
@@ -1102,6 +1081,7 @@ where
     ExecParam: CustomMsg + DeserializeOwned + 'static,
     FieldType: 'static,
 {
+    ...
 }
 ```
 
@@ -1109,7 +1089,7 @@ where
 
 Entry points has to be generated with solid types. Using the `entry_points` macro
 on the generic contract we have to specify the types that has to be used.
-We do that by via `entry_points(generics<..>)`:
+We do that with `entry_points(generics<..>)`:
 
 ```rust
 #[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg>))]
@@ -1124,6 +1104,25 @@ where
     ...
 }
 ```
+
+Also the contract might define generic type in place of custom message and query.
+In such case we have to inform `entry_points` macro using `custom`:
+
+```rust
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg>, custom(msg=SvCustomMsg, query=SvCustomQuery))]
+#[contract]
+#[sv::custom(msg=MsgT, query=QueryT)]
+impl<InstantiateParam, ExecParam, FieldType, MsgT, QueryT>
+    GenericContract<InstantiateParam, ExecParam, FieldType, MsgT, QueryT>
+where
+    for<'msg_de> InstantiateParam: CustomMsg + Deserialize<'msg_de> + 'msg_de,
+    ExecParam: CustomMsg + DeserializeOwned + 'static,
+    FieldType: 'static,
+{
+    ...
+}
+```
+
 
 ## Generating schema
 
