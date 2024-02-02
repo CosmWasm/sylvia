@@ -12,6 +12,12 @@ and idiomatic Rust and then just let cargo make sure that they are sound.
 
 Learn more about `sylvia` in [the book](https://cosmwasm.github.io/sylvia-book/index.html)
 
+## Introducing the Sylvia Template
+
+The Sylvia template streamlines the development of CosmWasm smart contracts by providing a project scaffold that adheres to best practices and leverages the Sylvia framework's powerful features. It's designed to help developers focus more on their contract's business logic rather than boilerplate code.
+
+Learn more here: [Sylvia Template on GitHub](https://github.com/CosmWasm/sylvia-template)
+
 ## The approach
 
 [CosmWasm](https://cosmwasm.com/) ecosystem core provides the base building
