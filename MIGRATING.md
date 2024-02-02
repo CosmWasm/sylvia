@@ -2,6 +2,28 @@
 
 This guide explains what is needed to upgrade contracts when migrating over major releases of `sylvia`. Note that you can also view the [complete CHANGELOG](https://github.com/CosmWasm/sylvia/blob/main/CHANGELOG.md) to understand the differences.
 
+## 0.9.3 -> 0.10.0
+
+## Multitest proxy
+
+Since `0.10.0` Sylvia won't generate multitest Proxy types for `interface` macro call. Instead all the methods from interfaces are directly implemented on the contract's multitest proxy.
+To use methods from a implemented interface like before user has to import the multitest trait from module in which the interface is implemented.
+
+```diff
+-let resp = contract
+-   .cw1_proxy()
+-   .can_execute()
+-   .unwrap();
++let resp = contract
++   .can_execute()
++   .unwrap();
+```
+
+## Associated types in generics
+
+`Sylvia` interface is meant to be implemented on contract only a single time. Because of that we decided to remove support for generics in interfaces.
+Instead migrating from `0.9.3` to `0.10.0` generics have to be changed to associated types.
+
 ## 0.8.1 -> 0.9.0
 
 ### `sv` module
