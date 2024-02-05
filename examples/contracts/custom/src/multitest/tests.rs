@@ -24,4 +24,9 @@ fn test_custom() {
 
     let count = contract.query_custom().unwrap().count;
     assert_eq!(count, 1);
+
+    contract.increment_sudo_counter().unwrap();
+
+    let count = contract.sudo_counter().unwrap().count;
+    assert_eq!(count, 1);
 }
