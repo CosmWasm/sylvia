@@ -777,7 +777,6 @@ impl<'a> MsgVariant<'a> {
                     fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
                 }
             }
-            ,
             MsgType::Sudo => quote! {
                 fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
             },
