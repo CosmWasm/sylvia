@@ -6,7 +6,20 @@ use sylvia::types::{ExecCtx, QueryCtx};
 #[contract(module = crate::contract)]
 #[messages(cw1 as Cw1)]
 #[sv::custom(msg=sylvia::types::SvCustomMsg, query=sylvia::types::SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT> Cw1
+impl<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
+        MigrateT,
+        FieldT,
+    > Cw1
     for crate::contract::GenericContract<
         InstantiateT,
         Exec1T,
@@ -15,6 +28,9 @@ impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, 
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         FieldT,
     >
@@ -56,7 +72,10 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            sylvia::types::SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             String,

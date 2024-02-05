@@ -1,13 +1,25 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use custom_and_generic::CustomAndGeneric;
 use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg, SvCustomQuery};
+use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
 
 #[contract(module = crate::contract)]
 #[messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, FieldT>
-    CustomAndGeneric
+impl<
+        InstantiateT,
+        Exec1T,
+        Exec2T,
+        Exec3T,
+        Query1T,
+        Query2T,
+        Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
+        MigrateT,
+        FieldT,
+    > CustomAndGeneric
     for crate::contract::GenericContract<
         InstantiateT,
         Exec1T,
@@ -16,6 +28,9 @@ impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, 
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         FieldT,
     >
@@ -27,6 +42,9 @@ impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, 
     type Query1T = SvCustomMsg;
     type Query2T = SvCustomMsg;
     type Query3T = SvCustomMsg;
+    type Sudo1T = SvCustomMsg;
+    type Sudo2T = SvCustomMsg;
+    type Sudo3T = SvCustomMsg;
     type ExecC = SvCustomMsg;
     type QueryC = SvCustomQuery;
     type RetT = SvCustomMsg;
@@ -70,6 +88,26 @@ impl<InstantiateT, Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, MigrateT, 
     ) -> StdResult<Self::RetT> {
         Ok(SvCustomMsg {})
     }
+
+    #[msg(sudo)]
+    fn custom_generic_sudo_one(
+        &self,
+        _ctx: SudoCtx<Self::QueryC>,
+        _msgs1: CosmosMsg<Self::Sudo1T>,
+        _msgs2: CosmosMsg<Self::Sudo2T>,
+    ) -> StdResult<Response<Self::ExecC>> {
+        Ok(Response::new())
+    }
+
+    #[msg(sudo)]
+    fn custom_generic_sudo_two(
+        &self,
+        _ctx: SudoCtx<Self::QueryC>,
+        _msgs1: CosmosMsg<Self::Sudo2T>,
+        _msgs2: CosmosMsg<Self::Sudo3T>,
+    ) -> StdResult<Response<Self::ExecC>> {
+        Ok(Response::new())
+    }
 }
 
 #[cfg(test)]
@@ -90,7 +128,10 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            sylvia::types::SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             String,
