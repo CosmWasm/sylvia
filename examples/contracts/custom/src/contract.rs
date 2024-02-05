@@ -1,5 +1,5 @@
 use cosmwasm_std::{CosmosMsg, QueryRequest, Response, StdResult};
-use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -40,6 +40,13 @@ impl CustomContract {
             .querier
             .query::<CountResponse>(&QueryRequest::Custom(CounterQuery::Count {}))?;
 
+        Ok(resp)
+    }
+
+    #[msg(sudo)]
+    pub fn sudo_custom(&self, _ctx: SudoCtx<CounterQuery>) -> StdResult<Response<CounterMsg>> {
+        let msg = CosmosMsg::Custom(CounterMsg::Increment {});
+        let resp = Response::default().add_message(msg);
         Ok(resp)
     }
 }
