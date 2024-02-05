@@ -1,5 +1,6 @@
 use cosmwasm_std::{CosmosMsg, QueryRequest, Response, StdResult};
-use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+use cw_storage_plus::Item;
+use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -7,7 +8,9 @@ use sylvia::entry_points;
 
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 
-pub struct CustomContract;
+pub struct CustomContract {
+    pub(crate) sudo_counter: Item<'static, u64>,
+}
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
@@ -15,14 +18,17 @@ pub struct CustomContract;
 #[sv::custom(query=CounterQuery, msg=CounterMsg)]
 impl CustomContract {
     pub const fn new() -> Self {
-        Self
+        Self {
+            sudo_counter: Item::new("sudo_counter"),
+        }
     }
 
     #[msg(instantiate)]
     pub fn instantiate(
         &self,
-        _ctx: InstantiateCtx<CounterQuery>,
+        ctx: InstantiateCtx<CounterQuery>,
     ) -> StdResult<Response<CounterMsg>> {
+        self.sudo_counter.save(ctx.deps.storage, &0)?;
         Ok(Response::default())
     }
 
@@ -41,5 +47,22 @@ impl CustomContract {
             .query::<CountResponse>(&QueryRequest::Custom(CounterQuery::Count {}))?;
 
         Ok(resp)
+    }
+
+    #[msg(query)]
+    pub fn sudo_counter(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
+        let count = self.sudo_counter.load(ctx.deps.storage)?;
+
+        Ok(CountResponse { count })
+    }
+
+    #[msg(sudo)]
+    pub fn increment_sudo_counter(
+        &self,
+        ctx: SudoCtx<CounterQuery>,
+    ) -> StdResult<Response<CounterMsg>> {
+        self.sudo_counter
+            .update(ctx.deps.storage, |value| -> StdResult<_> { Ok(value + 1) })?;
+        Ok(Response::new())
     }
 }
