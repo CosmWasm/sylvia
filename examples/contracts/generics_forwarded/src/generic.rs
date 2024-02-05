@@ -2,7 +2,7 @@ use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use generic::Generic;
 use serde::Deserialize;
 use sylvia::contract;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SvCustomMsg};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
@@ -15,6 +15,9 @@ impl<
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -28,6 +31,9 @@ impl<
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -41,6 +47,9 @@ where
     Query1T: CustomMsg + 'static,
     Query2T: CustomMsg + 'static,
     Query3T: CustomMsg + 'static,
+    Sudo1T: CustomMsg + 'static,
+    Sudo2T: CustomMsg + 'static,
+    Sudo3T: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
     CustomQueryT: CustomQuery + 'static,
@@ -53,6 +62,9 @@ where
     type Query1T = Query1T;
     type Query2T = Query2T;
     type Query3T = Query3T;
+    type Sudo1T = Sudo1T;
+    type Sudo2T = Sudo2T;
+    type Sudo3T = Sudo3T;
     type RetT = SvCustomMsg;
 
     #[msg(exec)]
@@ -94,6 +106,26 @@ where
     ) -> StdResult<SvCustomMsg> {
         Ok(SvCustomMsg {})
     }
+
+    #[msg(sudo)]
+    fn generic_sudo_one(
+        &self,
+        _ctx: SudoCtx,
+        _msgs1: CosmosMsg<Self::Sudo1T>,
+        _msgs2: CosmosMsg<Self::Sudo2T>,
+    ) -> StdResult<Response> {
+        Ok(Response::new())
+    }
+
+    #[msg(sudo)]
+    fn generic_sudo_two(
+        &self,
+        _ctx: SudoCtx,
+        _msgs1: CosmosMsg<Self::Sudo2T>,
+        _msgs2: CosmosMsg<Self::Sudo3T>,
+    ) -> StdResult<Response> {
+        Ok(Response::new())
+    }
 }
 
 #[cfg(test)]
@@ -107,16 +139,20 @@ mod tests {
     #[test]
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        #[allow(clippy::type_complexity)]
         let code_id: CodeId<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            sylvia::types::SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            sylvia::types::SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomQuery,
             String,
             _,
@@ -151,6 +187,19 @@ mod tests {
             .unwrap();
         contract
             .generic_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+
+        contract
+            .generic_sudo_one(
+                CosmosMsg::Custom(SvCustomMsg),
+                CosmosMsg::Custom(SvCustomMsg),
+            )
+            .unwrap();
+        contract
+            .generic_sudo_two(
+                CosmosMsg::Custom(SvCustomMsg),
+                CosmosMsg::Custom(SvCustomMsg),
+            )
             .unwrap();
     }
 }

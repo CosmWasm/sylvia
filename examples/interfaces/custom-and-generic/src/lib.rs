@@ -1,6 +1,6 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError};
 
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
@@ -12,6 +12,9 @@ pub trait CustomAndGeneric {
     type Query1T: CustomMsg;
     type Query2T: CustomMsg;
     type Query3T: CustomMsg;
+    type Sudo1T: CustomMsg;
+    type Sudo2T: CustomMsg;
+    type Sudo3T: CustomMsg;
     type ExecC: CustomMsg;
     type QueryC: CustomQuery + 'static;
     type RetT: CustomMsg;
@@ -47,6 +50,22 @@ pub trait CustomAndGeneric {
         param1: Self::Query2T,
         param2: Self::Query3T,
     ) -> Result<Self::RetT, Self::Error>;
+
+    #[msg(sudo)]
+    fn custom_generic_sudo_one(
+        &self,
+        ctx: SudoCtx<Self::QueryC>,
+        msg1: CosmosMsg<Self::Sudo1T>,
+        msg2: CosmosMsg<Self::Sudo2T>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
+
+    #[msg(sudo)]
+    fn custom_generic_sudo_two(
+        &self,
+        ctx: SudoCtx<Self::QueryC>,
+        msg1: CosmosMsg<Self::Sudo2T>,
+        msg2: CosmosMsg<Self::Sudo3T>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 }
 
 #[cfg(test)]
@@ -93,6 +112,9 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
         >::borrowed(&contract, &querier_wrapper);
 
         let _: Result<SvCustomMsg, _> =
@@ -113,11 +135,17 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
         > as InterfaceApi>::Query::custom_generic_query_one(
             SvCustomMsg {}, SvCustomMsg {}
         );
 
         let _ = <super::sv::Api<
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -138,9 +166,44 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
         > as InterfaceApi>::Exec::custom_generic_execute_two(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
+        );
+
+        let _ = <super::sv::Api<
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+        > as InterfaceApi>::Sudo::custom_generic_sudo_one(
+            CosmosMsg::Custom(SvCustomMsg {}),
+            CosmosMsg::Custom(SvCustomMsg {}),
+        );
+
+        let _ = <super::sv::Api<
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+        > as InterfaceApi>::Sudo::custom_generic_sudo_one(
+            CosmosMsg::Custom(SvCustomMsg {}),
+            CosmosMsg::Custom(SvCustomMsg {}),
         );
     }
 }

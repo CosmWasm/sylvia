@@ -9,8 +9,8 @@ pub struct NonGenericContract;
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
+#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
 #[messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
@@ -83,6 +83,18 @@ mod tests {
             )
             .call(owner)
             .unwrap();
+        contract
+            .generic_sudo_one(
+                CosmosMsg::Custom(SvCustomMsg {}),
+                CosmosMsg::Custom(SvCustomMsg {}),
+            )
+            .unwrap();
+        contract
+            .generic_sudo_two(
+                CosmosMsg::Custom(SvCustomMsg {}),
+                CosmosMsg::Custom(SvCustomMsg {}),
+            )
+            .unwrap();
 
         // Custom generic Interface
         contract
@@ -104,6 +116,18 @@ mod tests {
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
             .call(owner)
+            .unwrap();
+        contract
+            .custom_generic_sudo_one(
+                CosmosMsg::Custom(SvCustomMsg {}),
+                CosmosMsg::Custom(SvCustomMsg {}),
+            )
+            .unwrap();
+        contract
+            .custom_generic_sudo_two(
+                CosmosMsg::Custom(SvCustomMsg {}),
+                CosmosMsg::Custom(SvCustomMsg {}),
+            )
             .unwrap();
     }
 }

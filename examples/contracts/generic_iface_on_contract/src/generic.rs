@@ -1,7 +1,7 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use generic::Generic;
 use sylvia::contract;
-use sylvia::types::{ExecCtx, QueryCtx, SvCustomMsg};
+use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[messages(generic as Generic)]
@@ -14,6 +14,9 @@ impl Generic for crate::contract::NonGenericContract {
     type Query1T = SvCustomMsg;
     type Query2T = SvCustomMsg;
     type Query3T = SvCustomMsg;
+    type Sudo1T = SvCustomMsg;
+    type Sudo2T = SvCustomMsg;
+    type Sudo3T = SvCustomMsg;
     type RetT = SvCustomMsg;
 
     #[msg(exec)]
@@ -54,5 +57,25 @@ impl Generic for crate::contract::NonGenericContract {
         _msg2: Self::Query3T,
     ) -> StdResult<Self::RetT> {
         Ok(SvCustomMsg {})
+    }
+
+    #[msg(sudo)]
+    fn generic_sudo_one(
+        &self,
+        _ctx: SudoCtx,
+        _msgs1: CosmosMsg<Self::Sudo1T>,
+        _msgs2: CosmosMsg<Self::Sudo2T>,
+    ) -> StdResult<Response> {
+        Ok(Response::new())
+    }
+
+    #[msg(sudo)]
+    fn generic_sudo_two(
+        &self,
+        _ctx: SudoCtx,
+        _msgs1: CosmosMsg<Self::Sudo2T>,
+        _msgs2: CosmosMsg<Self::Sudo3T>,
+    ) -> StdResult<Response> {
+        Ok(Response::new())
     }
 }
