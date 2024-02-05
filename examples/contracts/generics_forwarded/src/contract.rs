@@ -2,7 +2,8 @@ use cosmwasm_std::{Reply, Response, StdResult};
 use cw_storage_plus::Item;
 use serde::Deserialize;
 use sylvia::types::{
-    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SvCustomMsg,
+    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
+    SvCustomMsg,
 };
 use sylvia::{contract, schemars};
 
@@ -17,6 +18,9 @@ pub struct GenericsForwardedContract<
     Query1T,
     Query2T,
     Query3T,
+    Sudo1T,
+    Sudo2T,
+    Sudo3T,
     MigrateT,
     CustomMsgT,
     CustomQueryT,
@@ -32,17 +36,20 @@ pub struct GenericsForwardedContract<
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
     )>,
 }
 
-#[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
+#[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
 #[contract]
-#[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg> as Generic: custom(msg, query))]
+#[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as Generic: custom(msg, query))]
 #[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, SvCustomMsg> as CustomAndGeneric)]
+#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<
         InstantiateT,
@@ -52,6 +59,9 @@ impl<
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -65,6 +75,9 @@ impl<
         Query1T,
         Query2T,
         Query3T,
+        Sudo1T,
+        Sudo2T,
+        Sudo3T,
         MigrateT,
         CustomMsgT,
         CustomQueryT,
@@ -78,6 +91,9 @@ where
     Query1T: CustomMsg + 'static,
     Query2T: CustomMsg + 'static,
     Query3T: CustomMsg + 'static,
+    Sudo1T: CustomMsg + 'static,
+    Sudo2T: CustomMsg + 'static,
+    Sudo3T: CustomMsg + 'static,
     MigrateT: CustomMsg + 'static,
     CustomMsgT: CustomMsg + 'static,
     CustomQueryT: CustomQuery + 'static,
@@ -139,6 +155,26 @@ where
         Ok(String::default())
     }
 
+    #[msg(sudo)]
+    fn contract_sudo_one(
+        &self,
+        _ctx: SudoCtx<CustomQueryT>,
+        _msgs1: Sudo1T,
+        _msgs2: Sudo2T,
+    ) -> StdResult<Response<CustomMsgT>> {
+        Ok(Response::new())
+    }
+
+    #[msg(sudo)]
+    fn contract_sudo_two(
+        &self,
+        _ctx: SudoCtx<CustomQueryT>,
+        _msgs1: Sudo2T,
+        _msgs2: Sudo3T,
+    ) -> StdResult<Response<CustomMsgT>> {
+        Ok(Response::new())
+    }
+
     #[msg(migrate)]
     pub fn migrate(
         &self,
@@ -168,6 +204,7 @@ mod tests {
     #[test]
     fn generic_contract() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        #[allow(clippy::type_complexity)]
         let code_id: CodeId<
             SvCustomMsg,
             SvCustomMsg,
@@ -176,8 +213,11 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            super::SvCustomMsg,
-            super::SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
+            SvCustomMsg,
             SvCustomQuery,
             String,
             _,
@@ -205,6 +245,12 @@ mod tests {
             .unwrap();
         contract
             .contract_query_two(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .contract_sudo_one(SvCustomMsg, SvCustomMsg)
+            .unwrap();
+        contract
+            .contract_sudo_two(SvCustomMsg, SvCustomMsg)
             .unwrap();
         contract
             .migrate(SvCustomMsg)
