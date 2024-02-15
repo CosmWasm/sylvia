@@ -82,7 +82,7 @@ jobs:
         run: ../../ci_contracts.sh "cargo wasm"
 
       - name: Install cosmwasm-check
-        run: cargo install cosmwasm-check --force
+        run: cargo install cosmwasm-check --force --locked
       - name: Check contracts
         run: find examples/target/wasm32-unknown-unknown/release/ -type f -name "*.wasm" -exec cosmwasm-check {} \;
 
