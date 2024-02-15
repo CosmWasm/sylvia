@@ -12,10 +12,16 @@ pub enum CounterMsg {
 }
 
 #[cw_serde]
+pub enum CounterSudo {
+    Increment {},
+}
+
+#[cw_serde]
 pub enum CounterQuery {
-    Count {},
+    Sudo {},
+    Exec {},
 }
 
 impl CustomMsg for CounterMsg {}
-
+impl CustomMsg for CounterSudo {}
 impl CustomQuery for CounterQuery {}

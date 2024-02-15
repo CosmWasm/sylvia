@@ -5,7 +5,7 @@ use sylvia::{contract, schemars};
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
 
-use crate::messages::{CountResponse, CounterMsg, CounterQuery};
+use crate::messages::{CountResponse, CounterMsg, CounterQuery, CounterSudo};
 
 pub struct CustomContract;
 
@@ -34,18 +34,28 @@ impl CustomContract {
     }
 
     #[msg(query)]
-    pub fn query_custom(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
+    pub fn query_exec(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
         let resp = ctx
             .deps
             .querier
-            .query::<CountResponse>(&QueryRequest::Custom(CounterQuery::Count {}))?;
+            .query::<CountResponse>(&QueryRequest::Custom(CounterQuery::Exec {}))?;
+
+        Ok(resp)
+    }
+
+    #[msg(query)]
+    pub fn query_sudo(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
+        let resp = ctx
+            .deps
+            .querier
+            .query::<CountResponse>(&QueryRequest::Custom(CounterQuery::Sudo {}))?;
 
         Ok(resp)
     }
 
     #[msg(sudo)]
     pub fn sudo_custom(&self, _ctx: SudoCtx<CounterQuery>) -> StdResult<Response<CounterMsg>> {
-        let msg = CosmosMsg::Custom(CounterMsg::Increment {});
+        let msg = CosmosMsg::Custom(CounterSudo::Increment {});
         let resp = Response::default().add_message(msg);
         Ok(resp)
     }

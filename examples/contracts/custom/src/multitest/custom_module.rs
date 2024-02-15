@@ -1,6 +1,6 @@
 use cosmwasm_schema::schemars::JsonSchema;
 use cosmwasm_std::{
-    to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
+    to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Querier, StdError, StdResult,
     Storage,
 };
 use cw_multi_test::{AppResponse, CosmosRouter, Module};
@@ -8,30 +8,36 @@ use cw_storage_plus::Item;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
-use crate::messages::{CountResponse, CounterMsg, CounterQuery};
+use crate::{
+    contract::sv::{ContractExecMsg, ContractSudoMsg},
+    messages::{CountResponse, CounterMsg, CounterQuery, CounterSudo},
+};
 
 pub struct CustomModule {
-    pub counter: Item<'static, u64>,
+    pub exec_counter: Item<'static, u64>,
+    pub sudo_counter: Item<'static, u64>,
 }
 
 impl Default for CustomModule {
     fn default() -> Self {
         Self {
-            counter: Item::new("counter"),
+            exec_counter: Item::new("exec_counter"),
+            sudo_counter: Item::new("sudo_counter"),
         }
     }
 }
 
 impl CustomModule {
-    pub fn save_counter(&self, storage: &mut dyn Storage, value: u64) -> StdResult<()> {
-        self.counter.save(storage, &value)
+    pub fn init_counter(&self, storage: &mut dyn Storage) -> StdResult<()> {
+        self.exec_counter.save(storage, &0)?;
+        self.sudo_counter.save(storage, &0)
     }
 }
 
 impl Module for CustomModule {
-    type ExecT = CounterMsg;
-    type QueryT = CounterQuery;
-    type SudoT = Empty;
+    type ExecT = ContractExecMsg;
+    type QueryT = ContractQueryMsg;
+    type SudoT = ContractSudoMsg;
 
     fn execute<ExecC, QueryC>(
         &self,
@@ -48,7 +54,7 @@ impl Module for CustomModule {
     {
         match msg {
             CounterMsg::Increment {} => {
-                self.counter
+                self.exec_counter
                     .update(storage, |value| Ok::<_, StdError>(value + 1))?;
                 Ok(AppResponse::default())
             }
@@ -58,16 +64,22 @@ impl Module for CustomModule {
     fn sudo<ExecC, QueryC>(
         &self,
         _api: &dyn Api,
-        _storage: &mut dyn Storage,
+        storage: &mut dyn Storage,
         _router: &dyn CosmosRouter<ExecC = ExecC, QueryC = QueryC>,
         _block: &BlockInfo,
-        _msg: Self::SudoT,
+        msg: Self::SudoT,
     ) -> anyhow::Result<AppResponse>
     where
         ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
         QueryC: CustomQuery + DeserializeOwned + 'static,
     {
-        Ok(AppResponse::default())
+        match msg {
+            CounterSudo::Increment {} => {
+                self.sudo_counter
+                    .update(storage, |value| Ok::<_, StdError>(value + 1))?;
+                Ok(AppResponse::default())
+            }
+        }
     }
 
     fn query(
@@ -79,8 +91,13 @@ impl Module for CustomModule {
         request: Self::QueryT,
     ) -> anyhow::Result<Binary> {
         match request {
-            CounterQuery::Count {} => {
-                let count = self.counter.load(storage)?;
+            CounterQuery::Exec {} => {
+                let count = self.exec_counter.load(storage)?;
+                let res = CountResponse { count };
+                to_json_binary(&res).map_err(Into::into)
+            }
+            CounterQuery::Sudo {} => {
+                let count = self.sudo_counter.load(storage)?;
                 let res = CountResponse { count };
                 to_json_binary(&res).map_err(Into::into)
             }

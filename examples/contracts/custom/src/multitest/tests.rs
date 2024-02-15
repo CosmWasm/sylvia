@@ -11,7 +11,7 @@ fn test_custom() {
     let mt_app = cw_multi_test::BasicAppBuilder::new_custom()
         .with_custom(CustomModule::default())
         .build(|router, _, storage| {
-            router.custom.save_counter(storage, 0).unwrap();
+            router.custom.init_counter(storage).unwrap();
         });
 
     let app = App::new(mt_app);
@@ -22,11 +22,15 @@ fn test_custom() {
 
     contract.send_custom().call(owner).unwrap();
 
-    let count = contract.query_custom().unwrap().count;
+    let count = contract.query_exec().unwrap().count;
     assert_eq!(count, 1);
+    let count = contract.query_sudo().unwrap().count;
+    assert_eq!(count, 0);
 
     contract.sudo_custom().unwrap();
 
-    let count = contract.query_custom().unwrap().count;
-    assert_eq!(count, 2);
+    let count = contract.query_exec().unwrap().count;
+    assert_eq!(count, 1);
+    let count = contract.query_sudo().unwrap().count;
+    assert_eq!(count, 1);
 }
