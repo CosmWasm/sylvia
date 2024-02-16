@@ -15,7 +15,7 @@ fn main() {
         // interfaces and which by contract we may end up with `ContractExecMsg<T4, T1, T3>`.
         //
         // ContractApi cannot be used here directly as `write_api` "expects string literal" here.
-        // This potentially could done with some type alias, not sure how it would affect the
+        // This potentially could be done with some type alias, not sure how it would affect the
         // schema.
         // execute: <GenericForwardedContract as ContractApi>::ContractExec,
         execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg>,
