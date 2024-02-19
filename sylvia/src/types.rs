@@ -3,33 +3,45 @@ use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 
+/// Represantation of `reply` context received in entry point as
+/// (DepsMut, Env) tuple.
 pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
 }
 
+/// Represantation of `reply` context received in entry point as
+/// (DepsMut, Env) tuple.
 pub struct MigrateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
 }
 
+/// Represantation of `reply` context received in entry point as
+/// (DepsMut, Env, MessageInfo) tuple.
 pub struct ExecCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
     pub info: MessageInfo,
 }
 
+/// Represantation of `instantiate` context received in entry point as
+/// (DepsMut, Env, MessageInfo) tuple.
 pub struct InstantiateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
     pub info: MessageInfo,
 }
 
+/// Represantation of `query` context received in entry point as
+/// (Deps, Env) tuple.
 pub struct QueryCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: Deps<'a, C>,
     pub env: Env,
 }
 
+/// Represantation of `sudo` context received in entry point as
+/// (DepsMut, Env) tuple.
 pub struct SudoCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
@@ -107,22 +119,26 @@ pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema
 
 impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
+/// This type is meant to be used in internal testing purpose.
 #[cw_serde]
 pub struct SvCustomMsg;
 
 impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 
+/// This type is meant to be used in internal testing purpose.
 #[cw_serde]
 pub struct SvCustomQuery;
 
 impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
+/// Api trait for easier access to generated types and messages.
 pub trait InterfaceApi {
     type Exec;
     type Query;
     type Querier<'querier>;
 }
 
+/// Api trait for easier access to generated types and messages.
 pub trait ContractApi {
     type Instantiate;
     type Query;
