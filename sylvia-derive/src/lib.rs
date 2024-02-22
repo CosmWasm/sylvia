@@ -11,6 +11,7 @@ pub(crate) mod check_generics;
 mod input;
 mod interfaces;
 mod message;
+mod message_type;
 mod multitest;
 mod parser;
 mod querier;
@@ -65,17 +66,17 @@ pub(crate) fn crate_module() -> Path {
 /// trait Cw4 {
 ///     type Error: From<StdError>;
 ///
-///     #[msg(exec)]
+///     #[sv::msg(exec)]
 ///     fn update_admin(&self, ctx: (DepsMut, Env, MessageInfo), admin: Option<String>) -> Result<Response, Self::Error>;
 ///
-///     #[msg(exec)]
+///     #[sv::msg(exec)]
 ///     fn update_members(&self, ctx: (DepsMut, Env, MessageInfo), remove: Vec<String>, add: Vec<Member>)
 ///         -> Result<Response, Self::Error>;
 ///
-///     #[msg(query)]
+///     #[sv::msg(query)]
 ///     fn admin(&self, ctx: (Deps, Env)) -> Result<AdminQueryResponse, Error>;
 ///
-///     #[msg(query)]
+///     #[sv::msg(query)]
 ///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>;
 /// }
 /// ```
@@ -120,7 +121,7 @@ pub(crate) fn crate_module() -> Path {
 /// ## Attributes
 ///
 /// Messages structures are generated basing on interface trait method attributed with
-/// `#[msg(msg_type, ...)`. Msg attribute takes as its first argument type of message it is
+/// `#[sv::msg(msg_type, ...)`. Msg attribute takes as its first argument type of message it is
 /// supposed to handle:
 ///   * `exec` - this is execute message variant
 ///   * `query` - this is query message variant
@@ -130,11 +131,11 @@ pub(crate) fn crate_module() -> Path {
 /// Example for member query
 ///
 /// ```ignore
-///     #[msg(query, resp=MemberQueryResponse)]
+///     #[sv::msg(query, resp=MemberQueryResponse)]
 ///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>;
 /// ```
 ///
-/// For now `#[msg(...)]` attribute doesn't support anymore data on `#[interface]`
+/// For now `#[sv::msg(...)]` attribute doesn't support anymore data on `#[interface]`
 /// elements, but it may be extended in future.
 #[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
@@ -174,7 +175,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// #[cw_derive::contract(module=msg)]
 /// impl Cw4Group {
-///     #[msg(instantiate, name="Instantiate")]
+///     #[sv::msg(instantiate, name="Instantiate")]
 ///     fn instantiate(&self, ctx: (DepsMut, Env, MessageInfo), admin: Option<String>)
 ///         -> Result<Response, Error>;
 /// }
@@ -212,7 +213,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// ## Attributes
 ///
 /// Messages structures are generated basing on specific implemented methods attributed with
-/// `#[msg(msg_type, ...)`. Msg attribute takes as its first argument type of message it is
+/// `#[sv::msg(msg_type, ...)`. Msg attribute takes as its first argument type of message it is
 /// supposed to handle:
 /// * `instantiate` - this is instantiation message handler. There should be always exactly one
 /// * `exec` - this is execute message variant
@@ -224,7 +225,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// Example for member query
 ///
 /// ```ignore
-///     #[msg(query, resp=MemberQueryResponse)]
+///     #[sv::msg(query, resp=MemberQueryResponse)]
 ///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>
 /// ```
 #[cfg(not(tarpaulin_include))]

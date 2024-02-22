@@ -23,10 +23,10 @@ mod interface {
     pub trait Interface {
         type Error: From<StdError>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn argumented_execution(
             &self,
             ctx: ExecCtx,
@@ -35,16 +35,16 @@ mod interface {
             #[serde(default)] desc: String,
         ) -> Result<Response, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn no_args_query(&self, ctx: QueryCtx) -> Result<QueryResult, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn argumented_query(&self, ctx: QueryCtx, user: Addr) -> Result<QueryResult, Self::Error>;
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error>;
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error>;
     }
 }
@@ -71,22 +71,22 @@ mod contract {
             Self {}
         }
 
-        #[msg(instantiate)]
+        #[sv::msg(instantiate)]
         pub fn instantiate(&self, _ctx: InstantiateCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(migrate)]
+        #[sv::msg(migrate)]
         pub fn migrate(&self, _ctx: MigrateCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn no_args_execution(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn argumented_execution(
             &self,
             _ctx: ExecCtx<MyQuery>,
@@ -97,27 +97,27 @@ mod contract {
             Ok(Response::new())
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn no_args_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<QueryResult> {
             Ok(QueryResult {})
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn argumented_query(&self, _ctx: QueryCtx<MyQuery>, _user: Addr) -> StdResult<QueryResult> {
             Ok(QueryResult {})
         }
 
-        #[msg(reply)]
+        #[sv::msg(reply)]
         fn my_reply(&self, _ctx: ReplyCtx<MyQuery>, _reply: Reply) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn no_args_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn argumented_sudo(&self, _ctx: SudoCtx<MyQuery>, _user: Addr) -> StdResult<Response> {
             Ok(Response::new())
         }

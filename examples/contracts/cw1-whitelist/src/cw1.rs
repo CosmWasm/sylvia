@@ -7,11 +7,11 @@ use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
 #[contract(module=crate::contract)]
-#[messages(cw1 as Cw1)]
+#[sv::messages(cw1 as Cw1)]
 impl Cw1 for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
@@ -23,7 +23,7 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn can_execute(
         &self,
         ctx: QueryCtx,

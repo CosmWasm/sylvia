@@ -47,9 +47,9 @@ pub struct GenericsForwardedContract<
 
 #[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
 #[contract]
-#[messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(cw1 as Cw1: custom(msg, query))]
-#[messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as CustomAndGeneric)]
+#[sv::messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as Generic: custom(msg, query))]
+#[sv::messages(cw1 as Cw1: custom(msg, query))]
+#[sv::messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
 impl<
         InstantiateT,
@@ -106,7 +106,7 @@ where
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         _ctx: InstantiateCtx<CustomQueryT>,
@@ -115,7 +115,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn contract_execute_one(
         &self,
         _ctx: ExecCtx<CustomQueryT>,
@@ -125,7 +125,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn contract_execute_two(
         &self,
         _ctx: ExecCtx<CustomQueryT>,
@@ -135,7 +135,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn contract_query_one(
         &self,
         _ctx: QueryCtx<CustomQueryT>,
@@ -145,7 +145,7 @@ where
         Ok(String::default())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn contract_query_two(
         &self,
         _ctx: QueryCtx<CustomQueryT>,
@@ -155,7 +155,7 @@ where
         Ok(String::default())
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn contract_sudo_one(
         &self,
         _ctx: SudoCtx<CustomQueryT>,
@@ -165,7 +165,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn contract_sudo_two(
         &self,
         _ctx: SudoCtx<CustomQueryT>,
@@ -175,7 +175,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(migrate)]
+    #[sv::msg(migrate)]
     pub fn migrate(
         &self,
         _ctx: MigrateCtx<CustomQueryT>,
@@ -185,7 +185,7 @@ where
     }
 
     #[allow(dead_code)]
-    #[msg(reply)]
+    #[sv::msg(reply)]
     fn reply(
         &self,
         _ctx: ReplyCtx<CustomQueryT>,

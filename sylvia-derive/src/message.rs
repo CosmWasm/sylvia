@@ -3,8 +3,8 @@ use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::parser::{
-    parse_associated_custom_type, parse_struct_message, ContractErrorAttr, Custom, EntryPointArgs,
-    MsgAttr, MsgType, OverrideEntryPoints,
+    parse_associated_custom_type, ContractErrorAttr, Custom, EntryPointArgs,
+    FilteredOverrideEntryPoints, MsgAttr, MsgType, OverrideEntryPoint, ParsedSylviaAttributes,
 };
 use crate::strip_generics::StripGenerics;
 use crate::strip_self_path::{AddSelfPath, ReplaceAssociatedType, StripSelfPath};
@@ -19,13 +19,13 @@ use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::fold::Fold;
-use syn::parse::{Parse, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItemType, ItemImpl,
-    ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItem, ImplItemFn,
+    ImplItemType, ItemImpl, ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type,
+    WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -39,7 +39,7 @@ pub struct StructMessage<'a> {
     full_where: Option<&'a WhereClause>,
     result: &'a ReturnType,
     msg_attr: MsgAttr,
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
 }
 
 impl<'a> StructMessage<'a> {
@@ -54,7 +54,7 @@ impl<'a> StructMessage<'a> {
 
         let contract_type = &source.self_ty;
 
-        let parsed = parse_struct_message(source, ty);
+        let parsed = Self::parse_struct_message(source, ty);
         let Some((method, msg_attr)) = parsed else {
             return None;
         };
@@ -76,6 +76,37 @@ impl<'a> StructMessage<'a> {
             msg_attr,
             custom,
         })
+    }
+
+    fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemFn, MsgAttr)> {
+        let mut methods = source.items.iter().filter_map(|item| match item {
+            ImplItem::Fn(method) => {
+                let attr = ParsedSylviaAttributes::new(method.attrs.iter()).msg_attr?;
+                if attr == ty {
+                    Some((method, attr))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        });
+
+        let (method, msg_attr) = if let Some(method) = methods.next() {
+            method
+        } else {
+            if ty == MsgType::Instantiate {
+                emit_error!(source.span(), "No instantiation message");
+            }
+            return None;
+        };
+
+        if let Some((obsolete, _)) = methods.next() {
+            emit_error!(
+                obsolete.span(), "More than one instantiation or migration message";
+                note = method.span() => "Instantiation/Migration message previously defined here"
+            );
+        }
+        Some((method, msg_attr))
     }
 
     pub fn emit(&self) -> TokenStream {
@@ -274,7 +305,7 @@ pub struct ContractEnumMessage<'a> {
     msg_ty: MsgType,
     contract: &'a Type,
     error: &'a ContractErrorAttr,
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
     where_clause: &'a Option<WhereClause>,
 }
 
@@ -819,27 +850,16 @@ where
         let mut generics_checker = CheckGenerics::new(all_generics);
         let variants: Vec<_> = source
             .filter_map(|variant_desc| {
-                let msg_attr = variant_desc.attr_msg()?;
-                let attr = match msg_attr
-                    .meta
-                    .require_list()
-                    .and_then(|meta| MsgAttr::parse.parse2(meta.tokens.clone()))
-                {
-                    Ok(attr) => attr,
-                    Err(err) => {
-                        emit_error!(variant_desc.span(), err);
-                        return None;
-                    }
-                };
+                let msg_attr: MsgAttr = variant_desc.attr_msg()?;
 
-                if attr.msg_type() != msg_ty {
+                if msg_attr.msg_type() != msg_ty {
                     return None;
                 }
 
                 Some(MsgVariant::new(
                     variant_desc.into_sig(),
                     &mut generics_checker,
-                    attr,
+                    msg_attr,
                 ))
             })
             .collect();
@@ -1065,7 +1085,7 @@ impl<'a> MsgField<'a> {
                 // Eg.
                 //
                 // ```
-                // fn exec_foo(&self, ctx: Ctx, #[msg(name=metadata)] SomeData { addr, sender }: SomeData);
+                // fn exec_foo(&self, ctx: Ctx, #[sv::msg(name=metadata)] SomeData { addr, sender }: SomeData);
                 // ```
                 //
                 // should expand to enum variant:
@@ -1155,7 +1175,7 @@ pub struct GlueMessage<'a> {
     contract: &'a Type,
     msg_ty: MsgType,
     error: &'a ContractErrorAttr,
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
     interfaces: &'a Interfaces,
     variants: MsgVariants<'a, GenericParam>,
 }
@@ -1367,7 +1387,7 @@ pub struct ContractApi<'a> {
     migrate_variants: MsgVariants<'a, GenericParam>,
     sudo_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
     interfaces: &'a Interfaces,
 }
 
@@ -1375,7 +1395,7 @@ impl<'a> ContractApi<'a> {
     pub fn new(
         source: &'a ItemImpl,
         generics: &'a [&'a GenericParam],
-        custom: &'a Custom<'a>,
+        custom: &'a Custom,
         interfaces: &'a Interfaces,
     ) -> Self {
         let exec_variants = MsgVariants::new(
@@ -1502,7 +1522,7 @@ impl<'a> ContractApi<'a> {
 
 pub struct InterfaceApi<'a> {
     source: &'a ItemTrait,
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
     associated_types: &'a AssociatedTypes<'a>,
 }
 
@@ -1510,7 +1530,7 @@ impl<'a> InterfaceApi<'a> {
     pub fn new(
         source: &'a ItemTrait,
         associated_types: &'a AssociatedTypes<'a>,
-        custom: &'a Custom<'a>,
+        custom: &'a Custom,
     ) -> Self {
         Self {
             source,
@@ -1588,41 +1608,24 @@ pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
     error: Type,
-    custom: Custom<'a>,
-    override_entry_points: OverrideEntryPoints,
+    custom: Custom,
+    override_entry_points: Vec<OverrideEntryPoint>,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
-    attrs: EntryPointArgs<'a>,
+    attrs: EntryPointArgs,
 }
 
 impl<'a> EntryPoints<'a> {
-    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs<'a>) -> Self {
-        let sylvia = crate_module();
+    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs) -> Self {
         let name = StripGenerics.fold_type(*source.self_ty.clone());
-        let override_entry_points = OverrideEntryPoints::new(&source.attrs);
+        let parsed_attrs = ParsedSylviaAttributes::new(source.attrs.iter());
+        let override_entry_points = parsed_attrs.override_entry_point_attrs;
 
-        let error = source
-            .attrs
-            .iter()
-            .find(|attr| attr.path().is_ident("error"))
-            .and_then(|attr| {
-                match attr
-                    .meta
-                    .require_list()
-                    .and_then(|meta| ContractErrorAttr::parse.parse2(meta.tokens.clone()))
-                {
-                    Ok(error) => Some(error.error),
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        None
-                    }
-                }
-            })
-            .unwrap_or_else(|| parse_quote! { #sylvia ::cw_std::StdError });
+        let error = parsed_attrs.error_attrs.unwrap_or_default().error;
 
         let generics: Vec<_> = source.generics.params.iter().collect();
         let where_clause = &source.generics.where_clause;
-        let custom = Custom::new(&source.attrs);
+        let custom = parsed_attrs.custom_attr.unwrap_or_default();
 
         Self {
             source,
@@ -1725,8 +1728,7 @@ impl<'a> EntryPoints<'a> {
                 quote! {}
             };
 
-            let reply_ep = override_entry_points
-                .get_entry_point(MsgType::Reply)
+            let reply_ep = override_entry_points.get_entry_point(MsgType::Reply)
                 .map(|_| quote! {})
                 .unwrap_or_else(|| match reply {
                     Some(reply) => quote! {

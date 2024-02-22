@@ -163,7 +163,7 @@ mod contract {
             }
         }
 
-        #[msg(instantiate)]
+        #[sv::msg(instantiate)]
         pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
             self.execs.save(ctx.deps.storage, &0)?;
             self.migrates.save(ctx.deps.storage, &0)?;
@@ -171,12 +171,12 @@ mod contract {
             Ok(Response::new())
         }
 
-        #[msg(migrate)]
+        #[sv::msg(migrate)]
         pub fn migrate(&self, _ctx: MigrateCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         pub fn increase_by_two(&self, ctx: ExecCtx) -> StdResult<Response> {
             self.execs
                 .update(ctx.deps.storage, |count| -> Result<u32, StdError> {
@@ -185,25 +185,25 @@ mod contract {
             Ok(Response::new())
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         pub fn execs(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.execs.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         pub fn sudos(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.sudos.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         pub fn migrates(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.migrates.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         pub fn sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::new())
         }

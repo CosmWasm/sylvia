@@ -1,6 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::{GenericParam, ItemImpl, Path};
 
 use crate::associated_types::{AssociatedTypes, EmitAssociated, ImplAssociatedTypes, ItemType};
@@ -8,7 +7,7 @@ use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::MsgVariants;
-use crate::parser::MsgType;
+use crate::parser::attributes::msg::MsgType;
 use crate::variant_descs::AsVariantDescs;
 
 pub struct TraitQuerier<'a, Generic> {

@@ -84,12 +84,12 @@ and this project adheres to
 
 ## [0.4.2] - 2023-05-24
 
-- Added support of `#[msg(reply)]` defining handler for reply messages,
+- Added support of `#[sv::msg(reply)]` defining handler for reply messages,
   currently only in the form of
   `fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> Result<Response, Err>`
-- Added generation of reply entrypoint forwarding to the `#[msg(reply)]`
+- Added generation of reply entrypoint forwarding to the `#[sv::msg(reply)]`
   handler
-- Added generation of reply implementation forwarding to `#[msg(reply)]`
+- Added generation of reply implementation forwarding to `#[sv::msg(reply)]`
   handler in multitest helpers
 
 ## [0.4.1] - 2023-05-23
@@ -127,7 +127,7 @@ and this project adheres to
 
 - Fix: Generate Migrate as struct
 - Cw20 implementation in sylvia
-- Removed `#[msg(reply)]`
+- Removed `#[sv::msg(reply)]`
 
 ## [0.2.1] - 2022-10-19
 

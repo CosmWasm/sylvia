@@ -23,16 +23,16 @@ pub mod counter {
     pub trait Counter {
         type Error: From<StdError>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response>;
     }
 }
@@ -46,23 +46,23 @@ pub mod impl_counter {
     use sylvia::types::{ExecCtx, QueryCtx};
 
     #[contract(module=crate)]
-    #[messages(crate::counter)]
+    #[sv::messages(crate::counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.count.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response> {
             self.count.save(ctx.deps.storage, &new_count)?;
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let other_count = self
                 .remote
@@ -75,7 +75,7 @@ pub mod impl_counter {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
             let other_count =
@@ -98,7 +98,7 @@ pub struct CounterContract<'a> {
 }
 
 #[contract]
-#[messages(counter)]
+#[sv::messages(counter)]
 impl CounterContract<'_> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
@@ -108,7 +108,7 @@ impl CounterContract<'_> {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     fn instantiate(&self, ctx: InstantiateCtx, remote_addr: Addr) -> StdResult<Response> {
         self.count.save(ctx.deps.storage, &0)?;
         self.remote

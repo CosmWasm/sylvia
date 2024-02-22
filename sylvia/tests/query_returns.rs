@@ -19,7 +19,8 @@ type QueryResult<E> = Result<QueryResponse, E>;
 
 mod msg {
     use cosmwasm_std::StdError;
-    use sylvia::{interface, types::QueryCtx};
+    use sylvia::interface;
+    use sylvia::types::QueryCtx;
 
     use crate::{QueryResponse, QueryResult};
 
@@ -27,7 +28,7 @@ mod msg {
     pub trait Interface {
         type Error: From<StdError>;
 
-        #[msg(query, resp=QueryResponse)]
+        #[sv::msg(query, resp=QueryResponse)]
         fn query(&self, ctx: QueryCtx, #[serde(default)] name: String) -> QueryResult<Self::Error>;
     }
 }
@@ -35,18 +36,18 @@ mod msg {
 pub struct SomeContract {}
 
 #[contract]
-#[error(ContractError)]
+#[sv::error(ContractError)]
 impl SomeContract {
     #[allow(clippy::new_without_default)]
     pub const fn new() -> Self {
         Self {}
     }
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[msg(query, resp=QueryResponse)]
+    #[sv::msg(query, resp=QueryResponse)]
     fn contract_query(
         &self,
         _ctx: QueryCtx,

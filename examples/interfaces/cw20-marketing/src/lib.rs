@@ -38,7 +38,7 @@ pub trait Cw20Marketing {
     /// `project` - A URL pointing to the project behind this token.
     /// `description` - A longer description of the token and it's utility. Designed for tooltips or such
     /// `marketing` - The address (if any) who can update this data structure
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_marketing(
         &self,
         ctx: ExecCtx,
@@ -48,16 +48,16 @@ pub trait Cw20Marketing {
     ) -> Result<Response, Self::Error>;
 
     /// If set as the "marketing" role on the contract, upload a new URL, SVG, or PNG for the token
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error>;
 
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn marketing_info(&self, ctx: QueryCtx) -> StdResult<MarketingInfoResponse>;
 
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn download_logo(&self, ctx: QueryCtx) -> StdResult<DownloadLogoResponse>;
 }

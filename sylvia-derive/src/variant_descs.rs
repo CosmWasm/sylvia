@@ -1,28 +1,23 @@
-use proc_macro2::Span;
-use syn::spanned::Spanned;
+use crate::parser::{MsgAttr, ParsedSylviaAttributes};
 use syn::{Attribute, ImplItem, ItemImpl, ItemTrait, Signature, TraitItem};
 
 pub struct VariantDesc<'a> {
-    attrs: &'a [Attribute],
+    msg_attr: Option<MsgAttr>,
     sig: &'a Signature,
-    span: Span,
 }
 
 impl<'a> VariantDesc<'a> {
-    pub fn new(attrs: &'a Vec<Attribute>, sig: &'a Signature, span: Span) -> Self {
-        Self { attrs, sig, span }
+    pub fn new(attrs: &'a [Attribute], sig: &'a Signature) -> Self {
+        let msg_attr = ParsedSylviaAttributes::new(attrs.iter()).msg_attr;
+        Self { msg_attr, sig }
     }
 
     pub fn into_sig(self) -> &'a Signature {
         self.sig
     }
 
-    pub fn attr_msg(&self) -> Option<&Attribute> {
-        self.attrs.iter().find(|attr| attr.path().is_ident("msg"))
-    }
-
-    pub fn span(&self) -> Span {
-        self.span
+    pub fn attr_msg(&self) -> Option<MsgAttr> {
+        self.msg_attr.clone()
     }
 }
 
@@ -44,9 +39,7 @@ impl AsVariantDescs for ItemImpl {
 
     fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
-            ImplItem::Fn(method) => {
-                Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
-            }
+            ImplItem::Fn(method) => Some(VariantDesc::new(&method.attrs, &method.sig)),
             _ => None,
         }))
     }
@@ -57,9 +50,7 @@ impl AsVariantDescs for ItemTrait {
 
     fn as_variants(&self) -> Self::Iter<'_> {
         Box::new(self.items.iter().filter_map(|item| match item {
-            TraitItem::Fn(method) => {
-                Some(VariantDesc::new(&method.attrs, &method.sig, method.span()))
-            }
+            TraitItem::Fn(method) => Some(VariantDesc::new(&method.attrs, &method.sig)),
             _ => None,
         }))
     }

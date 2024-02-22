@@ -4,7 +4,7 @@ use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
 
 #[contract(module = crate::contract)]
-#[messages(custom_and_generic as CustomAndGeneric)]
+#[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=sylvia::types::SvCustomMsg, query=SvCustomQuery)]
 impl CustomAndGeneric for crate::contract::NonGenericContract {
     type Error = StdError;
@@ -21,7 +21,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
     type QueryC = SvCustomQuery;
     type RetT = SvCustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -31,7 +31,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_two(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -41,7 +41,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_one(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -51,7 +51,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
         Ok(SvCustomMsg {})
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_two(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -61,7 +61,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
         Ok(SvCustomMsg {})
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_one(
         &self,
         _ctx: SudoCtx<Self::QueryC>,
@@ -71,7 +71,7 @@ impl CustomAndGeneric for crate::contract::NonGenericContract {
         Ok(Response::new())
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_two(
         &self,
         _ctx: SudoCtx<Self::QueryC>,

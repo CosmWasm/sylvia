@@ -23,22 +23,22 @@ where
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx, _param: Instantiate) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn exec(&self, _ctx: ExecCtx, _param: Exec) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn query(&self, _ctx: QueryCtx, _param: Query) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[msg(migrate)]
+    #[sv::msg(migrate)]
     pub fn migrate(&self, _ctx: MigrateCtx, _param: Migrate) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -47,7 +47,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::SomeContract;
-    use cosmwasm_std::{testing::mock_dependencies, Addr, QuerierWrapper};
+    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{Addr, QuerierWrapper};
     use sylvia::types::{ContractApi, SvCustomMsg};
 
     #[test]

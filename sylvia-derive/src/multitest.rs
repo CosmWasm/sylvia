@@ -7,7 +7,10 @@ use crate::associated_types::ImplAssociatedTypes;
 use crate::crate_module;
 use crate::interfaces::Interfaces;
 use crate::message::{MsgVariant, MsgVariants};
-use crate::parser::{ContractErrorAttr, Custom, MsgType, OverrideEntryPoint, OverrideEntryPoints};
+use crate::parser::attributes::msg::MsgType;
+use crate::parser::{
+    Custom, FilteredOverrideEntryPoints, OverrideEntryPoint, ParsedSylviaAttributes,
+};
 use crate::utils::{emit_bracketed_generics, is_trait};
 use crate::variant_descs::AsVariantDescs;
 
@@ -42,8 +45,8 @@ pub struct ContractMtHelpers<'a> {
     where_clause: &'a Option<syn::WhereClause>,
     contract_name: &'a Ident,
     proxy_name: Ident,
-    custom: &'a Custom<'a>,
-    override_entry_points: &'a OverrideEntryPoints,
+    custom: &'a Custom,
+    override_entry_points: Vec<OverrideEntryPoint>,
     instantiate_variants: MsgVariants<'a, GenericParam>,
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
@@ -57,7 +60,7 @@ impl<'a> ContractMtHelpers<'a> {
         source: &'a ItemImpl,
         generic_params: &'a [&'a GenericParam],
         custom: &'a Custom,
-        override_entry_points: &'a OverrideEntryPoints,
+        override_entry_points: Vec<OverrideEntryPoint>,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
         let instantiate_variants = MsgVariants::new(
@@ -108,7 +111,10 @@ impl<'a> ContractMtHelpers<'a> {
                 None => unreachable!(),
             }
         } else {
-            let error = ContractErrorAttr::new(source).error;
+            let error = ParsedSylviaAttributes::new(source.attrs.iter())
+                .error_attrs
+                .unwrap_or_default()
+                .error;
             parse_quote! { #error }
         };
 
@@ -632,7 +638,7 @@ impl<'a> ContractMtHelpers<'a> {
 pub struct ImplMtHelpers<'a> {
     source: &'a ItemImpl,
     error_type: Type,
-    custom: &'a Custom<'a>,
+    custom: &'a Custom,
     interfaces: &'a Interfaces,
     generic_params: &'a [&'a GenericParam],
     exec_variants: MsgVariants<'a, GenericParam>,

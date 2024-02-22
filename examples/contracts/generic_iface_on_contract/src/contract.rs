@@ -9,9 +9,9 @@ pub struct NonGenericContract;
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
-#[messages(cw1 as Cw1: custom(msg, query))]
+#[sv::messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
+#[sv::messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
+#[sv::messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl NonGenericContract {
@@ -19,7 +19,7 @@ impl NonGenericContract {
         Self
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         _ctx: InstantiateCtx<SvCustomQuery>,
@@ -31,8 +31,8 @@ impl NonGenericContract {
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::{CosmosMsg, Empty};
-    use sylvia::types::SvCustomQuery;
-    use sylvia::{multitest::App, types::SvCustomMsg};
+    use sylvia::multitest::App;
+    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     use super::NonGenericContract;
     use crate::custom_and_generic::sv::test_utils::CustomAndGeneric;

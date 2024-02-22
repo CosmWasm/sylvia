@@ -23,19 +23,19 @@ impl CounterContract {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
         self.counter.save(ctx.deps.storage, &0)?;
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
         let count = self.counter.load(ctx.deps.storage)?;
         Ok(CountResponse { count })
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn increase_by_two(&self, ctx: ExecCtx) -> StdResult<Response> {
         self.counter
             .update(ctx.deps.storage, |count| -> Result<u32, StdError> {

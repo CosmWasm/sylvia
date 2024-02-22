@@ -17,12 +17,12 @@ mod noop_contract {
             Self
         }
 
-        #[msg(instantiate)]
+        #[sv::msg(instantiate)]
         fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn noop(&self, _ctx: ExecCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
@@ -48,12 +48,12 @@ mod reply_contract {
             Self
         }
 
-        #[msg(instantiate)]
+        #[sv::msg(instantiate)]
         fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn poke(&self, _ctx: ExecCtx, noop: String) -> StdResult<Response> {
             let msg = noop_contract::sv::ExecMsg::Noop {};
             let msg = WasmMsg::Execute {
@@ -67,7 +67,7 @@ mod reply_contract {
             Ok(resp)
         }
 
-        #[msg(reply)]
+        #[sv::msg(reply)]
         fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> StdResult<Response> {
             let resp = Response::new().set_data(to_json_binary("data")?);
             Ok(resp)

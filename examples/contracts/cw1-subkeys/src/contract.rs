@@ -33,9 +33,9 @@ pub struct Cw1SubkeysContract<'a> {
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[error(ContractError)]
-#[messages(cw1 as Cw1)]
-#[messages(whitelist as Whitelist)]
+#[sv::error(ContractError)]
+#[sv::messages(cw1 as Cw1)]
+#[sv::messages(whitelist as Whitelist)]
 impl Cw1SubkeysContract<'_> {
     pub const fn new() -> Self {
         Self {
@@ -45,7 +45,7 @@ impl Cw1SubkeysContract<'_> {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         mut ctx: InstantiateCtx,
@@ -57,7 +57,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(result)
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn increase_allowance(
         &self,
         ctx: ExecCtx,
@@ -107,7 +107,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(res)
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn decrease_allowance(
         &self,
         ctx: ExecCtx,
@@ -158,7 +158,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(res)
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn set_permissions(
         &self,
         ctx: ExecCtx,
@@ -183,7 +183,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(res)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn allowance(&self, ctx: QueryCtx, spender: String) -> StdResult<Allowance> {
         // we can use unchecked here as it is a query - bad value means a miss, we never write it
         let spender = Addr::unchecked(spender);
@@ -196,7 +196,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(allow)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn permissions(&self, ctx: QueryCtx, spender: String) -> StdResult<Permissions> {
         let spender = Addr::unchecked(spender);
         let permissions = self
@@ -207,7 +207,7 @@ impl Cw1SubkeysContract<'_> {
         Ok(permissions)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn all_allowances(
         &self,
         ctx: QueryCtx,
@@ -243,7 +243,7 @@ impl Cw1SubkeysContract<'_> {
         })
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn all_permissions(
         &self,
         ctx: QueryCtx,

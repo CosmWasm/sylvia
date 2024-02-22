@@ -10,7 +10,10 @@ use crate::message::{
     StructMessage,
 };
 use crate::multitest::{ContractMtHelpers, ImplMtHelpers};
-use crate::parser::{ContractArgs, ContractErrorAttr, Custom, MsgType, OverrideEntryPoints};
+use crate::parser::attributes::msg::MsgType;
+use crate::parser::{
+    ContractArgs, ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes,
+};
 use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
 use crate::remote::{ContractRemote, InterfaceRemote};
 use crate::utils::is_trait;
@@ -19,7 +22,7 @@ use crate::variant_descs::AsVariantDescs;
 /// Preprocessed `interface` macro input
 pub struct TraitInput<'a> {
     item: &'a ItemTrait,
-    custom: Custom<'a>,
+    custom: Custom,
     associated_types: AssociatedTypes<'a>,
 }
 
@@ -29,8 +32,8 @@ pub struct ImplInput<'a> {
     error: ContractErrorAttr,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
-    custom: Custom<'a>,
-    override_entry_points: OverrideEntryPoints,
+    custom: Custom,
+    override_entry_points: Vec<OverrideEntryPoint>,
     interfaces: Interfaces,
 }
 
@@ -56,7 +59,9 @@ impl<'a> TraitInput<'a> {
             );
         }
 
-        let custom = Custom::new(&item.attrs);
+        let custom = ParsedSylviaAttributes::new(item.attrs.iter())
+            .custom_attr
+            .unwrap_or_default();
         let associated_types = AssociatedTypes::new(item);
 
         Self {
@@ -144,9 +149,10 @@ impl<'a> TraitInput<'a> {
 impl<'a> ImplInput<'a> {
     pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
         let generics = item.generics.params.iter().collect();
-        let error = ContractErrorAttr::new(item);
-        let custom = Custom::new(&item.attrs);
-        let override_entry_points = OverrideEntryPoints::new(&item.attrs);
+        let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
+        let error = parsed_attrs.error_attrs.unwrap_or_default();
+        let custom = parsed_attrs.custom_attr.unwrap_or_default();
+        let override_entry_points = parsed_attrs.override_entry_point_attrs;
         let interfaces = Interfaces::new(item);
 
         Self {
@@ -308,7 +314,8 @@ impl<'a> ImplInput<'a> {
         if is_trait(item) {
             ImplMtHelpers::new(item, generic_params, custom, interfaces, &contract_module).emit()
         } else {
-            ContractMtHelpers::new(item, generic_params, custom, override_entry_points).emit()
+            ContractMtHelpers::new(item, generic_params, custom, override_entry_points.clone())
+                .emit()
         }
     }
 }

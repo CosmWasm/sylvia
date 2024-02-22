@@ -19,7 +19,7 @@ pub trait CustomAndGeneric {
     type QueryC: CustomQuery + 'static;
     type RetT: CustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_one(
         &self,
         ctx: ExecCtx<Self::QueryC>,
@@ -27,7 +27,7 @@ pub trait CustomAndGeneric {
         msgs2: Vec<CosmosMsg<Self::Exec2T>>,
     ) -> Result<Response<Self::ExecC>, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_two(
         &self,
         ctx: ExecCtx<Self::QueryC>,
@@ -35,7 +35,7 @@ pub trait CustomAndGeneric {
         msgs2: Vec<CosmosMsg<Self::Exec3T>>,
     ) -> Result<Response<Self::ExecC>, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_one(
         &self,
         ctx: QueryCtx<Self::QueryC>,
@@ -43,7 +43,7 @@ pub trait CustomAndGeneric {
         param2: Self::Query2T,
     ) -> Result<Self::RetT, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_two(
         &self,
         ctx: QueryCtx<Self::QueryC>,
@@ -51,7 +51,7 @@ pub trait CustomAndGeneric {
         param2: Self::Query3T,
     ) -> Result<Self::RetT, Self::Error>;
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_one(
         &self,
         ctx: SudoCtx<Self::QueryC>,
@@ -59,7 +59,7 @@ pub trait CustomAndGeneric {
         msg2: CosmosMsg<Self::Sudo2T>,
     ) -> Result<Response<Self::ExecC>, Self::Error>;
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_two(
         &self,
         ctx: SudoCtx<Self::QueryC>,

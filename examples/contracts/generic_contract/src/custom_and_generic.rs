@@ -4,7 +4,7 @@ use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
 
 #[contract(module = crate::contract)]
-#[messages(custom_and_generic as CustomAndGeneric)]
+#[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
@@ -49,7 +49,7 @@ impl<
     type QueryC = SvCustomQuery;
     type RetT = SvCustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -59,7 +59,7 @@ impl<
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn custom_generic_execute_two(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -69,7 +69,7 @@ impl<
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_one(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -79,7 +79,7 @@ impl<
         Ok(SvCustomMsg {})
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn custom_generic_query_two(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -89,7 +89,7 @@ impl<
         Ok(SvCustomMsg {})
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_one(
         &self,
         _ctx: SudoCtx<Self::QueryC>,
@@ -99,7 +99,7 @@ impl<
         Ok(Response::new())
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn custom_generic_sudo_two(
         &self,
         _ctx: SudoCtx<Self::QueryC>,
@@ -114,10 +114,8 @@ impl<
 mod tests {
     use super::sv::test_utils::CustomAndGeneric;
     use crate::contract::sv::multitest_utils::CodeId;
-    use sylvia::{
-        multitest::App,
-        types::{SvCustomMsg, SvCustomQuery},
-    };
+    use sylvia::multitest::App;
+    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn proxy_methods() {
