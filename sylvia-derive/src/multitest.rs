@@ -11,7 +11,7 @@ use crate::parser::attributes::msg::MsgType;
 use crate::parser::{
     Custom, FilteredOverrideEntryPoints, OverrideEntryPoint, ParsedSylviaAttributes,
 };
-use crate::utils::{emit_bracketed_generics, is_trait};
+use crate::utils::emit_bracketed_generics;
 use crate::variant_descs::AsVariantDescs;
 
 fn interface_name(source: &ItemImpl) -> &Ident {
@@ -100,23 +100,11 @@ impl<'a> ContractMtHelpers<'a> {
             where_clause,
         );
 
-        let error_type: Type = if is_trait(source) {
-            let associated_error = source.items.iter().find_map(|item| match item {
-                ImplItem::Type(ty) if ty.ident == "Error" => Some(&ty.ty),
-                _ => None,
-            });
-            match associated_error {
-                Some(error) => parse_quote!(#error),
-                // This should never happen as the `interface` macro requires the trait to have an associated `Error` type
-                None => unreachable!(),
-            }
-        } else {
-            let error = ParsedSylviaAttributes::new(source.attrs.iter())
-                .error_attrs
-                .unwrap_or_default()
-                .error;
-            parse_quote! { #error }
-        };
+        let error_type = ParsedSylviaAttributes::new(source.attrs.iter())
+            .error_attrs
+            .unwrap_or_default()
+            .error;
+        let error_type = parse_quote! { #error_type };
 
         let contract = &source.self_ty;
         let contract_name = extract_contract_name(contract);
@@ -627,7 +615,7 @@ pub struct ImplMtHelpers<'a> {
     query_variants: MsgVariants<'a, GenericParam>,
     sudo_variants: MsgVariants<'a, GenericParam>,
     where_clause: &'a Option<syn::WhereClause>,
-    contract_module: &'a Option<&'a Path>,
+    contract_module: &'a Path,
     contract_name: &'a Ident,
 }
 
@@ -637,7 +625,7 @@ impl<'a> ImplMtHelpers<'a> {
         generic_params: &'a [&'a GenericParam],
         custom: &'a Custom,
         interfaces: &'a Interfaces,
-        contract_module: &'a Option<&'a Path>,
+        contract_module: &'a Path,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
         let exec_variants = MsgVariants::new(
@@ -782,10 +770,6 @@ impl<'a> ImplMtHelpers<'a> {
             &associated_items,
         );
 
-        let contract_module = match contract_module {
-            Some(contract_module) => quote! { #contract_module :: },
-            None => quote! {},
-        };
         let contract_proxy = Ident::new(&format!("{}Proxy", contract_name), contract_name.span());
 
         let where_predicates = where_clause
@@ -802,7 +786,7 @@ impl<'a> ImplMtHelpers<'a> {
                     #(#sudo_methods_declarations)*
                 }
 
-                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #trait_name< #mt_app, #(#generic_params,)* > for #contract_module sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
+                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #trait_name< #mt_app, #(#generic_params,)* > for #contract_module :: sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
                 where
                     CustomT: #sylvia ::cw_multi_test::Module,
                     WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,

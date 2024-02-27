@@ -1,3 +1,4 @@
+use proc_macro_error::abort;
 use syn::parse::{Error, Nothing, Parse, ParseStream};
 use syn::{Ident, Path, Result, Token};
 
@@ -5,32 +6,28 @@ use syn::{Ident, Path, Result, Token};
 pub struct ContractArgs {
     /// Module in which contract impl block is defined.
     /// Used only while implementing `Interface` on `Contract`.
-    pub module: Option<Path>,
+    pub module: Path,
 }
 
 impl Parse for ContractArgs {
     fn parse(input: ParseStream) -> Result<Self> {
-        let mut module = None;
-
-        while !input.is_empty() {
-            let attr: Ident = input.parse()?;
+        let maybe_module = input.parse().and_then(|attr: Ident| -> Result<Path> {
             let _: Token![=] = input.parse()?;
-
             if attr == "module" {
-                module = Some(input.parse()?);
+                input.parse()
             } else {
-                return Err(Error::new(attr.span(), "expected `module`"));
+                Err(Error::new(attr.span(), "Missing `module` attribute"))
             }
-
-            if input.peek(Token![,]) {
-                let _: Token![,] = input.parse()?;
-            } else if !input.is_empty() {
-                return Err(input.error("Unexpected token, comma expected"));
-            }
-        }
-
+        });
+        let module: Path = match maybe_module {
+            Ok(module) => module,
+            Err(e) => abort!(
+                e.span(), "The module path needs to be provided `#[contract(module=path::to::contract)`.";
+                note = "Implementing interface on a contract requires to point the path to the contract structure.";
+                note = "Parsing error: {}", e
+            ),
+        };
         let _: Nothing = input.parse()?;
-
         Ok(ContractArgs { module })
     }
 }
