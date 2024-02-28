@@ -132,22 +132,18 @@ pub struct ImplTraitInput<'a> {
     attributes: &'a ContractArgs,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
-    custom: Custom,
     interfaces: Interfaces,
 }
 
 impl<'a> ImplTraitInput<'a> {
     pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
         let generics = item.generics.params.iter().collect();
-        let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
-        let custom = parsed_attrs.custom_attr.unwrap_or_default();
         let interfaces = Interfaces::new(item);
 
         Self {
             attributes,
             item,
             generics,
-            custom,
             interfaces,
         }
     }
@@ -187,21 +183,11 @@ impl<'a> ImplTraitInput<'a> {
         }
 
         let Self {
-            item,
-            custom,
-            interfaces,
-            ..
+            item, interfaces, ..
         } = self;
         let generic_params = &self.generics;
 
-        ImplMtHelpers::new(
-            item,
-            generic_params,
-            custom,
-            interfaces,
-            &self.attributes.module,
-        )
-        .emit()
+        ImplMtHelpers::new(item, generic_params, interfaces, &self.attributes.module).emit()
     }
 }
 

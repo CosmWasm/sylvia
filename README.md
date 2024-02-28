@@ -907,7 +907,6 @@ pub trait SomeInterface {
 }
 
 #[contract(module=super)]
-#[sv::custom(msg=MyMsg, query=MyQuery)]
 impl SomeInterface for crate::MyContract {
 }
 ```
@@ -926,7 +925,6 @@ pub trait AssociatedInterface {
 }
 
 #[contract(module=super)]
-#[sv::custom(msg=MyMsg)]
 impl AssociatedInterface for crate::MyContract {
     type Error = StdError;
     type ExecC = MyMsg;
@@ -1040,7 +1038,6 @@ We can either use some concrete types here or forward the generics defined on co
 ```rust
 #[contract(module = crate::contract)]
 #[sv::messages(generic as Generic)]
-#[sv::custom(msg=SvCustomMsg)]
 impl<InstantiateParam, ExecParam, FieldType>
     Generic
     for crate::contract::GenericContract<

@@ -5,7 +5,6 @@ use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
 #[sv::messages(generic as Generic)]
-#[sv::custom(msg = SvCustomMsg)]
 impl Generic for crate::contract::NonGenericContract {
     type Error = StdError;
     type Exec1T = SvCustomMsg;

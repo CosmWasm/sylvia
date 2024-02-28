@@ -608,7 +608,6 @@ impl<'a> ContractMtHelpers<'a> {
 pub struct ImplMtHelpers<'a> {
     source: &'a ItemImpl,
     error_type: Type,
-    custom: &'a Custom,
     interfaces: &'a Interfaces,
     generic_params: &'a [&'a GenericParam],
     exec_variants: MsgVariants<'a, GenericParam>,
@@ -623,7 +622,6 @@ impl<'a> ImplMtHelpers<'a> {
     pub fn new(
         source: &'a ItemImpl,
         generic_params: &'a [&'a GenericParam],
-        custom: &'a Custom,
         interfaces: &'a Interfaces,
         contract_module: &'a Path,
     ) -> Self {
@@ -665,7 +663,6 @@ impl<'a> ImplMtHelpers<'a> {
             generic_params,
             where_clause,
             contract_name,
-            custom,
             interfaces,
             exec_variants,
             query_variants,
@@ -678,7 +675,6 @@ impl<'a> ImplMtHelpers<'a> {
         let Self {
             source,
             error_type,
-            custom,
             interfaces,
             generic_params,
             exec_variants,
@@ -703,11 +699,7 @@ impl<'a> ImplMtHelpers<'a> {
             })
             .unwrap_or(quote! {});
 
-        let associated_msg = associated_types.custom_msg();
-        let custom_msg = custom
-            .msg()
-            .or(associated_msg.cloned())
-            .unwrap_or(Custom::default_type());
+        let custom_msg: Type = parse_quote! { MultitestExecCustomType };
 
         let mt_app = parse_quote! {
             #sylvia ::cw_multi_test::App<
@@ -780,14 +772,15 @@ impl<'a> ImplMtHelpers<'a> {
             pub mod test_utils {
                 use super::*;
 
-                pub trait #trait_name<MtApp, #(#generic_params,)* > #where_clause {
+                pub trait #trait_name<MtApp, #custom_msg, #(#generic_params,)* > #where_clause {
                     #(#query_methods_declarations)*
                     #(#exec_methods_declarations)*
                     #(#sudo_methods_declarations)*
                 }
 
-                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > #trait_name< #mt_app, #(#generic_params,)* > for #contract_module :: sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
+                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #custom_msg, #(#generic_params,)* > #trait_name< #mt_app, #custom_msg, #(#generic_params,)* > for #contract_module :: sv::multitest_utils:: #contract_proxy <'_, #mt_app, #(#generic_params,)* >
                 where
+                    #custom_msg: Clone + std::fmt::Debug + std::cmp::PartialEq + cosmwasm_schema::schemars::JsonSchema + 'static,
                     CustomT: #sylvia ::cw_multi_test::Module,
                     WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
                     BankT: #sylvia ::cw_multi_test::Bank,

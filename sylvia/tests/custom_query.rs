@@ -51,7 +51,6 @@ mod impl_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::interface)]
-    #[sv::custom(query=MyQuery)]
     impl crate::interface::Interface for crate::MyContract {
         type Error = StdError;
         type QueryC = OtherQuery;
@@ -105,7 +104,6 @@ mod impl_some_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::some_interface)]
-    #[sv::custom(query=MyQuery)]
     impl super::some_interface::SomeInterface for crate::MyContract {
         type Error = StdError;
 
@@ -210,7 +208,6 @@ mod impl_default_query_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::default_query_interface)]
-    #[sv::custom(query=MyQuery)]
     impl DefaultQueryInterface for crate::MyContract {
         type Error = StdError;
 

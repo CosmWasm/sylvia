@@ -4,6 +4,10 @@ use crate::contract::sv::multitest_utils::CodeId;
 
 use super::custom_module::CustomModule;
 
+use crate::cw1::sv::test_utils::Cw1;
+
+use cosmwasm_std::CosmosMsg;
+
 #[test]
 fn test_custom() {
     let owner = "owner";
@@ -21,6 +25,11 @@ fn test_custom() {
     let contract = code_id.instantiate().call(owner).unwrap();
 
     contract.send_custom().call(owner).unwrap();
+
+    contract
+        .can_execute("".to_string(), CosmosMsg::Custom(cosmwasm_std::Empty {}))
+        .unwrap();
+    contract.execute(vec![]).call(owner).unwrap();
 
     let count = contract.query_custom().unwrap().count;
     assert_eq!(count, 1);

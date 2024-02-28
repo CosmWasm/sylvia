@@ -1,4 +1,3 @@
-use crate::messages::CounterMsg;
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 use sylvia::contract;
@@ -8,7 +7,6 @@ use crate::contract::CustomContract;
 
 #[contract(module=crate::contract)]
 #[sv::messages(cw1 as Cw1)]
-#[sv::custom(query=CounterQuery, msg=CounterMsg)]
 impl Cw1 for CustomContract {
     type Error = StdError;
 

@@ -52,7 +52,6 @@ mod impl_some_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::some_interface)]
-    #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
 
@@ -105,7 +104,6 @@ mod impl_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::interface)]
-    #[sv::custom(msg=MyMsg)]
     impl Interface for crate::MyContract {
         type Error = StdError;
         type ExecC = OtherMsg;
@@ -154,7 +152,6 @@ mod impl_other_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::other_interface)]
-    #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
 
@@ -205,7 +202,6 @@ mod impl_associated_interface {
 
     #[contract(module=crate)]
     #[sv::messages(crate::associated_interface)]
-    #[sv::custom(msg=MyMsg)]
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;
         type ExecC = MyMsg;
