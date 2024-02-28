@@ -102,16 +102,18 @@ mod tests {
 
         let querier = super::sv::BoundQuerier::<
             Empty,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
+            std::marker::PhantomData<(
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+            )>,
         >::borrowed(&contract, &querier_wrapper);
         let _: Result<SvCustomMsg, _> =
             super::sv::Querier::generic_query_one(&querier, SvCustomMsg {}, SvCustomMsg {});

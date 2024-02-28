@@ -15,7 +15,6 @@ mod message_type;
 mod multitest;
 mod parser;
 mod querier;
-mod remote;
 mod strip_generics;
 mod strip_input;
 mod strip_self_path;
