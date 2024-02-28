@@ -78,10 +78,12 @@ pub mod impl_counter {
         #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let other_count =
-                crate::counter::sv::BoundQuerier::borrowed(remote.as_ref(), &ctx.deps.querier)
-                    .count()?
-                    .count;
+            let other_count = crate::counter::sv::BoundQuerier::<_, Self>::borrowed(
+                remote.as_ref(),
+                &ctx.deps.querier,
+            )
+            .count()?
+            .count;
             self.count.update(ctx.deps.storage, |count| {
                 let count = count.saturating_sub(other_count);
                 Ok::<_, StdError>(count)
@@ -94,7 +96,7 @@ pub mod impl_counter {
 
 pub struct CounterContract<'a> {
     pub count: Item<'static, u64>,
-    pub remote: Item<'static, sv::Remote<'a>>,
+    pub remote: Item<'static, sv::Remote<'a, CounterContract<'a>>>,
 }
 
 #[contract]
@@ -133,16 +135,20 @@ mod tests {
         let remote_addr = Addr::unchecked("remote");
 
         // Remote generation
-        let remote = super::counter::sv::Remote::new(remote_addr.clone());
-        let _: super::counter::sv::BoundQuerier<_> = remote.querier(&querier_wrapper);
-        let remote = super::sv::Remote::new(remote_addr.clone());
-        let _: super::sv::BoundQuerier<_> = remote.querier(&querier_wrapper);
+        let remote =
+            super::counter::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let _: super::counter::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
+        let remote = super::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let _: super::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
 
         // Querier generation
-        let _ = super::counter::sv::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
+        let _ = super::counter::sv::BoundQuerier::<_, super::CounterContract<'_>>::borrowed(
+            &remote_addr,
+            &querier_wrapper,
+        );
         let querier = super::sv::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
 
-        let _ = super::counter::sv::BoundQuerier::from(&querier);
+        let _ = super::counter::sv::BoundQuerier::<_, super::CounterContract<'_>>::from(&querier);
     }
 
     #[test]

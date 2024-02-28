@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::associated_types::{AssociatedTypes, ImplAssociatedTypes, ItemType};
+use crate::associated_types::{AssociatedTypes, ItemType};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -14,8 +14,7 @@ use crate::parser::attributes::msg::MsgType;
 use crate::parser::{
     ContractArgs, ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes,
 };
-use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
-use crate::remote::{ContractRemote, InterfaceRemote};
+use crate::querier::{ContractQuerier, TraitQuerier};
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
@@ -65,12 +64,12 @@ impl<'a> TraitInput<'a> {
             custom,
         } = self;
         let messages = self.emit_messages();
-        let remote = InterfaceRemote::new(associated_types).emit();
         let associated_names: Vec<_> = associated_types.as_names().collect();
 
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
-        let querier = TraitQuerier::new(&query_variants, associated_types).emit_trait_querier();
+        let querier =
+            TraitQuerier::new(&query_variants, associated_types, &item.ident).emit_trait_querier();
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
@@ -78,8 +77,6 @@ impl<'a> TraitInput<'a> {
             pub mod sv {
                 use super::*;
                 #messages
-
-                #remote
 
                 #querier
 
@@ -150,31 +147,14 @@ impl<'a> ImplTraitInput<'a> {
 
     pub fn process(&self) -> TokenStream {
         let multitest_helpers = self.emit_multitest_helpers();
-        let querier = self.emit_querier_for_bound_impl();
 
         quote! {
             pub mod sv {
                 use super::*;
 
                 #multitest_helpers
-
-                #querier
             }
         }
-    }
-
-    fn emit_querier_for_bound_impl(&self) -> TokenStream {
-        let variants_args =
-            MsgVariants::<GenericParam>::new(self.item.as_variants(), MsgType::Query, &[], &None);
-        let associated_types = ImplAssociatedTypes::new(self.item);
-        ImplQuerier::new(
-            self.item,
-            &variants_args,
-            &associated_types,
-            &self.interfaces,
-            &self.attributes.module,
-        )
-        .emit()
     }
 
     fn emit_multitest_helpers(&self) -> TokenStream {
@@ -230,9 +210,8 @@ impl<'a> ImplInput<'a> {
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
 
-        let querier = ContractQuerier::new(item, interfaces).emit();
+        let querier = ContractQuerier::new(item).emit();
         let messages = self.emit_messages();
-        let remote = ContractRemote::new(item, interfaces).emit();
         let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
 
         quote! {
@@ -242,8 +221,6 @@ impl<'a> ImplInput<'a> {
                 #messages
 
                 #multitest_helpers
-
-                #remote
 
                 #querier
 
