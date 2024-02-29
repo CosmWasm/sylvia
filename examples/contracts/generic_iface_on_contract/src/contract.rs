@@ -35,9 +35,9 @@ mod tests {
     use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     use super::NonGenericContract;
-    use crate::custom_and_generic::sv::test_utils::CustomAndGeneric;
-    use crate::cw1::sv::test_utils::Cw1;
-    use crate::generic::sv::test_utils::Generic;
+    use custom_and_generic::sv::test_utils::CustomAndGenericProxy;
+    use cw1::sv::test_utils::Cw1Proxy;
+    use generic::sv::test_utils::GenericProxy;
 
     #[test]
     fn mt_helpers() {

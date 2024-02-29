@@ -1,9 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{
-    parse_quote, ImplItem, ImplItemType, ItemImpl, ItemTrait, TraitItem, TraitItemType, Type,
-    WhereClause, WherePredicate,
-};
+use syn::{parse_quote, ItemTrait, TraitItem, TraitItemType, WhereClause, WherePredicate};
 
 pub const ERROR_TYPE: &str = "Error";
 pub const EXEC_TYPE: &str = "ExecC";
@@ -94,40 +91,6 @@ impl<'a> AssociatedTypes<'a> {
                     .any(|reserved| reserved == &associated.ident.to_string().as_str())
             })
             .cloned()
-    }
-}
-
-#[derive(Default)]
-pub struct ImplAssociatedTypes<'a>(Vec<&'a ImplItemType>);
-
-impl<'a> ImplAssociatedTypes<'a> {
-    pub fn new(source: &'a ItemImpl) -> Self {
-        let associated_types: Vec<_> = source
-            .items
-            .iter()
-            .filter_map(|item| match item {
-                ImplItem::Type(ty) => Some(ty),
-                _ => None,
-            })
-            .collect();
-
-        Self(associated_types)
-    }
-
-    pub fn as_types(&self) -> Vec<&Type> {
-        self.filtered().map(|associated| &associated.ty).collect()
-    }
-
-    pub fn as_item_types(&self) -> Vec<&ImplItemType> {
-        self.filtered().copied().collect()
-    }
-
-    pub fn filtered(&self) -> impl Iterator<Item = &&ImplItemType> {
-        self.0.iter().filter(|associated| {
-            !RESERVED_TYPES
-                .iter()
-                .any(|reserved| reserved == &associated.ident.to_string().as_str())
-        })
     }
 }
 
