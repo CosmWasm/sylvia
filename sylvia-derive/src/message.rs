@@ -7,7 +7,7 @@ use crate::parser::{
     FilteredOverrideEntryPoints, MsgAttr, MsgType, OverrideEntryPoint, ParsedSylviaAttributes,
 };
 use crate::strip_generics::StripGenerics;
-use crate::strip_self_path::{AddSelfPath, ReplaceAssociatedType, StripSelfPath};
+use crate::strip_self_path::StripSelfPath;
 use crate::utils::{
     as_where_clause, emit_bracketed_generics, extract_return_type, filter_generics, filter_wheres,
     process_fields,
@@ -23,9 +23,8 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItem, ImplItemFn,
-    ImplItemType, ItemImpl, ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type,
-    WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItem, ImplItemFn, ItemImpl,
+    ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -564,11 +563,7 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_impl<Generic>(
-        &self,
-        api_path: &TokenStream,
-        generics: &[&Generic],
-    ) -> TokenStream
+    pub fn emit_querier_impl<Generic>(&self, api_path: &TokenStream) -> TokenStream
     where
         Generic: ToTokens + GetPath,
     {
@@ -580,10 +575,7 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let mut fold = AddSelfPath::new(generics);
-        let parameters = fields
-            .iter()
-            .map(|field| field.emit_method_field_folded(&mut fold));
+        let parameters = fields.iter().map(|field| field.emit_method_field_folded());
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
@@ -595,10 +587,7 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_querier_declaration<Generic>(&self, generics: &[&Generic]) -> TokenStream
-    where
-        Generic: ToTokens + GetPath,
-    {
+    pub fn emit_querier_declaration(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
@@ -607,14 +596,58 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let mut fold = AddSelfPath::new(generics);
-        let parameters = fields
-            .iter()
-            .map(|field| field.emit_method_field_folded(&mut fold));
+        let parameters = fields.iter().map(|field| field.emit_method_field_folded());
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         quote! {
             fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
+        }
+    }
+
+    pub fn emit_multitest_proxy_methods_declaration<Generic>(
+        &self,
+        msg_ty: &MsgType,
+        custom_msg: &Type,
+        mt_app: &Type,
+        error_type: &Type,
+        generics: &[&Generic],
+    ) -> TokenStream
+    where
+        Generic: ToTokens,
+    {
+        let sylvia = crate_module();
+        let Self {
+            name,
+            fields,
+            stripped_return_type,
+            ..
+        } = self;
+
+        let params = fields.iter().map(|field| field.emit_method_field());
+        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let enum_name = msg_ty.emit_msg_name();
+        let enum_name: Type = if !generics.is_empty() {
+            parse_quote! { #enum_name ::< #(#generics,)* > }
+        } else {
+            parse_quote! { #enum_name }
+        };
+
+        match msg_ty {
+            MsgType::Exec => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
+            },
+            MsgType::Migrate => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
+            },
+            MsgType::Query => quote! {
+                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type>;
+            },
+            MsgType::Sudo => quote! {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
+            },
+            _ => quote! {},
         }
     }
 
@@ -650,7 +683,7 @@ impl<'a> MsgVariant<'a> {
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #enum_name, #mt_app, #custom_msg> {
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, #mt_app, #custom_msg> {
                     let msg = #enum_name :: #name ( #(#arguments),* );
 
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
@@ -658,14 +691,14 @@ impl<'a> MsgVariant<'a> {
             },
             MsgType::Migrate => quote! {
                 #[track_caller]
-                pub fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::<#error_type, #enum_name, #mt_app, #custom_msg> {
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, #mt_app, #custom_msg> {
                     let msg = #enum_name ::new( #(#arguments),* );
 
                     #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Query => quote! {
-                pub fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type> {
+                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type> {
                     let msg = #enum_name :: #name ( #(#arguments),* );
 
                     (*self.app)
@@ -676,7 +709,7 @@ impl<'a> MsgVariant<'a> {
                 }
             },
             MsgType::Sudo => quote! {
-                pub fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
                     let msg = #enum_name :: #name ( #(#arguments),* );
 
                     (*self.app)
@@ -696,20 +729,18 @@ impl<'a> MsgVariant<'a> {
         mt_app: &Type,
         error_type: &Type,
         interface_api: &TokenStream,
-        associated_items: &'a [&'a ImplItemType],
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            stripped_return_type,
+            return_type,
             ..
         } = self;
 
-        let mut fold = ReplaceAssociatedType::new(associated_items);
         let params: Vec<_> = fields
             .iter()
-            .map(|field| field.emit_method_field_folded(&mut fold))
+            .map(|field| field.emit_method_field_folded())
             .collect();
         let arguments = fields.iter().map(MsgField::name);
         let type_name = msg_ty.as_accessor_name();
@@ -718,16 +749,15 @@ impl<'a> MsgVariant<'a> {
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_api :: #type_name, #mt_app, #custom_msg> {
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<Self:: #error_type, #interface_api :: #type_name, #mt_app, #custom_msg> {
                     let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Query => {
-                let return_type = fold.fold_type(parse_quote! { #stripped_return_type });
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, Self:: #error_type> {
                         let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                         (*self.app)
@@ -739,7 +769,7 @@ impl<'a> MsgVariant<'a> {
                 }
             }
             MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, Self:: #error_type> {
                     let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                     (*self.app)
@@ -758,36 +788,33 @@ impl<'a> MsgVariant<'a> {
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        associated_items: &'a [&'a ImplItemType],
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
             fields,
-            stripped_return_type,
+            return_type,
             ..
         } = self;
 
-        let mut fold = ReplaceAssociatedType::new(associated_items);
         let params: Vec<_> = fields
             .iter()
-            .map(|field| field.emit_method_field_folded(&mut fold))
+            .map(|field| field.emit_method_field_folded())
             .collect();
         let type_name = msg_ty.as_accessor_name();
         let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
         match msg_ty {
             MsgType::Exec => quote! {
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<#error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< Self:: #error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
             },
             MsgType::Query => {
-                let return_type = fold.fold_type(parse_quote! { #stripped_return_type });
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, Self:: #error_type>;
                 }
             }
             MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, Self:: #error_type>;
             },
             _ => quote! {},
         }
@@ -910,6 +937,26 @@ where
         }
     }
 
+    pub fn emit_multitest_proxy_methods_declaration(
+        &self,
+        custom_msg: &Type,
+        mt_app: &Type,
+        error_type: &Type,
+    ) -> Vec<TokenStream> {
+        self.variants
+            .iter()
+            .map(|variant| {
+                variant.emit_multitest_proxy_methods_declaration(
+                    &self.msg_ty,
+                    custom_msg,
+                    mt_app,
+                    error_type,
+                    &self.used_generics,
+                )
+            })
+            .collect()
+    }
+
     pub fn emit_multitest_proxy_methods(
         &self,
         custom_msg: &Type,
@@ -936,7 +983,6 @@ where
         mt_app: &Type,
         error_type: &Type,
         interface_api: &TokenStream,
-        associated_items: &'a [&'a ImplItemType],
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
@@ -947,7 +993,6 @@ where
                     mt_app,
                     error_type,
                     interface_api,
-                    associated_items,
                 )
             })
             .collect()
@@ -958,7 +1003,6 @@ where
         custom_msg: &Type,
         error_type: &Type,
         interface_enum: &TokenStream,
-        associated_items: &'a [&'a ImplItemType],
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
@@ -968,7 +1012,6 @@ where
                     custom_msg,
                     error_type,
                     interface_enum,
-                    associated_items,
                 )
             })
             .collect()
@@ -1126,15 +1169,8 @@ impl<'a> MsgField<'a> {
         }
     }
 
-    pub fn emit_method_field_folded<FoldT>(&self, fold: &mut FoldT) -> TokenStream
-    where
-        FoldT: Fold,
-    {
-        let Self {
-            name, stripped_ty, ..
-        } = self;
-
-        let ty = fold.fold_type((*stripped_ty).clone());
+    pub fn emit_method_field_folded(&self) -> TokenStream {
+        let Self { name, ty, .. } = self;
 
         quote! {
             #name: #ty

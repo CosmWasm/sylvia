@@ -1,4 +1,4 @@
-use input::{ImplInput, ImplTraitInput, TraitInput};
+use input::{ImplInput, TraitInput};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::proc_macro_error;
@@ -235,11 +235,10 @@ pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
 fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemImpl = parse2(item)?;
-        let expanded = if input.trait_.is_some() {
-            let attrs: parser::ContractArgs = parse2(attr)?;
-            ImplTraitInput::new(&attrs, &input).process()
-        } else {
+        let expanded = if attr.is_empty() {
             ImplInput::new(&input).process()
+        } else {
+            quote! {}
         };
         let input = StripInput.fold_item_impl(input);
 

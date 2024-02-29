@@ -76,9 +76,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::sv::test_utils::Cw1;
     use crate::contract::sv::multitest_utils::CodeId;
     use cosmwasm_std::{CosmosMsg, Empty};
+    use cw1::sv::test_utils::Cw1Proxy;
     use sylvia::multitest::App;
     use sylvia::types::{SvCustomMsg, SvCustomQuery};
 

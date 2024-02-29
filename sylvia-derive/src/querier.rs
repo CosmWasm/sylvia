@@ -59,7 +59,7 @@ where
         let methods_declaration = variants
             .variants()
             .iter()
-            .map(|variant| variant.emit_querier_declaration(&generics));
+            .map(|variant| variant.emit_querier_declaration());
 
         let types_declaration = associated_types.filtered().cloned();
         let where_clause = associated_types.as_where_clause();
@@ -115,14 +115,12 @@ impl<'a> ContractQuerier<'a> {
         let methods_impl = variants
             .variants()
             .iter()
-            .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path, &generics));
-
-        let methods_impl_copy = methods_impl.clone();
+            .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path));
 
         let methods_declaration = variants
             .variants()
             .iter()
-            .map(|variant| variant.emit_querier_declaration(&generics));
+            .map(|variant| variant.emit_querier_declaration());
 
         let types_declaration = where_clause
             .as_ref()
@@ -136,20 +134,26 @@ impl<'a> ContractQuerier<'a> {
 
         let contract_name = *source.self_ty.clone();
 
+        let bracketed_generics = if !generics.is_empty() {
+            quote! { < #(#generics,)* > }
+        } else {
+            quote! {}
+        };
+
         quote! {
-            pub use #sylvia ::types::{BoundQuerier, Remote};
+            pub use #sylvia ::types::BoundQuerier;
             use std::marker::PhantomData;
 
-            pub trait Querier {
+            pub trait Querier #bracketed_generics {
                 #(#types_declaration)*
 
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for BoundQuerier<'a, C, #contract_name > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier #bracketed_generics for BoundQuerier<'a, C, #contract_name > #where_clause {
                 #(#types_implementation)*
 
-                #(#methods_impl_copy)*
+                #(#methods_impl)*
             }
         }
     }
