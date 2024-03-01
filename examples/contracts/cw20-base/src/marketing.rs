@@ -4,15 +4,11 @@ use crate::validation::verify_logo;
 use cosmwasm_std::{Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
-use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
-#[contract(module=crate::contract)]
-#[sv::messages(cw20_marketing as Cw20Marketing)]
 impl Cw20Marketing for Cw20Base<'_> {
     type Error = ContractError;
 
-    #[sv::msg(exec)]
     fn update_marketing(
         &self,
         ctx: ExecCtx,
@@ -69,7 +65,6 @@ impl Cw20Marketing for Cw20Base<'_> {
         Ok(res)
     }
 
-    #[sv::msg(exec)]
     fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error> {
         let mut marketing_info = self
             .marketing_info
@@ -102,7 +97,6 @@ impl Cw20Marketing for Cw20Base<'_> {
         Ok(res)
     }
 
-    #[sv::msg(query)]
     fn marketing_info(&self, ctx: QueryCtx) -> StdResult<MarketingInfoResponse> {
         Ok(self
             .marketing_info
@@ -110,7 +104,6 @@ impl Cw20Marketing for Cw20Base<'_> {
             .unwrap_or_default())
     }
 
-    #[sv::msg(query)]
     fn download_logo(&self, ctx: QueryCtx) -> StdResult<DownloadLogoResponse> {
         let logo = self.logo.load(ctx.deps.storage)?;
         match logo {

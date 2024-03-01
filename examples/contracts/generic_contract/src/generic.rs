@@ -1,11 +1,8 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use generic::Generic;
 use serde::Deserialize;
-use sylvia::contract;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
 
-#[contract(module = crate::contract)]
-#[sv::messages(generic as Generic)]
 impl<
         InstantiateT,
         Exec1T,
@@ -60,7 +57,6 @@ where
     type Sudo3T = SvCustomMsg;
     type RetT = SvCustomMsg;
 
-    #[sv::msg(exec)]
     fn generic_exec_one(
         &self,
         _ctx: ExecCtx,
@@ -70,7 +66,6 @@ where
         Ok(Response::new())
     }
 
-    #[sv::msg(exec)]
     fn generic_exec_two(
         &self,
         _ctx: ExecCtx,
@@ -80,7 +75,6 @@ where
         Ok(Response::new())
     }
 
-    #[sv::msg(query)]
     fn generic_query_one(
         &self,
         _ctx: QueryCtx,
@@ -90,7 +84,6 @@ where
         Ok(SvCustomMsg {})
     }
 
-    #[sv::msg(query)]
     fn generic_query_two(
         &self,
         _ctx: QueryCtx,
@@ -100,7 +93,6 @@ where
         Ok(SvCustomMsg {})
     }
 
-    #[sv::msg(sudo)]
     fn generic_sudo_one(
         &self,
         _ctx: SudoCtx,
@@ -110,7 +102,6 @@ where
         Ok(Response::new())
     }
 
-    #[sv::msg(sudo)]
     fn generic_sudo_two(
         &self,
         _ctx: SudoCtx,

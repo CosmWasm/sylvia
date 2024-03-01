@@ -42,27 +42,21 @@ pub mod impl_counter {
     use crate::counter::Counter;
     use crate::CountResponse;
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
-        #[sv::msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.count.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[sv::msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response> {
             self.count.save(ctx.deps.storage, &new_count)?;
             Ok(Response::new())
         }
 
-        #[sv::msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let other_count = self
                 .remote
@@ -75,7 +69,6 @@ pub mod impl_counter {
             Ok(Response::new())
         }
 
-        #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
             let other_count = crate::counter::sv::BoundQuerier::<_, Self>::borrowed(
@@ -96,7 +89,7 @@ pub mod impl_counter {
 
 pub struct CounterContract<'a> {
     pub count: Item<'static, u64>,
-    pub remote: Item<'static, sv::Remote<'a, CounterContract<'a>>>,
+    pub remote: Item<'static, sylvia::types::Remote<'a, CounterContract<'a>>>,
 }
 
 #[contract]
@@ -114,7 +107,7 @@ impl CounterContract<'_> {
     fn instantiate(&self, ctx: InstantiateCtx, remote_addr: Addr) -> StdResult<Response> {
         self.count.save(ctx.deps.storage, &0)?;
         self.remote
-            .save(ctx.deps.storage, &sv::Remote::new(remote_addr))?;
+            .save(ctx.deps.storage, &sylvia::types::Remote::new(remote_addr))?;
         Ok(Response::new())
     }
 }
@@ -125,7 +118,7 @@ mod tests {
     use cosmwasm_std::{Addr, Empty, QuerierWrapper};
     use sylvia::multitest::App;
 
-    use crate::impl_counter::sv::test_utils::Counter;
+    use crate::counter::sv::test_utils::CounterProxy;
     use crate::sv::multitest_utils::CodeId;
 
     #[test]
@@ -135,10 +128,9 @@ mod tests {
         let remote_addr = Addr::unchecked("remote");
 
         // Remote generation
-        let remote =
-            super::counter::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let remote = sylvia::types::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
         let _: super::counter::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
-        let remote = super::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let remote = sylvia::types::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
         let _: super::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
 
         // Querier generation

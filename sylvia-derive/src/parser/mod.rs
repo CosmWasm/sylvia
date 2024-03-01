@@ -1,5 +1,4 @@
 pub mod attributes;
-pub mod contract;
 pub mod entry_point;
 
 pub use attributes::{
