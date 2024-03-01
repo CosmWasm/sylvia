@@ -6,7 +6,6 @@ use cw20_allowances::responses::{
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
-use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 use crate::contract::Cw20Base;
@@ -17,14 +16,11 @@ use crate::responses::Cw20ReceiveMsg;
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-#[contract(module=crate::contract)]
-#[sv::messages(cw20_allowances as Cw20Allowances)]
 impl Cw20Allowances for Cw20Base<'_> {
     type Error = ContractError;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
-    #[sv::msg(exec)]
     fn increase_allowance(
         &self,
         ctx: ExecCtx,
@@ -69,7 +65,6 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Lowers the spender's access of tokens from the owner's (env.sender) account by amount.
     /// If expires is Some(), overwrites current allowance expiration with this one.
-    #[sv::msg(exec)]
     fn decrease_allowance(
         &self,
         ctx: ExecCtx,
@@ -119,7 +114,6 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Transfers amount tokens from owner -> recipient
     /// if `env.sender` has sufficient pre-approval.
-    #[sv::msg(exec)]
     fn transfer_from(
         &self,
         ctx: ExecCtx,
@@ -176,7 +170,6 @@ impl Cw20Allowances for Cw20Base<'_> {
 
     /// Sends amount tokens from owner -> contract
     /// if `env.sender` has sufficient pre-approval.
-    #[sv::msg(exec)]
     fn send_from(
         &self,
         ctx: ExecCtx,
@@ -231,7 +224,6 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Destroys amount of tokens forever
-    #[sv::msg(exec)]
     fn burn_from(
         &self,
         ctx: ExecCtx,
@@ -273,7 +265,6 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns how much spender can use from owner account, 0 if unset.
-    #[sv::msg(query)]
     fn allowance(
         &self,
         ctx: QueryCtx,
@@ -290,7 +281,6 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this owner has approved. Supports pagination.
-    #[sv::msg(query)]
     fn all_allowances(
         &self,
         ctx: QueryCtx,
@@ -319,7 +309,6 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this spender has been granted. Supports pagination.
-    #[sv::msg(query)]
     fn all_spender_allowances(
         &self,
         ctx: QueryCtx,
@@ -349,7 +338,6 @@ impl Cw20Allowances for Cw20Base<'_> {
     }
 
     /// Returns all allowances this spender has been granted. Supports pagination.
-    #[sv::msg(query)]
     fn all_accounts(
         &self,
         ctx: QueryCtx,

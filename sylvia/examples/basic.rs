@@ -66,16 +66,12 @@ mod impl_group {
     use anyhow::Error;
     use cosmwasm_std::Response;
     use sylvia::types::{ExecCtx, QueryCtx};
-    use sylvia_derive::contract;
 
     use crate::{GroupContract, MemberResp};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::group as Group)]
     impl crate::group::Group for GroupContract {
         type Error = Error;
 
-        #[sv::msg(exec)]
         fn update_admin(
             &self,
             _ctx: ExecCtx,
@@ -84,7 +80,6 @@ mod impl_group {
             todo!()
         }
 
-        #[sv::msg(exec)]
         fn update_members(
             &self,
             _ctx: ExecCtx,
@@ -94,7 +89,6 @@ mod impl_group {
             todo!()
         }
 
-        #[sv::msg(query)]
         fn member(&self, _ctx: QueryCtx, _addr: String) -> Result<MemberResp, Self::Error> {
             todo!()
         }

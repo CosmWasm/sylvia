@@ -426,16 +426,6 @@ but only one - the one with info about the trait being implemented.
 
 `Sylvia` works with multiple attributes. I will explain here how and when to use which of them.
 
-```rust
-#[contract(module=contract_module::inner_module)]
-impl Interface for MyContract {
-...
-}
-```
-
-`module` is meant to be used when implementing interface on the contract. Its purpose
-is to inform `sylvia` where is the contract defined. If the contract is implemented in the same
-scope this attribute can and should be omitted.
 
 ```rust
 #[entry_point]
@@ -906,7 +896,6 @@ we can either make the interface to work only with specified message type via
 pub trait SomeInterface {
 }
 
-#[contract(module=super)]
 impl SomeInterface for crate::MyContract {
 }
 ```
@@ -924,7 +913,6 @@ pub trait AssociatedInterface {
     type QueryC: CustomQuery;
 }
 
-#[contract(module=super)]
 impl AssociatedInterface for crate::MyContract {
     type Error = StdError;
     type ExecC = MyMsg;
@@ -1036,8 +1024,6 @@ Rust will force the user to specify the types of the associates during the imple
 We can either use some concrete types here or forward the generics defined on contract.
 
 ```rust
-#[contract(module = crate::contract)]
-#[sv::messages(generic as Generic)]
 impl<InstantiateParam, ExecParam, FieldType>
     Generic
     for crate::contract::GenericContract<

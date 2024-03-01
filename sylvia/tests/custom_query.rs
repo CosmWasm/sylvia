@@ -45,27 +45,21 @@ mod interface {
 mod impl_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
-    use sylvia_derive::contract;
 
     use crate::{MyQuery, OtherQuery, SomeResponse};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::interface)]
     impl crate::interface::Interface for crate::MyContract {
         type Error = StdError;
         type QueryC = OtherQuery;
 
-        #[sv::msg(query)]
         fn interface_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[sv::msg(exec)]
         fn interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn interface_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
@@ -98,26 +92,20 @@ mod some_interface {
 mod impl_some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
-    use sylvia_derive::contract;
 
     use crate::{MyQuery, SomeResponse};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::some_interface)]
     impl super::some_interface::SomeInterface for crate::MyContract {
         type Error = StdError;
 
-        #[sv::msg(query)]
         fn some_interface_query(&self, _ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[sv::msg(exec)]
         fn some_interface_exec(&self, _ctx: ExecCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn some_interface_sudo(&self, _ctx: SudoCtx<MyQuery>) -> StdResult<Response> {
             Ok(Response::default())
         }
@@ -152,25 +140,19 @@ mod impl_associated_type_interface {
     use crate::{MyQuery, SomeResponse};
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
-    use sylvia_derive::contract;
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::associated_type_interface)]
     impl AssociatedTypeInterface for crate::MyContract {
         type Error = StdError;
         type QueryC = MyQuery;
 
-        #[sv::msg(query)]
         fn associated_query(&self, _ctx: QueryCtx<Self::QueryC>) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[sv::msg(exec)]
         fn associated_exec(&self, _ctx: ExecCtx<Self::QueryC>) -> StdResult<Response> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn associated_sudo(&self, _ctx: SudoCtx<Self::QueryC>) -> StdResult<Response> {
             Ok(Response::default())
         }
@@ -204,24 +186,18 @@ mod impl_default_query_interface {
     use crate::SomeResponse;
     use cosmwasm_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
-    use sylvia_derive::contract;
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::default_query_interface)]
     impl DefaultQueryInterface for crate::MyContract {
         type Error = StdError;
 
-        #[sv::msg(query)]
         fn default_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[sv::msg(exec)]
         fn default_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn default_sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::default())
         }

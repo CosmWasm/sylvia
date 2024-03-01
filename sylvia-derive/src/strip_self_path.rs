@@ -1,6 +1,5 @@
 use syn::fold::Fold;
 use syn::Path;
-
 pub struct StripSelfPath;
 
 impl Fold for StripSelfPath {

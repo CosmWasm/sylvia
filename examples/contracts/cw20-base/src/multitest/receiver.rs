@@ -19,15 +19,11 @@ pub trait Receiver {
 pub mod impl_receiver {
     use crate::multitest::receiver_contract::ReceiverContract;
     use cosmwasm_std::{Response, StdError};
-    use sylvia::contract;
     use sylvia::types::ExecCtx;
 
-    #[contract(module=crate::multitest::receiver_contract)]
-    #[sv::messages(crate::multitest::receiver as Receiver)]
     impl super::Receiver for ReceiverContract {
         type Error = StdError;
 
-        #[sv::msg(exec)]
         fn receive(
             &self,
             _ctx: ExecCtx,
