@@ -44,6 +44,8 @@ where
             .map(ItemType::as_name)
             .collect();
 
+        let all_generics: Vec<_> = associated_types.all_names().collect();
+
         let accoc_types: Vec<_> = associated_types
             .without_special()
             .map(ItemType::as_name)
@@ -66,7 +68,6 @@ where
 
         quote! {
             pub use #sylvia ::types::{BoundQuerier, Remote};
-            use std::marker::PhantomData;
 
             pub trait Querier {
                 #(#types_declaration)*
@@ -74,7 +75,7 @@ where
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for BoundQuerier<'a, C, PhantomData< (#(#generics,)*) > > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for BoundQuerier<'a, C, &dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
                 #(type #generics = #generics;)*
 
                 #(#methods_trait_impl)*
@@ -142,7 +143,6 @@ impl<'a> ContractQuerier<'a> {
 
         quote! {
             pub use #sylvia ::types::BoundQuerier;
-            use std::marker::PhantomData;
 
             pub trait Querier #bracketed_generics {
                 #(#types_declaration)*

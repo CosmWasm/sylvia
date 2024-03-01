@@ -62,7 +62,7 @@ impl<'a> TraitInput<'a> {
             custom,
         } = self;
         let messages = self.emit_messages();
-        let associated_names: Vec<_> = associated_types.as_names().collect();
+        let associated_names: Vec<_> = associated_types.as_filtered_names().collect();
 
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
