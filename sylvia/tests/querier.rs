@@ -114,11 +114,11 @@ impl CounterContract<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::counter::sv::test_utils::CounterProxy;
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, Empty, QuerierWrapper};
     use sylvia::multitest::App;
 
+    use crate::counter::sv::test_utils::CounterProxy;
     use crate::sv::multitest_utils::CodeId;
 
     #[test]

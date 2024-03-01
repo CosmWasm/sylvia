@@ -102,18 +102,19 @@ mod tests {
 
         let querier = sylvia::types::BoundQuerier::<
             Empty,
-            std::marker::PhantomData<(
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-                SvCustomMsg,
-            )>,
+            &dyn super::Generic<
+                Exec1T = SvCustomMsg,
+                Exec2T = SvCustomMsg,
+                Exec3T = SvCustomMsg,
+                Query1T = SvCustomMsg,
+                Query2T = SvCustomMsg,
+                Query3T = SvCustomMsg,
+                Sudo1T = SvCustomMsg,
+                Sudo2T = SvCustomMsg,
+                Sudo3T = SvCustomMsg,
+                RetT = SvCustomMsg,
+                Error = (),
+            >,
         >::borrowed(&contract, &querier_wrapper);
         let _: Result<SvCustomMsg, _> =
             super::sv::Querier::generic_query_one(&querier, SvCustomMsg {}, SvCustomMsg {});
