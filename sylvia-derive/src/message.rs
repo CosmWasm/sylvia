@@ -153,27 +153,24 @@ impl<'a> StructMessage<'a> {
         let generics = emit_bracketed_generics(generics);
         let unused_generics = emit_bracketed_generics(unused_generics);
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                #[serde(rename_all="snake_case")]
-                pub struct #name #generics {
-                    #(pub #fields,)*
+        quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #[serde(rename_all="snake_case")]
+            pub struct #name #generics {
+                #(pub #fields,)*
+            }
+
+            impl #generics #name #generics #where_clause {
+                pub fn new(#(#parameters,)*) -> Self {
+                    Self { #(#fields_names,)* }
                 }
 
-                impl #generics #name #generics #where_clause {
-                    pub fn new(#(#parameters,)*) -> Self {
-                        Self { #(#fields_names,)* }
-                    }
-
-                    pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
-                        #result #full_where
-                    {
-                        let Self { #(#fields_names,)* } = self;
-                        contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
-                    }
+                pub fn dispatch #unused_generics(self, contract: &#contract_type, ctx: #ctx_type)
+                    #result #full_where
+                {
+                    let Self { #(#fields_names,)* } = self;
+                    contract.#function_name(Into::into(ctx), #(#fields_names,)*).map_err(Into::into)
                 }
             }
         }
@@ -262,38 +259,35 @@ impl<'a> EnumMessage<'a> {
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), enum_name.span());
         let derive_call = msg_ty.emit_derive_call();
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #derive_call
-                #[serde(rename_all="snake_case")]
-                pub enum #unique_enum_name #bracketed_used_generics {
-                    #(#msg_variants,)*
-                    #phantom_variant
-                }
-                pub type #enum_name #bracketed_used_generics = #unique_enum_name #bracketed_used_generics;
+        quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #derive_call
+            #[serde(rename_all="snake_case")]
+            pub enum #unique_enum_name #bracketed_used_generics {
+                #(#msg_variants,)*
+                #phantom_variant
+            }
+            pub type #enum_name #bracketed_used_generics = #unique_enum_name #bracketed_used_generics;
 
-                impl #bracketed_used_generics #unique_enum_name #bracketed_used_generics #where_clause {
-                    pub fn dispatch<ContractT, #(#unused_generics,)*>(self, contract: &ContractT, ctx: #ctx_type)
-                        -> #dispatch_type
-                    where
-                        #(#where_predicates,)*
-                        #contract_predicate
-                    {
-                        use #unique_enum_name::*;
+            impl #bracketed_used_generics #unique_enum_name #bracketed_used_generics #where_clause {
+                pub fn dispatch<ContractT, #(#unused_generics,)*>(self, contract: &ContractT, ctx: #ctx_type)
+                    -> #dispatch_type
+                where
+                    #(#where_predicates,)*
+                    #contract_predicate
+                {
+                    use #unique_enum_name::*;
 
-                        match self {
-                            #(#match_arms,)*
-                            #phatom_match_arm
-                        }
+                    match self {
+                        #(#match_arms,)*
+                        #phatom_match_arm
                     }
-                    #(#variants_constructors)*
                 }
+                #(#variants_constructors)*
+            }
 
-                pub const fn #messages_fn_name () -> [&'static str; #msgs_cnt] {
-                    [#(#msgs,)*]
-                }
+            pub const fn #messages_fn_name () -> [&'static str; #msgs_cnt] {
+                [#(#msgs,)*]
             }
         }
     }
@@ -375,33 +369,30 @@ impl<'a> ContractEnumMessage<'a> {
             false => quote! {},
         };
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
-                #[serde(rename_all="snake_case")]
-                pub enum #enum_name #bracketed_used_generics {
-                    #(#variants,)*
-                    #phantom_variant
-                }
+        quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
+            #[serde(rename_all="snake_case")]
+            pub enum #enum_name #bracketed_used_generics {
+                #(#variants,)*
+                #phantom_variant
+            }
 
-                impl #bracketed_used_generics #enum_name #bracketed_used_generics {
-                    pub fn dispatch #bracketed_unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
-                        use #enum_name::*;
+            impl #bracketed_used_generics #enum_name #bracketed_used_generics {
+                pub fn dispatch #bracketed_unused_generics (self, contract: &#contract, ctx: #ctx_type) -> #ret_type #where_clause {
+                    use #enum_name::*;
 
-                        match self {
-                            #(#match_arms,)*
-                            #phantom_match_arm
-                        }
+                    match self {
+                        #(#match_arms,)*
+                        #phantom_match_arm
                     }
-
-                    #(#variants_constructors)*
                 }
 
-                pub const fn #messages_fn_name () -> [&'static str; #variants_cnt] {
-                    [#(#variant_names,)*]
-                }
+                #(#variants_constructors)*
+            }
+
+            pub const fn #messages_fn_name () -> [&'static str; #variants_cnt] {
+                [#(#variant_names,)*]
             }
         }
     }
@@ -482,13 +473,10 @@ impl<'a> MsgVariant<'a> {
             _ => quote! {},
         };
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #returns_attribute
-                #name {
-                    #(#fields,)*
-                }
+        quote! {
+            #returns_attribute
+            #name {
+                #(#fields,)*
             }
         }
     }
@@ -520,7 +508,6 @@ impl<'a> MsgVariant<'a> {
             .zip(args.clone())
             .map(|(field, num_field)| quote!(#field : #num_field));
 
-        #[cfg(not(tarpaulin_include))]
         match msg_type {
             Exec | Sudo => quote! {
                 #name {
@@ -569,13 +556,10 @@ impl<'a> MsgVariant<'a> {
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
         let bracketed_generics = emit_bracketed_generics(associated_name);
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                    let query = <Api #bracketed_generics as sylvia::types::InterfaceApi>::Query:: #variant_name (#(#fields_names),*);
-                    self.querier().query_wasm_smart(self.contract(), &query)
-                }
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                let query = <Api #bracketed_generics as sylvia::types::InterfaceApi>::Query:: #variant_name (#(#fields_names),*);
+                self.querier().query_wasm_smart(self.contract(), &query)
             }
         }
     }
@@ -603,13 +587,10 @@ impl<'a> MsgVariant<'a> {
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                    let query = #api_path :: #variant_name (#(#fields_names),*);
-                    self.querier().query_wasm_smart(self.contract(), &query)
-                }
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                let query = #api_path :: #variant_name (#(#fields_names),*);
+                self.querier().query_wasm_smart(self.contract(), &query)
             }
         }
     }
@@ -632,11 +613,8 @@ impl<'a> MsgVariant<'a> {
             .map(|field| field.emit_method_field_folded(&mut fold));
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
-            }
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
         }
     }
 
@@ -1122,12 +1100,9 @@ impl<'a> MsgField<'a> {
             ..
         } = self;
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #(#attrs)*
-                #name: #stripped_ty
-            }
+        quote! {
+            #(#attrs)*
+            #name: #stripped_ty
         }
     }
 
@@ -1137,11 +1112,8 @@ impl<'a> MsgField<'a> {
             name, stripped_ty, ..
         } = self;
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #name: #stripped_ty
-            }
+        quote! {
+            #name: #stripped_ty
         }
     }
 
@@ -1155,11 +1127,8 @@ impl<'a> MsgField<'a> {
 
         let ty = fold.fold_type((*stripped_ty).clone());
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #name: #ty
-            }
+        quote! {
+            #name: #ty
         }
     }
 
@@ -1268,7 +1237,6 @@ impl<'a> GlueMessage<'a> {
 
         let interfaces_deserialization_attempts = interfaces.emit_deserialization_attempts(msg_ty);
 
-        #[cfg(not(tarpaulin_include))]
         let contract_deserialization_attempt = quote! {
             let msgs = &#messages_fn_name();
             if msgs.into_iter().any(|msg| msg == &recv_msg_name) {
@@ -1288,15 +1256,12 @@ impl<'a> GlueMessage<'a> {
 
         let response_schemas = match msg_ty {
             MsgType::Query => {
-                #[cfg(not(tarpaulin_include))]
-                {
-                    quote! {
-                        #[cfg(not(target_arch = "wasm32"))]
-                        impl #bracketed_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
-                            fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
-                                let responses = [#(#response_schemas_calls),*];
-                                responses.into_iter().flatten().collect()
-                            }
+                quote! {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    impl #bracketed_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+                        fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
+                            let responses = [#(#response_schemas_calls),*];
+                            responses.into_iter().flatten().collect()
                         }
                     }
                 }
@@ -1306,73 +1271,70 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #[allow(clippy::derive_partial_eq_without_eq)]
-                #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
-                #[serde(rename_all="snake_case", untagged)]
-                pub enum #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
-                    #(#variants,)*
-                    #contract_variant
-                }
+        quote! {
+            #[allow(clippy::derive_partial_eq_without_eq)]
+            #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #[serde(rename_all="snake_case", untagged)]
+            pub enum #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+                #(#variants,)*
+                #contract_variant
+            }
 
-                impl #bracketed_wrapper_generics #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
-                    pub fn dispatch #unused_generics (
-                        self,
-                        contract: &#contract,
-                        ctx: #ctx_type,
-                    ) -> #ret_type #full_where_clause {
-                        const _: () = {
-                            let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
-                            #sylvia ::utils::assert_no_intersection(msgs);
-                        };
-
-                        match self {
-                            #(#dispatch_arms,)*
-                            #dispatch_arm
-                        }
-                    }
-                }
-
-                #response_schemas
-
-                impl<'de, #(#wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
-                    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                        where D: serde::Deserializer<'de>,
-                    {
-                        use serde::de::Error;
-
-                        let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
-                        let map = match &val {
-                            #sylvia ::serde_value::Value::Map(map) => map,
-                            _ => return Err(D::Error::custom("Wrong message format!"))
-                        };
-                        if map.len() != 1 {
-                            return Err(D::Error::custom(format!("Expected exactly one message. Received {}", map.len())))
-                        }
-
-                        // Due to earlier size check of map this unwrap is safe
-                        let recv_msg_name = map.into_iter().next().unwrap();
-
-                        if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
-                            #(#interfaces_deserialization_attempts)*
-                            #contract_deserialization_attempt
-                        }
-
+            impl #bracketed_wrapper_generics #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+                pub fn dispatch #unused_generics (
+                    self,
+                    contract: &#contract,
+                    ctx: #ctx_type,
+                ) -> #ret_type #full_where_clause {
+                    const _: () = {
                         let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
-                        let mut err_msg = msgs.into_iter().flatten().fold(
-                            // It might be better to forward the error or serialization, but we just
-                            // deserialized it from JSON, not reason to expect failure here.
-                            format!(
-                                "Unsupported message received: {}. Messages supported by this contract: ",
-                                #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())
-                            ),
-                            |mut acc, message| acc + message + ", ",
-                        );
-                        err_msg.truncate(err_msg.len() - 2);
-                        Err(D::Error::custom(err_msg))
+                        #sylvia ::utils::assert_no_intersection(msgs);
+                    };
+
+                    match self {
+                        #(#dispatch_arms,)*
+                        #dispatch_arm
                     }
+                }
+            }
+
+            #response_schemas
+
+            impl<'de, #(#wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                    where D: serde::Deserializer<'de>,
+                {
+                    use serde::de::Error;
+
+                    let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
+                    let map = match &val {
+                        #sylvia ::serde_value::Value::Map(map) => map,
+                        _ => return Err(D::Error::custom("Wrong message format!"))
+                    };
+                    if map.len() != 1 {
+                        return Err(D::Error::custom(format!("Expected exactly one message. Received {}", map.len())))
+                    }
+
+                    // Due to earlier size check of map this unwrap is safe
+                    let recv_msg_name = map.into_iter().next().unwrap();
+
+                    if let #sylvia ::serde_value::Value::String(recv_msg_name) = &recv_msg_name .0 {
+                        #(#interfaces_deserialization_attempts)*
+                        #contract_deserialization_attempt
+                    }
+
+                    let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
+                    let mut err_msg = msgs.into_iter().flatten().fold(
+                        // It might be better to forward the error or serialization, but we just
+                        // deserialized it from JSON, not reason to expect failure here.
+                        format!(
+                            "Unsupported message received: {}. Messages supported by this contract: ",
+                            #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())
+                        ),
+                        |mut acc, message| acc + message + ", ",
+                    );
+                    err_msg.truncate(err_msg.len() - 2);
+                    Err(D::Error::custom(err_msg))
                 }
             }
         }
@@ -1689,7 +1651,6 @@ impl<'a> EntryPoints<'a> {
             None => quote! {},
         };
 
-        #[cfg(not(tarpaulin_include))]
         {
             let entry_points = [
                 instantiate_variants,

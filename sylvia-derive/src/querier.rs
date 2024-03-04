@@ -55,40 +55,37 @@ where
         let types_definition = associated_types.emit_types_definition();
         let where_clause = associated_types.as_where_clause();
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > {
-                    contract: &'a #sylvia ::cw_std::Addr,
-                    querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
-                    _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+        quote! {
+            pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > {
+                contract: &'a #sylvia ::cw_std::Addr,
+                querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
+                _phantom: std::marker::PhantomData<( #(#generics,)* )>,
+            }
+
+            impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
+                pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
+                    self.querier
                 }
 
-                impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
-                    pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
-                        self.querier
-                    }
-
-                    pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
-                        self.contract
-                    }
-
-                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
-                        Self { contract, querier, _phantom: std::marker::PhantomData }
-                    }
+                pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
+                    self.contract
                 }
 
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > Querier for BoundQuerier<'a, C, #(#generics,)* > #where_clause {
-                    #(#types_definition)*
-
-                    #(#methods_impl)*
+                pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
+                    Self { contract, querier, _phantom: std::marker::PhantomData }
                 }
+            }
 
-                pub trait Querier {
-                    #(#types_declaration)*
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > Querier for BoundQuerier<'a, C, #(#generics,)* > #where_clause {
+                #(#types_definition)*
 
-                    #(#methods_declaration)*
-                }
+                #(#methods_impl)*
+            }
+
+            pub trait Querier {
+                #(#types_declaration)*
+
+                #(#methods_declaration)*
             }
         }
     }
@@ -162,14 +159,11 @@ where
 
         let types_definition = associated_types.as_item_types();
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #generic_params > #querier for #bound_querier<'a, C, #generic_params > #where_clause {
-                    #(#types_definition)*
+        quote! {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #generic_params > #querier for #bound_querier<'a, C, #generic_params > #where_clause {
+                #(#types_definition)*
 
-                    #(#methods_impl)*
-                }
+                #(#methods_impl)*
             }
         }
     }
@@ -226,43 +220,40 @@ impl<'a> ContractQuerier<'a> {
             .unwrap_or(vec![]);
         let from_implementations = interfaces.emit_querier_from_impl(&generics);
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > {
-                    contract: &'a #sylvia ::cw_std::Addr,
-                    querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
-                    _phantom: std::marker::PhantomData<( #(#generics,)* )>,
-                }
-
-                impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
-                    pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
-                        self.querier
-                    }
-
-                    pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
-                        self.contract
-                    }
-
-                    pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
-                        Self {contract, querier, _phantom: std::marker::PhantomData}
-                    }
-                }
-
-                impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > Querier for BoundQuerier<'a, C, #(#generics,)* > #where_clause {
-                    #(#types_implementation)*
-
-                    #(#methods_impl)*
-                }
-
-                pub trait Querier {
-                    #(#types_declaration)*
-
-                    #(#methods_declaration)*
-                }
-
-                #(#from_implementations)*
+        quote! {
+            pub struct BoundQuerier<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > {
+                contract: &'a #sylvia ::cw_std::Addr,
+                querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>,
+                _phantom: std::marker::PhantomData<( #(#generics,)* )>,
             }
+
+            impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > BoundQuerier<'a, C, #(#generics,)* > {
+                pub fn querier(&self) -> &'a #sylvia ::cw_std::QuerierWrapper<'a, C> {
+                    self.querier
+                }
+
+                pub fn contract(&self) -> &'a #sylvia ::cw_std::Addr {
+                    self.contract
+                }
+
+                pub fn borrowed(contract: &'a #sylvia ::cw_std::Addr, querier: &'a #sylvia ::cw_std::QuerierWrapper<'a, C>) -> Self {
+                    Self {contract, querier, _phantom: std::marker::PhantomData}
+                }
+            }
+
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)* > Querier for BoundQuerier<'a, C, #(#generics,)* > #where_clause {
+                #(#types_implementation)*
+
+                #(#methods_impl)*
+            }
+
+            pub trait Querier {
+                #(#types_declaration)*
+
+                #(#methods_declaration)*
+            }
+
+            #(#from_implementations)*
         }
     }
 }

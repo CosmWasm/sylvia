@@ -146,7 +146,6 @@ mod contract {
         pub(crate) migrates: Item<'static, u32>,
     }
 
-    #[cfg(not(tarpaulin_include))]
     #[contract]
     #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::sudo::SudoWrapperMsg))]
     #[sv::override_entry_point(migrate=crate::entry_points::migrate(crate::migrate::MigrateMsg))]

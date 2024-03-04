@@ -10,7 +10,6 @@ mod noop_contract {
 
     pub struct NoopContract;
 
-    #[cfg(not(tarpaulin_include))]
     #[contract]
     impl NoopContract {
         pub const fn new() -> Self {
@@ -40,7 +39,6 @@ mod reply_contract {
     pub struct ReplyContract;
 
     #[allow(dead_code)]
-    #[cfg(not(tarpaulin_include))]
     #[entry_points]
     #[contract]
     impl ReplyContract {

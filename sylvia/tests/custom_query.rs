@@ -31,15 +31,12 @@ mod interface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn interface_query(&self, ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn interface_sudo(&self, ctx: SudoCtx<MyQuery>) -> StdResult<Response>;
     }
@@ -88,15 +85,12 @@ mod some_interface {
     pub trait SomeInterface {
         type Error: From<StdError>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn some_interface_query(&self, ctx: QueryCtx<MyQuery>) -> StdResult<SomeResponse>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn some_interface_exec(&self, ctx: ExecCtx<MyQuery>) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn some_interface_sudo(&self, ctx: SudoCtx<MyQuery>) -> StdResult<Response>;
     }
@@ -144,15 +138,12 @@ mod associated_type_interface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn associated_query(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<SomeResponse>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx<Self::QueryC>) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn associated_sudo(&self, ctx: SudoCtx<Self::QueryC>) -> StdResult<Response>;
     }
@@ -199,15 +190,12 @@ mod default_query_interface {
     pub trait DefaultQueryInterface {
         type Error: From<StdError>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn default_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn default_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn default_sudo(&self, ctx: SudoCtx) -> StdResult<Response>;
     }
