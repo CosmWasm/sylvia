@@ -105,7 +105,7 @@ use sylvia::cw_std::{StdResult, Response};
 
 #[contract]
 impl MyContract {
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -132,7 +132,7 @@ use sylvia::cw_std::{StdResult, Response};
 #[entry_points]
 #[contract]
 impl MyContract {
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -179,7 +179,7 @@ impl MyContract<'_> {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
         self.counter.save(ctx.deps.storage, &0)?;
 
@@ -201,7 +201,7 @@ Now let's pass the initial counter state as a function argument:
 ```rust
 #[contract]
 impl MyContract<'_> {
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, ctx: InstantiateCtx, counter: u64) -> StdResult<Response> {
         self.counter.save(ctx.deps.storage, &counter)?;
 
@@ -226,7 +226,7 @@ Now let's add an execution message to the contract:
 ```rust
 #[contract]
 impl MyContract<'_> {
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn increment(&self, ctx: ExecCtx) -> StdResult<Response> {
         let counter = self.counter.load(ctx.deps.storage)?;
         self.counter.save(ctx.deps.storage, &(counter + 1))?;
@@ -261,9 +261,9 @@ it is very easy to do:
 use sylvia::cw_std::ensure;
 
 #[contract]
-#[error(ContractError)]
+#[sv::error(ContractError)]
 impl MyContract<'_> {
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn increment(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
         let counter = self.counter.load(ctx.deps.storage)?;
 
@@ -291,9 +291,9 @@ pub struct CounterResp {
 }
 
 #[contract]
-#[error(ContractError)]
+#[sv::error(ContractError)]
 impl MyContract<'_> {
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn counter(&self, ctx: QueryCtx) -> StdResult<CounterResp> {
         self
             .counter
@@ -333,10 +333,10 @@ pub mod group {
     pub trait Group {
         type Error: From<StdError>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn add_member(&self, ctx: ExecCtx, member: String) -> Result<Response, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn is_member(&self, ctx: QueryCtx, member: String) -> Result<IsMemberResp, Self::Error>;
     }
 }
@@ -355,23 +355,23 @@ pub struct MyContract<'a> {
 }
 
 #[contract]
-#[messages(group as Group)]
+#[sv::messages(group as Group)]
 // Alternatively:
 // It's not needed to provide the interface's
 // name if it corresponds to the last segment
 // of the module path:
-// #[messages(group)]
+// #[sv::messages(group)]
 impl group::Group for MyContract<'_> {
     type Error = ContractError;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn add_member(&self, ctx: ExecCtx, member: String) -> Result<Response, ContractError> {
         let member = ctx.deps.api.addr_validate(&member)?;
         self.members.save(ctx.deps.storage, &member, &Empty {})?;
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn is_member(&self, ctx: QueryCtx, member: String) -> Result<group::IsMemberResp, ContractError> {
         let is_member = self.members.has(ctx.deps.storage, &Addr::unchecked(&member));
         let resp = group::IsMemberResp {
@@ -383,7 +383,7 @@ impl group::Group for MyContract<'_> {
 }
 
 #[contract]
-#[messages(group as Group)]
+#[sv::messages(group as Group)]
 impl MyContract<'_> {
     // Nothing changed here
 }
@@ -398,7 +398,7 @@ in its own `cross_staking` module (note the underscore). This is a requirement r
 now - Sylvia generates all the messages and boilerplate in this module and will try
 to access them through this module. If the interface's name is a camel-case
 version of the last module path's segment, the `as InterfaceName` can be omitted.
-F.e. `#[messages(cw1 as Cw1)]` can be reduced to `#[messages(cw1)]`
+F.e. `#[sv::messages(cw1 as Cw1)]` can be reduced to `#[sv::messages(cw1)]`
 
 
 Then there is the `Error` type embedded in the trait - it is also needed there,
@@ -406,20 +406,20 @@ and the trait bound here has to be at least `From<StdError>`, as Sylvia might
 generate code returning an `StdError` in deserialization/dispatching implementation.
 The trait can be more strict - this is the minimum.
 
-Another thing to remember is that the `#[msg(...)]` attributes become part of the
+Another thing to remember is that the `#[sv::msg(...)]` attributes become part of the
 function signature - they must be the same for the trait and later implementation.
 
 Finally, every implementation block has an additional
-`#[messages(module as Identifier)]` attribute. Sylvia needs it to generate the dispatching
+`#[sv::messages(module as Identifier)]` attribute. Sylvia needs it to generate the dispatching
 properly - there is the limitation that every macro has access only to its local
 scope. In particular - we cannot see all traits implemented by a type and their
 implementation from the `#[contract]` crate.
 
-To solve this issue, we put this `#[messages(...)]` attribute pointing to Sylvia
+To solve this issue, we put this `#[sv::messages(...)]` attribute pointing to Sylvia
 what is the module name where the interface is defined, and giving a unique name
 for this interface (it would be used in generated code to provide proper enum variant).
 
-The impl-block with trait implementation also contains the `#[messages]` attribute,
+The impl-block with trait implementation also contains the `#[sv::messages]` attribute,
 but only one - the one with info about the trait being implemented.
 
 ## Macro attributes
@@ -440,7 +440,7 @@ scope this attribute can and should be omitted.
 ```rust
 #[entry_point]
 #[contract]
-#[error(ContractError)]
+#[sv::error(ContractError)]
 impl MyContract {
 ...
 }
@@ -451,13 +451,13 @@ error is being used by your contract. If omitted generated code will use `StdErr
 
 ```rust
 #[contract]
-#[messages(interface as Interface)]
+#[sv::messages(interface as Interface)]
 impl MyContract {
 ...
 }
 
 #[contract]
-#[messages(interface as Interface)]
+#[sv::messages(interface as Interface)]
 impl Interface for MyContract {
 ...
 }
@@ -614,7 +614,7 @@ pub struct MyContract<'a> {
     remote: Item<'a, Remote<'static>>,
 }
 
-#[msg(exec)]
+#[sv::msg(exec)]
 pub fn evaluate_member(&self, ctx: ExecCtx, ...) -> StdResult<Response> {
     let is_member = self
         .remote
@@ -647,8 +647,8 @@ use sylvia::cw_std::{DepsMut, Env, Reply, Response};
 
 #[contract]
 #[entry_point]
-#[error(ContractError)]
-#[messages(group as Group)]
+#[sv::error(ContractError)]
+#[sv::messages(group as Group)]
 impl MyContract<'_> {
     fn reply(&self, deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
         todo!()
@@ -932,7 +932,7 @@ impl AssociatedInterface for crate::MyContract {
     type ExecC = MyMsg;
     type QueryC = MyQuery;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn associated_exec(&self, _ctx: ExecCtx<Self::QueryC>) -> StdResult<Response<Self::ExecC>> {
         Ok(Response::default())
     }
@@ -965,14 +965,14 @@ pub trait Generic
     type QueryParam: CustomMsg;
     type RetType: CustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec(
         &self,
         ctx: ExecCtx,
         msgs: Vec<CosmosMsg<Self::ExecParam>>,
     ) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query(&self, ctx: QueryCtx, param: Self::QueryParam) -> Result<Self::RetType, Self::Error>;
 }
 ```
@@ -1012,7 +1012,7 @@ where
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         _ctx: InstantiateCtx,
@@ -1021,7 +1021,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn contract_execute(
         &self,
         _ctx: ExecCtx,
@@ -1039,7 +1039,7 @@ We can either use some concrete types here or forward the generics defined on co
 
 ```rust
 #[contract(module = crate::contract)]
-#[messages(generic as Generic)]
+#[sv::messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg)]
 impl<InstantiateParam, ExecParam, FieldType>
     Generic
@@ -1054,7 +1054,7 @@ impl<InstantiateParam, ExecParam, FieldType>
     type QueryParam: SvCustomMsg;
     type RetType = SvCustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec(
         &self,
         _ctx: ExecCtx,
@@ -1063,7 +1063,7 @@ impl<InstantiateParam, ExecParam, FieldType>
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query(
         &self,
         _ctx: QueryCtx,
@@ -1079,7 +1079,7 @@ interface in the main `contract` macro call:
 
 ```rust
 #[contract]
-#[messages(generic<ExecParam, SvCustomMsg, SvCustomMsg> as Generic)]
+#[sv::messages(generic<ExecParam, SvCustomMsg, SvCustomMsg> as Generic)]
 impl<InstantiateParam, ExecParam, FieldType>
     GenericContract<InstantiateParam, ExecParam, FieldType>
 where

@@ -27,10 +27,10 @@ mod interface {
     pub trait Interface {
         type Error: From<StdError>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn argumented_execution(
             &self,
             ctx: ExecCtx,
@@ -39,17 +39,17 @@ mod interface {
             desc: String,
         ) -> Result<Response, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn no_args_query(&self, ctx: QueryCtx) -> Result<EmptyQueryResponse, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn argumented_query(&self, ctx: QueryCtx, user: Addr)
             -> Result<QueryResponse, Self::Error>;
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error>;
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error>;
     }
 }
@@ -61,11 +61,11 @@ mod impl_interface {
     use crate::{EmptyQueryResponse, QueryResponse};
 
     #[sylvia::contract(module = crate::contract)]
-    #[messages(crate::interface)]
+    #[sv::messages(crate::interface)]
     impl crate::interface::Interface for crate::contract::Contract {
         type Error = StdError;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn no_args_execution(&self, ctx: ExecCtx) -> Result<Response, StdError> {
             self.execs
                 .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
@@ -74,7 +74,7 @@ mod impl_interface {
             Ok(Response::new())
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn argumented_execution(
             &self,
             ctx: ExecCtx,
@@ -92,13 +92,13 @@ mod impl_interface {
             Ok(Response::new())
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn no_args_query(&self, _: QueryCtx) -> Result<EmptyQueryResponse, StdError> {
             *self.queries.borrow_mut() += 1;
             Ok(dbg!(EmptyQueryResponse {}))
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn argumented_query(
             &self,
             ctx: QueryCtx,
@@ -108,7 +108,7 @@ mod impl_interface {
             Ok(self.data.load(ctx.deps.storage, user).unwrap())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn no_args_sudo(&self, ctx: SudoCtx) -> Result<Response, Self::Error> {
             self.sudos
                 .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
@@ -117,7 +117,7 @@ mod impl_interface {
             Ok(Response::new())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn argumented_sudo(&self, ctx: SudoCtx, user: Addr) -> Result<Response, Self::Error> {
             self.sudos
                 .update(ctx.deps.storage, |count| -> Result<u64, StdError> {
@@ -151,7 +151,7 @@ mod contract {
     #[allow(dead_code)]
     #[cfg(not(tarpaulin_include))]
     #[contract]
-    #[messages(crate::interface)]
+    #[sv::messages(crate::interface)]
     impl Contract {
         pub fn new() -> Self {
             Self {
@@ -162,14 +162,14 @@ mod contract {
             }
         }
 
-        #[msg(instantiate)]
+        #[sv::msg(instantiate)]
         fn instanciate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
             self.execs.save(ctx.deps.storage, &0)?;
             self.sudos.save(ctx.deps.storage, &0)?;
             Ok(Response::new())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn contract_sudo(&self, ctx: SudoCtx) -> StdResult<Response> {
             self.sudos
                 .update(ctx.deps.storage, |count| -> Result<u64, StdError> {

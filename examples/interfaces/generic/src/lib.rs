@@ -17,7 +17,7 @@ pub trait Generic {
     type Sudo3T: CustomMsg;
     type RetT: CustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec_one(
         &self,
         ctx: ExecCtx,
@@ -25,7 +25,7 @@ pub trait Generic {
         msgs2: Vec<CosmosMsg<Self::Exec2T>>,
     ) -> Result<Response, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec_two(
         &self,
         ctx: ExecCtx,
@@ -33,7 +33,7 @@ pub trait Generic {
         msgs2: Vec<CosmosMsg<Self::Exec3T>>,
     ) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query_one(
         &self,
         ctx: QueryCtx,
@@ -41,7 +41,7 @@ pub trait Generic {
         param2: Self::Query2T,
     ) -> Result<Self::RetT, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query_two(
         &self,
         ctx: QueryCtx,
@@ -49,7 +49,7 @@ pub trait Generic {
         param2: Self::Query3T,
     ) -> Result<Self::RetT, Self::Error>;
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn generic_sudo_one(
         &self,
         ctx: SudoCtx,
@@ -57,7 +57,7 @@ pub trait Generic {
         msg2: CosmosMsg<Self::Sudo2T>,
     ) -> Result<Response, Self::Error>;
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn generic_sudo_two(
         &self,
         ctx: SudoCtx,
@@ -68,7 +68,8 @@ pub trait Generic {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{testing::mock_dependencies, Addr, CosmosMsg, Empty, QuerierWrapper};
+    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
     use sylvia::types::{InterfaceApi, SvCustomMsg};
 
     use crate::sv::Querier;

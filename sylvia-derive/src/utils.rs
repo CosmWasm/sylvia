@@ -98,7 +98,7 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
             segment.span(),
             "Neither Result nor StdResult found in return type. \
                     You might be using aliased return type. \
-                    Please use #[msg(return_type=<your_return_type>)]"
+                    Please use #[sv::msg(return_type=<your_return_type>)]"
         );
     }
     let PathArguments::AngleBracketed(args) = &segments[0].arguments else {

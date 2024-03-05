@@ -7,31 +7,31 @@ use sylvia::{interface, schemars};
 pub trait Cw4 {
     type Error: From<StdError>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_admin(&self, ctx: ExecCtx, admin: String) -> Result<Response, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_members(&self, ctx: ExecCtx, members: Vec<String>) -> Result<Response, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn add_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn remove_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn member(&self, ctx: QueryCtx, member: String) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn list_members(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn total_weight(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn admin(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn hooks(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
 }
 

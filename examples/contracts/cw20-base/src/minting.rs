@@ -7,11 +7,11 @@ use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 #[contract(module=crate::contract)]
-#[messages(cw20_minting as Cw20Minting)]
+#[sv::messages(cw20_minting as Cw20Minting)]
 impl Cw20Minting for Cw20Base<'_> {
     type Error = ContractError;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn mint(
         &self,
         ctx: ExecCtx,
@@ -61,7 +61,7 @@ impl Cw20Minting for Cw20Base<'_> {
         Ok(res)
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_minter(
         &self,
         ctx: ExecCtx,
@@ -101,7 +101,7 @@ impl Cw20Minting for Cw20Base<'_> {
         Ok(resp)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>> {
         let meta = self.token_info.load(ctx.deps.storage)?;
         let minter = match meta.mint {

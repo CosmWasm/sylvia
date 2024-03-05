@@ -32,15 +32,15 @@ mod some_interface {
         type Error: From<StdError>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(query)]
+        #[sv::msg(query)]
         fn interface_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn interface_sudo(&self, ctx: SudoCtx) -> StdResult<Response<MyMsg>>;
     }
 }
@@ -54,22 +54,22 @@ mod impl_some_interface {
     use crate::{MyMsg, SomeResponse};
 
     #[contract(module=crate)]
-    #[messages(crate::some_interface)]
+    #[sv::messages(crate::some_interface)]
     #[sv::custom(msg=MyMsg)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn interface_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn interface_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
@@ -90,15 +90,15 @@ mod interface {
         type ExecC: CustomMsg;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(query)]
+        #[sv::msg(query)]
         fn query(&self, ctx: QueryCtx) -> StdResult<Response<MyMsg>>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn sudo(&self, ctx: SudoCtx) -> StdResult<Response<MyMsg>>;
     }
 }
@@ -110,24 +110,24 @@ mod impl_interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[contract(module=crate)]
-    #[messages(crate::interface)]
+    #[sv::messages(crate::interface)]
     #[sv::custom(msg=MyMsg)]
     impl Interface for crate::MyContract {
         type Error = StdError;
         type ExecC = OtherMsg;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn query(&self, _ctx: QueryCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
@@ -144,15 +144,15 @@ mod other_interface {
         type Error: From<StdError>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn other_interface_sudo(&self, ctx: SudoCtx) -> StdResult<Response>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(query)]
+        #[sv::msg(query)]
         fn other_interface_query(&self, ctx: QueryCtx) -> StdResult<Response>;
     }
 }
@@ -163,24 +163,24 @@ mod impl_other_interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[contract(module=crate)]
-    #[messages(crate::other_interface)]
+    #[sv::messages(crate::other_interface)]
     #[sv::custom(msg=crate::MyMsg)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn other_interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
             Ok(Response::default())
         }
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn other_interface_sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(query)]
+        #[sv::msg(query)]
         fn other_interface_query(&self, _ctx: QueryCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
@@ -199,15 +199,15 @@ mod associated_interface {
         type ExecC: CustomMsg;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn associated_sudo(&self, ctx: SudoCtx) -> StdResult<Response<Self::ExecC>>;
 
         #[cfg(not(tarpaulin_include))]
-        #[msg(query)]
+        #[sv::msg(query)]
         fn associated_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
     }
 }
@@ -219,23 +219,23 @@ mod impl_associated_interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[contract(module=crate)]
-    #[messages(crate::associated_interface)]
+    #[sv::messages(crate::associated_interface)]
     #[sv::custom(msg=MyMsg)]
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;
         type ExecC = MyMsg;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn associated_exec(&self, _ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
             Ok(Response::default())
         }
 
-        #[msg(sudo)]
+        #[sv::msg(sudo)]
         fn associated_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<Self::ExecC>> {
             Ok(Response::default())
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn associated_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse {})
         }
@@ -243,10 +243,10 @@ mod impl_associated_interface {
 }
 
 #[contract]
-#[messages(some_interface)]
-#[messages(other_interface: custom(msg))]
-#[messages(associated_interface)]
-#[messages(interface)]
+#[sv::messages(some_interface)]
+#[sv::messages(other_interface: custom(msg))]
+#[sv::messages(associated_interface)]
+#[sv::messages(interface)]
 #[sv::custom(msg=MyMsg)]
 impl MyContract {
     #[allow(clippy::new_without_default)]
@@ -254,29 +254,29 @@ impl MyContract {
         Self {}
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn some_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn some_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
         Ok(SomeResponse)
     }
 
     #[cfg(not(tarpaulin_include))]
-    #[msg(migrate)]
+    #[sv::msg(migrate)]
     pub fn some_migrate(&self, _ctx: MigrateCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
 
     #[cfg(not(tarpaulin_include))]
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     pub fn some_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
@@ -288,8 +288,7 @@ mod tests {
     use crate::impl_interface::sv::test_utils::Interface;
     use crate::impl_other_interface::sv::test_utils::OtherInterface;
     use crate::impl_some_interface::sv::test_utils::SomeInterface;
-    use crate::MyContract;
-    use crate::MyMsg;
+    use crate::{MyContract, MyMsg};
     use sylvia::multitest::App;
 
     #[test]

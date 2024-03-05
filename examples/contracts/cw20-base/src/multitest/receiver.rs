@@ -6,7 +6,7 @@ use sylvia::{interface, schemars};
 pub trait Receiver {
     type Error: From<StdError>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn receive(
         &self,
         ctx: ExecCtx,
@@ -23,11 +23,11 @@ pub mod impl_receiver {
     use sylvia::types::ExecCtx;
 
     #[contract(module=crate::multitest::receiver_contract)]
-    #[messages(crate::multitest::receiver as Receiver)]
+    #[sv::messages(crate::multitest::receiver as Receiver)]
     impl super::Receiver for ReceiverContract {
         type Error = StdError;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn receive(
             &self,
             _ctx: ExecCtx,

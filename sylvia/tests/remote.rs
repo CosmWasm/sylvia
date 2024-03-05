@@ -20,14 +20,14 @@ pub mod some_interface {
 }
 
 #[contract]
-#[messages(some_interface)]
+#[sv::messages(some_interface)]
 impl SomeContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }

@@ -1,16 +1,17 @@
 use cosmwasm_std::{Response, StdResult};
-use sylvia::{contract, schemars, types::InstantiateCtx};
+use sylvia::types::InstantiateCtx;
+use sylvia::{contract, schemars};
 
 use super::receiver;
 pub struct ReceiverContract {}
 
 #[contract]
-#[messages(receiver as Receiver)]
+#[sv::messages(receiver as Receiver)]
 impl ReceiverContract {
     pub const fn new() -> Self {
         Self {}
     }
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
         Ok(Response::new())
     }

@@ -42,14 +42,14 @@ mod group {
     pub trait Group {
         type Error: From<StdError>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn update_admin(
             &self,
             ctx: ExecCtx,
             admin: Option<String>,
         ) -> Result<Response, Self::Error>;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn update_members(
             &self,
             ctx: ExecCtx,
@@ -57,7 +57,7 @@ mod group {
             add: Vec<Member>,
         ) -> Result<Response, Self::Error>;
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn member(&self, ctx: QueryCtx, addr: String) -> Result<MemberResp, Self::Error>;
     }
 }
@@ -71,11 +71,11 @@ mod impl_group {
     use crate::{GroupContract, MemberResp};
 
     #[contract(module=crate)]
-    #[messages(crate::group as Group)]
+    #[sv::messages(crate::group as Group)]
     impl crate::group::Group for GroupContract {
         type Error = Error;
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn update_admin(
             &self,
             _ctx: ExecCtx,
@@ -84,7 +84,7 @@ mod impl_group {
             todo!()
         }
 
-        #[msg(exec)]
+        #[sv::msg(exec)]
         fn update_members(
             &self,
             _ctx: ExecCtx,
@@ -94,7 +94,7 @@ mod impl_group {
             todo!()
         }
 
-        #[msg(query)]
+        #[sv::msg(query)]
         fn member(&self, _ctx: QueryCtx, _addr: String) -> Result<MemberResp, Self::Error> {
             todo!()
         }
@@ -113,8 +113,8 @@ impl Default for GroupContract {
 }
 
 #[contract]
-#[error(Error)]
-#[messages(group as Group)]
+#[sv::error(Error)]
+#[sv::messages(group as Group)]
 impl GroupContract {
     pub const fn new() -> Self {
         Self {
@@ -123,7 +123,7 @@ impl GroupContract {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         ctx: InstantiateCtx,

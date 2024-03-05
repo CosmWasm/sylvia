@@ -74,10 +74,10 @@ pub struct Cw20Base<'a> {
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[error(ContractError)]
-#[messages(cw20_allowances as Allowances)]
-#[messages(cw20_marketing as Marketing)]
-#[messages(cw20_minting as Minting)]
+#[sv::error(ContractError)]
+#[sv::messages(cw20_allowances as Allowances)]
+#[sv::messages(cw20_marketing as Marketing)]
+#[sv::messages(cw20_minting as Minting)]
 impl Cw20Base<'_> {
     pub const fn new() -> Self {
         Self {
@@ -137,7 +137,7 @@ impl Cw20Base<'_> {
             .update(storage, (spender, owner), update_fn)
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         mut ctx: InstantiateCtx,
@@ -212,7 +212,7 @@ impl Cw20Base<'_> {
     }
 
     /// Transfer is a base message to move tokens to another account without triggering actions
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn transfer(
         &self,
         ctx: ExecCtx,
@@ -241,7 +241,7 @@ impl Cw20Base<'_> {
     }
 
     /// Burn is a base message to destroy tokens forever
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn burn(&self, ctx: ExecCtx, amount: Uint128) -> Result<Response, ContractError> {
         ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
@@ -266,7 +266,7 @@ impl Cw20Base<'_> {
 
     /// Send is a base message to transfer tokens to a contract and trigger an action
     /// on the receiving contract.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn send(
         &self,
         ctx: ExecCtx,
@@ -305,7 +305,7 @@ impl Cw20Base<'_> {
     }
 
     /// Returns the current balance of the given address, 0 if unset.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn balance(&self, ctx: QueryCtx, address: String) -> StdResult<BalanceResponse> {
         let address = ctx.deps.api.addr_validate(&address)?;
         let balance = self
@@ -316,7 +316,7 @@ impl Cw20Base<'_> {
     }
 
     /// Returns metadata on the contract - name, decimals, supply, etc.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn token_info(&self, ctx: QueryCtx) -> StdResult<TokenInfoResponse> {
         let info = self.token_info.load(ctx.deps.storage)?;
         let res = TokenInfoResponse {
@@ -328,7 +328,7 @@ impl Cw20Base<'_> {
         Ok(res)
     }
 
-    #[msg(migrate)]
+    #[sv::msg(migrate)]
     fn migrate(&self, ctx: MigrateCtx) -> Result<Response, ContractError> {
         let original_version =
             ensure_from_older_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;

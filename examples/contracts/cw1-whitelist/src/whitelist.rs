@@ -8,11 +8,11 @@ use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
 #[contract(module=crate::contract)]
-#[messages(whitelist as Whitelist)]
+#[sv::messages(whitelist as Whitelist)]
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
@@ -24,7 +24,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_admins(
         &self,
         ctx: ExecCtx,
@@ -84,7 +84,7 @@ impl Whitelist for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse> {
         let admins: Result<_, _> = self
             .admins

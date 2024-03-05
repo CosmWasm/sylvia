@@ -14,7 +14,7 @@ pub struct CustomContract {
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[messages(cw1 as Cw1: custom(msg, query))]
+#[sv::messages(cw1 as Cw1: custom(msg, query))]
 #[sv::custom(query=CounterQuery, msg=CounterMsg)]
 impl CustomContract {
     pub const fn new() -> Self {
@@ -23,7 +23,7 @@ impl CustomContract {
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         ctx: InstantiateCtx<CounterQuery>,
@@ -32,14 +32,14 @@ impl CustomContract {
         Ok(Response::default())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     pub fn send_custom(&self, _ctx: ExecCtx<CounterQuery>) -> StdResult<Response<CounterMsg>> {
         let msg = CosmosMsg::Custom(CounterMsg::Increment {});
         let resp = Response::default().add_message(msg);
         Ok(resp)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn query_custom(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
         let resp = ctx
             .deps
@@ -49,14 +49,14 @@ impl CustomContract {
         Ok(resp)
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     pub fn sudo_counter(&self, ctx: QueryCtx<CounterQuery>) -> StdResult<CountResponse> {
         let count = self.sudo_counter.load(ctx.deps.storage)?;
 
         Ok(CountResponse { count })
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     pub fn increment_sudo_counter(
         &self,
         ctx: SudoCtx<CounterQuery>,

@@ -1,0 +1,74 @@
+use proc_macro_error::emit_error;
+use syn::parse::{Error, Parse, ParseStream, Parser};
+use syn::spanned::Spanned;
+use syn::{parse_quote, Attribute, Ident, Result, Token, Type};
+
+use crate::crate_module;
+
+#[derive(Debug, Default)]
+pub struct Custom {
+    msg: Option<Type>,
+    query: Option<Type>,
+}
+
+impl Custom {
+    pub fn new(attr: &Attribute) -> Result<Self> {
+        attr.meta
+            .require_list()
+            .and_then(|meta| Custom::parse.parse2(meta.tokens.clone()))
+            .map_err(|err| {
+                emit_error!(attr.span(), err);
+                err
+            })
+    }
+
+    pub fn msg_or_default(&self) -> Type {
+        self.msg.clone().unwrap_or_else(Self::default_type)
+    }
+
+    pub fn query_or_default(&self) -> Type {
+        self.query.clone().unwrap_or_else(Self::default_type)
+    }
+
+    pub fn msg(&self) -> Option<Type> {
+        self.msg.clone()
+    }
+
+    pub fn query(&self) -> Option<Type> {
+        self.query.clone()
+    }
+
+    pub fn default_type() -> Type {
+        let sylvia = crate_module();
+        parse_quote! { #sylvia ::cw_std::Empty }
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+// False negative. It is being called in closure
+impl Parse for Custom {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut custom = Self::default();
+
+        while !input.is_empty() {
+            let ty: Ident = input.parse()?;
+            let _: Token![=] = input.parse()?;
+            if ty == "msg" {
+                custom.msg = Some(input.parse()?)
+            } else if ty == "query" {
+                custom.query = Some(input.parse()?)
+            } else {
+                return Err(Error::new(
+                    ty.span(),
+                    "Invalid custom type. Expected msg or query",
+                ));
+            };
+            if !input.peek(Token![,]) {
+                break;
+            }
+            let _: Token![,] = input.parse()?;
+        }
+
+        Ok(custom)
+    }
+}

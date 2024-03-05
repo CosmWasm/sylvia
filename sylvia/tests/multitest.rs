@@ -21,7 +21,7 @@ where
         }
     }
 
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(&self, _ctx: InstantiateCtx, _param: ParamT) -> StdResult<Response> {
         Ok(Response::new())
     }

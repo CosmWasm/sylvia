@@ -19,9 +19,9 @@ pub struct Cw1WhitelistContract<'a> {
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[error(ContractError)]
-#[messages(cw1 as Cw1)]
-#[messages(whitelist as Whitelist)]
+#[sv::error(ContractError)]
+#[sv::messages(cw1 as Cw1)]
+#[sv::messages(whitelist as Whitelist)]
 impl Cw1WhitelistContract<'_> {
     pub const fn new() -> Self {
         Self {
@@ -29,7 +29,7 @@ impl Cw1WhitelistContract<'_> {
             mutable: Item::new("mutable"),
         }
     }
-    #[msg(instantiate)]
+    #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
         ctx: InstantiateCtx,

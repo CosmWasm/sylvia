@@ -4,7 +4,7 @@ use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 #[contract(module = crate::contract)]
-#[messages(cw1 as Cw1)]
+#[sv::messages(cw1 as Cw1)]
 #[sv::custom(msg=sylvia::types::SvCustomMsg, query=sylvia::types::SvCustomQuery)]
 impl<
         InstantiateT,
@@ -37,12 +37,12 @@ impl<
 {
     type Error = StdError;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn can_execute(
         &self,
         _ctx: QueryCtx,
@@ -58,10 +58,8 @@ mod tests {
     use super::sv::test_utils::Cw1;
     use crate::contract::sv::multitest_utils::CodeId;
     use cosmwasm_std::{CosmosMsg, Empty};
-    use sylvia::{
-        multitest::App,
-        types::{SvCustomMsg, SvCustomQuery},
-    };
+    use sylvia::multitest::App;
+    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn proxy_methods() {

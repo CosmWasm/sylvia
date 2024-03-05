@@ -9,13 +9,13 @@ pub mod responses;
 pub trait Whitelist {
     type Error: From<cosmwasm_std::StdError>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error>;
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
 }
 

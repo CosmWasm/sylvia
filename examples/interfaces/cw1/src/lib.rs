@@ -17,13 +17,13 @@ pub trait Cw1 {
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender. Every implementation has it's own logic to
     /// determine in
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
 
     /// Checks permissions of the caller on this proxy.
     /// If CanExecute returns true then a call to `Execute` with the same message,
     /// from the given sender, before any further state changes, should also succeed.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn can_execute(
         &self,
         ctx: QueryCtx,

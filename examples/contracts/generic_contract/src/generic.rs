@@ -5,7 +5,7 @@ use sylvia::contract;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
 
 #[contract(module = crate::contract)]
-#[messages(generic as Generic)]
+#[sv::messages(generic as Generic)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
@@ -61,7 +61,7 @@ where
     type Sudo3T = SvCustomMsg;
     type RetT = SvCustomMsg;
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec_one(
         &self,
         _ctx: ExecCtx,
@@ -71,7 +71,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn generic_exec_two(
         &self,
         _ctx: ExecCtx,
@@ -81,7 +81,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query_one(
         &self,
         _ctx: QueryCtx,
@@ -91,7 +91,7 @@ where
         Ok(SvCustomMsg {})
     }
 
-    #[msg(query)]
+    #[sv::msg(query)]
     fn generic_query_two(
         &self,
         _ctx: QueryCtx,
@@ -101,7 +101,7 @@ where
         Ok(SvCustomMsg {})
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn generic_sudo_one(
         &self,
         _ctx: SudoCtx,
@@ -111,7 +111,7 @@ where
         Ok(Response::new())
     }
 
-    #[msg(sudo)]
+    #[sv::msg(sudo)]
     fn generic_sudo_two(
         &self,
         _ctx: SudoCtx,

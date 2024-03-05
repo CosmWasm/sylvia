@@ -1,12 +1,12 @@
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::parse::{Parse, Parser};
 use syn::spanned::Spanned;
 use syn::{GenericArgument, GenericParam, ItemImpl};
 
 use crate::crate_module;
-use crate::parser::{ContractMessageAttr, MsgType};
+use crate::parser::attributes::msg::MsgType;
+use crate::parser::{ContractMessageAttr, ParsedSylviaAttributes};
 
 #[derive(Debug, Default)]
 pub struct Interfaces {
@@ -15,27 +15,7 @@ pub struct Interfaces {
 
 impl Interfaces {
     pub fn new(source: &ItemImpl) -> Self {
-        let interfaces: Vec<_> = source
-            .attrs
-            .iter()
-            .filter(|attr| attr.path().is_ident("messages"))
-            .filter_map(|attr| {
-                let interface = match attr
-                    .meta
-                    .require_list()
-                    .and_then(|meta| ContractMessageAttr::parse.parse2(meta.tokens.clone()))
-                {
-                    Ok(interface) => interface,
-                    Err(err) => {
-                        emit_error!(attr.span(), err);
-                        return None;
-                    }
-                };
-
-                Some(interface)
-            })
-            .collect();
-
+        let interfaces = ParsedSylviaAttributes::new(source.attrs.iter()).messages_attrs;
         Self { interfaces }
     }
 
@@ -202,9 +182,9 @@ impl Interfaces {
                 let first = &interfaces[0];
                 for redefined in &interfaces[1..] {
                     emit_error!(
-                        redefined.module, "The attribute `messages` is redefined";
-                        note = first.module.span() => "Previous definition of the attribute `messsages`";
-                        note = "Only one `messages` attribute can exist on an interface implementation on contract"
+                        redefined.module, "The attribute `sv::messages` is redefined";
+                        note = first.module.span() => "Previous definition of the attribute `sv::messages`";
+                        note = "Only one `sv::messages` attribute can exist on an interface implementation on contract"
                     );
                 }
                 None

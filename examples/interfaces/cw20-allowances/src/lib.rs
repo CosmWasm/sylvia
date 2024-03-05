@@ -14,7 +14,7 @@ pub trait Cw20Allowances {
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn increase_allowance(
         &self,
         ctx: ExecCtx,
@@ -25,7 +25,7 @@ pub trait Cw20Allowances {
 
     /// Lowers the spender's access of tokens from the owner's (env.sender) account by amount.
     /// If expires is Some(), overwrites current allowance expiration with this one.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn decrease_allowance(
         &self,
         ctx: ExecCtx,
@@ -36,7 +36,7 @@ pub trait Cw20Allowances {
 
     /// Transfers amount tokens from owner -> recipient
     /// if `env.sender` has sufficient pre-approval.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn transfer_from(
         &self,
         ctx: ExecCtx,
@@ -47,7 +47,7 @@ pub trait Cw20Allowances {
 
     /// Sends amount tokens from owner -> contract
     /// if `env.sender` has sufficient pre-approval.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn send_from(
         &self,
         ctx: ExecCtx,
@@ -58,7 +58,7 @@ pub trait Cw20Allowances {
     ) -> Result<Response, Self::Error>;
 
     /// Destroys amount of tokens forever
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn burn_from(
         &self,
         ctx: ExecCtx,
@@ -67,7 +67,7 @@ pub trait Cw20Allowances {
     ) -> Result<Response, Self::Error>;
 
     /// Returns how much spender can use from owner account, 0 if unset.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn allowance(
         &self,
         ctx: QueryCtx,
@@ -76,7 +76,7 @@ pub trait Cw20Allowances {
     ) -> StdResult<AllowanceResponse>;
 
     /// Returns all allowances this owner has approved. Supports pagination.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn all_allowances(
         &self,
         ctx: QueryCtx,
@@ -86,7 +86,7 @@ pub trait Cw20Allowances {
     ) -> StdResult<AllAllowancesResponse>;
 
     /// Returns all allowances this spender has been granted. Supports pagination.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn all_spender_allowances(
         &self,
         ctx: QueryCtx,
@@ -96,7 +96,7 @@ pub trait Cw20Allowances {
     ) -> StdResult<AllSpenderAllowancesResponse>;
 
     /// Returns all accounts that have balances. Supports pagination.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn all_accounts(
         &self,
         ctx: QueryCtx,

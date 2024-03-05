@@ -10,7 +10,7 @@ pub trait Cw20Minting {
     type Error: From<StdError>;
 
     /// If authorized, creates amount new tokens and adds to the recipient balance.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn mint(
         &self,
         ctx: ExecCtx,
@@ -20,7 +20,7 @@ pub trait Cw20Minting {
 
     /// The current minter may set a new minter.
     /// Setting the minter to None will remove the token's minter forever.
-    #[msg(exec)]
+    #[sv::msg(exec)]
     fn update_minter(
         &self,
         ctx: ExecCtx,
@@ -28,6 +28,6 @@ pub trait Cw20Minting {
     ) -> Result<Response, Self::Error>;
 
     /// Returns who can mint and the hard cap on maximum tokens after minting.
-    #[msg(query)]
+    #[sv::msg(query)]
     fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>>;
 }

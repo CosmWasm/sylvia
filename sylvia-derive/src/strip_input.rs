@@ -4,7 +4,7 @@ use syn::{
     FnArg, ImplItemFn, ItemImpl, ItemTrait, PatType, Receiver, Signature, Token, TraitItemFn,
 };
 
-use crate::parser::sylvia_attribute;
+use crate::parser::SylviaAttribute;
 
 /// Utility for stripping all attributes from input before it is emitted
 pub struct StripInput;
@@ -37,7 +37,7 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !attr.path().is_ident("msg"))
+            .filter(|attr| SylviaAttribute::new(attr).is_none())
             .collect();
 
         let inputs = remove_input_attr(i.sig.inputs);
@@ -49,7 +49,7 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| !attr.path().is_ident("msg"))
+            .filter(|attr| SylviaAttribute::new(attr).is_none())
             .collect();
 
         let inputs = remove_input_attr(i.sig.inputs);
@@ -61,7 +61,7 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| sylvia_attribute(attr).is_none())
+            .filter(|attr| SylviaAttribute::new(attr).is_none())
             .collect();
 
         fold::fold_item_trait(self, ItemTrait { attrs, ..i })
@@ -71,11 +71,7 @@ impl Fold for StripInput {
         let attrs = i
             .attrs
             .into_iter()
-            .filter(|attr| {
-                !(attr.path().is_ident("messages")
-                    || attr.path().is_ident("error")
-                    || sylvia_attribute(attr).is_some())
-            })
+            .filter(|attr| SylviaAttribute::new(attr).is_none())
             .collect();
 
         fold::fold_item_impl(self, ItemImpl { attrs, ..i })
