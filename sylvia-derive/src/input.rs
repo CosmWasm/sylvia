@@ -16,7 +16,6 @@ use crate::parser::{
 };
 use crate::querier::{ContractQuerier, ImplQuerier, TraitQuerier};
 use crate::remote::{ContractRemote, InterfaceRemote};
-use crate::utils::is_trait;
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
@@ -24,17 +23,6 @@ pub struct TraitInput<'a> {
     item: &'a ItemTrait,
     custom: Custom,
     associated_types: AssociatedTypes<'a>,
-}
-
-/// Preprocessed `contract` macro input for non-trait impl block
-pub struct ImplInput<'a> {
-    attributes: &'a ContractArgs,
-    error: ContractErrorAttr,
-    item: &'a ItemImpl,
-    generics: Vec<&'a GenericParam>,
-    custom: Custom,
-    override_entry_points: Vec<OverrideEntryPoint>,
-    interfaces: Interfaces,
 }
 
 impl<'a> TraitInput<'a> {
@@ -139,34 +127,32 @@ impl<'a> TraitInput<'a> {
     }
 }
 
-impl<'a> ImplInput<'a> {
+/// Preprocessed `contract` macro input for impl trait block
+pub struct ImplTraitInput<'a> {
+    attributes: &'a ContractArgs,
+    item: &'a ItemImpl,
+    generics: Vec<&'a GenericParam>,
+    custom: Custom,
+    interfaces: Interfaces,
+}
+
+impl<'a> ImplTraitInput<'a> {
     pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
         let generics = item.generics.params.iter().collect();
         let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
-        let error = parsed_attrs.error_attrs.unwrap_or_default();
         let custom = parsed_attrs.custom_attr.unwrap_or_default();
-        let override_entry_points = parsed_attrs.override_entry_point_attrs;
         let interfaces = Interfaces::new(item);
 
         Self {
             attributes,
             item,
             generics,
-            error,
             custom,
-            override_entry_points,
             interfaces,
         }
     }
 
     pub fn process(&self) -> TokenStream {
-        match is_trait(self.item) {
-            true => self.process_interface(),
-            false => self.process_contract(),
-        }
-    }
-
-    fn process_interface(&self) -> TokenStream {
         let multitest_helpers = self.emit_multitest_helpers();
         let querier = self.emit_querier_for_bound_impl();
 
@@ -181,7 +167,74 @@ impl<'a> ImplInput<'a> {
         }
     }
 
-    fn process_contract(&self) -> TokenStream {
+    fn emit_querier_for_bound_impl(&self) -> TokenStream {
+        let variants_args =
+            MsgVariants::<GenericParam>::new(self.item.as_variants(), MsgType::Query, &[], &None);
+        let associated_types = ImplAssociatedTypes::new(self.item);
+        ImplQuerier::new(
+            self.item,
+            &variants_args,
+            &associated_types,
+            &self.interfaces,
+            &self.attributes.module,
+        )
+        .emit()
+    }
+
+    fn emit_multitest_helpers(&self) -> TokenStream {
+        if !cfg!(feature = "mt") {
+            return quote! {};
+        }
+
+        let Self {
+            item,
+            custom,
+            interfaces,
+            ..
+        } = self;
+        let generic_params = &self.generics;
+
+        ImplMtHelpers::new(
+            item,
+            generic_params,
+            custom,
+            interfaces,
+            &self.attributes.module,
+        )
+        .emit()
+    }
+}
+
+/// Preprocessed `contract` macro input for non-trait impl block
+pub struct ImplInput<'a> {
+    error: ContractErrorAttr,
+    item: &'a ItemImpl,
+    generics: Vec<&'a GenericParam>,
+    custom: Custom,
+    override_entry_points: Vec<OverrideEntryPoint>,
+    interfaces: Interfaces,
+}
+
+impl<'a> ImplInput<'a> {
+    pub fn new(item: &'a ItemImpl) -> Self {
+        let generics = item.generics.params.iter().collect();
+        let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
+        let error = parsed_attrs.error_attrs.unwrap_or_default();
+        let custom = parsed_attrs.custom_attr.unwrap_or_default();
+        let override_entry_points = parsed_attrs.override_entry_point_attrs;
+        let interfaces = Interfaces::new(item);
+
+        Self {
+            item,
+            generics,
+            error,
+            custom,
+            override_entry_points,
+            interfaces,
+        }
+    }
+
+    pub fn process(&self) -> TokenStream {
         let Self {
             item,
             generics,
@@ -267,21 +320,6 @@ impl<'a> ImplInput<'a> {
         .emit()
     }
 
-    fn emit_querier_for_bound_impl(&self) -> TokenStream {
-        let contract_module = self.attributes.module.as_ref();
-        let variants_args =
-            MsgVariants::<GenericParam>::new(self.item.as_variants(), MsgType::Query, &[], &None);
-        let associated_types = ImplAssociatedTypes::new(self.item);
-        ImplQuerier::new(
-            self.item,
-            &variants_args,
-            &associated_types,
-            &self.interfaces,
-            &contract_module,
-        )
-        .emit()
-    }
-
     fn emit_multitest_helpers(&self) -> TokenStream {
         if !cfg!(feature = "mt") {
             return quote! {};
@@ -291,17 +329,10 @@ impl<'a> ImplInput<'a> {
             item,
             custom,
             override_entry_points,
-            interfaces,
             ..
         } = self;
-        let contract_module = self.attributes.module.as_ref();
-        let generic_params = &self.generics;
 
-        if is_trait(item) {
-            ImplMtHelpers::new(item, generic_params, custom, interfaces, &contract_module).emit()
-        } else {
-            ContractMtHelpers::new(item, generic_params, custom, override_entry_points.clone())
-                .emit()
-        }
+        let generic_params = &self.generics;
+        ContractMtHelpers::new(item, generic_params, custom, override_entry_points.clone()).emit()
     }
 }

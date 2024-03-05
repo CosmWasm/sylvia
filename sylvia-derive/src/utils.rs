@@ -4,8 +4,8 @@ use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, GenericParam, ItemImpl, Path, PathArguments, ReturnType,
-    Signature, Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature,
+    Type, WhereClause, WherePredicate,
 };
 
 use crate::check_generics::{CheckGenerics, GetPath};
@@ -124,8 +124,4 @@ pub fn emit_bracketed_generics<GenericT: ToTokens>(unbonded_generics: &[GenericT
         true => quote! {},
         false => quote! { < #(#unbonded_generics,)* > },
     }
-}
-
-pub fn is_trait(item: &ItemImpl) -> bool {
-    item.trait_.is_some()
 }

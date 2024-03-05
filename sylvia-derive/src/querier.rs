@@ -96,7 +96,7 @@ pub struct ImplQuerier<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a ImplAssociatedTypes<'a>,
     interfaces: &'a Interfaces,
-    contract_module: &'a Option<&'a Path>,
+    contract_module: &'a Path,
 }
 
 impl<'a, Generic> ImplQuerier<'a, Generic>
@@ -108,7 +108,7 @@ where
         variants: &'a MsgVariants<'a, Generic>,
         associated_types: &'a ImplAssociatedTypes,
         interfaces: &'a Interfaces,
-        contract_module: &'a Option<&'a Path>,
+        contract_module: &'a Path,
     ) -> Self {
         Self {
             source,
@@ -153,14 +153,11 @@ where
         let querier = trait_module
             .map(|module| quote! { #module ::sv::Querier })
             .unwrap_or_else(|| quote! { sv::Querier });
-        let bound_querier = contract_module
-            .map(|module| quote! { #module ::sv::BoundQuerier})
-            .unwrap_or_else(|| quote! { sv::BoundQuerier });
 
         let types_definition = associated_types.as_item_types();
 
         quote! {
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #generic_params > #querier for #bound_querier<'a, C, #generic_params > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #generic_params > #querier for #contract_module ::sv::BoundQuerier<'a, C, #generic_params > #where_clause {
                 #(#types_definition)*
 
                 #(#methods_impl)*
