@@ -4,7 +4,7 @@ mod test {
     use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::messages::{CustomExecMsg, SudoMsg, UserExecMsg};
     use cosmwasm_std::Addr;
-    use cw_multi_test::Executor;
+    use cw_multi_test::{Executor, IntoBech32};
     use sylvia::multitest::App;
 
     #[test]
@@ -12,13 +12,13 @@ mod test {
         let app = App::default();
         let code_id = CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate()
             .with_label("Contract")
-            .with_admin(Some(owner))
-            .call(owner)
+            .with_admin(owner.as_str())
+            .call(&owner)
             .unwrap();
 
         let count = contract.count().unwrap().count;
@@ -40,7 +40,7 @@ mod test {
         (*contract.app)
             .app_mut()
             .execute_contract(
-                Addr::unchecked(owner),
+                Addr::unchecked(&owner),
                 contract.contract_addr.clone(),
                 &msg,
                 &[],
@@ -57,7 +57,7 @@ mod test {
         (*contract.app)
             .app_mut()
             .execute_contract(
-                Addr::unchecked(owner),
+                Addr::unchecked(&owner),
                 contract.contract_addr.clone(),
                 &msg,
                 &[],

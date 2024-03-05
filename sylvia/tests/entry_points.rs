@@ -141,9 +141,9 @@ mod contract {
     use crate::CountResponse;
 
     pub struct Contract {
-        pub(crate) execs: Item<'static, u32>,
-        pub(crate) sudos: Item<'static, u32>,
-        pub(crate) migrates: Item<'static, u32>,
+        pub(crate) execs: Item<u32>,
+        pub(crate) sudos: Item<u32>,
+        pub(crate) migrates: Item<u32>,
     }
 
     #[contract]
@@ -212,7 +212,7 @@ mod contract {
 #[cfg(all(test, feature = "mt"))]
 mod tests {
     use cosmwasm_std::Addr;
-    use cw_multi_test::Executor;
+    use cw_multi_test::{Executor, IntoBech32};
     use sylvia::multitest::App;
 
     use crate::contract::sv::mt::{CodeId, ContractProxy};
@@ -225,13 +225,14 @@ mod tests {
         let app = App::default();
         let code_id = CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
+        let admin = Addr::unchecked("admin");
 
         let contract = code_id
             .instantiate()
             .with_label("Contract")
-            .with_admin(Some(owner))
-            .call(owner)
+            .with_admin(admin.as_str())
+            .call(&owner)
             .unwrap();
 
         let msg = SudoWrapperMsg::CustomSudo(crate::sudo::SudoMsg::MoveFunds {
@@ -248,7 +249,7 @@ mod tests {
         let count = contract.sudos().unwrap().count;
         assert_eq!(count, 1);
 
-        contract.migrate().call(owner, code_id.code_id()).unwrap();
+        contract.migrate().call(&admin, code_id.code_id()).unwrap();
         let count = contract.migrates().unwrap().count;
         assert_eq!(count, 1);
 
@@ -257,7 +258,7 @@ mod tests {
         (*contract.app)
             .app_mut()
             .execute_contract(
-                Addr::unchecked(owner),
+                Addr::unchecked(&owner),
                 contract.contract_addr.clone(),
                 &msg,
                 &[],
@@ -273,7 +274,7 @@ mod tests {
         (*contract.app)
             .app_mut()
             .execute_contract(
-                Addr::unchecked(owner),
+                Addr::unchecked(&owner),
                 contract.contract_addr.clone(),
                 &msg,
                 &[],

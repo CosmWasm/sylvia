@@ -407,7 +407,7 @@ impl<'a> ContractMtHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str) -> Result<#sylvia ::multitest::Proxy<'app, MtApp, #contract_name >, #error_type> {
+                pub fn call(self, sender: &#sylvia ::cw_std::Addr ) -> Result<#sylvia ::multitest::Proxy<'app, MtApp, #contract_name >, #error_type> {
                     let Self {code_id, funds, label, admin, salt, msg} = self;
 
                     match salt {
@@ -418,7 +418,7 @@ impl<'a> ContractMtHelpers<'a> {
                             .app_mut()
                             .instantiate_contract(
                                 code_id.code_id,
-                                #sylvia ::cw_std::Addr::unchecked(sender),
+                                sender.clone(),
                                 &msg,
                                 funds,
                                 label,
@@ -703,7 +703,7 @@ impl<'a> TraitMtHelpers<'a> {
                 impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #custom_msg, ContractT: super:: #interface_name > #trait_name < #mt_app, #custom_msg > for #sylvia ::multitest::Proxy<'_, #mt_app, ContractT >
                 where
                     ContractT:: #error_type : std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
-                    #custom_msg: Clone + std::fmt::Debug + std::cmp::PartialEq + cosmwasm_schema::schemars::JsonSchema + 'static,
+                    #custom_msg: #sylvia ::types::CustomMsg + 'static,
                     CustomT: #sylvia ::cw_multi_test::Module,
                     WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
                     BankT: #sylvia ::cw_multi_test::Bank,

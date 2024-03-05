@@ -521,13 +521,13 @@ mod tests {
 
         let contract = code_id.instantiate(3)
             .with_label("My contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         let counter = contract.counter().unwrap();
         assert_eq!(counter, contract::CounterResp { counter: 3});
 
-        contract.increment().call(owner).unwrap();
+        contract.increment().call(&owner).unwrap();
 
         let counter = contract.counter().unwrap();
         assert_eq!(counter, contract::CounterResp { counter: 4});
@@ -594,11 +594,11 @@ fn member_test() {
 
     let contract = code_id.instantiate(0)
         .with_label("My contract")
-        .call(owner);
+        .call(&owner);
 
     contract
         .add_member(member.to_owned())
-        .call(owner);
+        .call(&owner);
 
     let resp = contract
         .is_member(member.to_owned())

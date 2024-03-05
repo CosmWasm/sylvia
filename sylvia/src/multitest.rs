@@ -62,10 +62,9 @@ use cosmwasm_std::{CodeInfoResponse, StdResult};
 use cw_multi_test::{
     Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov,
     GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, Stargate,
-    StargateFailing, Wasm, WasmKeeper,
+    StargateFailingModule, Wasm, WasmKeeper,
 };
 use derivative::Derivative;
-use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::types::{CustomMsg, CustomQuery};
@@ -127,7 +126,7 @@ impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
                 DistributionKeeper,
                 IbcFailingModule,
                 GovFailingModule,
-                StargateFailing,
+                StargateFailingModule,
             >,
             &dyn Api,
             &mut dyn Storage,
@@ -157,8 +156,21 @@ impl<MtApp> App<MtApp> {
     }
 }
 
-impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
-    App<cw_multi_test::App<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>>
+impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, StargateT>
+    App<
+        cw_multi_test::App<
+            BankT,
+            ApiT,
+            StorageT,
+            CustomT,
+            WasmT,
+            StakingT,
+            DistrT,
+            IbcT,
+            GovT,
+            StargateT,
+        >,
+    >
 where
     CustomT::ExecT: CustomMsg + 'static,
     CustomT::QueryT: CustomQuery + 'static,
@@ -171,6 +183,7 @@ where
     DistrT: Distribution,
     IbcT: Ibc,
     GovT: Gov,
+    StargateT: Stargate,
 {
     /// Returns the info of the current block on the chain.
     pub fn block_info(&self) -> BlockInfo {
@@ -254,7 +267,7 @@ impl<'a, 'app, Error, Msg, MtApp, ExecC> ExecProxy<'a, 'app, Error, Msg, MtApp, 
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
-    ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
+    ExecC: cosmwasm_std::CustomMsg + 'static,
     MtApp: Executor<ExecC>,
 {
     pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<MtApp>) -> Self {
@@ -274,11 +287,11 @@ where
 
     /// Sends the execute message to the contract.
     #[track_caller]
-    pub fn call(self, sender: &'a str) -> Result<cw_multi_test::AppResponse, Error> {
+    pub fn call(self, sender: &'a Addr) -> Result<cw_multi_test::AppResponse, Error> {
         (*self.app)
             .app_mut()
             .execute_contract(
-                Addr::unchecked(sender),
+                sender.clone(),
                 Addr::unchecked(self.contract_addr),
                 &self.msg,
                 self.funds,
@@ -305,7 +318,7 @@ impl<'a, 'app, Error, Msg, MtApp, ExecC> MigrateProxy<'a, 'app, Error, Msg, MtAp
 where
     Msg: Serialize + Debug,
     Error: Debug + Display + Send + Sync + 'static,
-    ExecC: Debug + Clone + JsonSchema + PartialEq + 'static,
+    ExecC: cosmwasm_std::CustomMsg + 'static,
     MtApp: Executor<ExecC>,
 {
     pub fn new(contract_addr: &'a Addr, msg: Msg, app: &'app App<MtApp>) -> Self {
@@ -319,11 +332,15 @@ where
 
     /// Sends the migrate message to the contract.
     #[track_caller]
-    pub fn call(self, sender: &str, new_code_id: u64) -> Result<cw_multi_test::AppResponse, Error> {
+    pub fn call(
+        self,
+        sender: &Addr,
+        new_code_id: u64,
+    ) -> Result<cw_multi_test::AppResponse, Error> {
         (*self.app)
             .app_mut()
             .migrate_contract(
-                Addr::unchecked(sender),
+                sender.clone(),
                 Addr::unchecked(self.contract_addr),
                 &self.msg,
                 new_code_id,

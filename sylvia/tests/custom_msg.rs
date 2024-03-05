@@ -247,6 +247,8 @@ mod tests {
     use crate::some_interface::sv::mt::SomeInterfaceProxy;
     use crate::sv::mt::MyContractProxy;
     use crate::{MyContract, MyMsg};
+    use cosmwasm_std::Addr;
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     #[test]
@@ -255,41 +257,42 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<MyMsg>>::custom(|_, _, _| {});
         let code_id = crate::sv::mt::CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
+        let admin = Addr::unchecked("admin");
 
         let contract = code_id
             .instantiate()
             .with_label("MyContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(admin.as_str())
+            .call(&owner)
             .unwrap();
 
-        contract.some_exec().call(owner).unwrap();
+        contract.some_exec().call(&owner).unwrap();
         contract.some_query().unwrap();
         contract.some_sudo().unwrap();
         contract
             .some_migrate()
-            .call(owner, code_id.code_id())
+            .call(&admin, code_id.code_id())
             .unwrap();
 
         // Interface messsages
         contract.interface_query().unwrap();
-        contract.interface_exec().call(owner).unwrap();
+        contract.interface_exec().call(&owner).unwrap();
         contract.interface_sudo().unwrap();
 
         // Other interface messages
         contract.other_interface_query().unwrap();
-        contract.other_interface_exec().call(owner).unwrap();
+        contract.other_interface_exec().call(&owner).unwrap();
         contract.other_interface_sudo().unwrap();
 
         // Associated interface messages
         contract.associated_query().unwrap();
-        contract.associated_exec().call(owner).unwrap();
+        contract.associated_exec().call(&owner).unwrap();
         contract.associated_sudo().unwrap();
 
         // Both associated type and custom attr used
         contract.query().unwrap();
-        contract.exec().call(owner).unwrap();
+        contract.exec().call(&owner).unwrap();
         contract.sudo().unwrap();
     }
 }

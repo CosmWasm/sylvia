@@ -1,6 +1,7 @@
 use cosmwasm_std::{Addr, StdError};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{EmbeddedLogo, Logo};
+use cw_multi_test::IntoBech32;
 use sylvia::multitest::App;
 
 use crate::contract::sv::mt::CodeId;
@@ -14,7 +15,8 @@ const PNG_HEADER: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
 fn update_unauthorised() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
+    let marketing = "marketing".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -28,12 +30,12 @@ fn update_unauthorised() {
             marketing: Some(InstantiateMarketingInfo {
                 project: Some("Project".to_owned()),
                 description: Some("Description".to_owned()),
-                marketing: Some("marketing".to_owned()),
+                marketing: Some(marketing.to_string()),
                 logo: Some(Logo::Url("url".to_owned())),
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
@@ -42,7 +44,7 @@ fn update_unauthorised() {
             Some("Better description".to_owned()),
             Some("creator".to_owned()),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::Unauthorized);
@@ -55,7 +57,7 @@ fn update_unauthorised() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked("marketing")),
+            marketing: Some(marketing),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -72,7 +74,7 @@ fn update_unauthorised() {
 fn update_project() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -91,12 +93,12 @@ fn update_project() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .update_marketing(Some("New project".to_owned()), None, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -106,7 +108,7 @@ fn update_project() {
         MarketingInfoResponse {
             project: Some("New project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -123,7 +125,7 @@ fn update_project() {
 fn clear_project() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -142,12 +144,12 @@ fn clear_project() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .update_marketing(Some("".to_owned()), None, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -156,7 +158,7 @@ fn clear_project() {
         MarketingInfoResponse {
             project: None,
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -173,7 +175,7 @@ fn clear_project() {
 fn update_description() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -192,12 +194,12 @@ fn update_description() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .update_marketing(None, Some("Better description".to_owned()), None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -206,7 +208,7 @@ fn update_description() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Better description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -223,7 +225,7 @@ fn update_description() {
 fn clear_description() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -242,12 +244,12 @@ fn clear_description() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .update_marketing(None, Some("".to_owned()), None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -257,7 +259,7 @@ fn clear_description() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: None,
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -274,7 +276,8 @@ fn clear_description() {
 fn update_marketing() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
+    let marketing = "marketing".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -293,12 +296,12 @@ fn update_marketing() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
-        .update_marketing(None, None, Some("marketing".to_owned()))
-        .call(owner)
+        .update_marketing(None, None, Some(marketing.to_string()))
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -308,7 +311,7 @@ fn update_marketing() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked("marketing")),
+            marketing: Some(marketing),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -325,7 +328,7 @@ fn update_marketing() {
 fn update_marketing_invalid() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -344,12 +347,12 @@ fn update_marketing_invalid() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .update_marketing(None, None, Some("m".to_owned()))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert!(
@@ -365,7 +368,7 @@ fn update_marketing_invalid() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -382,7 +385,7 @@ fn update_marketing_invalid() {
 fn clear_marketing() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -401,12 +404,12 @@ fn clear_marketing() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .update_marketing(None, None, Some("".to_owned()))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -432,7 +435,7 @@ fn clear_marketing() {
 fn update_logo_url() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -451,12 +454,12 @@ fn update_logo_url() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .upload_logo(Logo::Url("new_url".to_owned()))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -466,7 +469,7 @@ fn update_logo_url() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("new_url".to_owned())),
         }
     );
@@ -483,7 +486,7 @@ fn update_logo_url() {
 fn update_logo_png() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -502,12 +505,12 @@ fn update_logo_png() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(PNG_HEADER.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -517,7 +520,7 @@ fn update_logo_png() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Embedded),
         }
     );
@@ -536,7 +539,7 @@ fn update_logo_png() {
 fn update_logo_svg() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let img = "<?xml version=\"1.0\"?><svg></svg>".as_bytes();
 
     let code_id = CodeId::store_code(&app);
@@ -556,12 +559,12 @@ fn update_logo_svg() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.marketing_info().unwrap();
@@ -571,7 +574,7 @@ fn update_logo_svg() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Embedded),
         }
     );
@@ -590,7 +593,7 @@ fn update_logo_svg() {
 fn update_logo_png_oversized() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let img = [&PNG_HEADER[..], &[1; 6000][..]].concat();
 
     let code_id = CodeId::store_code(&app);
@@ -610,12 +613,12 @@ fn update_logo_png_oversized() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig);
@@ -627,7 +630,7 @@ fn update_logo_png_oversized() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -644,7 +647,7 @@ fn update_logo_png_oversized() {
 fn update_logo_svg_oversized() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let img = [
         "<?xml version=\"1.0\"?><svg>",
         std::str::from_utf8(&[b'x'; 6000]).unwrap(),
@@ -670,12 +673,12 @@ fn update_logo_svg_oversized() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::LogoTooBig);
@@ -686,7 +689,7 @@ fn update_logo_svg_oversized() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -703,7 +706,7 @@ fn update_logo_svg_oversized() {
 fn update_logo_png_invalid() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let img = &[1];
 
     let code_id = CodeId::store_code(&app);
@@ -723,12 +726,12 @@ fn update_logo_png_invalid() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Png(img.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidPngHeader);
 
@@ -738,7 +741,7 @@ fn update_logo_png_invalid() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );
@@ -755,7 +758,7 @@ fn update_logo_png_invalid() {
 fn update_logo_svg_invalid() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let img = &[1];
 
     let code_id = CodeId::store_code(&app);
@@ -775,12 +778,12 @@ fn update_logo_svg_invalid() {
             }),
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .upload_logo(Logo::Embedded(EmbeddedLogo::Svg(img.into())))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidXmlPreamble);
 
@@ -790,7 +793,7 @@ fn update_logo_svg_invalid() {
         MarketingInfoResponse {
             project: Some("Project".to_owned()),
             description: Some("Description".to_owned()),
-            marketing: Some(Addr::unchecked(owner)),
+            marketing: Some(Addr::unchecked(&owner)),
             logo: Some(LogoInfo::Url("url".to_owned())),
         }
     );

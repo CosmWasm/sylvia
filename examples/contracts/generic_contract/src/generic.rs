@@ -119,6 +119,7 @@ mod tests {
     use crate::contract::sv::mt::CodeId;
     use crate::contract::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::CosmosMsg;
+    use cw_multi_test::IntoBech32;
     use generic::sv::mt::GenericProxy;
     use sylvia::multitest::App;
 
@@ -142,13 +143,13 @@ mod tests {
             _,
         > = CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate(SvCustomMsg {})
             .with_label("GenericContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(owner.as_str())
+            .call(&owner)
             .unwrap();
 
         contract
@@ -156,14 +157,14 @@ mod tests {
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .generic_exec_two(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .generic_query_one(SvCustomMsg, SvCustomMsg)

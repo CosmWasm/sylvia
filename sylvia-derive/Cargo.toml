@@ -43,13 +43,13 @@ sylvia = { path = "../sylvia", features = [
     "cosmwasm_1_3",
     "cosmwasm_1_4",
 ] }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-cosmwasm-schema = "1.5"
-schemars = "0.8"
-cw-storage-plus = "1.2.0"
-thiserror = "1.0.58"
-cw-multi-test = "0.20.0"
-cw-utils = "1.0.2"
+serde = { workspace = true }
+cosmwasm-schema = { workspace = true }
+schemars = { workspace = true }
+cw-storage-plus = { workspace = true }
+thiserror = { workspace = true }
+cw-multi-test = { workspace = true }
+cw-utils = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true

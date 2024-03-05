@@ -97,8 +97,8 @@ mod impl_group {
 }
 
 pub struct GroupContract {
-    admin: Item<'static, Addr>,
-    _members: Map<'static, Addr, u64>,
+    admin: Item<Addr>,
+    _members: Map<Addr, u64>,
 }
 
 impl Default for GroupContract {

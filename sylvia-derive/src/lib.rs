@@ -269,7 +269,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// #
 /// #
 /// pub struct SvContract {
-///     data: Item<'static, ContractData>,
+///     data: Item<ContractData>,
 /// }
 ///
 /// ##[sylvia::contract]
@@ -330,7 +330,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// # pub struct ContractData;
 /// #
 /// # pub struct SvContract {
-/// #    data: Item<'static, ContractData>,
+/// #    data: Item<ContractData>,
 /// # }
 /// #
 /// # impl SvContract {
@@ -444,7 +444,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// # pub struct QueryResponse;
 /// #
 /// pub struct SvContract {
-///     data: Item<'static, ContractData>,
+///     data: Item<ContractData>,
 /// }
 ///
 /// ##[sylvia::contract]
@@ -694,7 +694,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// # impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 /// #
 /// pub struct SvContract<InstantiateT, DataT> {
-///     data: Item<'static, DataT>,
+///     data: Item<DataT>,
 ///     _phantom: PhantomData<InstantiateT>,
 /// }
 ///

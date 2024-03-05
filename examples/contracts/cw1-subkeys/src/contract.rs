@@ -27,8 +27,8 @@ const DEFAULT_LIMIT: u32 = 10;
 
 pub struct Cw1SubkeysContract<'a> {
     pub(crate) whitelist: Cw1WhitelistContract<'a>,
-    pub(crate) permissions: Map<'static, &'a Addr, Permissions>,
-    pub(crate) allowances: Map<'static, &'a Addr, Allowance>,
+    pub(crate) permissions: Map<&'a Addr, Permissions>,
+    pub(crate) allowances: Map<&'a Addr, Allowance>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_points)]

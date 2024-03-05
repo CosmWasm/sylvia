@@ -1,5 +1,6 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{Addr, StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
+use cw_multi_test::IntoBech32;
 use sylvia::multitest::App;
 
 use crate::contract::sv::mt::{CodeId, Cw20BaseProxy};
@@ -12,8 +13,8 @@ use cw20_minting::sv::mt::Cw20MintingProxy;
 fn mintable() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(511223344);
 
@@ -35,7 +36,7 @@ fn mintable() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // read token info
@@ -77,8 +78,8 @@ fn mintable() {
 fn mintable_over_cap() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
     let amount = Uint128::new(11223344);
     let limit = Uint128::new(11223300);
 
@@ -100,7 +101,7 @@ fn mintable_over_cap() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(
@@ -113,9 +114,9 @@ fn mintable_over_cap() {
 fn can_mint_by_minter() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
-    let winner = "lucky";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
+    let winner = "lucky".into_bech32();
     let prize = Uint128::new(222_222_222);
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(11223344);
@@ -138,19 +139,19 @@ fn can_mint_by_minter() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
         .mint(winner.to_string(), prize)
-        .call(minter)
+        .call(&minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
         .mint(winner.to_string(), Uint128::zero())
-        .call(minter)
+        .call(&minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount);
@@ -159,7 +160,7 @@ fn can_mint_by_minter() {
     // cap is enforced
     let err = contract
         .mint(winner.to_string(), Uint128::new(333_222_222))
-        .call(minter)
+        .call(&minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap);
@@ -169,9 +170,9 @@ fn can_mint_by_minter() {
 fn others_cannot_mint() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
-    let winner = "lucky";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
+    let winner = "lucky".into_bech32();
     let prize = Uint128::new(222_222_222);
     let limit = Uint128::new(511223344);
     let amount = Uint128::new(1234);
@@ -194,19 +195,19 @@ fn others_cannot_mint() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
         .mint(winner.to_string(), prize)
-        .call(minter)
+        .call(&minter)
         .unwrap();
 
     // but cannot mint nothing
     let err = contract
         .mint(winner.to_string(), Uint128::zero())
-        .call(minter)
+        .call(&minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount);
@@ -215,7 +216,7 @@ fn others_cannot_mint() {
     // cap is enforced
     let err = contract
         .mint(winner.to_string(), Uint128::new(333_222_222))
-        .call(minter)
+        .call(&minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotExceedCap);
@@ -225,9 +226,9 @@ fn others_cannot_mint() {
 fn minter_can_update_minter_but_not_cap() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
-    let new_minter = "new_minter";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
+    let new_minter = "new_minter".into_bech32();
     let amount = Uint128::new(1234);
     let cap = Some(Uint128::from(3000000u128));
 
@@ -249,13 +250,13 @@ fn minter_can_update_minter_but_not_cap() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // minter can mint coins to some winner
     contract
         .update_minter(Some(new_minter.to_string()))
-        .call(minter)
+        .call(&minter)
         .unwrap();
 
     let resp = contract.minter().unwrap().unwrap();
@@ -272,9 +273,9 @@ fn minter_can_update_minter_but_not_cap() {
 fn others_cannot_update_minter() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
-    let new_minter = "new_minter";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
+    let new_minter = Addr::unchecked("new_minter");
     let amount = Uint128::new(1234);
 
     let code_id = CodeId::store_code(&app);
@@ -295,12 +296,12 @@ fn others_cannot_update_minter() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
         .update_minter(Some(new_minter.to_string()))
-        .call(new_minter)
+        .call(&new_minter)
         .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized);
 }
@@ -309,8 +310,8 @@ fn others_cannot_update_minter() {
 fn unset_minter() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let minter = "addr0002";
+    let owner = "owner".into_bech32();
+    let minter = "minter".into_bech32();
     let winner = "lucky";
     let amount = Uint128::new(1234);
 
@@ -332,11 +333,11 @@ fn unset_minter() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // Unset minter
-    contract.update_minter(None).call(minter).unwrap();
+    contract.update_minter(None).call(&minter).unwrap();
 
     let resp = contract.minter().unwrap();
     assert_eq!(resp, None);
@@ -344,7 +345,7 @@ fn unset_minter() {
     // Old minter can no longer mint
     let err = contract
         .mint(winner.to_string(), amount)
-        .call(minter)
+        .call(&minter)
         .unwrap_err();
 
     assert_eq!(err, ContractError::Unauthorized);

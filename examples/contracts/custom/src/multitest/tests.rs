@@ -1,3 +1,4 @@
+use cw_multi_test::IntoBech32;
 use sylvia::multitest::App;
 
 use crate::contract::sv::mt::CodeId;
@@ -11,7 +12,7 @@ use cw1::sv::mt::Cw1Proxy;
 
 #[test]
 fn test_custom() {
-    let owner = "owner";
+    let owner = "owner".into_bech32();
 
     let mt_app = cw_multi_test::BasicAppBuilder::new_custom()
         .with_custom(CustomModule::default())
@@ -23,14 +24,14 @@ fn test_custom() {
 
     let code_id = CodeId::store_code(&app);
 
-    let contract = code_id.instantiate().call(owner).unwrap();
+    let contract = code_id.instantiate().call(&owner).unwrap();
 
-    contract.send_custom().call(owner).unwrap();
+    contract.send_custom().call(&owner).unwrap();
 
     contract
         .can_execute("".to_string(), CosmosMsg::Custom(cosmwasm_std::Empty {}))
         .unwrap();
-    contract.execute(vec![]).call(owner).unwrap();
+    contract.execute(vec![]).call(&owner).unwrap();
 
     let count = contract.query_custom().unwrap().count;
     assert_eq!(count, 1);

@@ -1,6 +1,7 @@
 #![cfg(feature = "mt")]
 
 use cosmwasm_std::{CodeInfoResponse, Empty, Response, StdResult};
+use cw_multi_test::IntoBech32;
 use std::marker::PhantomData;
 use sylvia::multitest::App;
 use sylvia::types::InstantiateCtx;
@@ -29,7 +30,7 @@ where
 
 #[test]
 fn instantiate_with_salt() {
-    let owner = "owner";
+    let owner = "owner".into_bech32();
     let salt = "sylvia OP".as_bytes();
 
     let app = App::default();
@@ -39,7 +40,7 @@ fn instantiate_with_salt() {
     let _: sylvia::multitest::Proxy<_, SomeContract<Empty>> = code_id
         .instantiate(Empty {})
         .with_salt(salt)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 }
 

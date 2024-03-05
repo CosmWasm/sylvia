@@ -253,7 +253,8 @@ mod tests {
     use crate::sv::mt::MyContractProxy;
     use crate::{MyContract, MyQuery};
 
-    use cosmwasm_std::Empty;
+    use cosmwasm_std::{Addr, Empty};
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     #[test]
@@ -262,41 +263,42 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<Empty, MyQuery>>::custom(|_, _, _| {});
         let code_id = crate::sv::mt::CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
+        let admin = Addr::unchecked("admin");
 
         let contract = code_id
             .instantiate()
             .with_label("MyContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(admin.as_str())
+            .call(&owner)
             .unwrap();
 
-        contract.some_exec().call(owner).unwrap();
+        contract.some_exec().call(&owner).unwrap();
         contract.some_query().unwrap();
         contract.some_sudo().unwrap();
         contract
             .some_migrate()
-            .call(owner, code_id.code_id())
+            .call(&admin, code_id.code_id())
             .unwrap();
 
         // `sv::custom` attribute interface
         contract.some_interface_query().unwrap();
-        contract.some_interface_exec().call(owner).unwrap();
+        contract.some_interface_exec().call(&owner).unwrap();
         contract.some_interface_sudo().unwrap();
 
         // Associated tyoe interface messages
         contract.associated_query().unwrap();
-        contract.associated_exec().call(owner).unwrap();
+        contract.associated_exec().call(&owner).unwrap();
         contract.associated_sudo().unwrap();
 
         // `sv::custom` attribute and associated type interface
         contract.interface_query().unwrap();
-        contract.interface_exec().call(owner).unwrap();
+        contract.interface_exec().call(&owner).unwrap();
         contract.interface_sudo().unwrap();
 
         // Neither `custom` attribute nor associated type
         contract.default_query().unwrap();
-        contract.default_exec().call(owner).unwrap();
+        contract.default_exec().call(&owner).unwrap();
         contract.default_sudo().unwrap();
     }
 }

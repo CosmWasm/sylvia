@@ -63,13 +63,13 @@ pub struct InstantiateMsgData {
 }
 
 pub struct Cw20Base<'a> {
-    pub(crate) token_info: Item<'static, TokenInfo>,
-    pub(crate) marketing_info: Item<'static, MarketingInfoResponse>,
-    pub(crate) logo: Item<'static, Logo>,
-    pub(crate) balances: Map<'static, &'a Addr, Uint128>,
-    pub(crate) allowances: Map<'static, (&'a Addr, &'a Addr), AllowanceResponse>,
+    pub(crate) token_info: Item<TokenInfo>,
+    pub(crate) marketing_info: Item<MarketingInfoResponse>,
+    pub(crate) logo: Item<Logo>,
+    pub(crate) balances: Map<&'a Addr, Uint128>,
+    pub(crate) allowances: Map<(&'a Addr, &'a Addr), AllowanceResponse>,
     // TODO: After https://github.com/CosmWasm/cw-plus/issues/670 is implemented, replace this with a `MultiIndex` over `ALLOWANCES`
-    pub(crate) allowances_spender: Map<'static, (&'a Addr, &'a Addr), AllowanceResponse>,
+    pub(crate) allowances_spender: Map<(&'a Addr, &'a Addr), AllowanceResponse>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_points)]

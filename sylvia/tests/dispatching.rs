@@ -133,11 +133,11 @@ mod contract {
     use crate::QueryResponse;
 
     pub struct Contract {
-        pub(crate) execs: Item<'static, u64>,
+        pub(crate) execs: Item<u64>,
         pub(crate) queries: RefCell<u64>,
-        pub(crate) sudos: Item<'static, u64>,
+        pub(crate) sudos: Item<u64>,
 
-        pub(crate) data: Map<'static, Addr, QueryResponse>,
+        pub(crate) data: Map<Addr, QueryResponse>,
     }
 
     #[entry_points]

@@ -29,7 +29,7 @@ pub struct GenericContract<
     MigrateT,
     FieldT,
 > {
-    _field: Item<'static, FieldT>,
+    _field: Item<FieldT>,
     #[allow(clippy::type_complexity)]
     _phantom: std::marker::PhantomData<(
         InstantiateT,
@@ -196,6 +196,7 @@ mod tests {
     use super::sv::mt::CodeId;
     use super::{SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::GenericContractProxy;
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     #[test]
@@ -218,22 +219,22 @@ mod tests {
             _,
         > = CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate(SvCustomMsg {})
             .with_label("GenericContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(owner.as_str())
+            .call(&owner)
             .unwrap();
 
         contract
             .contract_execute_one(SvCustomMsg, SvCustomMsg)
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .contract_execute_two(SvCustomMsg, SvCustomMsg)
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .contract_query_one(SvCustomMsg, SvCustomMsg)
@@ -249,7 +250,7 @@ mod tests {
             .unwrap();
         contract
             .migrate(SvCustomMsg)
-            .call(owner, code_id.code_id())
+            .call(&owner, code_id.code_id())
             .unwrap();
     }
 }

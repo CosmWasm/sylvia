@@ -40,6 +40,7 @@ impl NonGenericContract {
 mod tests {
     use super::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::{CosmosMsg, Empty};
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     use super::NonGenericContract;
@@ -53,12 +54,12 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = super::sv::mt::CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate()
             .with_label("Cw1Contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         // Non custom non generic interface
@@ -67,7 +68,7 @@ mod tests {
             .unwrap();
         contract
             .execute(vec![CosmosMsg::Custom(Empty {})])
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         // Non-Custom generic Interface
@@ -82,14 +83,14 @@ mod tests {
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .generic_exec_two(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .generic_sudo_one(
@@ -116,14 +117,14 @@ mod tests {
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .custom_generic_execute_two(
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
                 vec![CosmosMsg::Custom(SvCustomMsg {})],
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .custom_generic_sudo_one(

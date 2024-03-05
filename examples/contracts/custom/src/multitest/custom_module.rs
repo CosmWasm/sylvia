@@ -11,7 +11,7 @@ use std::fmt::Debug;
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 
 pub struct CustomModule {
-    pub counter: Item<'static, u64>,
+    pub counter: Item<u64>,
 }
 
 impl Default for CustomModule {

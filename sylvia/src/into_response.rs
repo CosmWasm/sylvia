@@ -20,8 +20,8 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             ))?,
             #[cfg(feature = "stargate")]
             CosmosMsg::Ibc(ibc) => CosmosMsg::Ibc(ibc),
-            #[cfg(feature = "stargate")]
-            CosmosMsg::Stargate { type_url, value } => CosmosMsg::Stargate { type_url, value },
+            #[cfg(feature = "cosmwasm_2_0")]
+            CosmosMsg::Any(any) => CosmosMsg::Any(any),
             #[cfg(feature = "stargate")]
             CosmosMsg::Gov(msg) => CosmosMsg::Gov(msg),
             _ => return Err(StdError::generic_err(format!(
@@ -35,6 +35,7 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             id: self.id,
             gas_limit: self.gas_limit,
             reply_on: self.reply_on,
+            payload: self.payload,
         })
     }
 }

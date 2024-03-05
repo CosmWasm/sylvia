@@ -1,5 +1,6 @@
 use cosmwasm_std::{coin, coins, Addr};
 use cw2::{query_contract_info, ContractVersion};
+use cw_multi_test::IntoBech32;
 use cw_utils::{Expiration, NativeBalance};
 use sylvia::multitest::App;
 
@@ -35,14 +36,14 @@ macro_rules! assert_sorted_eq {
 fn get_contract_version_works() {
     let app = App::default();
 
-    let owner = "owner";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
     let contract = code_id
-        .instantiate(vec![owner.to_owned()], true)
+        .instantiate(vec![owner.to_string()], true)
         .with_label("Sublist contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let version: ContractVersion =
@@ -69,25 +70,27 @@ mod allowance {
     fn query() {
         let app = App::default();
 
-        let owner = "owner";
-        let spenders = ["spender1", "spender2", "spender3"];
+        let owner = "owner".into_bech32();
+        let spender1 = "spender1".into_bech32();
+        let spender2 = "spender2".into_bech32();
+        let spender3 = "spender3".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned()], false)
+            .instantiate(vec![owner.to_string()], false)
             .with_label("Sublist contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
-            .increase_allowance(spenders[0].to_owned(), coin(1, ATOM), None)
-            .call(owner)
+            .increase_allowance(spender1.to_string(), coin(1, ATOM), None)
+            .call(&owner)
             .unwrap();
 
         contract
-            .increase_allowance(spenders[1].to_owned(), coin(2, ATOM), None)
-            .call(owner)
+            .increase_allowance(spender2.to_string(), coin(2, ATOM), None)
+            .call(&owner)
             .unwrap();
 
         assert_eq!(
@@ -95,7 +98,7 @@ mod allowance {
                 balance: NativeBalance(coins(1, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(spenders[0].to_owned()).unwrap()
+            contract.allowance(spender1.to_string()).unwrap()
         );
 
         assert_eq!(
@@ -103,12 +106,12 @@ mod allowance {
                 balance: NativeBalance(coins(2, ATOM)),
                 expires: Expiration::Never {},
             },
-            contract.allowance(spenders[1].to_owned()).unwrap()
+            contract.allowance(spender2.to_string()).unwrap()
         );
 
         assert_eq!(
             Allowance::default(),
-            contract.allowance(spenders[2].to_owned()).unwrap()
+            contract.allowance(spender3.to_string()).unwrap()
         );
     }
 
@@ -116,25 +119,25 @@ mod allowance {
     fn query_expired() {
         let app = App::default();
 
-        let owner = "owner";
-        let spender = "spender";
+        let owner = "owner".into_bech32();
+        let spender = "spender".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned()], false)
+            .instantiate(vec![owner.to_string()], false)
             .with_label("Sublist contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         let height = app.block_info().height;
         contract
             .increase_allowance(
-                spender.to_owned(),
+                spender.to_string(),
                 coin(1, ATOM),
                 Some(Expiration::AtHeight(height + 1)),
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         app.update_block(next_block);
@@ -145,7 +148,7 @@ mod allowance {
                 balance: NativeBalance(vec![]),
                 expires: Expiration::Never {},
             },
-            contract.allowance(spender.to_owned()).unwrap()
+            contract.allowance(spender.to_string()).unwrap()
         );
     }
 
@@ -153,51 +156,51 @@ mod allowance {
     fn query_all() {
         let app = App::default();
 
-        let owner = "owner";
-        let spender1 = "spender1";
-        let spender2 = "spender2";
-        let spender3 = "spender3";
-        let spender4 = "spender4";
+        let owner = "owner".into_bech32();
+        let spender1 = "spender1".into_bech32();
+        let spender2 = "spender2".into_bech32();
+        let spender3 = "spender3".into_bech32();
+        let spender4 = "spender4".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned()], false)
+            .instantiate(vec![owner.to_string()], false)
             .with_label("Sublist contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         let height = app.block_info().height;
         contract
-            .increase_allowance(spender1.to_owned(), coin(1234, ATOM), None)
-            .call(owner)
+            .increase_allowance(spender1.to_string(), coin(1234, ATOM), None)
+            .call(&owner)
             .unwrap();
 
         contract
             .increase_allowance(
-                spender2.to_owned(),
+                spender2.to_string(),
                 coin(2345, ATOM),
                 Some(Expiration::Never {}),
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
             .increase_allowance(
-                spender3.to_owned(),
+                spender3.to_string(),
                 coin(3456, ATOM),
                 Some(Expiration::AtHeight(height + 2)),
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
             .increase_allowance(
-                spender4.to_owned(),
+                spender4.to_string(),
                 coin(2222, ATOM),
                 Some(Expiration::AtHeight(height + 1)),
             )
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         app.update_block(next_block);
@@ -263,27 +266,27 @@ mod permissions {
     fn query() {
         let app = App::default();
 
-        let owner = "owner";
-        let spender1 = "spender1";
-        let spender2 = "spender2";
-        let spender3 = "spender2";
+        let owner = "owner".into_bech32();
+        let spender1 = "spender1".into_bech32();
+        let spender2 = "spender2".into_bech32();
+        let spender3 = "spender3".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
             .instantiate(vec![owner.to_string()], false)
             .with_label("Subkeys contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
             .set_permissions(spender1.to_string(), ALL_PERMS)
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
             .set_permissions(spender2.to_string(), NO_PERMS)
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         assert_eq!(
@@ -304,40 +307,46 @@ mod permissions {
     fn query_all() {
         let app = App::default();
 
-        let owner = "owner";
-        let spender1 = "spender1";
-        let spender2 = "spender2";
-        let spender3 = "spender3";
+        let owner = "owner".into_bech32();
+        let spender1 = "spender1".into_bech32();
+        let spender2 = "spender2".into_bech32();
+        let spender3 = "spender3".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned()], false)
+            .instantiate(vec![owner.to_string()], false)
             .with_label("Subkeys contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         contract
-            .set_permissions(spender1.to_owned(), ALL_PERMS)
-            .call(owner)
+            .set_permissions(spender1.to_string(), ALL_PERMS)
+            .call(&owner)
             .unwrap();
 
         contract
-            .set_permissions(spender2.to_owned(), NO_PERMS)
-            .call(owner)
+            .set_permissions(spender2.to_string(), NO_PERMS)
+            .call(&owner)
             .unwrap();
 
         contract
-            .set_permissions(spender3.to_owned(), NO_PERMS)
-            .call(owner)
+            .set_permissions(spender3.to_string(), NO_PERMS)
+            .call(&owner)
             .unwrap();
 
         assert_eq!(
             ALL_PERMS,
-            contract.permissions(spender1.to_owned()).unwrap()
+            contract.permissions(spender1.to_string()).unwrap()
         );
-        assert_eq!(NO_PERMS, contract.permissions(spender2.to_owned()).unwrap());
-        assert_eq!(NO_PERMS, contract.permissions(spender3.to_owned()).unwrap());
+        assert_eq!(
+            NO_PERMS,
+            contract.permissions(spender2.to_string()).unwrap()
+        );
+        assert_eq!(
+            NO_PERMS,
+            contract.permissions(spender3.to_string()).unwrap()
+        );
 
         let batch1 = contract.all_permissions(None, Some(2)).unwrap().permissions;
         assert_eq!(2, batch1.len());
@@ -381,20 +390,19 @@ mod cw1_execute {
     fn can_execute() {
         let app = App::default();
 
-        let owner = "owner";
-        let admin = "admin";
-        let non_admin = "non_admin";
+        let owner = "owner".into_bech32();
+        let admin = "admin".into_bech32();
+        let non_admin = "non_admin".into_bech32();
 
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned(), admin.to_owned()], false)
+            .instantiate(vec![owner.to_string(), admin.to_string()], false)
             .with_label("Subkeys contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
-
         let msg = BankMsg::Send {
-            to_address: "owner".to_owned(),
+            to_address: owner.to_string(),
             amount: vec![],
         };
 
@@ -413,18 +421,18 @@ mod cw1_execute {
 
     #[test]
     fn execute() {
-        let owner = "owner";
-        let admin = "admin";
-        let non_admin = "non_admin";
+        let owner = "owner".into_bech32();
+        let admin = "admin".into_bech32();
+        let non_admin = Addr::unchecked("non_admin");
 
         let app = cw_multi_test::App::new(|router, _api, storage| {
             router
                 .bank
-                .init_balance(storage, &Addr::unchecked(admin), coins(2345, ATOM))
+                .init_balance(storage, &admin, coins(2345, ATOM))
                 .unwrap();
             router
                 .bank
-                .init_balance(storage, &Addr::unchecked(non_admin), coins(2345, ATOM))
+                .init_balance(storage, &non_admin, coins(2345, ATOM))
                 .unwrap();
         });
 
@@ -433,9 +441,9 @@ mod cw1_execute {
         let code_id = CodeId::store_code(&app);
 
         let contract = code_id
-            .instantiate(vec![owner.to_owned(), admin.to_string()], false)
+            .instantiate(vec![owner.to_string(), admin.to_string()], false)
             .with_label("Subkeys contract")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         let msg = BankMsg::Send {
@@ -446,13 +454,13 @@ mod cw1_execute {
         contract
             .execute(vec![msg.clone().into()])
             .with_funds(&[coin(2345, ATOM)])
-            .call(admin)
+            .call(&admin)
             .unwrap();
 
         contract
             .execute(vec![msg.into()])
             .with_funds(&[coin(2345, ATOM)])
-            .call(non_admin)
+            .call(&non_admin)
             .unwrap_err();
     }
 }
