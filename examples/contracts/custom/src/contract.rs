@@ -9,7 +9,7 @@ use sylvia::entry_points;
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 
 pub struct CustomContract {
-    pub(crate) sudo_counter: Item<'static, u64>,
+    pub(crate) sudo_counter: Item<u64>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_points)]

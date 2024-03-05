@@ -107,6 +107,7 @@ mod tests {
     use super::{SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::CodeId;
     use custom_and_generic::sv::mt::CustomAndGenericProxy;
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     #[test]
@@ -128,22 +129,22 @@ mod tests {
             _,
         >::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate(SvCustomMsg {})
             .with_label("GenericContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(owner.as_str())
+            .call(&owner)
             .unwrap();
 
         contract
             .custom_generic_execute_one(vec![], vec![])
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .custom_generic_execute_two(vec![], vec![])
-            .call(owner)
+            .call(&owner)
             .unwrap();
         contract
             .custom_generic_query_one(SvCustomMsg {}, SvCustomMsg {})

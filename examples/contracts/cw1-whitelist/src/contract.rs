@@ -13,8 +13,8 @@ const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct Cw1WhitelistContract<'a> {
-    pub(crate) admins: Map<'static, &'a Addr, Empty>,
-    pub(crate) mutable: Item<'static, bool>,
+    pub(crate) admins: Map<&'a Addr, Empty>,
+    pub(crate) mutable: Item<bool>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_points)]
@@ -61,6 +61,7 @@ mod tests {
         coin, coins, to_json_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg,
     };
     use cw1::Cw1;
+    use cw_multi_test::IntoBech32;
     use whitelist::responses::AdminListResponse;
     use whitelist::Whitelist;
 
@@ -68,9 +69,11 @@ mod tests {
     fn instantiate_and_modify_config() {
         let mut deps = mock_dependencies();
 
-        let alice = "alice";
-        let bob = "bob";
-        let carl = "carl";
+        let alice = "alice".into_bech32();
+        let bob = "bob".into_bech32();
+        let carl = "carl".into_bech32();
+        let mut admins = vec![alice.to_string(), bob.to_string(), carl.to_string()];
+        admins.sort();
 
         let anyone = "anyone";
 
@@ -88,7 +91,7 @@ mod tests {
 
         // ensure expected config
         let expected = AdminListResponse {
-            admins: vec![alice.to_string(), bob.to_string(), carl.to_string()],
+            admins,
             mutable: true,
         };
         assert_eq!(
@@ -109,7 +112,7 @@ mod tests {
         assert_eq!(err, ContractError::Unauthorized);
 
         // but alice can kick out carl
-        let info = mock_info(alice, &[]);
+        let info = mock_info(alice.as_str(), &[]);
         contract
             .update_admins(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -130,14 +133,14 @@ mod tests {
         );
 
         // carl cannot freeze it
-        let info = mock_info(carl, &[]);
+        let info = mock_info(carl.as_str(), &[]);
         let err = contract
             .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized);
 
         // but bob can
-        let info = mock_info(bob, &[]);
+        let info = mock_info(bob.as_str(), &[]);
         contract
             .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap();
@@ -153,7 +156,7 @@ mod tests {
         );
 
         // and now alice cannot change it again
-        let info = mock_info(alice, &[]);
+        let info = mock_info(alice.as_str(), &[]);
         let err = contract
             .update_admins(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -167,14 +170,14 @@ mod tests {
     fn execute_messages_has_proper_permissions() {
         let mut deps = mock_dependencies();
 
-        let alice = "alice";
-        let bob = "bob";
-        let carl = "carl";
+        let alice = "alice".into_bech32();
+        let bob = "bob".into_bech32();
+        let carl = "carl".into_bech32();
 
         let contract = Cw1WhitelistContract::new();
 
         // instantiate the contract
-        let info = mock_info(bob, &[]);
+        let info = mock_info(bob.as_str(), &[]);
         contract
             .instantiate(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -199,14 +202,14 @@ mod tests {
         ];
 
         // bob cannot execute them
-        let info = mock_info(bob, &[]);
+        let info = mock_info(bob.as_str(), &[]);
         let err = contract
             .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized);
 
         // but carl can
-        let info = mock_info(carl, &[]);
+        let info = mock_info(carl.as_str(), &[]);
         let res = contract
             .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap();
@@ -221,15 +224,15 @@ mod tests {
     fn can_execute_query_works() {
         let mut deps = mock_dependencies();
 
-        let alice = "alice";
-        let bob = "bob";
+        let alice = "alice".into_bech32();
+        let bob = "bob".into_bech32();
 
-        let anyone = "anyone";
+        let anyone = "anyone".into_bech32();
 
         let contract = Cw1WhitelistContract::new();
 
         // instantiate the contract
-        let info = mock_info(anyone, &[]);
+        let info = mock_info(anyone.as_str(), &[]);
         contract
             .instantiate(
                 (deps.as_mut(), mock_env(), info).into(),

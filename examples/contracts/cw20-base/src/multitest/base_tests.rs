@@ -1,5 +1,6 @@
-use cosmwasm_std::{Addr, Binary, StdError, Uint128};
+use cosmwasm_std::{Binary, StdError, Uint128};
 use cw20_allowances::responses::{AllAllowancesResponse, SpenderAllowanceInfo};
+use cw_multi_test::IntoBech32;
 use cw_utils::Expiration;
 use sylvia::multitest::App;
 
@@ -15,7 +16,7 @@ fn basic() {
     let app = App::default();
 
     let amount = Uint128::from(11223344u128);
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -25,14 +26,14 @@ fn basic() {
             symbol: "CASH".to_string(),
             decimals: 9,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.token_info().unwrap();
@@ -56,11 +57,11 @@ fn basic() {
 fn instantiate_multiple_accounts() {
     let app = App::default();
 
-    let owner = "addr0000";
+    let owner = "addr0000".into_bech32();
     let amount1 = Uint128::from(11223344u128);
-    let addr1 = "addr0001";
+    let addr1 = "addr0001".into_bech32();
     let amount2 = Uint128::from(7890987u128);
-    let addr2 = "addr0002";
+    let addr2 = "addr0002".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -72,11 +73,11 @@ fn instantiate_multiple_accounts() {
             decimals: 6,
             initial_balances: vec![
                 Cw20Coin {
-                    address: addr1.to_owned(),
+                    address: addr1.to_string(),
                     amount: amount1,
                 },
                 Cw20Coin {
-                    address: addr1.to_owned(),
+                    address: addr1.to_string(),
                     amount: amount2,
                 },
             ],
@@ -84,7 +85,7 @@ fn instantiate_multiple_accounts() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::DuplicateInitialBalanceAddresses);
@@ -97,11 +98,11 @@ fn instantiate_multiple_accounts() {
             decimals: 6,
             initial_balances: vec![
                 Cw20Coin {
-                    address: addr1.into(),
+                    address: addr1.to_string(),
                     amount: amount1,
                 },
                 Cw20Coin {
-                    address: addr2.into(),
+                    address: addr2.to_string(),
                     amount: amount2,
                 },
             ],
@@ -109,7 +110,7 @@ fn instantiate_multiple_accounts() {
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.token_info().unwrap();
@@ -132,9 +133,9 @@ fn instantiate_multiple_accounts() {
 fn queries_work() {
     let app = App::default();
 
-    let owner = "addr0000";
+    let owner = "addr0000".into_bech32();
     let amount = Uint128::from(12340000u128);
-    let addr = Addr::unchecked("addr0001");
+    let addr = "addr0001".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -144,14 +145,14 @@ fn queries_work() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let resp = contract.token_info().unwrap();
@@ -182,8 +183,8 @@ fn queries_work() {
 fn transfer() {
     let app = App::default();
 
-    let owner = "addr0000";
-    let addr = "addr0001";
+    let owner = "addr0000".into_bech32();
+    let addr = "addr0001".into_bech32();
     let amount = Uint128::from(12340000u128);
     let transfer = Uint128::from(76543u128);
     let too_much = Uint128::from(12340321u128);
@@ -196,27 +197,27 @@ fn transfer() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // cannot transfer nothing
     let err = contract
         .transfer(addr.to_string(), Uint128::zero())
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount);
 
     // cannot send more than we have
     let err = contract
         .transfer(addr.to_string(), too_much)
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -224,7 +225,7 @@ fn transfer() {
     // cannot send from empty account
     let err = contract
         .transfer(owner.to_string(), transfer)
-        .call(addr)
+        .call(&addr)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -232,7 +233,7 @@ fn transfer() {
     // valid transfer
     contract
         .transfer(addr.to_string(), transfer)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // Check balance
@@ -250,8 +251,8 @@ fn transfer() {
 fn burn() {
     let app = App::default();
 
-    let owner = "addr0000";
-    let addr = "addr0001";
+    let owner = "addr0000".into_bech32();
+    let addr = "addr0001".into_bech32();
     let amount = Uint128::from(12340000u128);
     let burn = Uint128::from(76543u128);
     let too_much = Uint128::from(12340321u128);
@@ -264,37 +265,37 @@ fn burn() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // cannot burn nothing
-    let err = contract.burn(Uint128::zero()).call(owner).unwrap_err();
+    let err = contract.burn(Uint128::zero()).call(&owner).unwrap_err();
     assert_eq!(err, ContractError::InvalidZeroAmount);
 
     let resp = contract.token_info().unwrap();
     assert_eq!(resp.total_supply, amount);
 
     // cannot burn more than we have
-    let err = contract.burn(too_much).call(owner).unwrap_err();
+    let err = contract.burn(too_much).call(&owner).unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
     let resp = contract.token_info().unwrap();
     assert_eq!(resp.total_supply, amount);
 
     // cannot send from empty account
-    let err = contract.burn(burn).call(addr).unwrap_err();
+    let err = contract.burn(burn).call(&addr).unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
     // valid burn reduces total supply
-    contract.burn(burn).call(owner).unwrap();
+    contract.burn(burn).call(&owner).unwrap();
 
     // check balance
     let remainder = amount.checked_sub(burn).unwrap();
@@ -308,7 +309,7 @@ fn burn() {
 fn send() {
     let app = App::default();
 
-    let owner = "addr0000";
+    let owner = "addr0000".into_bech32();
     let amount = Uint128::from(12340000u128);
     let too_much = Uint128::from(12340321u128);
     let transfer = Uint128::from(76543u128);
@@ -321,7 +322,7 @@ fn send() {
     let receiver_contract = receiver_code_id
         .instantiate()
         .with_label("cool-dex")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let contract = code_id
@@ -330,14 +331,14 @@ fn send() {
             symbol: "CASH".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let err = contract
@@ -346,7 +347,7 @@ fn send() {
             Uint128::zero(),
             send_msg.clone(),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::InvalidZeroAmount);
@@ -358,7 +359,7 @@ fn send() {
             too_much,
             send_msg.clone(),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -369,7 +370,7 @@ fn send() {
             transfer,
             send_msg,
         )
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // ensure balance is properly transferred
@@ -388,8 +389,8 @@ fn send() {
 fn migrate() {
     let app = App::default();
 
-    let owner = "addr0000";
-    let spender = "addr0001";
+    let owner = "addr0000".into_bech32();
+    let spender = "addr0001".into_bech32();
     let code_id = CodeId::store_code(&app);
     let amount = Uint128::new(100);
 
@@ -399,15 +400,15 @@ fn migrate() {
             symbol: "TOKEN".to_string(),
             decimals: 6,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .with_admin(Some(owner))
-        .call(owner)
+        .with_admin(owner.as_str())
+        .call(&owner)
         .unwrap();
 
     // no allowance to start
@@ -421,11 +422,11 @@ fn migrate() {
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // Now migrate
-    contract.migrate().call(owner, code_id.code_id()).unwrap();
+    contract.migrate().call(&owner, code_id.code_id()).unwrap();
 
     // Smoke check that the contract still works.
     let resp = contract.balance(owner.to_string()).unwrap();

@@ -1,3 +1,5 @@
+#[cfg(all(test, feature = "mt"))]
+use cw_multi_test::IntoBech32;
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
 use sylvia::cw_std::{from_json, Reply, SubMsgResponse, SubMsgResult};
 
@@ -77,9 +79,13 @@ mod reply_contract {
 fn entry_point_generation() {
     let msg = Reply {
         id: 0,
+        payload: Default::default(),
+        gas_used: 0,
+        #[allow(deprecated)]
         result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![],
             data: None,
+            msg_responses: vec![],
         }),
     };
     let mut deps = mock_dependencies();
@@ -96,17 +102,17 @@ fn entry_point_generation() {
 fn mt_helper_generation() {
     use crate::reply_contract::sv::mt::ReplyContractProxy;
     let app = sylvia::multitest::App::default();
-    let owner = "owner";
+    let owner = "owner".into_bech32();
 
     let noop_contract_code = noop_contract::sv::mt::CodeId::store_code(&app);
-    let noop_contract = noop_contract_code.instantiate().call(owner).unwrap();
+    let noop_contract = noop_contract_code.instantiate().call(&owner).unwrap();
 
     let reply_contract_code = reply_contract::sv::mt::CodeId::store_code(&app);
-    let reply_contract = reply_contract_code.instantiate().call(owner).unwrap();
+    let reply_contract = reply_contract_code.instantiate().call(&owner).unwrap();
 
     let resp = reply_contract
         .poke(noop_contract.contract_addr.to_string())
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let data: String = from_json(resp.data.unwrap()).unwrap();

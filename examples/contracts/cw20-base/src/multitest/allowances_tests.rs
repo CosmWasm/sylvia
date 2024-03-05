@@ -3,7 +3,7 @@ use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
     SpenderAllowanceInfo,
 };
-use cw_multi_test::next_block;
+use cw_multi_test::{next_block, IntoBech32};
 use cw_utils::Expiration;
 use sylvia::multitest::App;
 
@@ -20,8 +20,8 @@ use cw20_allowances::sv::mt::Cw20AllowancesProxy;
 fn increase_decrease_allowances() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -31,14 +31,14 @@ fn increase_decrease_allowances() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // no allowance to start
@@ -52,7 +52,7 @@ fn increase_decrease_allowances() {
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // ensure it looks good
@@ -67,7 +67,7 @@ fn increase_decrease_allowances() {
     let allowance = allowance.checked_sub(lower).unwrap();
     contract
         .decrease_allowance(spender.to_string(), lower, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -82,7 +82,7 @@ fn increase_decrease_allowances() {
     let expires = Expiration::AtTime(Timestamp::from_seconds(8888888888));
     contract
         .increase_allowance(spender.to_string(), raise, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -93,7 +93,7 @@ fn increase_decrease_allowances() {
     // decrease it below 0
     contract
         .decrease_allowance(spender.to_string(), Uint128::new(99988647623876347), None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let allowance_resp = contract
@@ -106,9 +106,9 @@ fn increase_decrease_allowances() {
 fn allowances_independent() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
-    let spender2 = "addr0003";
+    let owner = "owner".into_bech32();
+    let spender1 = "spender1".into_bech32();
+    let spender2 = "spender2".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -118,19 +118,19 @@ fn allowances_independent() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // no allowance to start
     let allowance_resp = contract
-        .allowance(owner.to_string(), spender.to_string())
+        .allowance(owner.to_string(), spender1.to_string())
         .unwrap();
     assert_eq!(allowance_resp, AllowanceResponse::default());
 
@@ -143,15 +143,15 @@ fn allowances_independent() {
     let allowance = Uint128::new(7777);
     let expires = Expiration::AtHeight(123_456);
     contract
-        .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .increase_allowance(spender1.to_string(), allowance, Some(expires))
+        .call(&owner)
         .unwrap();
 
     // set other allowance with no expiration
     let allowance2 = Uint128::new(87654);
     contract
         .increase_allowance(spender2.to_string(), allowance2, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // check they are proper
@@ -161,7 +161,7 @@ fn allowances_independent() {
         expires: Expiration::Never {},
     };
     let allowance_resp = contract
-        .allowance(owner.to_string(), spender.to_string())
+        .allowance(owner.to_string(), spender1.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_one);
 
@@ -175,7 +175,7 @@ fn allowances_independent() {
     let expires3 = Expiration::AtTime(Timestamp::from_seconds(3767626296));
     contract
         .increase_allowance(spender2.to_string(), allowance3, Some(expires3))
-        .call(spender)
+        .call(&spender1)
         .unwrap();
 
     let expect_three = AllowanceResponse {
@@ -183,7 +183,7 @@ fn allowances_independent() {
         expires: expires3,
     };
     let allowance_resp = contract
-        .allowance(owner.to_string(), spender.to_string())
+        .allowance(owner.to_string(), spender1.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_one);
     let allowance_resp = contract
@@ -191,7 +191,7 @@ fn allowances_independent() {
         .unwrap();
     assert_eq!(allowance_resp, expect_two);
     let allowance_resp = contract
-        .allowance(spender.to_string(), spender2.to_string())
+        .allowance(spender1.to_string(), spender2.to_string())
         .unwrap();
     assert_eq!(allowance_resp, expect_three);
 }
@@ -200,7 +200,7 @@ fn allowances_independent() {
 fn no_self_allowance() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
 
     let code_id = CodeId::store_code(&app);
 
@@ -210,20 +210,20 @@ fn no_self_allowance() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: Uint128::new(12340000),
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // self-allowance
     let err = contract
         .increase_allowance(owner.to_string(), Uint128::new(7777), None)
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotSetOwnAccount);
@@ -231,7 +231,7 @@ fn no_self_allowance() {
     // decrease self-allowance
     let err = contract
         .decrease_allowance(owner.to_string(), Uint128::new(7777), None)
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     assert_eq!(err, ContractError::CannotSetOwnAccount);
@@ -241,7 +241,7 @@ fn no_self_allowance() {
 fn transfer_from_self_to_self() {
     let app = App::default();
 
-    let owner = "addr0001";
+    let owner = "owner".into_bech32();
     let amount = Uint128::new(999999);
 
     let code_id = CodeId::store_code(&app);
@@ -252,21 +252,21 @@ fn transfer_from_self_to_self() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
         .transfer_from(owner.to_string(), owner.to_string(), transfer)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // make sure amount of money is the same
@@ -278,8 +278,8 @@ fn transfer_from_self_to_self() {
 fn transfer_from_owner_requires_no_allowance() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let rcpt = "addr0003";
+    let owner = "owner".into_bech32();
+    let rcpt = "rcpt".into_bech32();
     let start_amount = Uint128::new(999999);
 
     let code_id = CodeId::store_code(&app);
@@ -290,21 +290,21 @@ fn transfer_from_owner_requires_no_allowance() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // make sure money arrived
@@ -322,9 +322,9 @@ fn transfer_from_owner_requires_no_allowance() {
 fn transfer_from_respects_limits() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
-    let rcpt = "addr0003";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
+    let rcpt = "rcpt".into_bech32();
     let start_amount = Uint128::new(999999);
 
     let code_id = CodeId::store_code(&app);
@@ -335,28 +335,28 @@ fn transfer_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
         .increase_allowance(spender.to_string(), allowance, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // valid transfer of part of the allowance
     let transfer = Uint128::new(44444);
     contract
         .transfer_from(owner.to_string(), rcpt.to_string(), transfer)
-        .call(spender)
+        .call(&spender)
         .unwrap();
 
     // make sure money arrived
@@ -384,7 +384,7 @@ fn transfer_from_respects_limits() {
     // cannot send more than the allowance
     let err = contract
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -396,7 +396,7 @@ fn transfer_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // move to next block
@@ -405,7 +405,7 @@ fn transfer_from_respects_limits() {
     // we should now get the expiration error
     let err = contract
         .transfer_from(owner.to_string(), rcpt.to_string(), Uint128::new(33443))
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired));
 }
@@ -414,8 +414,8 @@ fn transfer_from_respects_limits() {
 fn burn_from_respects_limits() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
     let start_amount = Uint128::new(999999);
 
     let code_id = CodeId::store_code(&app);
@@ -426,28 +426,28 @@ fn burn_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
         .increase_allowance(spender.to_string(), allowance, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // valid burn of part of the allowance
     let transfer = Uint128::new(44444);
     contract
         .burn_from(owner.to_string(), transfer)
-        .call(spender)
+        .call(&spender)
         .unwrap();
 
     // make sure money burnt
@@ -473,7 +473,7 @@ fn burn_from_respects_limits() {
     // cannot burn more than the allowance
     let err = contract
         .burn_from(owner.to_string(), Uint128::new(33443))
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
@@ -486,7 +486,7 @@ fn burn_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // move to next block
@@ -495,7 +495,7 @@ fn burn_from_respects_limits() {
     // we should now get the expiration error
     let err = contract
         .burn_from(owner.to_string(), Uint128::new(33443))
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Expired));
 }
@@ -505,9 +505,9 @@ fn burn_from_respects_limits() {
 fn send_from_respects_limits() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let owner2 = "addr0003";
-    let spender = "addr0002";
+    let owner = "owner".into_bech32();
+    let owner2 = "owner2".into_bech32();
+    let spender = "spender".into_bech32();
     let send_msg = Binary::from(r#"{"some":123}"#.as_bytes());
     let start_amount = Uint128::new(999999);
 
@@ -520,27 +520,27 @@ fn send_from_respects_limits() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     let receiver_contract = receiver_code_id
         .instantiate()
         .with_label("cool-dex")
-        .call(owner2)
+        .call(&owner2)
         .unwrap();
 
     // provide an allowance
     let allowance = Uint128::new(77777);
     contract
         .increase_allowance(spender.to_string(), allowance, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // valid send of part of the allowance
@@ -552,7 +552,7 @@ fn send_from_respects_limits() {
             transfer,
             send_msg.clone(),
         )
-        .call(spender)
+        .call(&spender)
         .unwrap();
 
     // make sure money burnt
@@ -583,7 +583,7 @@ fn send_from_respects_limits() {
             Uint128::new(33443),
             send_msg.clone(),
         )
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
     assert!(matches!(err, ContractError::Std(StdError::Overflow { .. })));
 
@@ -595,7 +595,7 @@ fn send_from_respects_limits() {
             Uint128::new(1000),
             Some(Expiration::AtHeight(next_block_height)),
         )
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // move to next block
@@ -609,7 +609,7 @@ fn send_from_respects_limits() {
             Uint128::new(33443),
             send_msg,
         )
-        .call(spender)
+        .call(&spender)
         .unwrap_err();
 
     assert!(matches!(err, ContractError::Expired));
@@ -619,8 +619,8 @@ fn send_from_respects_limits() {
 fn no_past_expiration() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
     let start_amount = Uint128::new(999999);
     let allowance = Uint128::new(7777);
 
@@ -632,14 +632,14 @@ fn no_past_expiration() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // set allowance with height expiration at current block height
@@ -648,7 +648,7 @@ fn no_past_expiration() {
 
     let err = contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -660,7 +660,7 @@ fn no_past_expiration() {
 
     let err = contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -672,7 +672,7 @@ fn no_past_expiration() {
 
     contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // ensure it looks good
@@ -688,7 +688,7 @@ fn no_past_expiration() {
 
     contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // ensure it looks good
@@ -710,7 +710,7 @@ fn no_past_expiration() {
 
     let err = contract
         .increase_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap_err();
 
     // ensure it is rejected
@@ -722,7 +722,7 @@ fn no_past_expiration() {
 
     contract
         .decrease_allowance(spender.to_string(), allowance, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // ensure it looks good
@@ -737,9 +737,9 @@ fn no_past_expiration() {
 fn query_allowances() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
-    let spender2 = "addr0003";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
+    let spender2 = "spender2".into_bech32();
     let start_amount = Uint128::new(999999);
     let allowance = Uint128::new(7777);
 
@@ -751,14 +751,14 @@ fn query_allowances() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // check all allowances
@@ -774,7 +774,7 @@ fn query_allowances() {
     // increase spender allowances
     contract
         .increase_allowance(spender.to_string(), allowance, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // check all allowances
@@ -813,7 +813,7 @@ fn query_allowances() {
     let increased_allowances = allowance + allowance;
     contract
         .increase_allowance(spender2.to_string(), increased_allowances, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // check all allowances
@@ -860,9 +860,9 @@ fn query_allowances() {
 fn query_all_allowances_works() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let spender = "addr0002";
-    let spender2 = "addr0003";
+    let owner = "owner".into_bech32();
+    let spender = "spender".into_bech32();
+    let spender2 = "spender2".into_bech32();
     let start_amount = Uint128::new(12340000);
 
     let code_id = CodeId::store_code(&app);
@@ -873,14 +873,14 @@ fn query_all_allowances_works() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // no allowance to start
@@ -894,14 +894,14 @@ fn query_all_allowances_works() {
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // set allowance with no expiration
     let allow2 = Uint128::new(54321);
     contract
         .increase_allowance(spender2.to_string(), allow2, None)
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // query list gets 2
@@ -945,9 +945,9 @@ fn query_all_allowances_works() {
 fn all_spender_allowances_on_two_contracts() {
     let app = App::default();
 
-    let owner = "addr0001";
-    let owner2 = "addr0003";
-    let spender = "addr0002";
+    let owner = "owner".into_bech32();
+    let owner2 = "owner2".into_bech32();
+    let spender = "spender".into_bech32();
     let start_amount = Uint128::new(12340000);
 
     let code_id = CodeId::store_code(&app);
@@ -958,14 +958,14 @@ fn all_spender_allowances_on_two_contracts() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // no allowance to start
@@ -979,7 +979,7 @@ fn all_spender_allowances_on_two_contracts() {
     let expires = Expiration::AtHeight(123_456);
     contract
         .increase_allowance(spender.to_string(), allow1, Some(expires))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // set allowance with no expiration, from the other owner
@@ -989,20 +989,20 @@ fn all_spender_allowances_on_two_contracts() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner2)
+        .call(&owner2)
         .unwrap();
 
     let allow2 = Uint128::new(54321);
     contract2
         .increase_allowance(spender.to_string(), allow2, None)
-        .call(owner2)
+        .call(&owner2)
         .unwrap();
 
     // query list on both contracts
@@ -1022,17 +1022,18 @@ fn query_all_accounts_works() {
     let app = App::default();
 
     // insert order and lexicographical order are different
-    let owner = "owner";
-    let acct2 = "zebra";
-    let acct3 = "nice";
-    let acct4 = "aaaardvark";
+    let owner = "owner".into_bech32();
+    let acct2 = "zebra".into_bech32();
+    let acct3 = "nice".into_bech32();
+    let acct4 = "aaaardvark".into_bech32();
     let start_amount = Uint128::new(12340000);
-    let expected_order = [
+    let mut accounts = [
         acct4.to_string(),
         acct3.to_string(),
         owner.to_string(),
         acct2.to_string(),
     ];
+    accounts.sort();
 
     let code_id = CodeId::store_code(&app);
 
@@ -1042,45 +1043,45 @@ fn query_all_accounts_works() {
             symbol: "AUTO".to_string(),
             decimals: 3,
             initial_balances: vec![Cw20Coin {
-                address: owner.into(),
+                address: owner.to_string(),
                 amount: start_amount,
             }],
             mint: None,
             marketing: None,
         })
         .with_label("Cw20 contract")
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // put money everywhere (to create balanaces)
     contract
         .transfer(acct2.to_string(), Uint128::new(222222))
-        .call(owner)
+        .call(&owner)
         .unwrap();
     contract
         .transfer(acct3.to_string(), Uint128::new(333333))
-        .call(owner)
+        .call(&owner)
         .unwrap();
     contract
         .transfer(acct4.to_string(), Uint128::new(444444))
-        .call(owner)
+        .call(&owner)
         .unwrap();
 
     // make sure we get the proper results
     let resp = contract.all_accounts(None, None).unwrap();
-    assert_eq!(resp.accounts, expected_order);
+    assert_eq!(resp.accounts, accounts);
 
     // let's do pagination
     let resp = contract.all_accounts(None, Some(2)).unwrap();
-    assert_eq!(resp.accounts, expected_order[0..2].to_vec());
+    assert_eq!(resp.accounts, accounts[0..2].to_vec());
 
     let resp = contract
         .all_accounts(Some(resp.accounts[1].clone()), Some(1))
         .unwrap();
-    assert_eq!(resp.accounts, expected_order[2..3].to_vec());
+    assert_eq!(resp.accounts, accounts[2..3].to_vec());
 
     let resp = contract
         .all_accounts(Some(resp.accounts[0].clone()), Some(777))
         .unwrap();
-    assert_eq!(resp.accounts, expected_order[3..].to_vec());
+    assert_eq!(resp.accounts, accounts[3..].to_vec());
 }

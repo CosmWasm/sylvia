@@ -135,7 +135,7 @@ impl Cw20Allowances for Cw20Base<'_> {
             return Ok(resp);
         }
 
-        if ctx.info.sender != owner {
+        if ctx.info.sender != owner_addr {
             // deduct allowance before doing anything else have enough allowance
             self.deduct_allowance(
                 ctx.deps.storage,

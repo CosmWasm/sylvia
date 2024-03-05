@@ -89,8 +89,8 @@ pub mod impl_counter {
 }
 
 pub struct CounterContract<'a> {
-    pub count: Item<'static, u64>,
-    pub remote: Item<'static, sylvia::types::Remote<'a, CounterContract<'a>>>,
+    pub count: Item<u64>,
+    pub remote: Item<sylvia::types::Remote<'a, CounterContract<'a>>>,
 }
 
 #[contract]
@@ -117,6 +117,7 @@ impl CounterContract<'_> {
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, Empty, QuerierWrapper};
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     use crate::counter::sv::mt::CounterProxy;
@@ -149,31 +150,31 @@ mod tests {
         let app = App::default();
         let code_id = CodeId::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let first_contract = code_id
             .instantiate(Addr::unchecked("remote"))
             .with_label("First Counter")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
         let second_contract = code_id
             .instantiate(first_contract.contract_addr.clone())
             .with_label("Second Counter")
-            .call(owner)
+            .call(&owner)
             .unwrap();
 
-        first_contract.set_count(42).call(owner).unwrap();
+        first_contract.set_count(42).call(&owner).unwrap();
 
         let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 0);
 
-        second_contract.copy_count().call(owner).unwrap();
+        second_contract.copy_count().call(&owner).unwrap();
 
         let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 42);
 
-        second_contract.decrease_by_count().call(owner).unwrap();
+        second_contract.decrease_by_count().call(&owner).unwrap();
 
         let resp = second_contract.count().unwrap();
         assert_eq!(resp.count, 0);

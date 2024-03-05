@@ -53,6 +53,7 @@ mod tests {
     use crate::contract::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::{CosmosMsg, Empty};
     use cw1::sv::mt::Cw1Proxy;
+    use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
     #[test]
@@ -74,16 +75,16 @@ mod tests {
             _,
         >::store_code(&app);
 
-        let owner = "owner";
+        let owner = "owner".into_bech32();
 
         let contract = code_id
             .instantiate(SvCustomMsg {})
             .with_label("GenericContract")
-            .with_admin(owner)
-            .call(owner)
+            .with_admin(owner.as_str())
+            .call(&owner)
             .unwrap();
 
-        contract.execute(vec![]).call(owner).unwrap();
+        contract.execute(vec![]).call(&owner).unwrap();
         contract
             .can_execute("sender".to_owned(), CosmosMsg::Custom(Empty {}))
             .unwrap();
