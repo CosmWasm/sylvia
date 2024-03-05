@@ -137,7 +137,6 @@ pub(crate) fn crate_module() -> Path {
 ///
 /// For now `#[sv::msg(...)]` attribute doesn't support anymore data on `#[interface]`
 /// elements, but it may be extended in future.
-#[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -228,7 +227,6 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///     #[sv::msg(query, resp=MemberQueryResponse)]
 ///     fn member(&self, ctx: (Deps, Env), addr: String, at_height: Option<u64>) -> Result<MemberQueryResponse, Error>
 /// ```
-#[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -253,14 +251,12 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     inner(attr, item).unwrap_or_else(syn::Error::into_compile_error)
 }
 
-#[cfg(not(tarpaulin_include))]
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
     entry_points_impl(attr.into(), item.into()).into()
 }
 
-#[cfg(not(tarpaulin_include))]
 fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
         let attrs: parser::EntryPointArgs = parse2(attr)?;

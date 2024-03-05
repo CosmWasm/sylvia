@@ -44,7 +44,6 @@ impl Custom {
     }
 }
 
-#[cfg(not(tarpaulin_include))]
 // False negative. It is being called in closure
 impl Parse for Custom {
     fn parse(input: ParseStream) -> Result<Self> {

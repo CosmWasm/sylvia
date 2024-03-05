@@ -38,7 +38,6 @@ pub struct ImplInput<'a> {
 }
 
 impl<'a> TraitInput<'a> {
-    #[cfg(not(tarpaulin_include))]
     pub fn new(item: &'a ItemTrait) -> Self {
         if !item.generics.params.is_empty() {
             emit_error!(
@@ -87,19 +86,16 @@ impl<'a> TraitInput<'a> {
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub mod sv {
-                    use super::*;
-                    #messages
+        quote! {
+            pub mod sv {
+                use super::*;
+                #messages
 
-                    #remote
+                #remote
 
-                    #querier
+                #querier
 
-                    #interface_messages
-                }
+                #interface_messages
             }
         }
     }
@@ -109,15 +105,12 @@ impl<'a> TraitInput<'a> {
         let query = self.emit_msg(MsgType::Query);
         let sudo = self.emit_msg(MsgType::Sudo);
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #exec
+        quote! {
+            #exec
 
-                #query
+            #query
 
-                #sudo
-            }
+            #sudo
         }
     }
 
@@ -177,7 +170,6 @@ impl<'a> ImplInput<'a> {
         let multitest_helpers = self.emit_multitest_helpers();
         let querier = self.emit_querier_for_bound_impl();
 
-        #[cfg(not(tarpaulin_include))]
         quote! {
             pub mod sv {
                 use super::*;
@@ -204,22 +196,19 @@ impl<'a> ImplInput<'a> {
         let remote = ContractRemote::new(item, interfaces).emit();
         let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                pub mod sv {
-                    use super::*;
+        quote! {
+            pub mod sv {
+                use super::*;
 
-                    #messages
+                #messages
 
-                    #multitest_helpers
+                #multitest_helpers
 
-                    #remote
+                #remote
 
-                    #querier
+                #querier
 
-                    #contract_api
-                }
+                #contract_api
             }
         }
     }
@@ -234,25 +223,22 @@ impl<'a> ImplInput<'a> {
         let query = self.emit_glue_msg(MsgType::Query);
         let sudo = self.emit_glue_msg(MsgType::Sudo);
 
-        #[cfg(not(tarpaulin_include))]
-        {
-            quote! {
-                #instantiate
+        quote! {
+            #instantiate
 
-                #exec_impl
+            #exec_impl
 
-                #query_impl
+            #query_impl
 
-                #sudo_impl
+            #sudo_impl
 
-                #migrate
+            #migrate
 
-                #exec
+            #exec
 
-                #query
+            #query
 
-                #sudo
-            }
+            #sudo
         }
     }
 

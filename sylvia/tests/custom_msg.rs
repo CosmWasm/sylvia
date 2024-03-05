@@ -31,15 +31,12 @@ mod some_interface {
     pub trait SomeInterface {
         type Error: From<StdError>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn interface_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn interface_exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn interface_sudo(&self, ctx: SudoCtx) -> StdResult<Response<MyMsg>>;
     }
@@ -89,15 +86,12 @@ mod interface {
         type Error: From<StdError>;
         type ExecC: CustomMsg;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn exec(&self, ctx: ExecCtx) -> StdResult<Response<MyMsg>>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn query(&self, ctx: QueryCtx) -> StdResult<Response<MyMsg>>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn sudo(&self, ctx: SudoCtx) -> StdResult<Response<MyMsg>>;
     }
@@ -126,7 +120,6 @@ mod impl_interface {
             Ok(Response::new())
         }
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
@@ -143,15 +136,12 @@ mod other_interface {
     pub trait OtherInterface {
         type Error: From<StdError>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn other_interface_exec(&self, ctx: ExecCtx) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn other_interface_sudo(&self, ctx: SudoCtx) -> StdResult<Response>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn other_interface_query(&self, ctx: QueryCtx) -> StdResult<Response>;
     }
@@ -173,13 +163,11 @@ mod impl_other_interface {
             Ok(Response::default())
         }
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn other_interface_sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn other_interface_query(&self, _ctx: QueryCtx) -> StdResult<Response> {
             Ok(Response::new())
@@ -198,15 +186,12 @@ mod associated_interface {
         type Error: From<StdError>;
         type ExecC: CustomMsg;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(exec)]
         fn associated_exec(&self, ctx: ExecCtx) -> StdResult<Response<Self::ExecC>>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(sudo)]
         fn associated_sudo(&self, ctx: SudoCtx) -> StdResult<Response<Self::ExecC>>;
 
-        #[cfg(not(tarpaulin_include))]
         #[sv::msg(query)]
         fn associated_query(&self, ctx: QueryCtx) -> StdResult<SomeResponse>;
     }
@@ -269,13 +254,11 @@ impl MyContract {
         Ok(SomeResponse)
     }
 
-    #[cfg(not(tarpaulin_include))]
     #[sv::msg(migrate)]
     pub fn some_migrate(&self, _ctx: MigrateCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())
     }
 
-    #[cfg(not(tarpaulin_include))]
     #[sv::msg(sudo)]
     pub fn some_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
         Ok(Response::default())

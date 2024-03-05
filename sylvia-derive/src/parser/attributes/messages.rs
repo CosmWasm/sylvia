@@ -76,7 +76,6 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
     Ok(customs)
 }
 
-#[cfg(not(tarpaulin_include))]
 // False negative. It is being called in closure
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {

@@ -149,7 +149,6 @@ mod contract {
 
     #[entry_points]
     #[allow(dead_code)]
-    #[cfg(not(tarpaulin_include))]
     #[contract]
     #[sv::messages(crate::interface)]
     impl Contract {

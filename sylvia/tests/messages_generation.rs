@@ -59,7 +59,6 @@ mod contract {
 
     pub struct Contract {}
 
-    #[cfg(not(tarpaulin_include))]
     #[entry_points]
     #[contract]
     #[allow(dead_code)]

@@ -47,7 +47,6 @@ pub struct SudoCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub env: Env,
 }
 
-#[cfg(not(tarpaulin_include))]
 impl<C: cosmwasm_std::CustomQuery> ExecCtx<'_, C> {
     pub fn branch(&'_ mut self) -> ExecCtx<'_, C> {
         ExecCtx {
@@ -58,7 +57,6 @@ impl<C: cosmwasm_std::CustomQuery> ExecCtx<'_, C> {
     }
 }
 
-#[cfg(not(tarpaulin_include))]
 impl<C: cosmwasm_std::CustomQuery> InstantiateCtx<'_, C> {
     pub fn branch(&'_ mut self) -> InstantiateCtx<'_, C> {
         InstantiateCtx {
@@ -69,7 +67,6 @@ impl<C: cosmwasm_std::CustomQuery> InstantiateCtx<'_, C> {
     }
 }
 
-#[cfg(not(tarpaulin_include))]
 impl<C: cosmwasm_std::CustomQuery> SudoCtx<'_, C> {
     pub fn branch(&'_ mut self) -> SudoCtx<'_, C> {
         SudoCtx {

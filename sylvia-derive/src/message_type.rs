@@ -39,7 +39,6 @@ impl MsgType {
         }
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn emit_ctx_params(self, query_type: &Type) -> TokenStream {
         use MsgType::*;
 
@@ -58,7 +57,6 @@ impl MsgType {
         }
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn emit_ep_name(self) -> Ident {
         match self {
             Self::Exec => parse_quote! { execute },

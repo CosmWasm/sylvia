@@ -11,7 +11,6 @@ use syn::{
 use crate::check_generics::{CheckGenerics, GetPath};
 use crate::message::MsgField;
 
-#[cfg(not(tarpaulin_include))]
 pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
     clause: &'a Option<WhereClause>,
     generics: &[&Generic],

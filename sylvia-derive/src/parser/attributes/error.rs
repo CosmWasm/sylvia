@@ -31,8 +31,6 @@ impl ContractErrorAttr {
     }
 }
 
-#[cfg(not(tarpaulin_include))]
-// False negative. It is being called in closure
 impl Parse for ContractErrorAttr {
     fn parse(input: ParseStream) -> Result<Self> {
         input.parse().map(|error| Self { error })

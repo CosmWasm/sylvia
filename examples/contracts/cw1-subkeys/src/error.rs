@@ -24,7 +24,6 @@ pub enum ContractError {
     SettingExpiredAllowance(Expiration),
 }
 
-#[cfg(not(tarpaulin_include))]
 impl From<WhitelistError> for ContractError {
     fn from(err: WhitelistError) -> Self {
         match err {
