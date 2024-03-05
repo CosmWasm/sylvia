@@ -15,6 +15,7 @@ crate-type = ["cdylib", "rlib"]
 library = []
 mt = ["library", "anyhow", "cw-multi-test"]
 
+
 [dependencies]
 cw1 = { path = "../../interfaces/cw1" }
 cosmwasm-schema = { workspace = true }

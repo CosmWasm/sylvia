@@ -134,13 +134,6 @@ impl<'a> ImplAssociatedTypes<'a> {
         self.filtered().copied().collect()
     }
 
-    pub fn custom_msg(&self) -> Option<&Type> {
-        self.0
-            .iter()
-            .find(|associated| associated.ident == EXEC_TYPE)
-            .map(|associated| &associated.ty)
-    }
-
     pub fn filtered(&self) -> impl Iterator<Item = &&ImplItemType> {
         self.0.iter().filter(|associated| {
             !RESERVED_TYPES

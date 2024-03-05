@@ -5,7 +5,6 @@ use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
 
 #[contract(module = crate::contract)]
 #[sv::messages(custom_and_generic as CustomAndGeneric)]
-#[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
         Exec1T,
