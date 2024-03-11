@@ -94,7 +94,7 @@ fn entry_point_generation() {
 #[cfg(all(test, feature = "mt"))]
 #[test]
 fn mt_helper_generation() {
-    use crate::reply_contract::sv::multitest_utils::ContractImpl;
+    use crate::reply_contract::sv::multitest_utils::ReplyContractProxy;
     let app = sylvia::multitest::App::default();
     let owner = "owner";
 

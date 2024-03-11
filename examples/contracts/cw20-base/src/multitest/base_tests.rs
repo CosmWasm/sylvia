@@ -3,7 +3,7 @@ use cw20_allowances::responses::{AllAllowancesResponse, SpenderAllowanceInfo};
 use cw_utils::Expiration;
 use sylvia::multitest::App;
 
-use crate::contract::sv::multitest_utils::{CodeId, ContractImpl};
+use crate::contract::sv::multitest_utils::{CodeId, Cw20BaseProxy};
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::multitest::receiver_contract::sv::multitest_utils::CodeId as ReceiverCodeId;

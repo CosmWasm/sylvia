@@ -13,7 +13,7 @@ use crate::error::ContractError;
 use crate::multitest::receiver_contract::sv::multitest_utils::CodeId as ReceiverCodeId;
 use crate::responses::Cw20Coin;
 
-use crate::contract::sv::multitest_utils::ContractImpl;
+use crate::contract::sv::multitest_utils::Cw20BaseProxy;
 use cw20_allowances::sv::test_utils::Cw20AllowancesProxy;
 
 #[test]

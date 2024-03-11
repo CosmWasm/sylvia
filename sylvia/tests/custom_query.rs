@@ -272,7 +272,7 @@ mod tests {
     use crate::default_query_interface::sv::test_utils::DefaultQueryInterfaceProxy;
     use crate::interface::sv::test_utils::InterfaceProxy;
     use crate::some_interface::sv::test_utils::SomeInterfaceProxy;
-    use crate::sv::multitest_utils::ContractImpl;
+    use crate::sv::multitest_utils::MyContractProxy;
     use crate::{MyContract, MyQuery};
 
     use cosmwasm_std::Empty;

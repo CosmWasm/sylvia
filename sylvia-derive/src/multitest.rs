@@ -13,6 +13,16 @@ use crate::parser::{
 use crate::utils::emit_bracketed_generics;
 use crate::variant_descs::AsVariantDescs;
 
+fn get_ident_from_type(contract_name: &Type) -> &Ident {
+    let Type::Path(type_path) = contract_name else {
+        unreachable!()
+    };
+    let segments = &type_path.path.segments;
+    assert!(!segments.is_empty());
+    let segment = &segments.last().unwrap();
+    &segment.ident
+}
+
 pub struct ContractMtHelpers<'a> {
     error_type: Type,
     contract_name: &'a Type,
@@ -162,12 +172,15 @@ impl<'a> ContractMtHelpers<'a> {
 
         let contract_block = self.generate_contract_helpers();
 
+        let contract = get_ident_from_type(contract_name);
+        let trait_name = Ident::new(&format!("{}Proxy", contract), contract.span());
+
         quote! {
             pub mod multitest_utils {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
 
-                pub trait ContractImpl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                pub trait #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
                     #where_clause
                 {
                     #( #exec_methods_delcaration )*
@@ -177,8 +190,8 @@ impl<'a> ContractMtHelpers<'a> {
                 }
 
                 impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
-                    ContractImpl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
-                        for #sylvia ::multitest::Proxy <'app, #mt_app, super:: #contract_name >
+                    #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                        for #sylvia ::multitest::Proxy <'app, #mt_app, #contract_name >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
                         CustomT::ExecT: std::fmt::Debug
@@ -238,19 +251,11 @@ impl<'a> ContractMtHelpers<'a> {
             .as_ref()
             .map(|where_clause| &where_clause.predicates);
 
-        let contract = {
-            let Type::Path(type_path) = contract_name else {
-                unreachable!()
-            };
-            let segments = &type_path.path.segments;
-            assert!(!segments.is_empty());
-            let segment = &segments.last().unwrap();
-            &segment.ident
-        };
+        let contract = get_ident_from_type(contract_name);
         let contract = if !generic_params.is_empty() {
-            quote! { super:: #contract ::< #(#generic_params,)* > }
+            quote! { #contract ::< #(#generic_params,)* > }
         } else {
-            quote! { super:: #contract }
+            quote! { #contract }
         };
 
         let instantiate_msg = if !used_generics.is_empty() {
@@ -407,7 +412,7 @@ impl<'a> ContractMtHelpers<'a> {
                 }
 
                 #[track_caller]
-                pub fn call(self, sender: &str) -> Result<#sylvia ::multitest::Proxy<'app, MtApp, super:: #contract_name >, #error_type> {
+                pub fn call(self, sender: &str) -> Result<#sylvia ::multitest::Proxy<'app, MtApp, #contract_name >, #error_type> {
                     let Self {code_id, funds, label, admin, salt, msg} = self;
 
                     match salt {
@@ -506,7 +511,7 @@ impl<'a> ContractMtHelpers<'a> {
         let custom_query = custom.query_or_default();
 
         quote! {
-            impl #bracketed_generics #sylvia ::cw_multi_test::Contract<#custom_msg, #custom_query> for super:: #contract_name #full_where_clause {
+            impl #bracketed_generics #sylvia ::cw_multi_test::Contract<#custom_msg, #custom_query> for #contract_name #full_where_clause {
                     fn execute(
                         &self,
                         deps: #sylvia ::cw_std::DepsMut< #custom_query >,
@@ -741,7 +746,7 @@ fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream 
 
     let values = msg_ty.emit_ctx_values();
     let msg_name = msg_ty.as_accessor_wrapper_name();
-    let api_msg = quote! { < super:: #contract_name as #sylvia ::types::ContractApi> :: #msg_name };
+    let api_msg = quote! { < #contract_name as #sylvia ::types::ContractApi> :: #msg_name };
 
     quote! {
         #sylvia ::cw_std::from_json::< #api_msg >(&msg)?

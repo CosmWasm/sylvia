@@ -2,7 +2,7 @@ use cosmwasm_std::{StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
 use sylvia::multitest::App;
 
-use crate::contract::sv::multitest_utils::{CodeId, ContractImpl};
+use crate::contract::sv::multitest_utils::{CodeId, Cw20BaseProxy};
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
 use crate::responses::{Cw20Coin, TokenInfoResponse};

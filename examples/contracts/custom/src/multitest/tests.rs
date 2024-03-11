@@ -4,7 +4,7 @@ use crate::contract::sv::multitest_utils::CodeId;
 
 use super::custom_module::CustomModule;
 
-use crate::contract::sv::multitest_utils::ContractImpl;
+use crate::contract::sv::multitest_utils::CustomContractProxy;
 
 use cosmwasm_std::CosmosMsg;
 use cw1::sv::test_utils::Cw1Proxy;
