@@ -9,7 +9,7 @@ use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
     StructMessage,
 };
-use crate::multitest::{ContractMtHelpers, ImplMtHelpers};
+use crate::multitest::{ContractMtHelpers, TraitMtHelpers};
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::{ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes};
 use crate::querier::{ContractQuerier, TraitQuerier};
@@ -133,7 +133,7 @@ impl<'a> TraitInput<'a> {
         let Self { item, .. } = self;
         let associated_types = &self.associated_types;
 
-        ImplMtHelpers::new(item, associated_types).emit()
+        TraitMtHelpers::new(item, associated_types).emit()
     }
 }
 

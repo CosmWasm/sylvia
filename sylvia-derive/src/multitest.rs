@@ -567,7 +567,7 @@ impl<'a> ContractMtHelpers<'a> {
     }
 }
 
-pub struct ImplMtHelpers<'a> {
+pub struct TraitMtHelpers<'a> {
     source: &'a ItemTrait,
     error_type: Type,
     associated_types: &'a AssociatedTypes<'a>,
@@ -577,19 +577,19 @@ pub struct ImplMtHelpers<'a> {
     where_clause: &'a Option<syn::WhereClause>,
 }
 
-impl<'a> ImplMtHelpers<'a> {
+impl<'a> TraitMtHelpers<'a> {
     pub fn new(source: &'a ItemTrait, associated_types: &'a AssociatedTypes) -> Self {
         let where_clause = &source.generics.where_clause;
         let exec_variants =
             MsgVariants::new(source.as_variants(), MsgType::Exec, &[], where_clause);
         let query_variants =
             MsgVariants::new(source.as_variants(), MsgType::Query, &[], where_clause);
+        let sudo_variants =
+            MsgVariants::new(source.as_variants(), MsgType::Sudo, &[], where_clause);
         let associated_error = source.items.iter().find_map(|item| match item {
             TraitItem::Type(ty) if ty.ident == "Error" => Some(&ty.ident),
             _ => None,
         });
-        let sudo_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Sudo, &[], where_clause);
         let error_type: Type = match associated_error {
             Some(error) => parse_quote!(#error),
             // This should never happen as the `interface` macro requires the trait to have an associated `Error` type
@@ -669,9 +669,6 @@ impl<'a> ImplMtHelpers<'a> {
             error_type,
             &interface_api,
         );
-
-        let sudo_methods_declarations =
-            sudo_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
         let sudo_methods = sudo_variants.emit_interface_multitest_proxy_methods(
             &custom_msg,
             &mt_app,
@@ -683,6 +680,8 @@ impl<'a> ImplMtHelpers<'a> {
             exec_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
         let query_methods_declarations =
             query_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
+        let sudo_methods_declarations =
+            sudo_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
 
         let where_predicates = where_clause
             .as_ref()
@@ -701,9 +700,9 @@ impl<'a> ImplMtHelpers<'a> {
                     #(#sudo_methods_declarations)*
                 }
 
-                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #custom_msg, Contract: super:: #interface_name > #trait_name < #mt_app, #custom_msg > for #sylvia ::multitest::Proxy<'_, #mt_app, Contract >
+                impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #custom_msg, ContractT: super:: #interface_name > #trait_name < #mt_app, #custom_msg > for #sylvia ::multitest::Proxy<'_, #mt_app, ContractT >
                 where
-                    Contract:: #error_type : std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
+                    ContractT:: #error_type : std::fmt::Debug + std::fmt::Display + Send + Sync + 'static,
                     #custom_msg: Clone + std::fmt::Debug + std::cmp::PartialEq + cosmwasm_schema::schemars::JsonSchema + 'static,
                     CustomT: #sylvia ::cw_multi_test::Module,
                     WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
@@ -725,8 +724,8 @@ impl<'a> ImplMtHelpers<'a> {
                     #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
                     #where_predicates
                 {
-                    type #error_type = <Contract as super:: #interface_name>:: #error_type ;
-                    #(type #associated_args = <Contract as super:: #interface_name>:: #associated_args ;)*
+                    type #error_type = <ContractT as super:: #interface_name>:: #error_type ;
+                    #(type #associated_args = <ContractT as super:: #interface_name>:: #associated_args ;)*
 
                     #(#query_methods)*
                     #(#exec_methods)*
