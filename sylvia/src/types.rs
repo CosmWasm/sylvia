@@ -2,6 +2,82 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+
+pub struct BoundQuerier<'a, C: cosmwasm_std::CustomQuery, Contract> {
+    contract: &'a cosmwasm_std::Addr,
+    querier: &'a cosmwasm_std::QuerierWrapper<'a, C>,
+    _phantom: std::marker::PhantomData<Contract>,
+}
+
+impl<'a, C: cosmwasm_std::CustomQuery, Contract> BoundQuerier<'a, C, Contract> {
+    pub fn querier(&self) -> &'a cosmwasm_std::QuerierWrapper<'a, C> {
+        self.querier
+    }
+
+    pub fn contract(&self) -> &'a cosmwasm_std::Addr {
+        self.contract
+    }
+
+    pub fn borrowed(
+        contract: &'a cosmwasm_std::Addr,
+        querier: &'a cosmwasm_std::QuerierWrapper<'a, C>,
+    ) -> Self {
+        Self {
+            contract,
+            querier,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a, C: cosmwasm_std::CustomQuery, Contract> From<&'a BoundQuerier<'a, C, Contract>>
+    for BoundQuerier<'a, C, Contract>
+{
+    fn from(input: &'a BoundQuerier<'a, C, Contract>) -> Self {
+        BoundQuerier::borrowed(input.contract, input.querier)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Remote<'a, Contract> {
+    addr: std::borrow::Cow<'a, cosmwasm_std::Addr>,
+    #[serde(skip)]
+    _phantom: std::marker::PhantomData<Contract>,
+}
+
+impl<'a, Contract> Remote<'a, Contract> {
+    pub fn new(addr: cosmwasm_std::Addr) -> Self {
+        Self {
+            addr: std::borrow::Cow::Owned(addr),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn borrowed(addr: &'a cosmwasm_std::Addr) -> Self {
+        Self {
+            addr: std::borrow::Cow::Borrowed(addr),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn querier<C: cosmwasm_std::CustomQuery>(
+        &'a self,
+        querier: &'a cosmwasm_std::QuerierWrapper<'a, C>,
+    ) -> BoundQuerier<'a, C, Contract> {
+        BoundQuerier {
+            contract: &self.addr,
+            querier,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a, Contract> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
+    fn as_ref(&self) -> &cosmwasm_std::Addr {
+        &self.addr
+    }
+}
 
 /// Represantation of `reply` context received in entry point as
 /// (DepsMut, Env) tuple.
@@ -139,7 +215,7 @@ pub trait InterfaceApi {
     type Exec;
     type Query;
     type Sudo;
-    type Querier<'querier>;
+    type Querier<'querier, Contract>;
 }
 
 /// Api trait for easier access to generated types and messages.

@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{GenericArgument, GenericParam, ItemImpl};
+use syn::{GenericArgument, ItemImpl};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::MsgType;
@@ -17,24 +17,6 @@ impl Interfaces {
     pub fn new(source: &ItemImpl) -> Self {
         let interfaces = ParsedSylviaAttributes::new(source.attrs.iter()).messages_attrs;
         Self { interfaces }
-    }
-
-    pub fn emit_querier_from_impl(&self, contract_generics: &[&GenericParam]) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
-        self.interfaces
-            .iter()
-            .map(|interface| {
-                let ContractMessageAttr { module, generics ,..} = interface;
-                quote! {
-                    impl<'a, C: #sylvia ::cw_std::CustomQuery, #(#contract_generics,)* > From<&'a BoundQuerier<'a, C, #(#contract_generics,)* >> for #module ::sv::BoundQuerier<'a, C, #generics > {
-                        fn from(querier: &'a BoundQuerier<'a, C, #(#contract_generics,)* >) -> Self {
-                            Self::borrowed(querier.contract(),  querier.querier())
-                        }
-                    }
-                }
-            })
-            .collect()
     }
 
     pub fn emit_glue_message_variants(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
@@ -124,22 +106,6 @@ impl Interfaces {
                 }
             })
             .collect()
-    }
-
-    pub fn emit_remote_from_impl(&self, contract_generics: &[&GenericParam]) -> Vec<TokenStream> {
-        self.interfaces.iter().map(|interface| {
-            let ContractMessageAttr {
-                module, generics, ..
-            } = interface;
-
-            quote! {
-                impl<'a, #(#contract_generics,)* > From<&'a Remote<'a, #(#contract_generics,)* >> for #module ::sv::Remote<'a, #generics > {
-                    fn from(remote: &'a Remote<'a, #(#contract_generics,)* >) -> Self {
-                        #module ::sv::Remote::borrowed(remote.as_ref())
-                    }
-                }
-            }
-        }).collect()
     }
 
     pub fn emit_dispatch_arms(&self, msg_ty: &MsgType) -> Vec<TokenStream> {

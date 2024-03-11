@@ -542,7 +542,7 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_trait_querier_impl(&self, associated_name: &[&Ident]) -> TokenStream {
+    pub fn emit_trait_querier_impl(&self, associated_name: &[TokenStream]) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
@@ -551,7 +551,7 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let parameters = fields.iter().map(MsgField::emit_method_field);
+        let parameters = fields.iter().map(MsgField::emit_method_field_assoc_type);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
         let bracketed_generics = emit_bracketed_generics(associated_name);
@@ -1117,6 +1117,15 @@ impl<'a> MsgField<'a> {
         }
     }
 
+    /// Emits method field
+    pub fn emit_method_field_assoc_type(&self) -> TokenStream {
+        let Self { name, ty, .. } = self;
+
+        quote! {
+            #name: #ty
+        }
+    }
+
     pub fn emit_method_field_folded<FoldT>(&self, fold: &mut FoldT) -> TokenStream
     where
         FoldT: Fold,
@@ -1475,8 +1484,8 @@ impl<'a> ContractApi<'a> {
                 type Sudo = SudoMsg #sudo_bracketed_generics;
                 type Instantiate = InstantiateMsg #instantiate_bracketed_generics;
                 #migrate_type
-                type Remote<'remote> = Remote<'remote, #(#generics,)* >;
-                type Querier<'querier> = BoundQuerier<'querier, #custom_query, #(#generics,)* >;
+                type Remote<'remote> = #sylvia ::types::Remote<'remote, Self >;
+                type Querier<'querier> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Self >;
             }
         }
     }
@@ -1560,7 +1569,7 @@ impl<'a> InterfaceApi<'a> {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
                 type Sudo = SudoMsg #sudo_bracketed_generics;
-                type Querier<'querier> = BoundQuerier<'querier, #custom_query, #(#generics,)* >;
+                type Querier<'querier, Contract> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Contract >;
             }
         }
     }

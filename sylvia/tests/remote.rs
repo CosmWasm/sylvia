@@ -36,30 +36,24 @@ impl SomeContract {
 // Making sure `Remote` can be stored in `#[cw_serde]` types
 #[cw_serde]
 #[allow(dead_code)]
-struct CustomStorage {
-    remote: crate::sv::Remote<'static>,
+struct CustomStorage<Contract> {
+    remote: sylvia::types::Remote<'static, Contract>,
 }
 
 #[cfg(test)]
 mod tests {
     use cosmwasm_std::Addr;
 
-    use crate::some_interface;
-
     #[test]
     fn remote_generation() {
         // interface
-        let _ = some_interface::sv::Remote::new(Addr::unchecked("some_interface"));
+        let _ = sylvia::types::Remote::<()>::new(Addr::unchecked("some_interface"));
         let addr = Addr::unchecked("some_interface");
-        let _ = some_interface::sv::Remote::borrowed(&addr);
+        let _ = sylvia::types::Remote::<()>::borrowed(&addr);
 
         // contract
-        let new_remote = crate::sv::Remote::new(Addr::unchecked("some_contract"));
         let addr = Addr::unchecked("some_contract");
-        let borrowed_remote = crate::sv::Remote::borrowed(&addr);
+        let borrowed_remote = sylvia::types::Remote::<()>::borrowed(&addr);
         assert_eq!(&Addr::unchecked("some_contract"), borrowed_remote.as_ref());
-
-        let _ = some_interface::sv::Remote::from(&borrowed_remote);
-        let _ = some_interface::sv::Remote::from(&new_remote);
     }
 }

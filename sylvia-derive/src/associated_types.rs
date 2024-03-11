@@ -69,12 +69,6 @@ impl<'a> AssociatedTypes<'a> {
         self.filtered().map(|associated| &associated.ident)
     }
 
-    pub fn emit_types_definition(&self) -> Vec<TokenStream> {
-        self.as_names()
-            .map(|name| quote! { type #name = #name; })
-            .collect()
-    }
-
     pub fn emit_contract_predicate(&self, trait_name: &Ident) -> TokenStream {
         let predicate = quote! { ContractT: #trait_name };
         if self.0.is_empty() {
@@ -118,12 +112,6 @@ impl<'a> ImplAssociatedTypes<'a> {
             .collect();
 
         Self(associated_types)
-    }
-
-    pub fn as_names(&self) -> Vec<&Ident> {
-        self.filtered()
-            .map(|associated| &associated.ident)
-            .collect()
     }
 
     pub fn as_types(&self) -> Vec<&Type> {
