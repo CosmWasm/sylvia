@@ -263,10 +263,11 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::impl_associated_interface::sv::test_utils::AssociatedInterface;
-    use crate::impl_interface::sv::test_utils::Interface;
-    use crate::impl_other_interface::sv::test_utils::OtherInterface;
-    use crate::impl_some_interface::sv::test_utils::SomeInterface;
+    use crate::associated_interface::sv::test_utils::AssociatedInterfaceProxy;
+    use crate::interface::sv::test_utils::InterfaceProxy;
+    use crate::other_interface::sv::test_utils::OtherInterfaceProxy;
+    use crate::some_interface::sv::test_utils::SomeInterfaceProxy;
+    use crate::sv::multitest_utils::MyContractProxy;
     use crate::{MyContract, MyMsg};
     use sylvia::multitest::App;
 

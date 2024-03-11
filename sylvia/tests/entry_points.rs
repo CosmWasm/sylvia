@@ -215,7 +215,7 @@ mod tests {
     use cw_multi_test::Executor;
     use sylvia::multitest::App;
 
-    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::multitest_utils::{CodeId, ContractProxy};
     use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::exec::{CustomExecMsg, UserExecMsg};
     use crate::sudo::SudoWrapperMsg;

@@ -2,11 +2,11 @@ use cosmwasm_std::{StdError, Uint128};
 use cw20_minting::responses::MinterResponse;
 use sylvia::multitest::App;
 
-use crate::contract::sv::multitest_utils::CodeId;
+use crate::contract::sv::multitest_utils::{CodeId, Cw20BaseProxy};
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::minting::sv::test_utils::Cw20Minting;
 use crate::responses::{Cw20Coin, TokenInfoResponse};
+use cw20_minting::sv::test_utils::Cw20MintingProxy;
 
 #[test]
 fn mintable() {

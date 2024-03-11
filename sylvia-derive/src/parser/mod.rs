@@ -6,7 +6,6 @@ pub use attributes::{
     ContractErrorAttr, ContractMessageAttr, Custom, Customs, FilteredOverrideEntryPoints, MsgAttr,
     MsgType, OverrideEntryPoint, ParsedSylviaAttributes, SylviaAttribute,
 };
-pub use contract::ContractArgs;
 pub use entry_point::EntryPointArgs;
 
 use proc_macro_error::emit_error;

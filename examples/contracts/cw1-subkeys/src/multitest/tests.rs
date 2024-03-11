@@ -6,6 +6,9 @@ use sylvia::multitest::App;
 use crate::contract::sv::multitest_utils::CodeId;
 use crate::contract::{CONTRACT_NAME, CONTRACT_VERSION};
 
+use crate::contract::sv::multitest_utils::Cw1SubkeysContractProxy;
+use cw1::sv::test_utils::Cw1Proxy;
+
 const ATOM: &str = "atom";
 
 /// Helper function for comparing vectors or another slice-like object as they would represent
@@ -370,7 +373,6 @@ mod permissions {
 }
 
 mod cw1_execute {
-    use crate::cw1::sv::test_utils::Cw1;
     use cosmwasm_std::BankMsg;
 
     use super::*;

@@ -10,9 +10,37 @@ use cw_multi_test::{
     GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, StargateFailing,
     Wasm, WasmKeeper,
 };
+use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+
+#[derive(Derivative)]
+#[derivative(Debug)]
+pub struct Proxy<'a, MtApp, Contract> {
+    pub contract_addr: cosmwasm_std::Addr,
+    #[derivative(Debug = "ignore")]
+    pub app: &'a crate::multitest::App<MtApp>,
+    pub _phantom: std::marker::PhantomData<(MtApp, Contract)>,
+}
+
+impl<'a, MtApp, Contract> Proxy<'a, MtApp, Contract> {
+    pub fn new(contract_addr: cosmwasm_std::Addr, app: &'a App<MtApp>) -> Self {
+        Proxy {
+            contract_addr,
+            app,
+            _phantom: std::marker::PhantomData::<(MtApp, Contract)>::default(),
+        }
+    }
+}
+
+impl<'app, MtApp, Contract> From<(cosmwasm_std::Addr, &'app App<MtApp>)>
+    for Proxy<'app, MtApp, Contract>
+{
+    fn from(input: (cosmwasm_std::Addr, &'app App<MtApp>)) -> Self {
+        Self::new(input.0, input.1)
+    }
+}
 
 pub struct App<MtApp> {
     app: RefCell<MtApp>,

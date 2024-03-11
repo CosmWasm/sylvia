@@ -36,7 +36,7 @@ fn instantiate_with_salt() {
 
     let code_id = sv::multitest_utils::CodeId::<Empty, _>::store_code(&app);
 
-    let _: sv::multitest_utils::SomeContractProxy<_, Empty> = code_id
+    let _: sylvia::multitest::Proxy<_, SomeContract<Empty>> = code_id
         .instantiate(Empty {})
         .with_salt(salt)
         .call(owner)

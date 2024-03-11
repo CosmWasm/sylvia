@@ -268,10 +268,11 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::impl_associated_type_interface::sv::test_utils::AssociatedTypeInterface;
-    use crate::impl_default_query_interface::sv::test_utils::DefaultQueryInterface;
-    use crate::impl_interface::sv::test_utils::Interface;
-    use crate::impl_some_interface::sv::test_utils::SomeInterface;
+    use crate::associated_type_interface::sv::test_utils::AssociatedTypeInterfaceProxy;
+    use crate::default_query_interface::sv::test_utils::DefaultQueryInterfaceProxy;
+    use crate::interface::sv::test_utils::InterfaceProxy;
+    use crate::some_interface::sv::test_utils::SomeInterfaceProxy;
+    use crate::sv::multitest_utils::MyContractProxy;
     use crate::{MyContract, MyQuery};
 
     use cosmwasm_std::Empty;

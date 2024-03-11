@@ -9,11 +9,9 @@ use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
     StructMessage,
 };
-use crate::multitest::{ContractMtHelpers, ImplMtHelpers};
+use crate::multitest::{ContractMtHelpers, TraitMtHelpers};
 use crate::parser::attributes::msg::MsgType;
-use crate::parser::{
-    ContractArgs, ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes,
-};
+use crate::parser::{ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes};
 use crate::querier::{ContractQuerier, TraitQuerier};
 use crate::variant_descs::AsVariantDescs;
 
@@ -73,6 +71,8 @@ impl<'a> TraitInput<'a> {
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
+        let multitest_helpers = self.emit_multitest_helpers();
+
         quote! {
             pub mod sv {
                 use super::*;
@@ -81,6 +81,8 @@ impl<'a> TraitInput<'a> {
                 #querier
 
                 #interface_messages
+
+                #multitest_helpers
             }
         }
     }
@@ -122,52 +124,16 @@ impl<'a> TraitInput<'a> {
         )
         .emit()
     }
-}
-
-/// Preprocessed `contract` macro input for impl trait block
-pub struct ImplTraitInput<'a> {
-    attributes: &'a ContractArgs,
-    item: &'a ItemImpl,
-    generics: Vec<&'a GenericParam>,
-    interfaces: Interfaces,
-}
-
-impl<'a> ImplTraitInput<'a> {
-    pub fn new(attributes: &'a ContractArgs, item: &'a ItemImpl) -> Self {
-        let generics = item.generics.params.iter().collect();
-        let interfaces = Interfaces::new(item);
-
-        Self {
-            attributes,
-            item,
-            generics,
-            interfaces,
-        }
-    }
-
-    pub fn process(&self) -> TokenStream {
-        let multitest_helpers = self.emit_multitest_helpers();
-
-        quote! {
-            pub mod sv {
-                use super::*;
-
-                #multitest_helpers
-            }
-        }
-    }
 
     fn emit_multitest_helpers(&self) -> TokenStream {
         if !cfg!(feature = "mt") {
             return quote! {};
         }
 
-        let Self {
-            item, interfaces, ..
-        } = self;
-        let generic_params = &self.generics;
+        let Self { item, .. } = self;
+        let associated_types = &self.associated_types;
 
-        ImplMtHelpers::new(item, generic_params, interfaces, &self.attributes.module).emit()
+        TraitMtHelpers::new(item, associated_types).emit()
     }
 }
 

@@ -1,5 +1,4 @@
 use proc_macro2::{Ident, TokenStream};
-use proc_macro_error::emit_error;
 use quote::quote;
 use syn::spanned::Spanned;
 use syn::{GenericArgument, ItemImpl};
@@ -137,24 +136,5 @@ impl Interfaces {
             .iter()
             .flat_map(|interface| &interface.generics)
             .collect()
-    }
-
-    pub fn get_only_interface(&self) -> Option<&ContractMessageAttr> {
-        let interfaces = &self.interfaces;
-        match interfaces.len() {
-            0 => None,
-            1 => Some(&interfaces[0]),
-            _ => {
-                let first = &interfaces[0];
-                for redefined in &interfaces[1..] {
-                    emit_error!(
-                        redefined.module, "The attribute `sv::messages` is redefined";
-                        note = first.module.span() => "Previous definition of the attribute `sv::messages`";
-                        note = "Only one `sv::messages` attribute can exist on an interface implementation on contract"
-                    );
-                }
-                None
-            }
-        }
     }
 }

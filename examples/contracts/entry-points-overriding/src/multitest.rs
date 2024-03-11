@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::multitest_utils::{CodeId, CounterContractProxy};
     use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::messages::{CustomExecMsg, SudoMsg, UserExecMsg};
     use cosmwasm_std::Addr;

@@ -198,6 +198,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::sv::multitest_utils::CodeId;
+    use crate::contract::sv::multitest_utils::GenericsForwardedContractProxy;
     use sylvia::multitest::App;
     use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
