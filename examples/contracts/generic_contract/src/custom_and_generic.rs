@@ -1,10 +1,7 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use custom_and_generic::CustomAndGeneric;
-use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
 
-#[contract(module = crate::contract)]
-#[sv::messages(custom_and_generic as CustomAndGeneric)]
 impl<
         InstantiateT,
         Exec1T,
@@ -48,7 +45,6 @@ impl<
     type QueryC = SvCustomQuery;
     type RetT = SvCustomMsg;
 
-    #[sv::msg(exec)]
     fn custom_generic_execute_one(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -58,7 +54,6 @@ impl<
         Ok(Response::new())
     }
 
-    #[sv::msg(exec)]
     fn custom_generic_execute_two(
         &self,
         _ctx: ExecCtx<Self::QueryC>,
@@ -68,7 +63,6 @@ impl<
         Ok(Response::new())
     }
 
-    #[sv::msg(query)]
     fn custom_generic_query_one(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -78,7 +72,6 @@ impl<
         Ok(SvCustomMsg {})
     }
 
-    #[sv::msg(query)]
     fn custom_generic_query_two(
         &self,
         _ctx: QueryCtx<Self::QueryC>,
@@ -88,7 +81,6 @@ impl<
         Ok(SvCustomMsg {})
     }
 
-    #[sv::msg(sudo)]
     fn custom_generic_sudo_one(
         &self,
         _ctx: SudoCtx<Self::QueryC>,
@@ -98,7 +90,6 @@ impl<
         Ok(Response::new())
     }
 
-    #[sv::msg(sudo)]
     fn custom_generic_sudo_two(
         &self,
         _ctx: SudoCtx<Self::QueryC>,

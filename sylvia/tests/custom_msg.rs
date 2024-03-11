@@ -44,28 +44,22 @@ mod some_interface {
 
 mod impl_some_interface {
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::some_interface::SomeInterface;
     use crate::{MyMsg, SomeResponse};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::some_interface)]
     impl SomeInterface for crate::MyContract {
         type Error = StdError;
 
-        #[sv::msg(query)]
         fn interface_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse)
         }
 
-        #[sv::msg(exec)]
         fn interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn interface_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
@@ -99,26 +93,20 @@ mod impl_interface {
     use crate::interface::Interface;
     use crate::{MyMsg, OtherMsg};
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::interface)]
     impl Interface for crate::MyContract {
         type Error = StdError;
         type ExecC = OtherMsg;
 
-        #[sv::msg(exec)]
         fn exec(&self, _ctx: ExecCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::default())
         }
 
-        #[sv::msg(query)]
         fn query(&self, _ctx: QueryCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
 
-        #[sv::msg(sudo)]
         fn sudo(&self, _ctx: SudoCtx) -> StdResult<Response<MyMsg>> {
             Ok(Response::new())
         }
@@ -147,25 +135,19 @@ mod other_interface {
 mod impl_other_interface {
     use crate::other_interface::OtherInterface;
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::other_interface)]
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
 
-        #[sv::msg(exec)]
         fn other_interface_exec(&self, _ctx: ExecCtx) -> StdResult<Response> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn other_interface_sudo(&self, _ctx: SudoCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
 
-        #[sv::msg(query)]
         fn other_interface_query(&self, _ctx: QueryCtx) -> StdResult<Response> {
             Ok(Response::new())
         }
@@ -197,26 +179,20 @@ mod impl_associated_interface {
     use crate::associated_interface::AssociatedInterface;
     use crate::{MyMsg, SomeResponse};
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::associated_interface)]
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;
         type ExecC = MyMsg;
 
-        #[sv::msg(exec)]
         fn associated_exec(&self, _ctx: ExecCtx) -> StdResult<Response<Self::ExecC>> {
             Ok(Response::default())
         }
 
-        #[sv::msg(sudo)]
         fn associated_sudo(&self, _ctx: SudoCtx) -> StdResult<Response<Self::ExecC>> {
             Ok(Response::default())
         }
 
-        #[sv::msg(query)]
         fn associated_query(&self, _ctx: QueryCtx) -> StdResult<SomeResponse> {
             Ok(SomeResponse {})
         }

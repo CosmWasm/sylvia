@@ -42,27 +42,21 @@ pub mod impl_counter {
     use crate::counter::Counter;
     use crate::CountResponse;
     use cosmwasm_std::{Response, StdError, StdResult};
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, QueryCtx};
 
-    #[contract(module=crate)]
-    #[sv::messages(crate::counter)]
     impl Counter for super::CounterContract<'_> {
         type Error = StdError;
 
-        #[sv::msg(query)]
         fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
             let count = self.count.load(ctx.deps.storage)?;
             Ok(CountResponse { count })
         }
 
-        #[sv::msg(exec)]
         fn set_count(&self, ctx: ExecCtx, new_count: u64) -> StdResult<Response> {
             self.count.save(ctx.deps.storage, &new_count)?;
             Ok(Response::new())
         }
 
-        #[sv::msg(exec)]
         fn copy_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let other_count = self
                 .remote
@@ -75,7 +69,6 @@ pub mod impl_counter {
             Ok(Response::new())
         }
 
-        #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
             let other_count = sylvia::types::BoundQuerier::<_, Self>::borrowed(

@@ -1,17 +1,13 @@
 use cosmwasm_std::{Addr, CosmosMsg, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
-use sylvia::contract;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
-#[contract(module=crate::contract)]
-#[sv::messages(cw1 as Cw1)]
 impl Cw1 for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
-    #[sv::msg(exec)]
     fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
@@ -23,7 +19,6 @@ impl Cw1 for Cw1WhitelistContract<'_> {
         Ok(resp)
     }
 
-    #[sv::msg(query)]
     fn can_execute(
         &self,
         ctx: QueryCtx,
