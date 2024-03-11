@@ -1569,7 +1569,7 @@ impl<'a> InterfaceApi<'a> {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
                 type Sudo = SudoMsg #sudo_bracketed_generics;
-                type Querier<'querier, Contract> = BoundQuerier<'querier, #custom_query, Contract >;
+                type Querier<'querier, Contract> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Contract >;
             }
         }
     }

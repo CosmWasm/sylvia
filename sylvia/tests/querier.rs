@@ -78,7 +78,7 @@ pub mod impl_counter {
         #[sv::msg(exec)]
         fn decrease_by_count(&self, ctx: ExecCtx) -> StdResult<Response> {
             let remote = self.remote.load(ctx.deps.storage)?;
-            let other_count = crate::counter::sv::BoundQuerier::<_, Self>::borrowed(
+            let other_count = sylvia::types::BoundQuerier::<_, Self>::borrowed(
                 remote.as_ref(),
                 &ctx.deps.querier,
             )
@@ -96,7 +96,7 @@ pub mod impl_counter {
 
 pub struct CounterContract<'a> {
     pub count: Item<'static, u64>,
-    pub remote: Item<'static, sv::Remote<'a, CounterContract<'a>>>,
+    pub remote: Item<'static, sylvia::types::Remote<'a, CounterContract<'a>>>,
 }
 
 #[contract]
@@ -114,7 +114,7 @@ impl CounterContract<'_> {
     fn instantiate(&self, ctx: InstantiateCtx, remote_addr: Addr) -> StdResult<Response> {
         self.count.save(ctx.deps.storage, &0)?;
         self.remote
-            .save(ctx.deps.storage, &sv::Remote::new(remote_addr))?;
+            .save(ctx.deps.storage, &sylvia::types::Remote::new(remote_addr))?;
         Ok(Response::new())
     }
 }
@@ -135,20 +135,19 @@ mod tests {
         let remote_addr = Addr::unchecked("remote");
 
         // Remote generation
-        let remote =
-            super::counter::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
-        let _: super::counter::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
-        let remote = super::sv::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
-        let _: super::sv::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
+        let remote = sylvia::types::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let _: sylvia::types::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
+        let remote = sylvia::types::Remote::<super::CounterContract<'_>>::new(remote_addr.clone());
+        let _: sylvia::types::BoundQuerier<_, _> = remote.querier(&querier_wrapper);
 
         // Querier generation
-        let _ = super::counter::sv::BoundQuerier::<_, super::CounterContract<'_>>::borrowed(
+        let _ = sylvia::types::BoundQuerier::<_, super::CounterContract<'_>>::borrowed(
             &remote_addr,
             &querier_wrapper,
         );
-        let querier = super::sv::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
+        let querier = sylvia::types::BoundQuerier::borrowed(&remote_addr, &querier_wrapper);
 
-        let _ = super::counter::sv::BoundQuerier::<_, super::CounterContract<'_>>::from(&querier);
+        let _ = sylvia::types::BoundQuerier::<_, super::CounterContract<'_>>::from(&querier);
     }
 
     #[test]

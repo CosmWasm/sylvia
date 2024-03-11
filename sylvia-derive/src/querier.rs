@@ -44,7 +44,7 @@ where
             .map(ItemType::as_name)
             .collect();
 
-        let accoc_types: Vec<_> = associated_types
+        let assoc_types: Vec<_> = associated_types
             .without_special()
             .map(ItemType::as_name)
             .map(|assoc| quote! {Self:: #assoc})
@@ -52,38 +52,34 @@ where
         let methods_trait_impl = variants
             .variants()
             .iter()
-            .map(|variant| variant.emit_trait_querier_impl(&accoc_types));
-
-        let methods_trait_impl_copy = methods_trait_impl.clone();
+            .map(|variant| variant.emit_trait_querier_impl(&assoc_types))
+            .collect::<Vec<_>>();
 
         let methods_declaration = variants
             .variants()
             .iter()
             .map(|variant| variant.emit_querier_declaration(&generics));
 
-        let types_declaration = associated_types.filtered().cloned();
+        let types_declaration = associated_types.filtered();
         let where_clause = associated_types.as_where_clause();
 
         quote! {
-            pub use #sylvia ::types::{BoundQuerier, Remote};
-            use std::marker::PhantomData;
-
             pub trait Querier {
                 #(#types_declaration)*
 
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for BoundQuerier<'a, C, PhantomData< (#(#generics,)*) > > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, std::marker::PhantomData< (#(#generics,)*) > > #where_clause {
                 #(type #generics = #generics;)*
 
                 #(#methods_trait_impl)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for BoundQuerier<'a, C, Contract> {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for #sylvia ::types::BoundQuerier<'a, C, Contract> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*
 
-                #(#methods_trait_impl_copy)*
+                #(#methods_trait_impl)*
             }
         }
     }
@@ -117,8 +113,6 @@ impl<'a> ContractQuerier<'a> {
             .iter()
             .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path, &generics));
 
-        let methods_impl_copy = methods_impl.clone();
-
         let methods_declaration = variants
             .variants()
             .iter()
@@ -137,19 +131,16 @@ impl<'a> ContractQuerier<'a> {
         let contract_name = *source.self_ty.clone();
 
         quote! {
-            pub use #sylvia ::types::{BoundQuerier, Remote};
-            use std::marker::PhantomData;
-
             pub trait Querier {
                 #(#types_declaration)*
 
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for BoundQuerier<'a, C, #contract_name > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, #contract_name > #where_clause {
                 #(#types_implementation)*
 
-                #(#methods_impl_copy)*
+                #(#methods_impl)*
             }
         }
     }

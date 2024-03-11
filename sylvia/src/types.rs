@@ -2,6 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 pub struct BoundQuerier<'a, C: cosmwasm_std::CustomQuery, Contract> {
     contract: &'a cosmwasm_std::Addr,
@@ -38,7 +39,7 @@ impl<'a, C: cosmwasm_std::CustomQuery, Contract> From<&'a BoundQuerier<'a, C, Co
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Remote<'a, Contract> {
     addr: std::borrow::Cow<'a, cosmwasm_std::Addr>,
     #[serde(skip)]

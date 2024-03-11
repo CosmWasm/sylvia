@@ -44,14 +44,12 @@ struct CustomStorage<Contract> {
 mod tests {
     use cosmwasm_std::Addr;
 
-    use crate::some_interface;
-
     #[test]
     fn remote_generation() {
         // interface
-        let _ = some_interface::sv::Remote::<()>::new(Addr::unchecked("some_interface"));
+        let _ = sylvia::types::Remote::<()>::new(Addr::unchecked("some_interface"));
         let addr = Addr::unchecked("some_interface");
-        let _ = some_interface::sv::Remote::<()>::borrowed(&addr);
+        let _ = sylvia::types::Remote::<()>::borrowed(&addr);
 
         // contract
         let addr = Addr::unchecked("some_contract");

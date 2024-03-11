@@ -103,7 +103,7 @@ mod tests {
         let deps = mock_dependencies();
         let querier_wrapper: QuerierWrapper = QuerierWrapper::new(&deps.querier);
 
-        let querier = super::sv::BoundQuerier::<
+        let querier = sylvia::types::BoundQuerier::<
             _,
             std::marker::PhantomData<(
                 Empty,
