@@ -3,6 +3,7 @@ use sylvia::types::ExecCtx;
 use sylvia::{interface, schemars};
 
 #[interface]
+#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Receiver {
     type Error: From<StdError>;
 

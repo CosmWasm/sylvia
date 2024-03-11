@@ -39,6 +39,7 @@ mod group {
     use crate::{Member, MemberResp};
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait Group {
         type Error: From<StdError>;
 

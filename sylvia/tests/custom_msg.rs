@@ -27,7 +27,7 @@ mod some_interface {
     use crate::{MyMsg, SomeResponse};
 
     #[interface]
-    #[sv::custom(msg=MyMsg)]
+    #[sv::custom(msg=MyMsg, query=cosmwasm_std::Empty)]
     pub trait SomeInterface {
         type Error: From<StdError>;
 
@@ -74,7 +74,7 @@ mod interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
-    #[sv::custom(msg=MyMsg)]
+    #[sv::custom(msg=MyMsg, query=cosmwasm_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
         type ExecC: CustomMsg;
@@ -119,6 +119,7 @@ mod other_interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait OtherInterface {
         type Error: From<StdError>;
 
@@ -161,6 +162,7 @@ mod associated_interface {
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
+    #[sv::custom(query=cosmwasm_std::Empty)]
     pub trait AssociatedInterface {
         type Error: From<StdError>;
         type ExecC: CustomMsg;

@@ -11,6 +11,7 @@ pub struct CanExecuteResp {
 }
 
 #[interface]
+#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw1 {
     type Error: From<StdError>;
 

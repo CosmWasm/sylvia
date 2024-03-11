@@ -4,6 +4,7 @@ use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
+#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Generic {
     type Error: From<StdError>;
     type Exec1T: CustomMsg;

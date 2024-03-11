@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
-use proc_macro_error::emit_error;
+use proc_macro_error::{emit_error, emit_warning};
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
-use crate::associated_types::{AssociatedTypes, ItemType};
+use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -47,6 +47,30 @@ impl<'a> TraitInput<'a> {
             .custom_attr
             .unwrap_or_default();
         let associated_types = AssociatedTypes::new(item);
+
+        if custom.msg.is_none()
+            && !associated_types
+                .all_names()
+                .any(|assoc_type| assoc_type == EXEC_TYPE)
+        {
+            emit_warning!(
+                item.ident.span(), "Missing both `{}` type and `#[sv::custom(msg=...)]` defined for the trait.", EXEC_TYPE;
+                note = "Implicitly it means that the trait could not be implemented for contracts that use CustomMsg different than `cosmwasm_std::Empty`";
+                note = "If this behaviour is intended, please add `#[sv::custom(msg=sylvia::cw_std::Empty]` attribute.";
+            );
+        }
+
+        if custom.query.is_none()
+            && !associated_types
+                .all_names()
+                .any(|assoc_type| assoc_type == QUERY_TYPE)
+        {
+            emit_warning!(
+                item.ident.span(), "Missing both `{}` type and `#[sv::custom(query=...)]` defined for the trait.", QUERY_TYPE;
+                note = "Implicitly it means that the trait could not be implemented for contracts that use CustomQuery different than `cosmwasm_std::Empty`";
+                note = "If this behaviour is intended, please add `#[sv::custom(query=sylvia::cw_std::Empty]` attribute.";
+            );
+        }
 
         Self {
             item,
