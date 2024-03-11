@@ -44,6 +44,8 @@ where
             .map(ItemType::as_name)
             .collect();
 
+        let all_generics: Vec<_> = associated_types.all_names().collect();
+
         let assoc_types: Vec<_> = associated_types
             .without_special()
             .map(ItemType::as_name)
@@ -70,7 +72,7 @@ where
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, std::marker::PhantomData< (#(#generics,)*) > > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, &dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
                 #(type #generics = #generics;)*
 
                 #(#methods_trait_impl)*

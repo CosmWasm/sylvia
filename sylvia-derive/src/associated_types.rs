@@ -24,6 +24,10 @@ impl<'a> AssociatedTypes<'a> {
         Self(associated_types)
     }
 
+    pub fn all_names(&self) -> impl Iterator<Item = &Ident> {
+        self.0.iter().map(|associated| &associated.ident)
+    }
+
     pub fn without_error(&self) -> impl Iterator<Item = &TraitItemType> {
         self.0
             .iter()
@@ -62,7 +66,7 @@ impl<'a> AssociatedTypes<'a> {
         }
     }
 
-    pub fn as_names(&self) -> impl Iterator<Item = &Ident> {
+    pub fn as_filtered_names(&self) -> impl Iterator<Item = &Ident> {
         self.filtered().map(|associated| &associated.ident)
     }
 
