@@ -7,8 +7,8 @@ use crate::crate_module;
 
 #[derive(Debug, Default)]
 pub struct Custom {
-    msg: Option<Type>,
-    query: Option<Type>,
+    pub msg: Option<Type>,
+    pub query: Option<Type>,
 }
 
 impl Custom {
@@ -28,14 +28,6 @@ impl Custom {
 
     pub fn query_or_default(&self) -> Type {
         self.query.clone().unwrap_or_else(Self::default_type)
-    }
-
-    pub fn msg(&self) -> Option<Type> {
-        self.msg.clone()
-    }
-
-    pub fn query(&self) -> Option<Type> {
-        self.query.clone()
     }
 
     pub fn default_type() -> Type {

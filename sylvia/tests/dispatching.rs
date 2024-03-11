@@ -24,6 +24,7 @@ mod interface {
     use crate::{EmptyQueryResponse, QueryResponse};
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
 

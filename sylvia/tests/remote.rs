@@ -10,6 +10,7 @@ pub mod some_interface {
     use sylvia::interface;
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait SomeInterface {
         type Error: From<StdError>;
     }

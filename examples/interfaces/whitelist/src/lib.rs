@@ -6,6 +6,7 @@ use sylvia::{interface, schemars};
 pub mod responses;
 
 #[interface]
+#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Whitelist {
     type Error: From<cosmwasm_std::StdError>;
 

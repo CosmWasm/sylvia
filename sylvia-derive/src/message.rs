@@ -198,12 +198,14 @@ impl<'a> EnumMessage<'a> {
         let associated_query = parse_associated_custom_type(source, QUERY_TYPE);
 
         let resp_type = custom
-            .msg()
+            .msg
+            .clone()
             .or(associated_exec)
             .unwrap_or_else(Custom::default_type);
 
         let query_type = custom
-            .query()
+            .query
+            .clone()
             .or(associated_query)
             .unwrap_or_else(Custom::default_type);
 

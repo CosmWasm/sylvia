@@ -20,6 +20,7 @@ pub mod counter {
     use crate::CountResponse;
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait Counter {
         type Error: From<StdError>;
 

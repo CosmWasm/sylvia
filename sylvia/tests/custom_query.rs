@@ -26,7 +26,7 @@ mod interface {
     use crate::{MyQuery, SomeResponse};
 
     #[interface]
-    #[sv::custom(query=MyQuery)]
+    #[sv::custom(query=MyQuery, msg=cosmwasm_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
@@ -74,7 +74,7 @@ mod some_interface {
     use crate::{MyQuery, SomeResponse};
 
     #[interface]
-    #[sv::custom(query=MyQuery)]
+    #[sv::custom(query=MyQuery, msg=cosmwasm_std::Empty)]
     pub trait SomeInterface {
         type Error: From<StdError>;
 
@@ -120,6 +120,7 @@ mod associated_type_interface {
     use crate::SomeResponse;
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty)]
     pub trait AssociatedTypeInterface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
@@ -167,6 +168,7 @@ mod default_query_interface {
     use crate::SomeResponse;
 
     #[interface]
+    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
     pub trait DefaultQueryInterface {
         type Error: From<StdError>;
 

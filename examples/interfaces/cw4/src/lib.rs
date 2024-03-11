@@ -4,6 +4,7 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
+#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw4 {
     type Error: From<StdError>;
 
