@@ -71,9 +71,13 @@ pub trait Generic {
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::{InterfaceApi, SvCustomMsg};
+    use sylvia::types::InterfaceApi;
 
     use crate::sv::Querier;
+
+    #[cosmwasm_schema::cw_serde]
+    pub struct SvCustomMsg;
+    impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 
     #[test]
     fn construct_messages() {

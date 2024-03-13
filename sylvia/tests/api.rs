@@ -49,7 +49,11 @@ mod tests {
     use crate::SomeContract;
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, QuerierWrapper};
-    use sylvia::types::{ContractApi, SvCustomMsg};
+    use sylvia::types::ContractApi;
+
+    #[cosmwasm_schema::cw_serde]
+    pub struct SvCustomMsg;
+    impl cosmwasm_std::CustomMsg for SvCustomMsg {}
 
     #[test]
     fn api() {

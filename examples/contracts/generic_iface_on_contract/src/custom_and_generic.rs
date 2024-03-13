@@ -1,6 +1,7 @@
+use crate::contract::{SvCustomMsg, SvCustomQuery};
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use custom_and_generic::CustomAndGeneric;
-use sylvia::types::{ExecCtx, QueryCtx, SudoCtx, SvCustomMsg, SvCustomQuery};
+use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
 impl CustomAndGeneric for crate::contract::NonGenericContract {
     type Error = StdError;

@@ -3,7 +3,7 @@ use cosmwasm_schema::write_api;
 #[cfg(not(tarpaulin_include))]
 fn main() {
     use generic_contract::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
-    use sylvia::types::SvCustomMsg;
+    use generic_contract::contract::SvCustomMsg;
 
     write_api! {
         instantiate: InstantiateMsg<SvCustomMsg>,

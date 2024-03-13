@@ -1,14 +1,19 @@
 use cosmwasm_std::{Reply, Response, StdResult};
 use cw_storage_plus::Item;
 use serde::Deserialize;
-use sylvia::types::{
-    CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx, SvCustomMsg,
-    SvCustomQuery,
-};
+use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
+
+#[cosmwasm_schema::cw_serde]
+pub struct SvCustomMsg;
+impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+
+#[cosmwasm_schema::cw_serde]
+pub struct SvCustomQuery;
+impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 pub struct GenericContract<
     InstantiateT,
@@ -42,7 +47,7 @@ pub struct GenericContract<
     )>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, sylvia::types::SvCustomMsg, String>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, String>))]
 #[contract]
 #[sv::messages(cw1 as Cw1: custom(msg, query))]
 #[sv::messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
@@ -189,9 +194,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::sv::multitest_utils::CodeId;
+    use super::{SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::multitest_utils::GenericContractProxy;
     use sylvia::multitest::App;
-    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn generic_contract() {

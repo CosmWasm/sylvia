@@ -1,4 +1,3 @@
-use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -197,18 +196,6 @@ impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
 pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
 impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
-
-/// This type is meant to be used in internal testing purpose.
-#[cw_serde]
-pub struct SvCustomMsg;
-
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
-
-/// This type is meant to be used in internal testing purpose.
-#[cw_serde]
-pub struct SvCustomQuery;
-
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 /// Api trait for easier access to generated types and messages.
 pub trait InterfaceApi {

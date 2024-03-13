@@ -3,12 +3,16 @@ use cw_storage_plus::Item;
 use serde::Deserialize;
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
-    SvCustomMsg,
 };
 use sylvia::{contract, schemars};
 
-#[cfg(not(feature = "library"))]
-use sylvia::types::SvCustomQuery;
+#[cosmwasm_schema::cw_serde]
+pub struct SvCustomMsg;
+impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+
+#[cosmwasm_schema::cw_serde]
+pub struct SvCustomQuery;
+impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 pub struct GenericsForwardedContract<
     InstantiateT,
@@ -198,9 +202,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::sv::multitest_utils::CodeId;
+    use super::{SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::multitest_utils::GenericsForwardedContractProxy;
     use sylvia::multitest::App;
-    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn generic_contract() {
