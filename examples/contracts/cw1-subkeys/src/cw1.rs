@@ -13,8 +13,8 @@ impl Cw1 for Cw1SubkeysContract<'_> {
         ctx: ExecCtx,
         msgs: Vec<cosmwasm_std::CosmosMsg>,
     ) -> Result<cosmwasm_std::Response, Self::Error> {
-        let authorized: StdResult<_> = msgs.iter().fold(Ok(true), |acc, msg| {
-            Ok(acc? & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
+        let authorized: StdResult<_> = msgs.iter().try_fold(true, |acc, msg| {
+            Ok(acc & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
         });
 
         ensure!(authorized?, ContractError::Unauthorized);
