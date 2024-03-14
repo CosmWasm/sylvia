@@ -839,7 +839,7 @@ Instead trait declaring all the interface methods is directly implemented on
 the contracts Proxy type.
 
 ```rust
-use contract::multitest_utils::Group;
+use contract::mt::Group;
 
 #[test]
 fn member_test() {
@@ -848,7 +848,7 @@ fn member_test() {
     let owner = "owner";
     let member = "john";
 
-    let code_id = contract::multitest_utils::CodeId::store_code(&app);
+    let code_id = contract::mt::CodeId::store_code(&app);
 
     let contract = code_id.instantiate(0)
         .with_label("My contract")

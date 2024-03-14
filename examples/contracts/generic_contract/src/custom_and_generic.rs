@@ -105,8 +105,8 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::{SvCustomMsg, SvCustomQuery};
-    use crate::contract::sv::multitest_utils::CodeId;
-    use custom_and_generic::sv::test_utils::CustomAndGenericProxy;
+    use crate::contract::sv::mt::CodeId;
+    use custom_and_generic::sv::mt::CustomAndGenericProxy;
     use sylvia::multitest::App;
 
     #[test]

@@ -43,15 +43,15 @@ mod tests {
     use sylvia::multitest::App;
 
     use super::NonGenericContract;
-    use custom_and_generic::sv::test_utils::CustomAndGenericProxy;
-    use cw1::sv::test_utils::Cw1Proxy;
-    use generic::sv::test_utils::GenericProxy;
+    use custom_and_generic::sv::mt::CustomAndGenericProxy;
+    use cw1::sv::mt::Cw1Proxy;
+    use generic::sv::mt::GenericProxy;
 
     #[test]
     fn mt_helpers() {
         let _ = NonGenericContract::new();
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
-        let code_id = super::sv::multitest_utils::CodeId::store_code(&app);
+        let code_id = super::sv::mt::CodeId::store_code(&app);
 
         let owner = "owner";
 
