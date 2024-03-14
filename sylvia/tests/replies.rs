@@ -94,14 +94,14 @@ fn entry_point_generation() {
 #[cfg(all(test, feature = "mt"))]
 #[test]
 fn mt_helper_generation() {
-    use crate::reply_contract::sv::multitest_utils::ReplyContractProxy;
+    use crate::reply_contract::sv::mt::ReplyContractProxy;
     let app = sylvia::multitest::App::default();
     let owner = "owner";
 
-    let noop_contract_code = noop_contract::sv::multitest_utils::CodeId::store_code(&app);
+    let noop_contract_code = noop_contract::sv::mt::CodeId::store_code(&app);
     let noop_contract = noop_contract_code.instantiate().call(owner).unwrap();
 
-    let reply_contract_code = reply_contract::sv::multitest_utils::CodeId::store_code(&app);
+    let reply_contract_code = reply_contract::sv::mt::CodeId::store_code(&app);
     let reply_contract = reply_contract_code.instantiate().call(owner).unwrap();
 
     let resp = reply_contract

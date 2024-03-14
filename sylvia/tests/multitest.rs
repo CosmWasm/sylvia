@@ -34,7 +34,7 @@ fn instantiate_with_salt() {
 
     let app = App::default();
 
-    let code_id = sv::multitest_utils::CodeId::<Empty, _>::store_code(&app);
+    let code_id = sv::mt::CodeId::<Empty, _>::store_code(&app);
 
     let _: sylvia::multitest::Proxy<_, SomeContract<Empty>> = code_id
         .instantiate(Empty {})
@@ -47,7 +47,7 @@ fn instantiate_with_salt() {
 fn code_info() {
     let app = App::default();
 
-    let code_id = sv::multitest_utils::CodeId::<Empty, _>::store_code(&app);
+    let code_id = sv::mt::CodeId::<Empty, _>::store_code(&app);
 
     let _: CodeInfoResponse = code_id.code_info().unwrap();
     let _: CodeInfoResponse = app.code_info(code_id.code_id()).unwrap();

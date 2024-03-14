@@ -3,13 +3,13 @@ mod test {
     use cosmwasm_std::{to_json_binary, WasmMsg};
     use whitelist::responses::AdminListResponse;
 
-    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::mt::CodeId;
     use crate::error::ContractError;
     use assert_matches::assert_matches;
     use sylvia::multitest::App;
 
-    use cw1::sv::test_utils::Cw1Proxy;
-    use whitelist::sv::test_utils::WhitelistProxy;
+    use cw1::sv::mt::Cw1Proxy;
+    use whitelist::sv::mt::WhitelistProxy;
 
     #[test]
     fn proxy_freeze_message() {

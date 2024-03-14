@@ -246,11 +246,11 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::associated_type_interface::sv::test_utils::AssociatedTypeInterfaceProxy;
-    use crate::default_query_interface::sv::test_utils::DefaultQueryInterfaceProxy;
-    use crate::interface::sv::test_utils::InterfaceProxy;
-    use crate::some_interface::sv::test_utils::SomeInterfaceProxy;
-    use crate::sv::multitest_utils::MyContractProxy;
+    use crate::associated_type_interface::sv::mt::AssociatedTypeInterfaceProxy;
+    use crate::default_query_interface::sv::mt::DefaultQueryInterfaceProxy;
+    use crate::interface::sv::mt::InterfaceProxy;
+    use crate::some_interface::sv::mt::SomeInterfaceProxy;
+    use crate::sv::mt::MyContractProxy;
     use crate::{MyContract, MyQuery};
 
     use cosmwasm_std::Empty;
@@ -260,7 +260,7 @@ mod tests {
     fn test_custom() {
         let _ = MyContract::new();
         let app = App::<cw_multi_test::BasicApp<Empty, MyQuery>>::custom(|_, _, _| {});
-        let code_id = crate::sv::multitest_utils::CodeId::store_code(&app);
+        let code_id = crate::sv::mt::CodeId::store_code(&app);
 
         let owner = "owner";
 

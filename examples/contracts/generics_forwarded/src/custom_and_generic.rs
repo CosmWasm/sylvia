@@ -124,10 +124,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::mt::CodeId;
     use crate::contract::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::CosmosMsg;
-    use custom_and_generic::sv::test_utils::CustomAndGenericProxy;
+    use custom_and_generic::sv::mt::CustomAndGenericProxy;
     use sylvia::multitest::App;
 
     #[test]

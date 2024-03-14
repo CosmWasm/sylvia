@@ -49,10 +49,10 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::sv::mt::CodeId;
     use crate::contract::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::{CosmosMsg, Empty};
-    use cw1::sv::test_utils::Cw1Proxy;
+    use cw1::sv::mt::Cw1Proxy;
     use sylvia::multitest::App;
 
     #[test]

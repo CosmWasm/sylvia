@@ -176,7 +176,7 @@ impl<'a> ContractMtHelpers<'a> {
         let trait_name = Ident::new(&format!("{}Proxy", contract), contract.span());
 
         quote! {
-            pub mod multitest_utils {
+            pub mod mt {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
 
@@ -693,7 +693,7 @@ impl<'a> TraitMtHelpers<'a> {
             .map(|where_clause| &where_clause.predicates);
 
         quote! {
-            pub mod test_utils {
+            pub mod mt {
                 use super::*;
 
                 pub trait #trait_name <MtApp, #custom_msg > #where_clause {

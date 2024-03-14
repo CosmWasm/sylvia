@@ -241,11 +241,11 @@ impl MyContract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use crate::associated_interface::sv::test_utils::AssociatedInterfaceProxy;
-    use crate::interface::sv::test_utils::InterfaceProxy;
-    use crate::other_interface::sv::test_utils::OtherInterfaceProxy;
-    use crate::some_interface::sv::test_utils::SomeInterfaceProxy;
-    use crate::sv::multitest_utils::MyContractProxy;
+    use crate::associated_interface::sv::mt::AssociatedInterfaceProxy;
+    use crate::interface::sv::mt::InterfaceProxy;
+    use crate::other_interface::sv::mt::OtherInterfaceProxy;
+    use crate::some_interface::sv::mt::SomeInterfaceProxy;
+    use crate::sv::mt::MyContractProxy;
     use crate::{MyContract, MyMsg};
     use sylvia::multitest::App;
 
@@ -253,7 +253,7 @@ mod tests {
     fn test_custom() {
         let _ = MyContract::new();
         let app = App::<cw_multi_test::BasicApp<MyMsg>>::custom(|_, _, _| {});
-        let code_id = crate::sv::multitest_utils::CodeId::store_code(&app);
+        let code_id = crate::sv::mt::CodeId::store_code(&app);
 
         let owner = "owner";
 

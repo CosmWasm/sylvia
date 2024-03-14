@@ -1,13 +1,13 @@
 use sylvia::multitest::App;
 
-use crate::contract::sv::multitest_utils::CodeId;
+use crate::contract::sv::mt::CodeId;
 
 use super::custom_module::CustomModule;
 
-use crate::contract::sv::multitest_utils::CustomContractProxy;
+use crate::contract::sv::mt::CustomContractProxy;
 
 use cosmwasm_std::CosmosMsg;
-use cw1::sv::test_utils::Cw1Proxy;
+use cw1::sv::mt::Cw1Proxy;
 
 #[test]
 fn test_custom() {

@@ -7,14 +7,14 @@ use cw_multi_test::next_block;
 use cw_utils::Expiration;
 use sylvia::multitest::App;
 
-use crate::contract::sv::multitest_utils::CodeId;
+use crate::contract::sv::mt::CodeId;
 use crate::contract::InstantiateMsgData;
 use crate::error::ContractError;
-use crate::multitest::receiver_contract::sv::multitest_utils::CodeId as ReceiverCodeId;
+use crate::multitest::receiver_contract::sv::mt::CodeId as ReceiverCodeId;
 use crate::responses::Cw20Coin;
 
-use crate::contract::sv::multitest_utils::Cw20BaseProxy;
-use cw20_allowances::sv::test_utils::Cw20AllowancesProxy;
+use crate::contract::sv::mt::Cw20BaseProxy;
+use cw20_allowances::sv::mt::Cw20AllowancesProxy;
 
 #[test]
 fn increase_decrease_allowances() {

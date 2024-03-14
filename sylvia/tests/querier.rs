@@ -119,8 +119,8 @@ mod tests {
     use cosmwasm_std::{Addr, Empty, QuerierWrapper};
     use sylvia::multitest::App;
 
-    use crate::counter::sv::test_utils::CounterProxy;
-    use crate::sv::multitest_utils::CodeId;
+    use crate::counter::sv::mt::CounterProxy;
+    use crate::sv::mt::CodeId;
 
     #[test]
     fn querier_generation() {
