@@ -1,7 +1,9 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use custom_and_generic::CustomAndGeneric;
 use serde::Deserialize;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx, SvCustomMsg};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
+
+use crate::contract::SvCustomMsg;
 
 impl<
         InstantiateT,
@@ -123,10 +125,10 @@ where
 #[cfg(test)]
 mod tests {
     use crate::contract::sv::multitest_utils::CodeId;
+    use crate::contract::{SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::CosmosMsg;
     use custom_and_generic::sv::test_utils::CustomAndGenericProxy;
     use sylvia::multitest::App;
-    use sylvia::types::{SvCustomMsg, SvCustomQuery};
 
     #[test]
     fn proxy_methods() {
