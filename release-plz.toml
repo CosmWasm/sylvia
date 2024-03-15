@@ -1,8 +1,8 @@
 [workspace]
 changelog_update = false
+dependencies_update = true
 
 [[package]]
 name = "sylvia-derive"
 changelog_update = true
-dependencies_update = true
 changelog_path = "./CHANGELOG.md"
