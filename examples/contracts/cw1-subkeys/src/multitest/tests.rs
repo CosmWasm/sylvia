@@ -46,7 +46,7 @@ fn get_contract_version_works() {
         .unwrap();
 
     let version: ContractVersion =
-        query_contract_info(&app.app_mut().wrap(), contract.contract_addr.to_string()).unwrap();
+        query_contract_info(&app.querier(), contract.contract_addr.to_string()).unwrap();
 
     assert_eq!(
         ContractVersion {
