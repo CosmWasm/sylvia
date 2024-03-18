@@ -704,8 +704,7 @@ impl<'a> MsgVariant<'a> {
                     let msg = #enum_name :: #name ( #(#arguments),* );
 
                     (*self.app)
-                        .app()
-                        .wrap()
+                        .querier()
                         .query_wasm_smart(self.contract_addr.clone(), &msg)
                         .map_err(Into::into)
                 }
@@ -763,8 +762,7 @@ impl<'a> MsgVariant<'a> {
                         let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
 
                         (*self.app)
-                            .app()
-                            .wrap()
+                            .querier()
                             .query_wasm_smart(self.contract_addr.clone(), &msg)
                             .map_err(Into::into)
                     }

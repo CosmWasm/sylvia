@@ -2,18 +2,21 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
-use cosmwasm_std::{Addr, Api, BlockInfo, Coin, CustomQuery, Empty, Storage};
+use cosmwasm_std::{
+    Addr, Api, BlockInfo, Coin, Empty, Querier, QuerierResult, QuerierWrapper, Storage,
+};
 #[cfg(feature = "cosmwasm_1_2")]
 use cosmwasm_std::{CodeInfoResponse, StdResult};
 use cw_multi_test::{
     Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov,
-    GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, StargateFailing,
-    Wasm, WasmKeeper,
+    GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, Stargate,
+    StargateFailing, Wasm, WasmKeeper,
 };
 use derivative::Derivative;
 use schemars::JsonSchema;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+
+use crate::types::{CustomMsg, CustomQuery};
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -29,7 +32,7 @@ impl<'a, MtApp, Contract> Proxy<'a, MtApp, Contract> {
         Proxy {
             contract_addr,
             app,
-            _phantom: std::marker::PhantomData::<(MtApp, Contract)>::default(),
+            _phantom: std::marker::PhantomData::<(MtApp, Contract)>,
         }
     }
 }
@@ -59,8 +62,8 @@ impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
     /// Creates new default `App` implementation working with customized exec and query messages.
     pub fn custom<F>(init_fn: F) -> Self
     where
-        ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
-        QueryC: Debug + CustomQuery + DeserializeOwned + 'static,
+        ExecC: CustomMsg + 'static,
+        QueryC: Debug + CustomQuery + 'static,
         F: FnOnce(
             &mut Router<
                 BankKeeper,
@@ -101,8 +104,8 @@ impl<MtApp> App<MtApp> {
 impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>
     App<cw_multi_test::App<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT>>
 where
-    CustomT::ExecT: std::fmt::Debug + PartialEq + Clone + JsonSchema + DeserializeOwned + 'static,
-    CustomT::QueryT: CustomQuery + DeserializeOwned + 'static,
+    CustomT::ExecT: CustomMsg + 'static,
+    CustomT::QueryT: CustomQuery + 'static,
     WasmT: Wasm<CustomT::ExecT, CustomT::QueryT>,
     BankT: Bank,
     ApiT: Api,
@@ -127,7 +130,48 @@ where
 
     #[cfg(feature = "cosmwasm_1_2")]
     pub fn code_info(&self, code_id: u64) -> StdResult<CodeInfoResponse> {
-        self.app.borrow().wrap().query_wasm_code_info(code_id)
+        self.querier().query_wasm_code_info(code_id)
+    }
+
+    /// Initialize a new `cosmwasm_std::QuerierWrapper` used to call e.g. `query_wasm_smart` or
+    /// `query_all_balances`.
+    /// A counterpart to `cw_multi_test::App::wrap` method.
+    pub fn querier(&self) -> QuerierWrapper<'_, CustomT::QueryT> {
+        QuerierWrapper::new(self)
+    }
+}
+
+impl<BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, StargateT> Querier
+    for App<
+        cw_multi_test::App<
+            BankT,
+            ApiT,
+            StorageT,
+            CustomT,
+            WasmT,
+            StakingT,
+            DistrT,
+            IbcT,
+            GovT,
+            StargateT,
+        >,
+    >
+where
+    CustomT::ExecT: CustomMsg + 'static,
+    CustomT::QueryT: CustomQuery + 'static,
+    WasmT: Wasm<CustomT::ExecT, CustomT::QueryT>,
+    BankT: Bank,
+    ApiT: Api,
+    StorageT: Storage,
+    CustomT: Module,
+    StakingT: Staking,
+    DistrT: Distribution,
+    IbcT: Ibc,
+    GovT: Gov,
+    StargateT: Stargate,
+{
+    fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
+        self.app.borrow().raw_query(bin_request)
     }
 }
 

@@ -194,13 +194,8 @@ impl<'a> ContractMtHelpers<'a> {
                         for #sylvia ::multitest::Proxy <'app, #mt_app, #contract_name >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
-                        CustomT::ExecT: std::fmt::Debug
-                            + PartialEq
-                            + Clone
-                            + #sylvia ::schemars::JsonSchema
-                            + #sylvia ::serde::de::DeserializeOwned
-                            + 'static,
-                        CustomT::QueryT: #sylvia ::cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                        CustomT::ExecT: #sylvia::types::CustomMsg + 'static,
+                        CustomT::QueryT: #sylvia ::types::CustomQuery + 'static,
                         WasmT: #sylvia ::cw_multi_test::Wasm<CustomT::ExecT, CustomT::QueryT>,
                         BankT: #sylvia ::cw_multi_test::Bank,
                         ApiT: #sylvia ::cw_std::Api,
@@ -322,7 +317,7 @@ impl<'a> ContractMtHelpers<'a> {
         let code_info = if cfg!(feature = "cosmwasm_1_2") {
             quote! {
                 pub fn code_info(&self) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::CodeInfoResponse> {
-                    self.app.app().wrap().query_wasm_code_info(self.code_id)
+                    self.app.querier().query_wasm_code_info(self.code_id)
                 }
             }
         } else {
@@ -719,13 +714,8 @@ impl<'a> TraitMtHelpers<'a> {
                     DistrT: #sylvia ::cw_multi_test::Distribution,
                     IbcT: #sylvia ::cw_multi_test::Ibc,
                     GovT: #sylvia ::cw_multi_test::Gov,
-                    CustomT::ExecT: Clone
-                        + std::fmt::Debug
-                        + PartialEq
-                        + #sylvia ::schemars::JsonSchema
-                        + #sylvia ::serde::de::DeserializeOwned
-                        + 'static,
-                    CustomT::QueryT: #sylvia:: cw_std::CustomQuery + #sylvia ::serde::de::DeserializeOwned + 'static,
+                    CustomT::ExecT: #sylvia ::types::CustomMsg + 'static,
+                    CustomT::QueryT: #sylvia:: types::CustomQuery + 'static,
                     #mt_app : #sylvia ::cw_multi_test::Executor< #custom_msg >,
                     #where_predicates
                 {
