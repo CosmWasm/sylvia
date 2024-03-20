@@ -33,3 +33,9 @@ itertools = "0.12.0"
 
 [dev-dependencies]
 sylvia-runtime-macros = "0.6.0"
+sylvia = { path = "../sylvia" }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+cosmwasm-schema = "1.5"
+schemars = "0.8"
+cw-storage-plus = "1.2.0"
+thiserror = "1.0.58"
