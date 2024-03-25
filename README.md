@@ -35,8 +35,9 @@ in compile time.
 
 ## Code generation
 
-Sylvia macros generate code in the `sv` module. This means that every single macro call
-has to be done in a separate module to avoid the generated modules' collisions.
+Sylvia macros generate code in the `sv` module. This means that every `contract` and
+`interface` macro call must be made in a separate module to avoid collisions between
+the generated modules.
 
 ## Contract type
 
@@ -66,6 +67,7 @@ pub struct CounterResp {
 
 #[entry_points]
 #[contract]
+#[sv::error(ContractError)]
 impl MyContract<'_> {
     pub fn new() -> Self {
         Self {
@@ -166,7 +168,7 @@ entry points have to return `ContractError` as its error variant).
 
 ## Interfaces
 
-One of the fundamental ideas of Sylvia's framework is interfaces, allowing the
+One of the fundamental ideas of the Sylvia framework is the interface, allowing the
 grouping of messages into their semantical groups. Let's define a Sylvia interface:
 
 ```rust
