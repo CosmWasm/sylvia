@@ -8,3 +8,7 @@ version = "0.9.3"
 
 [workspace.dependencies]
 sylvia-derive = { version = "0.9.3", path = "sylvia-derive" }
+
+[workspace.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--generate-link-to-definition"]

@@ -256,7 +256,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// ## Example usage
 /// ```rust
 /// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
-/// # use sylvia::cw_std::{Response, StdError};
+/// # use sylvia::cw_std::{Response, StdError, Reply};
 /// # use cw_storage_plus::Item;
 /// # use thiserror::Error;
 /// #
@@ -302,7 +302,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///     }
 ///
 ///     #[sv::msg(reply)]
-///     fn reply(&self, ctx: ReplyCtx) -> Result<Response, ContractError> {
+///     fn reply(&self, ctx: ReplyCtx, reply: Reply) -> Result<Response, ContractError> {
 /// #        Ok(Response::new())
 ///     }
 ///
@@ -685,17 +685,25 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// ```rust
 /// # use sylvia::types::InstantiateCtx;
 /// # use sylvia::cw_std::{Response, StdResult};
+/// # use sylvia::cw_schema::cw_serde;
 /// # use cw_storage_plus::Item;
 /// # use std::marker::PhantomData;
+/// #
+/// # #[cw_serde]
+/// # pub struct SvCustomMsg;
+/// # impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 /// #
 /// pub struct SvContract<InstantiateT, DataT> {
 ///     data: Item<'static, DataT>,
 ///     _phantom: PhantomData<InstantiateT>,
 /// }
 ///
-/// ##[sylvia::entry_points(generics<u32, u32>)]
+/// ##[sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg>)]
 /// ##[sylvia::contract]
-/// impl<InstantiateT, DataT> SvContract<InstantiateT, DataT> {
+/// impl<InstantiateT, DataT> SvContract<InstantiateT, DataT>
+///     where InstantiateT: sylvia::types::CustomMsg + 'static,
+///         DataT: 'static
+/// {
 ///     pub const fn new() -> Self {
 ///         Self {
 ///             data: Item::new("data"),

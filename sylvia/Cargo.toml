@@ -20,9 +20,18 @@ cosmwasm_1_2 = [
     "cw-multi-test?/cosmwasm_1_2",
     "dep:cw-utils",
     "sylvia-derive/cosmwasm_1_2",
+    "cosmwasm_1_1",
 ]
-cosmwasm_1_3 = ["cosmwasm-std/cosmwasm_1_3", "cw-multi-test?/cosmwasm_1_3"]
-cosmwasm_1_4 = ["cosmwasm-std/cosmwasm_1_4", "cw-multi-test?/cosmwasm_1_4"]
+cosmwasm_1_3 = [
+    "cosmwasm-std/cosmwasm_1_3",
+    "cw-multi-test?/cosmwasm_1_3",
+    "cosmwasm_1_2",
+]
+cosmwasm_1_4 = [
+    "cosmwasm-std/cosmwasm_1_4",
+    "cw-multi-test?/cosmwasm_1_4",
+    "cosmwasm_1_3",
+]
 
 [dependencies]
 sylvia-derive = { workspace = true }
@@ -44,3 +53,7 @@ cw-multi-test = "0.20.0"
 cw-storage-plus = "1.2.0"
 cw-utils = "1.0.2"
 thiserror = "1.0.50"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--generate-link-to-definition"]
