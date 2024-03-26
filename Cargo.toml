@@ -4,10 +4,10 @@ exclude = ["examples/*"]
 resolver = "2"
 
 [workspace.package]
-version = "0.9.3"
+version = "0.10.0"
 
 [workspace.dependencies]
-sylvia-derive = { version = "0.9.3", path = "sylvia-derive" }
+sylvia-derive = { version = "0.10.0", path = "sylvia-derive" }
 
 [workspace.metadata.docs.rs]
 all-features = true
