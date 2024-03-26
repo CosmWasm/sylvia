@@ -4,6 +4,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.9.3...sylvia-derive-v0.10.0) - 2024-03-26
+
+### Added
+- Implement Querier on App ([#154](https://github.com/CosmWasm/sylvia/pull/154))
+- Change multitest modules names to unified `mt` ([#324](https://github.com/CosmWasm/sylvia/pull/324))
+- Handle missing explicite custom types ([#323](https://github.com/CosmWasm/sylvia/pull/323))
+- BoundQuerier improve ([#321](https://github.com/CosmWasm/sylvia/pull/321))
+- Remove `#[contract(module=...)]` support ([#320](https://github.com/CosmWasm/sylvia/pull/320))
+- `#[contract(module=...)]` not needed in mt ([#319](https://github.com/CosmWasm/sylvia/pull/319))
+- `#[contract(module=...)]` and `#[messages]` not needed for trait impl ([#318](https://github.com/CosmWasm/sylvia/pull/318))
+- Remove custom in impl trait ([#314](https://github.com/CosmWasm/sylvia/pull/314))
+- Error on missing module for `impl Interface for Contract` ([#311](https://github.com/CosmWasm/sylvia/pull/311))
+- Add support for `#[sv::]` attributes for all sylvia attribtues. ([#310](https://github.com/CosmWasm/sylvia/pull/310))
+- Generate sudo multitest helpers
+- Generate sudo entry point
+- Generate SudoMsg in contract
+- Generate SudoMsg in interface
+- Forward generics through associated types
+- ExecC and QueryC used in place of CustomMsgT
+- Remove mt trait_utils generation
+- Impl interfaces with associated types on generic contract
+- Impl interface with associated types on non generic contract
+- Interfaces generate with associated_types
+- Allow specifying concrete customs in entry_points
+- Support duplicated exec generic params
+- Forward generics to custom_generic interface
+- Allow single concrete type to be passed in place of multiple
+- Forward generics to the interface
+- Make as Variant optional for #[messages(...)] attribtue
+
+### Other
+- Update README ([#331](https://github.com/CosmWasm/sylvia/pull/331))
+- Enable all features in docs.rs and add multitest docs comments
+- Enable code examples in macros doc tests
+- Remove tarpaulin exclusions ([#312](https://github.com/CosmWasm/sylvia/pull/312))
+- Add sudo to custom example
+- Update README.md ([#300](https://github.com/CosmWasm/sylvia/pull/300))
+- Change function signature
+- Update docs ([#299](https://github.com/CosmWasm/sylvia/pull/299))
+- Internal renaming
+- Create ImplMtHelpers
+- Impl non-generic non-custom on forwarding contract
+- Migrate to syn 2.0
+
 ## [0.9.2](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.9.1...sylvia-derive-v0.9.2) - 2023-11-29
 
 ### Added
