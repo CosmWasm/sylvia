@@ -271,6 +271,7 @@ impl CustomQuery for MyMsg {}
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(interface as Interface)]
+#[sv::messages(interface as InterfaceWithCustomType: custom(msg, query))]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
 #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::SudoMsg))]
 impl MyContract {
@@ -279,15 +280,17 @@ impl MyContract {
 ```
 
  * `sv::error` is used by both `contract` and `entry_point` macros. It is necessary in case a custom
-error is being used by your contract. If omitted generated code will use `StdError`.
+   error is being used by your contract. If omitted generated code will use `StdError`.
 
- * `sv::messages` is the attribute for the `contract` macro. Its purpose is to inform Sylvia about interfaces
-implemented for the contract.
+ * `sv::messages` is the attribute for the `contract` macro. Its purpose is to inform Sylvia
+   about interfaces implemented for the contract. If the implemented interface does not use a
+   default `Empty` message response for query and/or exec then the `: custom(query)`,
+   `: custom(msg)` or `: custom(msg, query)` should be indicated.
 
  * `sv::override_entry_point` - refer to the `Overriding entry points` section.
 
  * `sv::custom` allows to define CustomMsg and CustomQuery for the contract. By default generated code
-will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
+    will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
 
 
 ## Usage in external crates
