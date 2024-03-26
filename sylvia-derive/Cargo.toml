@@ -9,6 +9,7 @@ repository = "https://github.com/CosmWasm/sylvia"
 homepage = "https://cosmwasm.com"
 keywords = ["cosmwasm", "blockchain", "confio"]
 categories = ["api-bindings", "wasm"]
+readme = "../README.md"
 
 [features]
 mt = []
