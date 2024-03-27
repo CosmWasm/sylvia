@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //! Framework for creating CosmWasm Smart Contract with high-level abstraction layer
 //!
 //! Most of implementation lies in `sylvia-derive` crate which is reexported here

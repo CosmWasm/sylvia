@@ -1,6 +1,6 @@
 //! This module provides utilities to work with `cw_multi_test` crate.
 //!
-//! Example usage:
+//! ## Example usage:
 //! ```rust
 //! # use sylvia::cw_std::{Response, StdResult};
 //! # use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
