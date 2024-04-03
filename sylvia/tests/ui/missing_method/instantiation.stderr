@@ -1,0 +1,8 @@
+error: Missing instantiation message.
+
+         = note: `sylvia::contract` requires exactly one method marked with `#[sv::msg(instantiation)]` attribute.
+
+ --> tests/ui/missing_method/instantiation.rs:4:1
+  |
+4 | impl Contract {
+  | ^^^^

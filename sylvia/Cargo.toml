@@ -46,6 +46,7 @@ cw-multi-test = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }
+trybuild = "1.0.91"
 
 [package.metadata.docs.rs]
 all-features = true
