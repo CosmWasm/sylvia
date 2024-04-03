@@ -36,7 +36,6 @@ impl Custom {
     }
 }
 
-// False negative. It is being called in closure
 impl Parse for Custom {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut custom = Self::default();

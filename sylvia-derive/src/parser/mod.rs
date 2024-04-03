@@ -11,7 +11,8 @@ use proc_macro_error::emit_error;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parse_quote, GenericArgument, Ident, ItemTrait, Path, PathArguments, Token, TraitItem, Type,
+    parse_quote, GenericArgument, Ident, ImplItem, ItemImpl, ItemTrait, Path, PathArguments, Token,
+    TraitItem, Type,
 };
 
 fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Token![,]> {
@@ -43,4 +44,27 @@ pub fn parse_associated_custom_type(source: &ItemTrait, type_name: &str) -> Opti
         }
         _ => None,
     })
+}
+
+pub fn assert_new_method_defined(item: &ItemImpl) {
+    const ERROR_NOTE: &str = "`sylvia::contract` requires parameterless `new` method to be defined for dispatch to work correctly.";
+
+    let new = item.items.iter().find_map(|item| match item {
+        ImplItem::Fn(method) if method.sig.ident == "new" => Some(method),
+        _ => None,
+    });
+
+    match new {
+        Some(new) if !new.sig.inputs.is_empty() => emit_error!(
+            new.sig.inputs, "Parameters not allowed in `new` method.";
+            note = ERROR_NOTE;
+        ),
+        None => {
+            emit_error!(
+                item, "Missing `new` method in `impl` block.";
+                note = ERROR_NOTE;
+            )
+        }
+        _ => (),
+    }
 }

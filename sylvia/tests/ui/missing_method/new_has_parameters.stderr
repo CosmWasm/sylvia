@@ -1,0 +1,8 @@
+error: Parameters not allowed in `new` method.
+
+         = note: `sylvia::contract` requires parameterless `new` method to be defined for dispatch to work correctly.
+
+ --> tests/ui/missing_method/new_has_parameters.rs:9:22
+  |
+9 |     pub const fn new(admin: String) -> Self {
+  |                      ^^^^^^^^^^^^^
