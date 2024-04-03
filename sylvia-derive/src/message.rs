@@ -94,7 +94,10 @@ impl<'a> StructMessage<'a> {
             method
         } else {
             if ty == MsgType::Instantiate {
-                emit_error!(source.span(), "No instantiation message");
+                emit_error!(
+                    source.span(), "Missing instantiation message.";
+                    note = source.span() => "`sylvia::contract` requires exactly one method marked with `#[sv::msg(instantiation)]` attribute."
+                );
             }
             return None;
         };
