@@ -60,7 +60,6 @@ impl FilteredOverrideEntryPoints for &Vec<OverrideEntryPoint> {
     }
 }
 
-// False negative. It is being called in closure
 impl Parse for OverrideEntryPoint {
     fn parse(input: ParseStream) -> Result<Self> {
         let ty: Ident = input.parse()?;

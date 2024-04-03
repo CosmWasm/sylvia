@@ -11,7 +11,10 @@ use crate::message::{
 };
 use crate::multitest::{ContractMtHelpers, TraitMtHelpers};
 use crate::parser::attributes::msg::MsgType;
-use crate::parser::{ContractErrorAttr, Custom, OverrideEntryPoint, ParsedSylviaAttributes};
+use crate::parser::{
+    assert_new_method_defined, ContractErrorAttr, Custom, OverrideEntryPoint,
+    ParsedSylviaAttributes,
+};
 use crate::querier::{ContractQuerier, TraitQuerier};
 use crate::variant_descs::AsVariantDescs;
 
@@ -173,6 +176,8 @@ pub struct ImplInput<'a> {
 
 impl<'a> ImplInput<'a> {
     pub fn new(item: &'a ItemImpl) -> Self {
+        assert_new_method_defined(item);
+
         let generics = item.generics.params.iter().collect();
         let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
         let error = parsed_attrs.error_attrs.unwrap_or_default();

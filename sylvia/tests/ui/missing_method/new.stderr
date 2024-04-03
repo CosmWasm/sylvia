@@ -1,0 +1,13 @@
+error: Missing `new` method in `impl` block.
+
+         = note: `sylvia::contract` requires parameterless `new` method to be defined for dispatch to work correctly.
+
+  --> tests/ui/missing_method/new.rs:8:1
+   |
+8  | / impl Contract {
+9  | |     #[sv::msg(instantiate)]
+10 | |     pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
+11 | |         Ok(Response::new())
+12 | |     }
+13 | | }
+   | |_^
