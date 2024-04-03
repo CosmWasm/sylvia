@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-tests = ["library", "cw-multi-test", "anyhow"]
+mt = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
 anyhow = { workspace = true, optional = true }

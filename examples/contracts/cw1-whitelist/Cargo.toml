@@ -13,8 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-tests = ["library", "cw-multi-test", "anyhow"]
-mt = ["sylvia/mt", "library"]
+mt = ["sylvia/mt", "library", "cw-multi-test", "anyhow"]
 
 [dependencies]
 cosmwasm-std = { workspace = true, features = ["staking"] }
