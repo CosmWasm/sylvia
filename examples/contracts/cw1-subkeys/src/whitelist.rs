@@ -10,7 +10,7 @@ use cosmwasm_std::ensure;
 impl Whitelist for Cw1SubkeysContract<'_> {
     type Error = ContractError;
 
-    fn execute(
+    fn execute2(
         &self,
         ctx: ExecCtx,
         msgs: Vec<cosmwasm_std::CosmosMsg>,

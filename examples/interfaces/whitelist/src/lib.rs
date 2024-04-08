@@ -23,7 +23,7 @@ pub trait Whitelist {
     /// contract's address as sender. Every implementation has it's own logic to
     /// determine in
     #[sv::msg(exec)]
-    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
+    fn execute2(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
 }
 
 #[cfg(test)]

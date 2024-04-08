@@ -9,7 +9,7 @@ use crate::error::ContractError;
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
-    fn execute(
+    fn execute2(
         &self,
         ctx: ExecCtx,
         msgs: Vec<cosmwasm_std::CosmosMsg>,

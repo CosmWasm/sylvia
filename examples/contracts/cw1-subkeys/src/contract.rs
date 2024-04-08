@@ -58,7 +58,7 @@ impl Cw1SubkeysContract<'_> {
     }
 
     #[sv::msg(exec)]
-    fn execute(
+    fn execute3(
         &self,
         ctx: ExecCtx,
         msgs: Vec<cosmwasm_std::CosmosMsg>,
