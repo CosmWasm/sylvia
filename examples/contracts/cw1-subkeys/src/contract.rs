@@ -58,6 +58,25 @@ impl Cw1SubkeysContract<'_> {
     }
 
     #[sv::msg(exec)]
+    fn execute(
+        &self,
+        ctx: ExecCtx,
+        msgs: Vec<cosmwasm_std::CosmosMsg>,
+    ) -> Result<cosmwasm_std::Response, ContractError> {
+        let authorized: StdResult<_> = msgs.iter().try_fold(true, |acc, msg| {
+            Ok(acc & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
+        });
+
+        ensure!(authorized?, ContractError::Unauthorized);
+
+        let res = Response::new()
+            .add_messages(msgs)
+            .add_attribute("action", "execute")
+            .add_attribute("owner", ctx.info.sender);
+        Ok(res)
+    }
+
+    #[sv::msg(exec)]
     pub fn increase_allowance(
         &self,
         ctx: ExecCtx,

@@ -9,6 +9,18 @@ use crate::error::ContractError;
 impl Whitelist for Cw1WhitelistContract<'_> {
     type Error = ContractError;
 
+    fn execute(
+        &self,
+        ctx: ExecCtx,
+        msgs: Vec<cosmwasm_std::CosmosMsg>,
+    ) -> Result<cosmwasm_std::Response, Self::Error> {
+        let res = Response::new()
+            .add_messages(msgs)
+            .add_attribute("action", "execute")
+            .add_attribute("owner", ctx.info.sender);
+        Ok(res)
+    }
+
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);

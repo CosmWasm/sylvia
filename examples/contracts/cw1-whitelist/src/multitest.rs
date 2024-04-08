@@ -38,10 +38,12 @@ mod test {
             funds: vec![],
         };
 
-        first_contract
-            .execute(vec![freeze.into()])
-            .call(&owner)
-            .unwrap();
+        <sylvia::multitest::Proxy<_, _> as Cw1Proxy<_, _>>::execute(
+            &first_contract,
+            vec![freeze.into()],
+        )
+        .call(&owner)
+        .unwrap();
 
         let resp = second_contract.admin_list().unwrap();
 

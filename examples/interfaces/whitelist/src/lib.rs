@@ -1,4 +1,4 @@
-use cosmwasm_std::{Response, StdResult};
+use cosmwasm_std::{CosmosMsg, Response, StdResult};
 use responses::AdminListResponse;
 use sylvia::types::{ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
@@ -18,6 +18,12 @@ pub trait Whitelist {
 
     #[sv::msg(query)]
     fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
+
+    /// Execute requests the contract to re-dispatch all these messages with the
+    /// contract's address as sender. Every implementation has it's own logic to
+    /// determine in
+    #[sv::msg(exec)]
+    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
 }
 
 #[cfg(test)]

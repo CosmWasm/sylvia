@@ -203,16 +203,22 @@ mod tests {
 
         // bob cannot execute them
         let info = mock_info(bob.as_str(), &[]);
-        let err = contract
-            .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
-            .unwrap_err();
+        let err = Cw1::execute(
+            &contract,
+            (deps.as_mut(), mock_env(), info).into(),
+            msgs.clone(),
+        )
+        .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized);
 
         // but carl can
         let info = mock_info(carl.as_str(), &[]);
-        let res = contract
-            .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
-            .unwrap();
+        let res = Cw1::execute(
+            &contract,
+            (deps.as_mut(), mock_env(), info).into(),
+            msgs.clone(),
+        )
+        .unwrap();
         assert_eq!(
             res.messages,
             msgs.into_iter().map(SubMsg::new).collect::<Vec<_>>()

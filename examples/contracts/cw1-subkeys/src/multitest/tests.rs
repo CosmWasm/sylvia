@@ -451,14 +451,14 @@ mod cw1_execute {
             amount: vec![coin(2345, ATOM)],
         };
 
-        contract
-            .execute(vec![msg.clone().into()])
+        <sylvia::multitest::Proxy<_,_> as Cw1SubkeysContractProxy<_, _, _, _, _, _, _, _, _>>
+            ::execute(&contract, vec![msg.clone().into()])
             .with_funds(&[coin(2345, ATOM)])
             .call(&admin)
             .unwrap();
 
-        contract
-            .execute(vec![msg.into()])
+        <sylvia::multitest::Proxy<_, _> as Cw1SubkeysContractProxy<_, _, _, _, _, _, _, _, _>>
+            ::execute(&contract, vec![msg.into()])
             .with_funds(&[coin(2345, ATOM)])
             .call(&non_admin)
             .unwrap_err();
