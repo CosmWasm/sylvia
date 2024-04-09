@@ -16,21 +16,15 @@ use syn::{
 };
 
 fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Token![,]> {
-    let generics = module.segments.last().map(|segment| {
-        match segment.arguments.clone(){
-            PathArguments::AngleBracketed(generics) => {
-                generics.args
-            },
+    let generics = module
+        .segments
+        .last()
+        .map(|segment| match segment.arguments.clone() {
+            PathArguments::AngleBracketed(generics) => generics.args,
             PathArguments::None => Default::default(),
-            PathArguments::Parenthesized(generics) => {
-                emit_error!(
-                    generics.span(), "Found paranthesis wrapping generics in `sv::messages` attribute.";
-                    note = "Expected `sv::messages` attribute to be in form `#[sv::messages(Path<generics> as Type)]`"
-                );
-               Default::default()
-            }
-        }
-    }).unwrap_or_default();
+            PathArguments::Parenthesized(_) => Default::default(),
+        })
+        .unwrap_or_default();
 
     generics
 }
