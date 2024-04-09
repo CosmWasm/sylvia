@@ -1,0 +1,8 @@
+error: Invalid custom attribute, expected one or both of: [`msg`, `query`]
+
+         = note: Expected attribute to be in form `#[sv::messages(interface: custom(msg, query))]`.
+
+  --> tests/ui/attributes/messages/invalid_custom.rs:21:34
+   |
+21 | #[sv::messages(interface: custom(wrong))]
+   |                                  ^^^^^

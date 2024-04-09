@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro_error::emit_warning;
 use syn::fold::Fold;
-use syn::parse::{Error, Parse, ParseStream, Parser};
+use syn::parse::{Parse, ParseStream, Parser};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{parenthesized, Attribute, GenericArgument, Ident, Path, Result, Token};
@@ -61,12 +61,10 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
         match custom.get_ident() {
             Some(ident) if ident == "msg" => customs.has_msg = true,
             Some(ident) if ident == "query" => customs.has_query = true,
-            _ => {
-                return Err(Error::new(
-                    custom.span(),
-                    "Invalid custom attribute, expected one of: `msg`, `query`",
-                ))
-            }
+            _ => emit_error!(custom.span(),
+                    "Invalid custom attribute, expected one or both of: [`msg`, `query`]";
+                    note = "Expected attribute to be in form `#[sv::messages(interface: custom(msg, query))]`."
+            ),
         }
         if !custom_content.peek(Token![,]) {
             break;
@@ -92,7 +90,8 @@ impl Parse for ContractMessageAttr {
             {
                 emit_warning!(
                     variant.span(), "Redundant `as {}`.", variant;
-                    note = "Interface name is a camel case version of the path and can be auto deduced."
+                    note = "Interface name is a camel case version of the path and can be auto deduced.";
+                    note = "Attribute can be simplified to: `#[sv::messages(interface_path)]`"
                 )
             }
             variant
@@ -104,10 +103,10 @@ impl Parse for ContractMessageAttr {
         };
         let customs = interface_has_custom(input)?;
         if !input.is_empty() {
-            return Err(Error::new(
-                input.span(),
-                "Unexpected token on the end of `messages` attribtue",
-            ));
+            emit_error!(input.span(),
+                "Unexpected tokens inside `sv::messages` attribtue.";
+                note = "Maximal supported form of attribute: `#[sv::messages(interface::path<T1, T2> as InterfaceName: custom(msg, query))]`."
+            )
         }
         Ok(Self {
             module,
