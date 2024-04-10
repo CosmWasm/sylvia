@@ -1,5 +1,5 @@
 use proc_macro_error::emit_error;
-use syn::parse::{Error, Parse, ParseStream, Parser};
+use syn::parse::{Parse, ParseStream, Parser};
 use syn::spanned::Spanned;
 use syn::{parse_quote, Attribute, Ident, Result, Token, Type};
 
@@ -48,10 +48,9 @@ impl Parse for Custom {
             } else if ty == "query" {
                 custom.query = Some(input.parse()?)
             } else {
-                return Err(Error::new(
-                    ty.span(),
-                    "Invalid custom type. Expected msg or query",
-                ));
+                emit_error!(ty.span(), "Invalid custom type.";
+                    note = ty.span() => "Expected `#[sv::custom(msg=SomeMsg, query=SomeQuery)]`"
+                );
             };
             if !input.peek(Token![,]) {
                 break;
