@@ -1,9 +1,11 @@
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::{CosmosMsg, CustomMsg, Response, StdError, StdResult};
+use cosmwasm_std::{CosmosMsg, CustomMsg, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
+
+use crate::error::ContractError;
 
 impl<
         InstantiateT,
@@ -53,9 +55,9 @@ where
     CustomQueryT: CustomQuery + JsonSchema + 'static,
     FieldT: 'static,
 {
-    type Error = StdError;
+    type Error = ContractError;
 
-    fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> StdResult<Response> {
+    fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error> {
         Ok(Response::new())
     }
 

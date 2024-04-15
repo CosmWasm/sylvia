@@ -122,7 +122,7 @@ impl Interfaces {
 
             match (msg_ty, customs.has_msg) {
                 (MsgType::Exec, true) | (MsgType::Sudo, true) => quote! {
-                    #contract_enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?)
+                    #contract_enum_name:: #variant(msg) => #sylvia ::into_response::IntoResponse::into_response(msg.dispatch(contract, Into::into( #ctx ))?).map_err(Into::into)
                 },
                 _ => quote! {
                     #contract_enum_name :: #variant(msg) => msg.dispatch(contract, Into::into( #ctx ))
