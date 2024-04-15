@@ -650,6 +650,7 @@ dependencies = [
  "generic",
  "serde",
  "sylvia",
+ "thiserror",
 ]
 
 [[package]]
