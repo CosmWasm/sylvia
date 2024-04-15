@@ -1,4 +1,5 @@
-use cosmwasm_std::{Reply, Response, StdResult};
+use crate::error::ContractError;
+use cosmwasm_std::{Reply, Response};
 use cw_storage_plus::Item;
 use serde::Deserialize;
 use sylvia::types::{
@@ -51,6 +52,7 @@ pub struct GenericsForwardedContract<
 
 #[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
 #[contract]
+#[sv::error(ContractError)]
 #[sv::messages(generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as Generic: custom(msg, query))]
 #[sv::messages(cw1 as Cw1: custom(msg, query))]
 #[sv::messages(custom_and_generic<Exec1T, Exec2T, Exec3T, Query1T, Query2T, Query3T, Sudo1T, Sudo2T, Sudo3T, SvCustomMsg> as CustomAndGeneric)]
@@ -115,7 +117,7 @@ where
         &self,
         _ctx: InstantiateCtx<CustomQueryT>,
         _msg: InstantiateT,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -125,7 +127,7 @@ where
         _ctx: ExecCtx<CustomQueryT>,
         _msg1: Exec1T,
         _msg2: Exec2T,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -135,7 +137,7 @@ where
         _ctx: ExecCtx<CustomQueryT>,
         _msg1: Exec2T,
         _msg2: Exec3T,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -145,7 +147,7 @@ where
         _ctx: QueryCtx<CustomQueryT>,
         _msg1: Query1T,
         _msg2: Query2T,
-    ) -> StdResult<String> {
+    ) -> Result<String, ContractError> {
         Ok(String::default())
     }
 
@@ -155,7 +157,7 @@ where
         _ctx: QueryCtx<CustomQueryT>,
         _msg1: Query2T,
         _msg2: Query3T,
-    ) -> StdResult<String> {
+    ) -> Result<String, ContractError> {
         Ok(String::default())
     }
 
@@ -165,7 +167,7 @@ where
         _ctx: SudoCtx<CustomQueryT>,
         _msgs1: Sudo1T,
         _msgs2: Sudo2T,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -175,7 +177,7 @@ where
         _ctx: SudoCtx<CustomQueryT>,
         _msgs1: Sudo2T,
         _msgs2: Sudo3T,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -184,7 +186,7 @@ where
         &self,
         _ctx: MigrateCtx<CustomQueryT>,
         _msg: MigrateT,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 
@@ -194,7 +196,7 @@ where
         &self,
         _ctx: ReplyCtx<CustomQueryT>,
         _reply: Reply,
-    ) -> StdResult<Response<CustomMsgT>> {
+    ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }
 }
