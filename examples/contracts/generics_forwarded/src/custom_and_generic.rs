@@ -1,9 +1,10 @@
-use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
+use cosmwasm_std::{CosmosMsg, Response};
 use custom_and_generic::CustomAndGeneric;
 use serde::Deserialize;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 
 use crate::contract::SvCustomMsg;
+use crate::error::ContractError;
 
 impl<
         InstantiateT,
@@ -53,7 +54,7 @@ where
     CustomQueryT: CustomQuery + 'static,
     FieldT: 'static,
 {
-    type Error = StdError;
+    type Error = ContractError;
     type Exec1T = Exec1T;
     type Exec2T = Exec2T;
     type Exec3T = Exec3T;
@@ -72,7 +73,7 @@ where
         _ctx: ExecCtx<Self::QueryC>,
         _msgs1: Vec<CosmosMsg<Self::Exec1T>>,
         _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
-    ) -> StdResult<Response<Self::ExecC>> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         Ok(Response::new())
     }
 
@@ -81,7 +82,7 @@ where
         _ctx: ExecCtx<Self::QueryC>,
         _msgs2: Vec<CosmosMsg<Self::Exec2T>>,
         _msgs1: Vec<CosmosMsg<Self::Exec3T>>,
-    ) -> StdResult<Response<Self::ExecC>> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         Ok(Response::new())
     }
 
@@ -90,7 +91,7 @@ where
         _ctx: QueryCtx<Self::QueryC>,
         _msg1: Self::Query1T,
         _msg2: Self::Query2T,
-    ) -> StdResult<SvCustomMsg> {
+    ) -> Result<SvCustomMsg, ContractError> {
         Ok(SvCustomMsg {})
     }
 
@@ -99,7 +100,7 @@ where
         _ctx: QueryCtx<Self::QueryC>,
         _msg1: Self::Query2T,
         _msg2: Self::Query3T,
-    ) -> StdResult<SvCustomMsg> {
+    ) -> Result<SvCustomMsg, ContractError> {
         Ok(SvCustomMsg {})
     }
 
@@ -108,7 +109,7 @@ where
         _ctx: SudoCtx<Self::QueryC>,
         _msgs1: CosmosMsg<Self::Sudo1T>,
         _msgs2: CosmosMsg<Self::Sudo2T>,
-    ) -> StdResult<Response<Self::ExecC>> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         Ok(Response::new())
     }
 
@@ -117,7 +118,7 @@ where
         _ctx: SudoCtx<Self::QueryC>,
         _msgs1: CosmosMsg<Self::Sudo2T>,
         _msgs2: CosmosMsg<Self::Sudo3T>,
-    ) -> StdResult<Response<Self::ExecC>> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         Ok(Response::new())
     }
 }
