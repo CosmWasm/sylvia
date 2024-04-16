@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.0...sylvia-derive-v1.0.1) - 2024-04-15
+
+### Added
+- Assert `new` method defined ([#342](https://github.com/CosmWasm/sylvia/pull/342))
+
+### Fixed
+- Add missing `map_err` on `IntoResponse` result
+
+### Other
+- Improve error message in `sv::custom` attribute ([#348](https://github.com/CosmWasm/sylvia/pull/348))
+- Improve errors in `sv::messages` attribute ([#345](https://github.com/CosmWasm/sylvia/pull/345))
+- Improve `no instantiation` error message
+
 ## [1.0.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.10.1...sylvia-derive-v1.0.0) - 2024-03-27
 
 ### Added
