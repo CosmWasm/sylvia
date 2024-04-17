@@ -138,33 +138,25 @@ impl<'a> ContractMtHelpers<'a> {
                 GovT,
             >
         };
+        let api = quote! { < #contract_name as #sylvia ::types::ContractApi> };
 
         let exec_methods =
-            exec_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+            exec_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
         let query_methods =
-            query_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+            query_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
         let sudo_methods =
-            sudo_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+            sudo_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
         let migrate_methods =
-            migrate_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
+            migrate_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
 
-        let exec_methods_delcaration = exec_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let query_methods_delcaration = query_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let sudo_methods_delcaration = sudo_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let migrate_methods_delcaration = migrate_variants
-            .emit_multitest_proxy_methods_declaration(&custom_msg, &mt_app, error_type);
+        let exec_methods_declarations =
+            exec_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
+        let query_methods_declarations =
+            query_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
+        let sudo_methods_declarations =
+            sudo_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
+        let migrate_methods_declarations =
+            migrate_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
 
         let where_predicates = where_clause
             .as_ref()
@@ -180,17 +172,17 @@ impl<'a> ContractMtHelpers<'a> {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
 
-                pub trait #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                pub trait #trait_name <'app, MtApp, #(#generic_params,)* >
                     #where_clause
                 {
-                    #( #exec_methods_delcaration )*
-                    #( #migrate_methods_delcaration )*
-                    #( #query_methods_delcaration )*
-                    #( #sudo_methods_delcaration )*
+                    #( #exec_methods_declarations )*
+                    #( #migrate_methods_declarations )*
+                    #( #query_methods_declarations )*
+                    #( #sudo_methods_declarations )*
                 }
 
                 impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
-                    #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                    #trait_name <'app, #mt_app, #(#generic_params,)* >
                         for #sylvia ::multitest::Proxy <'app, #mt_app, #contract_name >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
@@ -623,7 +615,8 @@ impl<'a> TraitMtHelpers<'a> {
         let interface_name = &source.ident;
         let trait_name = Ident::new(&format!("{}Proxy", interface_name), interface_name.span());
 
-        let custom_msg: Type = parse_quote! { MultitestExecCustomType };
+        let custom_msg: Type = parse_quote! { CustomMsgT };
+        let prefixed_error_type: Type = parse_quote! { Self:: #error_type };
 
         let mt_app = parse_quote! {
             #sylvia ::cw_multi_test::App<
@@ -653,35 +646,35 @@ impl<'a> TraitMtHelpers<'a> {
             .collect();
 
         let bracketed_generics = emit_bracketed_generics(&associated_args_for_api);
-        let interface_api = quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
+        let api = quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
 
-        let associated_types_delcaration = associated_types.without_error();
+        let associated_types_declaration = associated_types.without_error();
 
-        let exec_methods = exec_variants.emit_interface_multitest_proxy_methods(
+        let exec_methods = exec_variants.emit_mt_method_definitions(
             &custom_msg,
             &mt_app,
-            error_type,
-            &interface_api,
+            &prefixed_error_type,
+            &api,
         );
-        let query_methods = query_variants.emit_interface_multitest_proxy_methods(
+        let query_methods = query_variants.emit_mt_method_definitions(
             &custom_msg,
             &mt_app,
-            error_type,
-            &interface_api,
+            &prefixed_error_type,
+            &api,
         );
-        let sudo_methods = sudo_variants.emit_interface_multitest_proxy_methods(
+        let sudo_methods = sudo_variants.emit_mt_method_definitions(
             &custom_msg,
             &mt_app,
-            error_type,
-            &interface_api,
+            &prefixed_error_type,
+            &api,
         );
 
         let exec_methods_declarations =
-            exec_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
+            exec_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
         let query_methods_declarations =
-            query_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
+            query_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
         let sudo_methods_declarations =
-            sudo_variants.emit_proxy_methods_declarations(&custom_msg, error_type, &interface_api);
+            sudo_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
 
         let where_predicates = where_clause
             .as_ref()
@@ -693,7 +686,7 @@ impl<'a> TraitMtHelpers<'a> {
 
                 pub trait #trait_name <MtApp, #custom_msg > #where_clause {
                     type #error_type: std::fmt::Debug + std::fmt::Display + Send + Sync + 'static;
-                    #(#associated_types_delcaration)*
+                    #(#associated_types_declaration)*
 
                     #(#query_methods_declarations)*
                     #(#exec_methods_declarations)*

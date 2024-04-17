@@ -54,9 +54,7 @@ impl<'a> StructMessage<'a> {
         let contract_type = &source.self_ty;
 
         let parsed = Self::parse_struct_message(source, ty);
-        let Some((method, msg_attr)) = parsed else {
-            return None;
-        };
+        let (method, msg_attr) = parsed?;
 
         let function_name = &method.sig.ident;
         let fields = process_fields(&method.sig, &mut generics_checker);
@@ -609,130 +607,13 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_multitest_proxy_methods_declaration<Generic>(
+    pub fn emit_mt_method_definition(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         mt_app: &Type,
         error_type: &Type,
-        generics: &[&Generic],
-    ) -> TokenStream
-    where
-        Generic: ToTokens,
-    {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            stripped_return_type,
-            ..
-        } = self;
-
-        let params = fields.iter().map(|field| field.emit_method_field());
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-        let enum_name = msg_ty.emit_msg_name();
-        let enum_name: Type = if !generics.is_empty() {
-            parse_quote! { #enum_name ::< #(#generics,)* > }
-        } else {
-            parse_quote! { #enum_name }
-        };
-
-        match msg_ty {
-            MsgType::Exec => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
-            },
-            MsgType::Migrate => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
-            },
-            MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type>;
-            },
-            MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
-            },
-            _ => quote! {},
-        }
-    }
-
-    pub fn emit_multitest_proxy_methods<Generic>(
-        &self,
-        msg_ty: &MsgType,
-        custom_msg: &Type,
-        mt_app: &Type,
-        error_type: &Type,
-        generics: &[&Generic],
-    ) -> TokenStream
-    where
-        Generic: ToTokens,
-    {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            stripped_return_type,
-            ..
-        } = self;
-
-        let params = fields.iter().map(|field| field.emit_method_field());
-        let arguments = fields.iter().map(MsgField::name);
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-        let enum_name = msg_ty.emit_msg_name();
-        let enum_name: Type = if !generics.is_empty() {
-            parse_quote! { #enum_name ::< #(#generics,)* > }
-        } else {
-            parse_quote! { #enum_name }
-        };
-
-        match msg_ty {
-            MsgType::Exec => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, #mt_app, #custom_msg> {
-                    let msg = #enum_name :: #name ( #(#arguments),* );
-
-                    #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
-                }
-            },
-            MsgType::Migrate => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, #mt_app, #custom_msg> {
-                    let msg = #enum_name ::new( #(#arguments),* );
-
-                    #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
-                }
-            },
-            MsgType::Query => quote! {
-                fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type> {
-                    let msg = #enum_name :: #name ( #(#arguments),* );
-
-                    (*self.app)
-                        .querier()
-                        .query_wasm_smart(self.contract_addr.clone(), &msg)
-                        .map_err(Into::into)
-                }
-            },
-            MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
-                    let msg = #enum_name :: #name ( #(#arguments),* );
-
-                    (*self.app)
-                        .app_mut()
-                        .wasm_sudo(self.contract_addr.clone(), &msg)
-                        .map_err(|err| err.downcast().unwrap())
-                }
-            },
-            _ => quote! {},
-        }
-    }
-
-    pub fn emit_interface_multitest_proxy_methods(
-        &self,
-        msg_ty: &MsgType,
-        custom_msg: &Type,
-        mt_app: &Type,
-        error_type: &Type,
-        interface_api: &TokenStream,
+        api: &TokenStream,
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
@@ -753,16 +634,16 @@ impl<'a> MsgVariant<'a> {
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::<Self:: #error_type, #interface_api :: #type_name, #mt_app, #custom_msg> {
-                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api :: #type_name, #mt_app, #custom_msg> {
+                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
 
                     #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
                 }
             },
             MsgType::Query => {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, Self:: #error_type> {
-                        let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = #api :: #type_name :: #name ( #(#arguments),* );
 
                         (*self.app)
                             .querier()
@@ -772,8 +653,8 @@ impl<'a> MsgVariant<'a> {
                 }
             }
             MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, Self:: #error_type> {
-                    let msg = #interface_api :: #type_name :: #name ( #(#arguments),* );
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
 
                     (*self.app)
                         .app_mut()
@@ -781,16 +662,24 @@ impl<'a> MsgVariant<'a> {
                         .map_err(|err| err.downcast().unwrap())
                 }
             },
+            MsgType::Migrate => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name , #mt_app, #custom_msg> {
+                    let msg = #api :: #type_name ::new( #(#arguments),* );
+
+                    #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
+                }
+            },
             _ => quote! {},
         }
     }
 
-    pub fn emit_proxy_methods_declarations(
+    pub fn emit_mt_method_declaration(
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
         error_type: &Type,
-        interface_enum: &TokenStream,
+        api: &TokenStream,
     ) -> TokenStream {
         let sylvia = crate_module();
         let Self {
@@ -809,15 +698,19 @@ impl<'a> MsgVariant<'a> {
 
         match msg_ty {
             MsgType::Exec => quote! {
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< Self:: #error_type, #interface_enum :: #type_name, MtApp, #custom_msg>;
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api:: #type_name, MtApp, #custom_msg>;
             },
             MsgType::Query => {
                 quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, Self:: #error_type>;
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
                 }
             }
             MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, Self:: #error_type>;
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
+            },
+            MsgType::Migrate => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name, MtApp, #custom_msg>;
             },
             _ => quote! {},
         }
@@ -940,82 +833,31 @@ where
         }
     }
 
-    pub fn emit_multitest_proxy_methods_declaration(
+    pub fn emit_mt_method_definitions(
         &self,
         custom_msg: &Type,
         mt_app: &Type,
         error_type: &Type,
+        api: &TokenStream,
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
             .map(|variant| {
-                variant.emit_multitest_proxy_methods_declaration(
-                    &self.msg_ty,
-                    custom_msg,
-                    mt_app,
-                    error_type,
-                    &self.used_generics,
-                )
+                variant.emit_mt_method_definition(&self.msg_ty, custom_msg, mt_app, error_type, api)
             })
             .collect()
     }
 
-    pub fn emit_multitest_proxy_methods(
+    pub fn emit_mt_method_declarations(
         &self,
         custom_msg: &Type,
-        mt_app: &Type,
         error_type: &Type,
+        api: &TokenStream,
     ) -> Vec<TokenStream> {
         self.variants
             .iter()
             .map(|variant| {
-                variant.emit_multitest_proxy_methods(
-                    &self.msg_ty,
-                    custom_msg,
-                    mt_app,
-                    error_type,
-                    &self.used_generics,
-                )
-            })
-            .collect()
-    }
-
-    pub fn emit_interface_multitest_proxy_methods(
-        &self,
-        custom_msg: &Type,
-        mt_app: &Type,
-        error_type: &Type,
-        interface_api: &TokenStream,
-    ) -> Vec<TokenStream> {
-        self.variants
-            .iter()
-            .map(|variant| {
-                variant.emit_interface_multitest_proxy_methods(
-                    &self.msg_ty,
-                    custom_msg,
-                    mt_app,
-                    error_type,
-                    interface_api,
-                )
-            })
-            .collect()
-    }
-
-    pub fn emit_proxy_methods_declarations(
-        &self,
-        custom_msg: &Type,
-        error_type: &Type,
-        interface_enum: &TokenStream,
-    ) -> Vec<TokenStream> {
-        self.variants
-            .iter()
-            .map(|variant| {
-                variant.emit_proxy_methods_declarations(
-                    &self.msg_ty,
-                    custom_msg,
-                    error_type,
-                    interface_enum,
-                )
+                variant.emit_mt_method_declaration(&self.msg_ty, custom_msg, error_type, api)
             })
             .collect()
     }
