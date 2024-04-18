@@ -1,10 +1,13 @@
 use proc_macro2::TokenStream;
+use proc_macro_error::emit_error;
 use quote::quote;
+use syn::fold::Fold;
 use syn::{parse_quote, GenericParam, Ident, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::Customs;
+use crate::strip_self_path::StripSelfPath;
 
 impl MsgType {
     pub fn emit_ctx_type(self, query_type: &Type) -> TokenStream {
@@ -159,6 +162,35 @@ impl MsgType {
             _ => quote! {
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             },
+        }
+    }
+
+    pub fn emit_dispatch_leg(&self, function_name: &Ident, args: &Vec<Ident>) -> TokenStream {
+        use MsgType::*;
+        let sylvia = crate_module();
+
+        match self {
+            Exec | Sudo => quote! {
+                contract.#function_name(Into::into(ctx), #(#args),*).map_err(Into::into)
+            },
+            Query => quote! {
+                #sylvia ::cw_std::to_json_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
+            },
+            Instantiate | Migrate | Reply => {
+                emit_error!(function_name.span(), "Internal Error";
+                note = "Dispatch leg should be called only for `Enum` type messages.");
+                quote! {}
+            }
+        }
+    }
+
+    pub fn emit_returns_attribute(&self, return_type: &Option<Type>) -> TokenStream {
+        match (self, return_type) {
+            (MsgType::Query, Some(return_type)) => {
+                let stripped_return_type = StripSelfPath.fold_type(return_type.clone());
+                quote! { #[returns(#stripped_return_type)] }
+            }
+            _ => quote! {},
         }
     }
 }

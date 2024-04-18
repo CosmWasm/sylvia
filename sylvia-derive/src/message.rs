@@ -406,8 +406,9 @@ pub struct MsgVariant<'a> {
     name: Ident,
     function_name: &'a Ident,
     fields: Vec<MsgField<'a>>,
-    return_type: TokenStream,
-    stripped_return_type: TokenStream,
+    /// Type extracted only in case of `Query` and used in `cosmwasm_schema::QueryResponses`
+    /// `returns` attribute.
+    return_type: Option<Type>,
     msg_type: MsgType,
 }
 
@@ -430,22 +431,22 @@ impl<'a> MsgVariant<'a> {
         let fields = process_fields(sig, generics_checker);
         let msg_type = msg_attr.msg_type();
 
-        let (return_type, stripped_return_type) = if let MsgAttr::Query { resp_type } = msg_attr {
+        let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
             match resp_type {
                 Some(resp_type) => {
                     let resp_type = parse_quote! { #resp_type };
-                    generics_checker.visit_path(&resp_type);
-                    (quote! { #resp_type }, quote! { #resp_type })
+                    generics_checker.visit_type(&resp_type);
+                    Some(resp_type)
                 }
                 None => {
                     let return_type = extract_return_type(&sig.output);
                     let stripped_return_type = StripSelfPath.fold_path(return_type.clone());
                     generics_checker.visit_path(&stripped_return_type);
-                    (quote! { #return_type }, quote! { #stripped_return_type })
+                    Some(parse_quote! { #return_type })
                 }
             }
         } else {
-            (quote! {}, quote! {})
+            None
         };
 
         Self {
@@ -453,7 +454,6 @@ impl<'a> MsgVariant<'a> {
             function_name,
             fields,
             return_type,
-            stripped_return_type,
             msg_type,
         }
     }
@@ -464,14 +464,11 @@ impl<'a> MsgVariant<'a> {
             name,
             fields,
             msg_type,
-            stripped_return_type,
+            return_type,
             ..
         } = self;
         let fields = fields.iter().map(MsgField::emit);
-        let returns_attribute = match msg_type {
-            MsgType::Query => quote! { #[returns(#stripped_return_type)] },
-            _ => quote! {},
-        };
+        let returns_attribute = msg_type.emit_returns_attribute(return_type);
 
         quote! {
             #returns_attribute
@@ -485,8 +482,6 @@ impl<'a> MsgVariant<'a> {
     /// scope. Dispatching is performed by calling the function this variant is build from on the
     /// `contract` variable, with `ctx` as its first argument - both of them should be in scope.
     pub fn emit_dispatch_leg(&self) -> TokenStream {
-        use MsgType::*;
-
         let Self {
             name,
             fields,
@@ -495,12 +490,11 @@ impl<'a> MsgVariant<'a> {
             ..
         } = self;
 
-        let sylvia = crate_module();
-
-        let args = fields
+        let args: Vec<_> = fields
             .iter()
             .zip(1..)
-            .map(|(field, num)| Ident::new(&format!("field{}", num), field.name.span()));
+            .map(|(field, num)| Ident::new(&format!("field{}", num), field.name.span()))
+            .collect();
 
         let fields = fields
             .iter()
@@ -508,21 +502,12 @@ impl<'a> MsgVariant<'a> {
             .zip(args.clone())
             .map(|(field, num_field)| quote!(#field : #num_field));
 
-        match msg_type {
-            Exec | Sudo => quote! {
-                #name {
-                    #(#fields,)*
-                } => contract.#function_name(Into::into(ctx), #(#args),*).map_err(Into::into)
-            },
-            Query => quote! {
-                #name {
-                    #(#fields,)*
-                } => #sylvia ::cw_std::to_json_binary(&contract.#function_name(Into::into(ctx), #(#args),*)?).map_err(Into::into)
-            },
-            Instantiate | Migrate | Reply => {
-                emit_error!(name.span(), "Instantiation, Reply and Migrate messages not supported on traits, they should be defined on contracts directly");
-                quote! {}
-            }
+        let method_call = msg_type.emit_dispatch_leg(function_name, &args);
+
+        quote! {
+            #name {
+                #(#fields,)*
+            } => #method_call
         }
     }
 
@@ -562,7 +547,7 @@ impl<'a> MsgVariant<'a> {
         &self.msg_type
     }
 
-    pub fn return_type(&self) -> &TokenStream {
+    pub fn return_type(&self) -> &Option<Type> {
         &self.return_type
     }
 }
