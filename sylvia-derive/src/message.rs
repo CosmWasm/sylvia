@@ -405,8 +405,6 @@ impl<'a> ContractEnumMessage<'a> {
 pub struct MsgVariant<'a> {
     name: Ident,
     function_name: &'a Ident,
-    // With https://github.com/rust-lang/rust/issues/63063 this could be just an iterator over
-    // `MsgField<'a>`
     fields: Vec<MsgField<'a>>,
     return_type: TokenStream,
     stripped_return_type: TokenStream,
@@ -541,69 +539,6 @@ impl<'a> MsgVariant<'a> {
             pub fn #method_name( #(#parameters),*) -> Self {
                 Self :: #name { #(#arguments),* }
             }
-        }
-    }
-
-    pub fn emit_trait_querier_impl(&self, associated_name: &[TokenStream]) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            return_type,
-            ..
-        } = self;
-
-        let parameters = fields.iter().map(MsgField::emit_method_field_assoc_type);
-        let fields_names = fields.iter().map(MsgField::name);
-        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-        let bracketed_generics = emit_bracketed_generics(associated_name);
-
-        quote! {
-            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                let query = <Api #bracketed_generics as sylvia::types::InterfaceApi>::Query:: #variant_name (#(#fields_names),*);
-                self.querier().query_wasm_smart(self.contract(), &query)
-            }
-        }
-    }
-
-    pub fn emit_querier_impl<Generic>(&self, api_path: &TokenStream) -> TokenStream
-    where
-        Generic: ToTokens + GetPath,
-    {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            return_type,
-            ..
-        } = self;
-
-        let parameters = fields.iter().map(|field| field.emit_method_field_folded());
-        let fields_names = fields.iter().map(MsgField::name);
-        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-
-        quote! {
-            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                let query = #api_path :: #variant_name (#(#fields_names),*);
-                self.querier().query_wasm_smart(self.contract(), &query)
-            }
-        }
-    }
-
-    pub fn emit_querier_declaration(&self) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            return_type,
-            ..
-        } = self;
-
-        let parameters = fields.iter().map(|field| field.emit_method_field_folded());
-        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-
-        quote! {
-            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
         }
     }
 
@@ -876,15 +811,6 @@ impl<'a> MsgField<'a> {
 
         quote! {
             #name: #stripped_ty
-        }
-    }
-
-    /// Emits method field
-    pub fn emit_method_field_assoc_type(&self) -> TokenStream {
-        let Self { name, ty, .. } = self;
-
-        quote! {
-            #name: #ty
         }
     }
 
