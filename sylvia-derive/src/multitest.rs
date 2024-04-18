@@ -140,23 +140,31 @@ impl<'a> ContractMtHelpers<'a> {
         };
         let api = quote! { < #contract_name as #sylvia ::types::ContractApi> };
 
-        let exec_methods =
-            exec_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
-        let query_methods =
-            query_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
-        let sudo_methods =
-            sudo_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
-        let migrate_methods =
-            migrate_variants.emit_mt_method_definitions(&custom_msg, &mt_app, error_type, &api);
+        let exec_methods = exec_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, error_type, &api)
+        });
+        let query_methods = query_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, error_type, &api)
+        });
+        let sudo_methods = sudo_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, error_type, &api)
+        });
+        let migrate_methods = migrate_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, error_type, &api)
+        });
 
-        let exec_methods_declarations =
-            exec_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
-        let query_methods_declarations =
-            query_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
-        let sudo_methods_declarations =
-            sudo_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
-        let migrate_methods_declarations =
-            migrate_variants.emit_mt_method_declarations(&custom_msg, error_type, &api);
+        let exec_methods_declarations = exec_variants
+            .variants()
+            .map(|variant| variant.emit_mt_method_declaration(&custom_msg, error_type, &api));
+        let query_methods_declarations = query_variants
+            .variants()
+            .map(|variant| variant.emit_mt_method_declaration(&custom_msg, error_type, &api));
+        let sudo_methods_declarations = sudo_variants
+            .variants()
+            .map(|variant| variant.emit_mt_method_declaration(&custom_msg, error_type, &api));
+        let migrate_methods_declarations = migrate_variants
+            .variants()
+            .map(|variant| variant.emit_mt_method_declaration(&custom_msg, error_type, &api));
 
         let where_predicates = where_clause
             .as_ref()
@@ -650,31 +658,25 @@ impl<'a> TraitMtHelpers<'a> {
 
         let associated_types_declaration = associated_types.without_error();
 
-        let exec_methods = exec_variants.emit_mt_method_definitions(
-            &custom_msg,
-            &mt_app,
-            &prefixed_error_type,
-            &api,
-        );
-        let query_methods = query_variants.emit_mt_method_definitions(
-            &custom_msg,
-            &mt_app,
-            &prefixed_error_type,
-            &api,
-        );
-        let sudo_methods = sudo_variants.emit_mt_method_definitions(
-            &custom_msg,
-            &mt_app,
-            &prefixed_error_type,
-            &api,
-        );
+        let exec_methods = exec_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, &prefixed_error_type, &api)
+        });
+        let query_methods = query_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, &prefixed_error_type, &api)
+        });
+        let sudo_methods = sudo_variants.variants().map(|variant| {
+            variant.emit_mt_method_definition(&custom_msg, &mt_app, &prefixed_error_type, &api)
+        });
 
-        let exec_methods_declarations =
-            exec_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
-        let query_methods_declarations =
-            query_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
-        let sudo_methods_declarations =
-            sudo_variants.emit_mt_method_declarations(&custom_msg, &prefixed_error_type, &api);
+        let exec_methods_declarations = exec_variants.variants().map(|variant| {
+            variant.emit_mt_method_declaration(&custom_msg, &prefixed_error_type, &api)
+        });
+        let query_methods_declarations = query_variants.variants().map(|variant| {
+            variant.emit_mt_method_declaration(&custom_msg, &prefixed_error_type, &api)
+        });
+        let sudo_methods_declarations = sudo_variants.variants().map(|variant| {
+            variant.emit_mt_method_declaration(&custom_msg, &prefixed_error_type, &api)
+        });
 
         let where_predicates = where_clause
             .as_ref()
@@ -735,5 +737,125 @@ fn emit_default_dispatch(msg_ty: &MsgType, contract_name: &Type) -> TokenStream 
         #sylvia ::cw_std::from_json::< #api_msg >(&msg)?
             .dispatch(self, ( #values ))
             .map_err(Into::into)
+    }
+}
+
+trait EmitMethods {
+    fn emit_mt_method_definition(
+        &self,
+        custom_msg: &Type,
+        mt_app: &Type,
+        error_type: &Type,
+        api: &TokenStream,
+    ) -> TokenStream;
+
+    fn emit_mt_method_declaration(
+        &self,
+        custom_msg: &Type,
+        error_type: &Type,
+        api: &TokenStream,
+    ) -> TokenStream;
+}
+
+impl EmitMethods for MsgVariant<'_> {
+    fn emit_mt_method_definition(
+        &self,
+        custom_msg: &Type,
+        mt_app: &Type,
+        error_type: &Type,
+        api: &TokenStream,
+    ) -> TokenStream {
+        let sylvia = crate_module();
+
+        let name = self.name();
+        let return_type = self.return_type();
+
+        let params: Vec<_> = self
+            .fields()
+            .iter()
+            .map(|field| field.emit_method_field_folded())
+            .collect();
+        let arguments = self.as_fields_names();
+        let type_name = self.msg_type().as_accessor_name();
+        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        match self.msg_type() {
+            MsgType::Exec => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api :: #type_name, #mt_app, #custom_msg> {
+                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
+
+                    #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
+                }
+            },
+            MsgType::Query => {
+                quote! {
+                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
+                        let msg = #api :: #type_name :: #name ( #(#arguments),* );
+
+                        (*self.app)
+                            .querier()
+                            .query_wasm_smart(self.contract_addr.clone(), &msg)
+                            .map_err(Into::into)
+                    }
+                }
+            }
+            MsgType::Sudo => quote! {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
+                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
+
+                    (*self.app)
+                        .app_mut()
+                        .wasm_sudo(self.contract_addr.clone(), &msg)
+                        .map_err(|err| err.downcast().unwrap())
+                }
+            },
+            MsgType::Migrate => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name , #mt_app, #custom_msg> {
+                    let msg = #api :: #type_name ::new( #(#arguments),* );
+
+                    #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
+                }
+            },
+            _ => quote! {},
+        }
+    }
+
+    fn emit_mt_method_declaration(
+        &self,
+        custom_msg: &Type,
+        error_type: &Type,
+        api: &TokenStream,
+    ) -> TokenStream {
+        let sylvia = crate_module();
+
+        let name = self.name();
+        let return_type = self.return_type();
+
+        let params: Vec<_> = self
+            .fields()
+            .iter()
+            .map(|field| field.emit_method_field_folded())
+            .collect();
+        let type_name = self.msg_type().as_accessor_name();
+        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        match self.msg_type() {
+            MsgType::Exec => quote! {
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api:: #type_name, MtApp, #custom_msg>;
+            },
+            MsgType::Query => quote! {
+                fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
+            },
+            MsgType::Sudo => quote! {
+                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
+            },
+            MsgType::Migrate => quote! {
+                #[track_caller]
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name, MtApp, #custom_msg>;
+            },
+            _ => quote! {},
+        }
     }
 }

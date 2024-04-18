@@ -607,115 +607,6 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_mt_method_definition(
-        &self,
-        msg_ty: &MsgType,
-        custom_msg: &Type,
-        mt_app: &Type,
-        error_type: &Type,
-        api: &TokenStream,
-    ) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            return_type,
-            ..
-        } = self;
-
-        let params: Vec<_> = fields
-            .iter()
-            .map(|field| field.emit_method_field_folded())
-            .collect();
-        let arguments = fields.iter().map(MsgField::name);
-        let type_name = msg_ty.as_accessor_name();
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-
-        match msg_ty {
-            MsgType::Exec => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api :: #type_name, #mt_app, #custom_msg> {
-                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
-
-                    #sylvia ::multitest::ExecProxy::new(&self.contract_addr, msg, &self.app)
-                }
-            },
-            MsgType::Query => {
-                quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type> {
-                        let msg = #api :: #type_name :: #name ( #(#arguments),* );
-
-                        (*self.app)
-                            .querier()
-                            .query_wasm_smart(self.contract_addr.clone(), &msg)
-                            .map_err(Into::into)
-                    }
-                }
-            }
-            MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type> {
-                    let msg = #api :: #type_name :: #name ( #(#arguments),* );
-
-                    (*self.app)
-                        .app_mut()
-                        .wasm_sudo(self.contract_addr.clone(), &msg)
-                        .map_err(|err| err.downcast().unwrap())
-                }
-            },
-            MsgType::Migrate => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name , #mt_app, #custom_msg> {
-                    let msg = #api :: #type_name ::new( #(#arguments),* );
-
-                    #sylvia ::multitest::MigrateProxy::new(&self.contract_addr, msg, &self.app)
-                }
-            },
-            _ => quote! {},
-        }
-    }
-
-    pub fn emit_mt_method_declaration(
-        &self,
-        msg_ty: &MsgType,
-        custom_msg: &Type,
-        error_type: &Type,
-        api: &TokenStream,
-    ) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            name,
-            fields,
-            return_type,
-            ..
-        } = self;
-
-        let params: Vec<_> = fields
-            .iter()
-            .map(|field| field.emit_method_field_folded())
-            .collect();
-        let type_name = msg_ty.as_accessor_name();
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-
-        match msg_ty {
-            MsgType::Exec => quote! {
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api:: #type_name, MtApp, #custom_msg>;
-            },
-            MsgType::Query => {
-                quote! {
-                    fn #name (&self, #(#params,)* ) -> Result<#return_type, #error_type>;
-                }
-            }
-            MsgType::Sudo => quote! {
-                fn #name (&self, #(#params,)* ) -> Result< #sylvia ::cw_multi_test::AppResponse, #error_type>;
-            },
-            MsgType::Migrate => quote! {
-                #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #api :: #type_name, MtApp, #custom_msg>;
-            },
-            _ => quote! {},
-        }
-    }
-
     pub fn as_fields_names(&self) -> Vec<&Ident> {
         self.fields.iter().map(MsgField::name).collect()
     }
@@ -726,6 +617,18 @@ impl<'a> MsgVariant<'a> {
 
     pub fn name(&self) -> &Ident {
         &self.name
+    }
+
+    pub fn fields(&self) -> &Vec<MsgField> {
+        &self.fields
+    }
+
+    pub fn msg_type(&self) -> &MsgType {
+        &self.msg_type
+    }
+
+    pub fn return_type(&self) -> &TokenStream {
+        &self.return_type
     }
 }
 
@@ -786,8 +689,8 @@ where
         }
     }
 
-    pub fn variants(&self) -> &Vec<MsgVariant<'a>> {
-        &self.variants
+    pub fn variants(&self) -> impl Iterator<Item = &MsgVariant> {
+        self.variants.iter()
     }
 
     pub fn used_generics(&self) -> &Vec<&'a Generic> {
@@ -831,35 +734,6 @@ where
                 msg.dispatch(&#name #bracketed_generics ::new() , ( #values )).map_err(Into::into)
             }
         }
-    }
-
-    pub fn emit_mt_method_definitions(
-        &self,
-        custom_msg: &Type,
-        mt_app: &Type,
-        error_type: &Type,
-        api: &TokenStream,
-    ) -> Vec<TokenStream> {
-        self.variants
-            .iter()
-            .map(|variant| {
-                variant.emit_mt_method_definition(&self.msg_ty, custom_msg, mt_app, error_type, api)
-            })
-            .collect()
-    }
-
-    pub fn emit_mt_method_declarations(
-        &self,
-        custom_msg: &Type,
-        error_type: &Type,
-        api: &TokenStream,
-    ) -> Vec<TokenStream> {
-        self.variants
-            .iter()
-            .map(|variant| {
-                variant.emit_mt_method_declaration(&self.msg_ty, custom_msg, error_type, api)
-            })
-            .collect()
     }
 
     pub fn emit_phantom_match_arm(&self) -> TokenStream {
@@ -1349,9 +1223,10 @@ impl<'a> ContractApi<'a> {
         let contract_query_bracketed_generics = emit_bracketed_generics(&contract_query_generics);
         let contract_sudo_bracketed_generics = emit_bracketed_generics(&contract_sudo_generics);
 
-        let migrate_type = match !migrate_variants.variants().is_empty() {
-            true => quote! { type Migrate = MigrateMsg #migrate_bracketed_generics; },
-            false => quote! { type Migrate = #sylvia ::cw_std::Empty; },
+        let migrate_type = if migrate_variants.variants().count() != 0 {
+            quote! { type Migrate = MigrateMsg #migrate_bracketed_generics; }
+        } else {
+            quote! { type Migrate = #sylvia ::cw_std::Empty; }
         };
         let custom_query = custom.query_or_default();
 
@@ -1531,7 +1406,6 @@ impl<'a> EntryPoints<'a> {
         let reply =
             MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
                 .variants()
-                .iter()
                 .map(|variant| variant.function_name.clone())
                 .next();
         let sudo_variants =

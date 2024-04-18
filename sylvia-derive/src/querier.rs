@@ -53,13 +53,11 @@ where
             .collect();
         let methods_trait_impl = variants
             .variants()
-            .iter()
             .map(|variant| variant.emit_trait_querier_impl(&assoc_types))
             .collect::<Vec<_>>();
 
         let methods_declaration = variants
             .variants()
-            .iter()
             .map(|variant| variant.emit_querier_declaration());
 
         let types_declaration = associated_types.filtered();
@@ -112,12 +110,10 @@ impl<'a> ContractQuerier<'a> {
         let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
         let methods_impl = variants
             .variants()
-            .iter()
             .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path));
 
         let methods_declaration = variants
             .variants()
-            .iter()
             .map(|variant| variant.emit_querier_declaration());
 
         let types_declaration = where_clause
