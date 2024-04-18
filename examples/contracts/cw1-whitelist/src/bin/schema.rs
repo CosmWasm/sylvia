@@ -6,7 +6,7 @@ use cw1_whitelist::contract::sv::{ContractExecMsg, ContractQueryMsg, Instantiate
 fn main() {
     write_api! {
         instantiate: InstantiateMsg,
-        execute: ContractExecMsg,
-        query: ContractQueryMsg,
+        execute: ContractExecMsg<cw1_whitelist::contract::Cw1WhitelistContract>,
+        query: ContractQueryMsg<cw1_whitelist::contract::Cw1WhitelistContract>,
     }
 }

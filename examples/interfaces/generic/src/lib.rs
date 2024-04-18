@@ -71,7 +71,6 @@ pub trait Generic {
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::InterfaceApi;
 
     use crate::sv::Querier;
 

@@ -46,14 +46,9 @@ where
 
         let all_generics: Vec<_> = associated_types.all_names().collect();
 
-        let assoc_types: Vec<_> = associated_types
-            .without_special()
-            .map(ItemType::as_name)
-            .map(|assoc| quote! {Self:: #assoc})
-            .collect();
         let methods_trait_impl = variants
             .variants()
-            .map(|variant| variant.emit_trait_querier_impl(&assoc_types))
+            .map(|variant| variant.emit_trait_querier_impl())
             .collect::<Vec<_>>();
 
         let methods_declaration = variants
@@ -70,11 +65,11 @@ where
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, &dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
-                #(type #generics = #generics;)*
+            // impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, &dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
+            //     #(type #generics = #generics;)*
 
-                #(#methods_trait_impl)*
-            }
+            //     #(#methods_trait_impl)*
+            // }
 
             impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for #sylvia ::types::BoundQuerier<'a, C, Contract> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*

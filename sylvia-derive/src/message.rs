@@ -247,15 +247,12 @@ impl<'a> EnumMessage<'a> {
         let phantom_variant = variants.emit_phantom_variant();
         let phatom_match_arm = variants.emit_phantom_match_arm();
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
-        let bracketed_used_assocs = if !used_generics.is_empty() {
-            quote! { <  #(#used_generics = #used_generics, )* > }
-        } else {
-            quote! {}
-        };
 
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), enum_name.span());
         let derive_call = msg_ty.emit_derive_call();
+
+        let sylvia = crate_module();
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
@@ -266,11 +263,12 @@ impl<'a> EnumMessage<'a> {
                 #phantom_variant
             }
             pub type #enum_name #bracketed_used_generics = #unique_enum_name #bracketed_used_generics;
-            impl #bracketed_used_generics #unique_enum_name #bracketed_used_generics #where_clause {
+
+            impl #bracketed_used_generics #unique_enum_name #bracketed_used_generics
+                #where_clause {
+
                 pub fn dispatch<ContractT>(self, contract: &ContractT, ctx: #ctx_type)
                     -> #dispatch_type
-                where
-                    ContractT: #trait_name #bracketed_used_assocs
                 {
                     use #unique_enum_name::*;
 
@@ -279,6 +277,7 @@ impl<'a> EnumMessage<'a> {
                         #phatom_match_arm
                     }
                 }
+
                 #(#variants_constructors)*
             }
 
@@ -538,7 +537,7 @@ impl<'a> MsgVariant<'a> {
         }
     }
 
-    pub fn emit_trait_querier_impl(&self, associated_name: &[TokenStream]) -> TokenStream {
+    pub fn emit_trait_querier_impl(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             name,
@@ -550,11 +549,10 @@ impl<'a> MsgVariant<'a> {
         let parameters = fields.iter().map(MsgField::emit_method_field_assoc_type);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
-        let bracketed_generics = emit_bracketed_generics(associated_name);
 
         quote! {
             fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                let query = <Api #bracketed_generics as sylvia::types::InterfaceApi>::Query:: #variant_name (#(#fields_names),*);
+                let query = <#sylvia ::types::ContractMessagesApi<Contract> as InterfaceApi>::Query:: #variant_name (#(#fields_names),*);
                 self.querier().query_wasm_smart(self.contract(), &query)
             }
         }
@@ -958,9 +956,16 @@ impl<'a> GlueMessage<'a> {
             .collect();
 
         let full_where_clause = &source.generics.where_clause;
-        let wrapper_predicates = filter_wheres(full_where_clause, &generics, &wrapper_generics);
-        let wrapper_where_clause = if !wrapper_predicates.is_empty() {
-            quote! { where #(#wrapper_predicates,)* }
+        // let wrapper_predicates = filter_wheres(full_where_clause, &generics, &wrapper_generics);
+        // let wrapper_where_clause = if !wrapper_predicates.is_empty() {
+        //     quote! { where #(#wrapper_predicates,)* }
+        // } else {
+        //     quote! {}
+        // };
+
+        let interfaces_traits = interfaces.emit_trait_paths();
+        let wrapper_where_clause = if !interfaces_traits.is_empty() {
+            quote! { where #(Contract: #interfaces_traits ::sv::InterfaceApi,)* }
         } else {
             quote! {}
         };
@@ -1016,7 +1021,7 @@ impl<'a> GlueMessage<'a> {
             MsgType::Query => {
                 quote! {
                     #[cfg(not(target_arch = "wasm32"))]
-                    impl #bracketed_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+                    impl<Contract: #sylvia ::cw_std::CustomMsg> #sylvia ::cw_schema::QueryResponses for #contract_enum_name <Contract> #wrapper_where_clause {
                         fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                             let responses = [#(#response_schemas_calls),*];
                             responses.into_iter().flatten().collect()
@@ -1033,17 +1038,18 @@ impl<'a> GlueMessage<'a> {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case", untagged)]
-            pub enum #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+            pub enum #contract_enum_name <Contract> #wrapper_where_clause {
                 #(#variants,)*
                 #contract_variant
             }
 
-            impl #bracketed_wrapper_generics #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+            impl<Contract> #contract_enum_name <Contract> #wrapper_where_clause {
                 pub fn dispatch #unused_generics (
                     self,
                     contract: &#contract,
                     ctx: #ctx_type,
                 ) -> #ret_type #full_where_clause {
+
                     const _: () = {
                         let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                         #sylvia ::utils::assert_no_intersection(msgs);
@@ -1058,7 +1064,7 @@ impl<'a> GlueMessage<'a> {
 
             #response_schemas
 
-            impl<'de, #(#wrapper_generics,)* > serde::Deserialize<'de> for #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
+            impl<'de, Contract > serde::Deserialize<'de> for #contract_enum_name <Contract> #wrapper_where_clause {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                     where D: serde::Deserializer<'de>,
                 {
@@ -1226,9 +1232,9 @@ impl<'a> ContractApi<'a> {
 
         quote! {
             impl #bracket_generics #sylvia ::types::ContractApi for #contract_name #where_clause {
-                type ContractExec = ContractExecMsg #contract_exec_bracketed_generics;
-                type ContractQuery = ContractQueryMsg #contract_query_bracketed_generics;
-                type ContractSudo = ContractSudoMsg #contract_sudo_bracketed_generics;
+                type ContractExec = ContractExecMsg<#sylvia ::types::ContractMessagesApi<Self>>;
+                type ContractQuery = ContractQueryMsg<#sylvia ::types::ContractMessagesApi<Self>>;
+                type ContractSudo = ContractSudoMsg<#sylvia ::types::ContractMessagesApi<Self>>;
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
                 type Sudo = SudoMsg #sudo_bracketed_generics;
@@ -1291,35 +1297,38 @@ impl<'a> InterfaceApi<'a> {
             &source.generics.where_clause,
         );
 
-        let where_clause = &self.associated_types.as_where_clause();
         let custom_query = custom.query_or_default();
         let exec_generics = &exec_variants.used_generics;
         let query_generics = &query_variants.used_generics;
         let sudo_generics = &sudo_variants.used_generics;
 
-        let bracket_generics = emit_bracketed_generics(&generics);
-        let exec_bracketed_generics = emit_bracketed_generics(exec_generics);
-        let query_bracketed_generics = emit_bracketed_generics(query_generics);
-        let sudo_bracketed_generics = emit_bracketed_generics(sudo_generics);
-
-        let phantom = if !generics.is_empty() {
-            quote! {
-                _phantom: std::marker::PhantomData<( #(#generics,)* )>,
-            }
-        } else {
-            quote! {}
+        let interface_name = &source.ident;
+        let exec_bracketed_generics = match exec_generics.is_empty() {
+            true => quote! {},
+            false => quote! { < #(<Contract as #interface_name >:: #exec_generics,)* > },
+        };
+        let query_bracketed_generics = match query_generics.is_empty() {
+            true => quote! {},
+            false => quote! { < #(<Contract as #interface_name >:: #query_generics,)* > },
+        };
+        let sudo_bracketed_generics = match sudo_generics.is_empty() {
+            true => quote! {},
+            false => quote! { < #(<Contract as #interface_name >:: #sudo_generics ,)* > },
         };
 
         quote! {
-            pub struct Api #bracket_generics {
-                #phantom
+            pub trait InterfaceApi {
+                type Exec;
+                type Query;
+                type Sudo;
+                type Querier<'querier>;
             }
 
-            impl #bracket_generics #sylvia ::types::InterfaceApi for Api #bracket_generics #where_clause {
+            impl<Contract: #interface_name> InterfaceApi for #sylvia ::types::ContractMessagesApi<Contract> {
                 type Exec = ExecMsg #exec_bracketed_generics;
                 type Query = QueryMsg #query_bracketed_generics;
-                type Sudo = SudoMsg #sudo_bracketed_generics;
-                type Querier<'querier, Contract> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Contract >;
+                type Sudo = SudoMsg #sudo_bracketed_generics ;
+                type Querier<'querier> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Contract >;
             }
         }
     }

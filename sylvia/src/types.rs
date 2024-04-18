@@ -364,6 +364,9 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for SudoCtx<'
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ContractMessagesApi<C>(std::marker::PhantomData<C>);
+
 /// Set of trait bounds for custom messages.
 pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
 
@@ -373,14 +376,6 @@ impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
 pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
 impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
-
-/// Api trait for easier access to generated types and messages.
-pub trait InterfaceApi {
-    type Exec;
-    type Query;
-    type Sudo;
-    type Querier<'querier, Contract>;
-}
 
 /// Api trait for easier access to generated types and messages.
 pub trait ContractApi {

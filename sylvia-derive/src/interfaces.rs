@@ -18,26 +18,22 @@ impl Interfaces {
         Self { interfaces }
     }
 
-    pub fn emit_glue_message_variants(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
+    pub fn emit_trait_paths(&self) -> Vec<TokenStream> {
+        self.interfaces
+            .iter()
+            .map(|ContractMessageAttr { module, .. }| quote! { #module })
+            .collect()
+    }
 
+    pub fn emit_glue_message_variants(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module,
-                    variant,
-                    generics,
-                    ..
+                    module, variant, ..
                 } = interface;
 
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
-                let interface_enum =
-                    quote! { <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> };
+                let interface_enum = quote! { <Contract as #module ::sv::InterfaceApi> };
                 let type_name = msg_ty.as_accessor_name();
 
                 quote! { #variant ( #interface_enum :: #type_name) }
@@ -84,24 +80,16 @@ impl Interfaces {
     }
 
     pub fn emit_response_schemas_calls(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module, generics, ..
+                    module, ..
                 } = interface;
-
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
 
                 let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> :: #type_name :: response_schemas_impl()
+                    <Contract as #module ::sv::InterfaceApi> :: #type_name :: response_schemas_impl()
                 }
             })
             .collect()
