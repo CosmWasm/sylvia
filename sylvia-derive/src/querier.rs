@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{GenericParam, Ident, ItemImpl};
@@ -5,8 +6,9 @@ use syn::{GenericParam, Ident, ItemImpl};
 use crate::associated_types::{AssociatedTypes, EmitAssociated, ItemType};
 use crate::check_generics::GetPath;
 use crate::crate_module;
-use crate::message::MsgVariants;
+use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
+use crate::utils::emit_bracketed_generics;
 use crate::variant_descs::AsVariantDescs;
 
 pub struct TraitQuerier<'a, Generic> {
@@ -43,17 +45,19 @@ where
             .without_special()
             .map(ItemType::as_name)
             .collect();
-
         let all_generics: Vec<_> = associated_types.all_names().collect();
-
-        let assoc_types: Vec<_> = associated_types
-            .without_special()
-            .map(ItemType::as_name)
+        let assoc_types: Vec<_> = generics
+            .iter()
             .map(|assoc| quote! {Self:: #assoc})
             .collect();
+        let bracketed_generics = emit_bracketed_generics(&assoc_types);
+        let accessor = MsgType::Query.as_accessor_name();
+        let api_path =
+            quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
+
         let methods_trait_impl = variants
             .variants()
-            .map(|variant| variant.emit_trait_querier_impl(&assoc_types))
+            .map(|variant| variant.emit_querier_impl(&api_path))
             .collect::<Vec<_>>();
 
         let methods_declaration = variants
@@ -110,7 +114,7 @@ impl<'a> ContractQuerier<'a> {
         let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
         let methods_impl = variants
             .variants()
-            .map(|variant| variant.emit_querier_impl::<GenericParam>(&api_path));
+            .map(|variant| variant.emit_querier_impl(&api_path));
 
         let methods_declaration = variants
             .variants()
@@ -146,6 +150,47 @@ impl<'a> ContractQuerier<'a> {
 
                 #(#methods_impl)*
             }
+        }
+    }
+}
+
+trait EmitMethod {
+    fn emit_querier_impl(&self, api_path: &TokenStream) -> TokenStream;
+    fn emit_querier_declaration(&self) -> TokenStream;
+}
+
+impl EmitMethod for MsgVariant<'_> {
+    fn emit_querier_impl(&self, api_path: &TokenStream) -> TokenStream {
+        let sylvia = crate_module();
+        let name = self.name();
+        let fields = self.fields();
+        let return_type = self.return_type();
+
+        let parameters = fields.iter().map(MsgField::emit_method_field_folded);
+        let fields_names = fields.iter().map(MsgField::name);
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
+                let query = #api_path :: #variant_name (#(#fields_names),*);
+                self.querier().query_wasm_smart(self.contract(), &query)
+            }
+        }
+    }
+
+    fn emit_querier_declaration(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let name = self.name();
+        let return_type = self.return_type();
+
+        let parameters = self
+            .fields()
+            .iter()
+            .map(|field| field.emit_method_field_folded());
+        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+
+        quote! {
+            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
         }
     }
 }
