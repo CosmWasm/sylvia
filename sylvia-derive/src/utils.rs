@@ -1,11 +1,12 @@
+use convert_case::Casing;
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, GenericParam, Path, PathArguments, ReturnType, Signature,
-    Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, GenericParam, Ident, Path, PathArguments, ReturnType,
+    Signature, Type, WhereClause, WherePredicate,
 };
 
 use crate::check_generics::{CheckGenerics, GetPath};
@@ -123,5 +124,16 @@ pub fn emit_bracketed_generics<GenericT: ToTokens>(unbonded_generics: &[GenericT
     match unbonded_generics.is_empty() {
         true => quote! {},
         false => quote! { < #(#unbonded_generics,)* > },
+    }
+}
+
+pub trait SvCasing {
+    fn to_case(&self, case: convert_case::Case) -> Self;
+}
+
+impl SvCasing for Ident {
+    fn to_case(&self, case: convert_case::Case) -> Ident {
+        let new_name = &self.to_string().to_case(case);
+        Ident::new(new_name, self.span())
     }
 }

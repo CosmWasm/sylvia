@@ -10,7 +10,7 @@ use crate::strip_generics::StripGenerics;
 use crate::strip_self_path::StripSelfPath;
 use crate::utils::{
     as_where_clause, emit_bracketed_generics, extract_return_type, filter_generics, filter_wheres,
-    process_fields,
+    process_fields, SvCasing,
 };
 use crate::variant_descs::{AsVariantDescs, VariantDescs};
 use convert_case::{Case, Casing};
@@ -424,10 +424,7 @@ impl<'a> MsgVariant<'a> {
     {
         let function_name = &sig.ident;
 
-        let name = Ident::new(
-            &function_name.to_string().to_case(Case::UpperCamel),
-            function_name.span(),
-        );
+        let name = function_name.to_case(Case::UpperCamel);
         let fields = process_fields(sig, generics_checker);
         let msg_type = msg_attr.msg_type();
 
@@ -515,8 +512,7 @@ impl<'a> MsgVariant<'a> {
     pub fn emit_variants_constructors(&self) -> TokenStream {
         let Self { name, fields, .. } = self;
 
-        let method_name = name.to_string().to_case(Case::Snake);
-        let method_name = Ident::new(&method_name, name.span());
+        let method_name = name.to_case(Case::Snake);
         let parameters = fields.iter().map(MsgField::emit_method_field);
         let arguments = fields.iter().map(MsgField::name);
 

@@ -1,4 +1,4 @@
-use convert_case::{Case, Casing};
+use convert_case::Case;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::{parse_quote, GenericParam, ItemImpl, ItemTrait, TraitItem, Type};
@@ -10,7 +10,7 @@ use crate::parser::attributes::msg::MsgType;
 use crate::parser::{
     Custom, FilteredOverrideEntryPoints, OverrideEntryPoint, ParsedSylviaAttributes,
 };
-use crate::utils::emit_bracketed_generics;
+use crate::utils::{emit_bracketed_generics, SvCasing};
 use crate::variant_descs::AsVariantDescs;
 
 fn get_ident_from_type(contract_name: &Type) -> &Ident {
@@ -486,11 +486,7 @@ impl<'a> ContractMtHelpers<'a> {
                 .get_only_variant()
                 .as_ref()
                 .map(|reply| {
-                    let reply_name = reply.name();
-                    let reply_name = Ident::new(
-                        &reply_name.to_string().to_case(Case::Snake),
-                        reply_name.span(),
-                    );
+                    let reply_name = reply.name().to_case(Case::Snake);
                     quote! {
                         self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
                     }
@@ -777,7 +773,7 @@ impl EmitMethods for MsgVariant<'_> {
             .collect();
         let arguments = self.as_fields_names();
         let type_name = self.msg_type().as_accessor_name();
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let name = name.to_case(Case::Snake);
 
         match self.msg_type() {
             MsgType::Exec => quote! {
@@ -839,7 +835,7 @@ impl EmitMethods for MsgVariant<'_> {
             .map(|field| field.emit_method_field_folded())
             .collect();
         let type_name = self.msg_type().as_accessor_name();
-        let name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let name = name.to_case(Case::Snake);
 
         match self.msg_type() {
             MsgType::Exec => quote! {
