@@ -1,4 +1,4 @@
-use convert_case::{Case, Casing};
+use convert_case::Case;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{GenericParam, Ident, ItemImpl};
@@ -8,7 +8,7 @@ use crate::check_generics::GetPath;
 use crate::crate_module;
 use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
-use crate::utils::emit_bracketed_generics;
+use crate::utils::{emit_bracketed_generics, SvCasing};
 use crate::variant_descs::AsVariantDescs;
 
 pub struct TraitQuerier<'a, Generic> {
@@ -168,7 +168,7 @@ impl EmitMethod for MsgVariant<'_> {
 
         let parameters = fields.iter().map(MsgField::emit_method_field_folded);
         let fields_names = fields.iter().map(MsgField::name);
-        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let variant_name = name.to_case(Case::Snake);
 
         quote! {
             fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
@@ -187,7 +187,7 @@ impl EmitMethod for MsgVariant<'_> {
             .fields()
             .iter()
             .map(|field| field.emit_method_field_folded());
-        let variant_name = Ident::new(&name.to_string().to_case(Case::Snake), name.span());
+        let variant_name = name.to_case(Case::Snake);
 
         quote! {
             fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
