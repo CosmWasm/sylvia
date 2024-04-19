@@ -170,7 +170,9 @@ impl<'a> ContractMtHelpers<'a> {
             .as_ref()
             .map(|where_clause| &where_clause.predicates);
 
-        let contract_block = self.generate_contract_helpers();
+        let impl_contract = self.emit_impl_contract();
+        let code_id = self.emit_code_id();
+        let instantiate_proxy = self.emit_instantiate_proxy();
 
         let contract = get_ident_from_type(contract_name);
         let trait_name = Ident::new(&format!("{}Proxy", contract), contract.span());
@@ -213,15 +215,18 @@ impl<'a> ContractMtHelpers<'a> {
                     #( #sudo_methods )*
                 }
 
-                #contract_block
+                #impl_contract
+
+                #code_id
+
+                #instantiate_proxy
             }
         }
     }
 
-    fn generate_contract_helpers(&self) -> TokenStream {
+    fn emit_code_id(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
-            error_type,
             generic_params,
             where_clause,
             contract_name,
@@ -240,7 +245,6 @@ impl<'a> ContractMtHelpers<'a> {
             .unwrap_or(vec![]);
 
         let used_generics = instantiate_variants.used_generics();
-        let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let where_predicates = where_clause
             .as_ref()
@@ -259,8 +263,6 @@ impl<'a> ContractMtHelpers<'a> {
             quote! { InstantiateMsg }
         };
 
-        let impl_contract = self.generate_impl_contract();
-
         let custom_msg = self.custom.msg_or_default();
         let custom_query = self.custom.query_or_default();
 
@@ -278,42 +280,6 @@ impl<'a> ContractMtHelpers<'a> {
             >
         };
 
-        let instantiate2 = if cfg!(feature = "cosmwasm_1_2") {
-            quote! {
-                let msg = #sylvia ::cw_std::to_json_binary(&msg)
-                    .map_err(Into::< #error_type >::into)?;
-                let sender = #sylvia ::cw_std::Addr::unchecked(sender);
-
-                let msg = #sylvia ::cw_std::WasmMsg::Instantiate2 {
-                    admin,
-                    code_id: code_id.code_id,
-                    msg,
-                    funds: funds.to_owned(),
-                    label: label.to_owned(),
-                    salt: salt.into(),
-                };
-                let app_response = (*code_id.app)
-                    .app_mut()
-                    .execute(sender.clone(), msg.into())
-                    .map_err(|err| err.downcast::< #error_type >().unwrap())?;
-
-                #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
-                    .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
-                    .map(|data| #sylvia ::multitest::Proxy {
-                        contract_addr: #sylvia ::cw_std::Addr::unchecked(data.contract_address),
-                        app: code_id.app,
-                        _phantom: std::marker::PhantomData::default(),
-                    })
-            }
-        } else {
-            quote! {
-                let err = #sylvia ::cw_std::StdError::generic_err(
-                    "`with_salt` was called, but it requires `cosmwasm_1_2` feature enabled. Consider removing `with_salt` or adding the `cosmwasm_1_2` feature."
-                );
-                Err(Into::into(err))
-            }
-        };
-
         let code_info = if cfg!(feature = "cosmwasm_1_2") {
             quote! {
                 pub fn code_info(&self) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::CodeInfoResponse> {
@@ -325,8 +291,6 @@ impl<'a> ContractMtHelpers<'a> {
         };
 
         quote! {
-            #impl_contract
-
             pub struct CodeId<'app, #(#generic_params,)* MtApp> {
                 code_id: u64,
                 app: &'app #sylvia ::multitest::App<MtApp>,
@@ -373,7 +337,32 @@ impl<'a> ContractMtHelpers<'a> {
                     }
                 }
             }
+        }
+    }
 
+    fn emit_instantiate_proxy(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            error_type,
+            generic_params,
+            where_clause,
+            contract_name,
+            instantiate_variants,
+            ..
+        } = self;
+
+        let used_generics = instantiate_variants.used_generics();
+        let bracketed_used_generics = emit_bracketed_generics(used_generics);
+
+        let where_predicates = where_clause
+            .as_ref()
+            .map(|where_clause| &where_clause.predicates);
+
+        let custom_msg = self.custom.msg_or_default();
+
+        let instantiate2_body = self.emit_instantiate2_body();
+
+        quote! {
             pub struct InstantiateProxy<'proxy, 'app, #(#generic_params,)* MtApp> {
                 code_id: &'proxy CodeId <'app, #(#generic_params,)* MtApp>,
                 funds: &'proxy [#sylvia ::cw_std::Coin],
@@ -412,7 +401,7 @@ impl<'a> ContractMtHelpers<'a> {
 
                     match salt {
                         Some(salt) => {
-                            #instantiate2
+                            #instantiate2_body
                         },
                         None => (*code_id.app)
                             .app_mut()
@@ -436,7 +425,48 @@ impl<'a> ContractMtHelpers<'a> {
         }
     }
 
-    fn generate_impl_contract(&self) -> TokenStream {
+    fn emit_instantiate2_body(&self) -> TokenStream {
+        let Self { error_type, .. } = self;
+        let sylvia = crate_module();
+
+        if cfg!(feature = "cosmwasm_1_2") {
+            quote! {
+                let msg = #sylvia ::cw_std::to_json_binary(&msg)
+                    .map_err(Into::< #error_type >::into)?;
+                let sender = #sylvia ::cw_std::Addr::unchecked(sender);
+
+                let msg = #sylvia ::cw_std::WasmMsg::Instantiate2 {
+                    admin,
+                    code_id: code_id.code_id,
+                    msg,
+                    funds: funds.to_owned(),
+                    label: label.to_owned(),
+                    salt: salt.into(),
+                };
+                let app_response = (*code_id.app)
+                    .app_mut()
+                    .execute(sender.clone(), msg.into())
+                    .map_err(|err| err.downcast::< #error_type >().unwrap())?;
+
+                #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
+                    .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
+                    .map(|data| #sylvia ::multitest::Proxy {
+                        contract_addr: #sylvia ::cw_std::Addr::unchecked(data.contract_address),
+                        app: code_id.app,
+                        _phantom: std::marker::PhantomData::default(),
+                    })
+            }
+        } else {
+            quote! {
+                let err = #sylvia ::cw_std::StdError::generic_err(
+                    "`with_salt` was called, but it requires `cosmwasm_1_2` feature enabled. Consider removing `with_salt` or adding the `cosmwasm_1_2` feature."
+                );
+                Err(Into::into(err))
+            }
+        }
+    }
+
+    fn emit_impl_contract(&self) -> TokenStream {
         let Self {
             source,
             contract_name,
@@ -503,15 +533,15 @@ impl<'a> ContractMtHelpers<'a> {
 
         quote! {
             impl #bracketed_generics #sylvia ::cw_multi_test::Contract<#custom_msg, #custom_query> for #contract_name #full_where_clause {
-                    fn execute(
-                        &self,
-                        deps: #sylvia ::cw_std::DepsMut< #custom_query >,
-                        env: #sylvia ::cw_std::Env,
-                        info: #sylvia ::cw_std::MessageInfo,
-                        msg: Vec<u8>,
-                    ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
-                        #exec_body
-                    }
+                fn execute(
+                    &self,
+                    deps: #sylvia ::cw_std::DepsMut< #custom_query >,
+                    env: #sylvia ::cw_std::Env,
+                    info: #sylvia ::cw_std::MessageInfo,
+                    msg: Vec<u8>,
+                ) -> #sylvia ::anyhow::Result<#sylvia ::cw_std::Response<#custom_msg>> {
+                    #exec_body
+                }
 
                 fn instantiate(
                     &self,
