@@ -142,14 +142,7 @@ impl<'a> TraitInput<'a> {
             where_clause,
         );
 
-        EnumMessage::new(
-            self.item,
-            msg_ty,
-            &self.custom,
-            variants,
-            &self.associated_types,
-        )
-        .emit()
+        EnumMessage::new(self.item, msg_ty, &self.custom, variants).emit()
     }
 
     fn emit_multitest_helpers(&self) -> TokenStream {

@@ -181,7 +181,6 @@ impl<'a> StructMessage<'a> {
 pub struct EnumMessage<'a> {
     source: &'a ItemTrait,
     variants: MsgVariants<'a, Ident>,
-    associated_types: &'a AssociatedTypes<'a>,
     msg_ty: MsgType,
     resp_type: Type,
     query_type: Type,
@@ -193,7 +192,6 @@ impl<'a> EnumMessage<'a> {
         msg_ty: MsgType,
         custom: &'a Custom,
         variants: MsgVariants<'a, Ident>,
-        associated_types: &'a AssociatedTypes<'a>,
     ) -> Self {
         let associated_exec = parse_associated_custom_type(source, EXEC_TYPE);
         let associated_query = parse_associated_custom_type(source, QUERY_TYPE);
@@ -213,7 +211,6 @@ impl<'a> EnumMessage<'a> {
         Self {
             source,
             variants,
-            associated_types,
             msg_ty,
             resp_type,
             query_type,
@@ -224,7 +221,6 @@ impl<'a> EnumMessage<'a> {
         let Self {
             source,
             variants,
-            associated_types,
             msg_ty,
             resp_type,
             query_type,
@@ -246,16 +242,16 @@ impl<'a> EnumMessage<'a> {
         let dispatch_type = msg_ty.emit_result_type(resp_type, &parse_quote!(ContractT::Error));
 
         let used_generics = variants.used_generics();
-        let unused_generics = variants.unused_generics();
-        let where_predicates = associated_types
-            .without_error()
-            .map(ItemType::as_where_predicate);
         let where_clause = variants.where_clause();
-        let contract_predicate = associated_types.emit_contract_predicate(trait_name);
 
         let phantom_variant = variants.emit_phantom_variant();
         let phatom_match_arm = variants.emit_phantom_match_arm();
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
+        let bracketed_used_assocs = if !used_generics.is_empty() {
+            quote! { <  #(#used_generics = #used_generics, )* > }
+        } else {
+            quote! {}
+        };
 
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), enum_name.span());
@@ -270,13 +266,11 @@ impl<'a> EnumMessage<'a> {
                 #phantom_variant
             }
             pub type #enum_name #bracketed_used_generics = #unique_enum_name #bracketed_used_generics;
-
             impl #bracketed_used_generics #unique_enum_name #bracketed_used_generics #where_clause {
-                pub fn dispatch<ContractT, #(#unused_generics,)*>(self, contract: &ContractT, ctx: #ctx_type)
+                pub fn dispatch<ContractT>(self, contract: &ContractT, ctx: #ctx_type)
                     -> #dispatch_type
                 where
-                    #(#where_predicates,)*
-                    #contract_predicate
+                    ContractT: #trait_name #bracketed_used_assocs
                 {
                     use #unique_enum_name::*;
 

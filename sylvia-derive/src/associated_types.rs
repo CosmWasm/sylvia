@@ -70,22 +70,6 @@ impl<'a> AssociatedTypes<'a> {
         self.filtered().map(|associated| &associated.ident)
     }
 
-    pub fn emit_contract_predicate(&self, trait_name: &Ident) -> TokenStream {
-        let predicate = quote! { ContractT: #trait_name };
-        if self.0.is_empty() {
-            return predicate;
-        }
-
-        let bounds = self.without_error().map(|associated| {
-            let name = &associated.ident;
-            quote! { #name = #name }
-        });
-
-        quote! {
-            #predicate < #(#bounds,)* >
-        }
-    }
-
     pub fn filtered(&self) -> impl Iterator<Item = &TraitItemType> {
         self.0
             .iter()
