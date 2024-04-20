@@ -3,7 +3,7 @@ use generic::Generic;
 use serde::Deserialize;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx};
 
-use crate::contract::SvCustomMsg;
+use crate::contract::{GenericContract, SvCustomMsg};
 
 impl<
         InstantiateT,
@@ -19,7 +19,7 @@ impl<
         MigrateT,
         FieldT,
     > Generic
-    for crate::contract::GenericContract<
+    for GenericContract<
         InstantiateT,
         Exec1T,
         Exec2T,
@@ -117,7 +117,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::contract::sv::mt::CodeId;
-    use crate::contract::{SvCustomMsg, SvCustomQuery};
+    use crate::contract::{GenericContract, SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::CosmosMsg;
     use cw_multi_test::IntoBech32;
     use generic::sv::mt::GenericProxy;
@@ -128,18 +128,20 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         #[allow(clippy::type_complexity)]
         let code_id: CodeId<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            String,
+            GenericContract<
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                String,
+            >,
             _,
         > = CodeId::store_code(&app);
 

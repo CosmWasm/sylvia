@@ -22,7 +22,7 @@ pub struct Cw1WhitelistContract<'a> {
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl Cw1WhitelistContract<'_> {
+impl<'a> Cw1WhitelistContract<'a> {
     pub const fn new() -> Self {
         Self {
             admins: Map::new("admins"),

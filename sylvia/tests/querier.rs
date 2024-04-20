@@ -95,7 +95,7 @@ pub struct CounterContract<'a> {
 
 #[contract]
 #[sv::messages(counter)]
-impl CounterContract<'_> {
+impl<'asdf> CounterContract<'asdf> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {

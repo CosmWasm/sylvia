@@ -140,6 +140,14 @@ impl<'a> ContractMtHelpers<'a> {
         };
         let api = quote! { < #contract_name as #sylvia ::types::ContractApi> };
 
+        let contract_ident = get_ident_from_type(contract_name);
+        let contract: Type = if !generic_params.is_empty() {
+            parse_quote! { #contract_ident ::< #(#generic_params,)* > }
+        } else {
+            parse_quote! { #contract_ident }
+        };
+        let trait_name = Ident::new(&format!("{}Proxy", contract_ident), contract_ident.span());
+
         let exec_methods = exec_variants.variants().map(|variant| {
             variant.emit_mt_method_definition(&custom_msg, &mt_app, error_type, &api)
         });
@@ -172,17 +180,14 @@ impl<'a> ContractMtHelpers<'a> {
 
         let impl_contract = self.emit_impl_contract();
         let code_id = self.emit_code_id();
-        let instantiate_proxy = self.emit_instantiate_proxy();
-
-        let contract = get_ident_from_type(contract_name);
-        let trait_name = Ident::new(&format!("{}Proxy", contract), contract.span());
+        let instantiate_proxy = self.emit_instantiate_proxy(&contract);
 
         quote! {
             pub mod mt {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
 
-                pub trait #trait_name <'app, MtApp, #(#generic_params,)* >
+                pub trait #trait_name <'app, #(#generic_params,)* MtApp >
                     #where_clause
                 {
                     #( #exec_methods_declarations )*
@@ -191,8 +196,8 @@ impl<'a> ContractMtHelpers<'a> {
                     #( #sudo_methods_declarations )*
                 }
 
-                impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
-                    #trait_name <'app, #mt_app, #(#generic_params,)* >
+                impl<'app, #(#generic_params,)* BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT >
+                    #trait_name <'app, #(#generic_params,)* #mt_app >
                         for #sylvia ::multitest::Proxy <'app, #mt_app, #contract_name >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
@@ -234,6 +239,15 @@ impl<'a> ContractMtHelpers<'a> {
             ..
         } = self;
 
+        let generic_params_lifetimes_replaced =
+            generic_params.iter().cloned().cloned().map(|generic| {
+                if let GenericParam::Lifetime(_) = generic {
+                    parse_quote! { '_ }
+                } else {
+                    generic
+                }
+            });
+
         let fields_names = instantiate_variants
             .get_only_variant()
             .map(MsgVariant::as_fields_names)
@@ -250,11 +264,11 @@ impl<'a> ContractMtHelpers<'a> {
             .as_ref()
             .map(|where_clause| &where_clause.predicates);
 
-        let contract = get_ident_from_type(contract_name);
+        let contract_ident = get_ident_from_type(contract_name);
         let contract = if !generic_params.is_empty() {
-            quote! { #contract ::< #(#generic_params,)* > }
+            quote! { #contract_ident ::< #(#generic_params,)* > }
         } else {
-            quote! { #contract }
+            quote! { #contract_ident }
         };
 
         let instantiate_msg = if !used_generics.is_empty() {
@@ -291,14 +305,14 @@ impl<'a> ContractMtHelpers<'a> {
         };
 
         quote! {
-            pub struct CodeId<'app, #(#generic_params,)* MtApp> {
+            pub struct CodeId<'app, Contract, MtApp> {
                 code_id: u64,
                 app: &'app #sylvia ::multitest::App<MtApp>,
-                _phantom: std::marker::PhantomData<( #(#generic_params,)* )>,
+                _phantom: std::marker::PhantomData<Contract>,
 
             }
 
-            impl<'app, BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* > CodeId<'app, #(#generic_params,)* #mt_app >
+            impl<'app, #(#generic_params,)* BankT, ApiT, StorageT, CustomT, StakingT, DistrT, IbcT, GovT > CodeId<'app, #contract, #mt_app >
                 where
                     BankT: #sylvia ::cw_multi_test::Bank,
                     ApiT: #sylvia ::cw_std::Api,
@@ -313,7 +327,7 @@ impl<'a> ContractMtHelpers<'a> {
                 pub fn store_code(app: &'app #sylvia ::multitest::App< #mt_app >) -> Self {
                     let code_id = app
                         .app_mut()
-                        .store_code(Box::new(#contract ::new()));
+                        .store_code(Box::new( #contract_ident:: < #(#generic_params_lifetimes_replaced),* > ::new() ));
                     Self { code_id, app, _phantom: std::marker::PhantomData::default() }
                 }
 
@@ -327,7 +341,7 @@ impl<'a> ContractMtHelpers<'a> {
                     &self, #(#fields,)*
                 ) -> InstantiateProxy<'_, 'app, #(#generic_params,)* #mt_app > {
                     let msg = #instantiate_msg {#(#fields_names,)*};
-                    InstantiateProxy::< #(#generic_params,)* _> {
+                    InstantiateProxy::<'_, 'app, #(#generic_params,)* _> {
                         code_id: self,
                         funds: &[],
                         label: "Contract",
@@ -340,7 +354,7 @@ impl<'a> ContractMtHelpers<'a> {
         }
     }
 
-    fn emit_instantiate_proxy(&self) -> TokenStream {
+    fn emit_instantiate_proxy(&self, contract: &Type) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             error_type,
@@ -364,7 +378,7 @@ impl<'a> ContractMtHelpers<'a> {
 
         quote! {
             pub struct InstantiateProxy<'proxy, 'app, #(#generic_params,)* MtApp> {
-                code_id: &'proxy CodeId <'app, #(#generic_params,)* MtApp>,
+                code_id: &'proxy CodeId <'app, #contract, MtApp>,
                 funds: &'proxy [#sylvia ::cw_std::Coin],
                 label: &'proxy str,
                 admin: Option<String>,
@@ -385,7 +399,7 @@ impl<'a> ContractMtHelpers<'a> {
                     Self { label, ..self }
                 }
 
-                pub fn with_admin<'s>(self, admin: impl Into<Option<&'s str>>) -> Self {
+                pub fn with_admin<'sv_admins_lifetime>(self, admin: impl Into<Option<&'sv_admins_lifetime str>>) -> Self {
                     let admin = admin.into().map(str::to_owned);
                     Self { admin, ..self }
                 }

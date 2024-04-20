@@ -89,7 +89,7 @@ mod tests {
             SvCustomMsg
         );
 
-        let _: crate::sv::ContractExecMsg<SvCustomMsg> = <SomeContract<
+        let _: crate::sv::ContractExecMsg<_, _, _, _, _> = <SomeContract<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -99,7 +99,7 @@ mod tests {
             exec
         );
 
-        let _: crate::sv::ContractQueryMsg<SvCustomMsg> = <SomeContract<
+        let _: crate::sv::ContractQueryMsg<_, _, _, _, _> = <SomeContract<
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,

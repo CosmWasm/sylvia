@@ -7,7 +7,7 @@ fn main() {
 
     write_api! {
         instantiate: InstantiateMsg<SvCustomMsg>,
-        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg>,
-        query: ContractQueryMsg<SvCustomMsg>,
+        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,>,
+        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,>,
     }
 }

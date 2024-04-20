@@ -200,14 +200,13 @@ impl<'a> ImplInput<'a> {
             item,
             generics,
             custom,
-            interfaces,
             ..
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
 
         let querier = ContractQuerier::new(item).emit();
         let messages = self.emit_messages();
-        let contract_api = ContractApi::new(item, generics, custom, interfaces).emit();
+        let contract_api = ContractApi::new(item, generics, custom).emit();
 
         quote! {
             pub mod sv {
@@ -264,16 +263,12 @@ impl<'a> ImplInput<'a> {
     }
 
     fn emit_glue_msg(&self, msg_ty: MsgType) -> TokenStream {
-        let Self { generics, item, .. } = self;
-        let where_clause = &item.generics.where_clause;
-        let variants = MsgVariants::new(item.as_variants(), msg_ty, generics, where_clause);
         GlueMessage::new(
             self.item,
             msg_ty,
             &self.error,
             &self.custom,
             &self.interfaces,
-            variants,
         )
         .emit()
     }

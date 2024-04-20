@@ -78,7 +78,7 @@ pub struct Cw20Base<'a> {
 #[sv::messages(cw20_allowances as Allowances)]
 #[sv::messages(cw20_marketing as Marketing)]
 #[sv::messages(cw20_minting as Minting)]
-impl Cw20Base<'_> {
+impl<'abcd> Cw20Base<'abcd> {
     pub const fn new() -> Self {
         Self {
             token_info: Item::new("token_info"),

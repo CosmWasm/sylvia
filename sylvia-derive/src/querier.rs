@@ -145,7 +145,7 @@ impl<'a> ContractQuerier<'a> {
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#generics,)*> Querier #bracketed_generics for #sylvia ::types::BoundQuerier<'a, C, #contract_name > #where_clause {
+            impl <'sv_querier_lifetime, #(#generics,)* C: #sylvia ::cw_std::CustomQuery> Querier #bracketed_generics for #sylvia ::types::BoundQuerier<'sv_querier_lifetime, C, #contract_name > #where_clause {
                 #(#types_implementation)*
 
                 #(#methods_impl)*

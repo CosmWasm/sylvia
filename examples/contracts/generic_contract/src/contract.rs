@@ -50,8 +50,8 @@ pub struct GenericContract<
 #[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, String>))]
 #[contract]
 #[sv::messages(cw1 as Cw1: custom(msg, query))]
-#[sv::messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[sv::messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
+#[sv::messages(generic as Generic: custom(msg, query))]
+#[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
 impl<
         InstantiateT,
@@ -194,7 +194,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::sv::mt::CodeId;
-    use super::{SvCustomMsg, SvCustomQuery};
+    use super::{GenericContract, SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::GenericContractProxy;
     use cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
@@ -204,18 +204,20 @@ mod tests {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         #[allow(clippy::type_complexity)]
         let code_id: CodeId<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            String,
+            GenericContract<
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                String,
+            >,
             _,
         > = CodeId::store_code(&app);
 

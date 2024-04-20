@@ -5,6 +5,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
 
+use crate::contract::GenericsForwardedContract;
 use crate::error::ContractError;
 
 impl<
@@ -23,7 +24,7 @@ impl<
         CustomQueryT,
         FieldT,
     > Cw1
-    for crate::contract::GenericsForwardedContract<
+    for GenericsForwardedContract<
         InstantiateT,
         Exec1T,
         Exec2T,
@@ -74,7 +75,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::contract::sv::mt::CodeId;
-    use crate::contract::{SvCustomMsg, SvCustomQuery};
+    use crate::contract::{GenericsForwardedContract, SvCustomMsg, SvCustomQuery};
     use cosmwasm_std::{CosmosMsg, Empty};
     use cw1::sv::mt::Cw1Proxy;
     use cw_multi_test::IntoBech32;
@@ -84,20 +85,22 @@ mod tests {
     fn proxy_methods() {
         let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomQuery,
-            String,
+            GenericsForwardedContract<
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomMsg,
+                SvCustomQuery,
+                String,
+            >,
             _,
         >::store_code(&app);
 

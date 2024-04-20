@@ -3,7 +3,7 @@ use cosmwasm_schema::write_api;
 #[cfg(not(tarpaulin_include))]
 fn main() {
     use generics_forwarded::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
-    use generics_forwarded::contract::SvCustomMsg;
+    use generics_forwarded::contract::{SvCustomMsg, SvCustomQuery};
 
     write_api! {
         instantiate: InstantiateMsg<SvCustomMsg>,
@@ -18,7 +18,7 @@ fn main() {
         // This potentially could be done with some type alias, not sure how it would affect the
         // schema.
         // execute: <GenericForwardedContract as ContractApi>::ContractExec,
-        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg>,
-        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg>,
+        execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>,
+        query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>,
     }
 }

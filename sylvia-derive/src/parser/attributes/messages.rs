@@ -105,7 +105,7 @@ impl Parse for ContractMessageAttr {
         if !input.is_empty() {
             emit_error!(input.span(),
                 "Unexpected tokens inside `sv::messages` attribtue.";
-                note = "Maximal supported form of attribute: `#[sv::messages(interface::path<T1, T2> as InterfaceName: custom(msg, query))]`."
+                note = "Maximal supported form of attribute: `#[sv::messages(interface::path as InterfaceName: custom(msg, query))]`."
             )
         }
         Ok(Self {
