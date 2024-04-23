@@ -850,10 +850,7 @@ impl<'a> GlueMessage<'a> {
 
         let generics: Vec<_> = source.generics.params.iter().collect();
         let full_where_clause = &source.generics.where_clause;
-        let bracketed_wrapper_generics = match generics.is_empty() {
-            true => quote! {},
-            false => quote! { < #(#generics,)* > },
-        };
+        let bracketed_wrapper_generics = emit_bracketed_generics(&generics);
 
         let contract_enum_name = msg_ty.emit_msg_wrapper_name();
         let enum_accessor = msg_ty.as_accessor_name();
@@ -941,9 +938,9 @@ impl<'a> GlueMessage<'a> {
                 fn json_schema(
                     gen: &mut #sylvia ::schemars::gen::SchemaGenerator,
                 ) -> #sylvia ::schemars::schema::Schema {
-                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+                    #sylvia ::schemars::schema::Schema::Object( #sylvia ::schemars::schema::SchemaObject {
                         subschemas: Some(
-                            Box::new(schemars::schema::SubschemaValidation {
+                            Box::new( #sylvia ::schemars::schema::SubschemaValidation {
                                 any_of: Some(
                                     <[_]>::into_vec(
                                         Box::new([
@@ -980,9 +977,9 @@ impl<'a> GlueMessage<'a> {
 
             #response_schemas
 
-            impl<'sv_deserializde_lifetime, #(#generics,)* > serde::Deserialize<'sv_deserializde_lifetime> for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
+            impl<'sv_de, #(#generics,)* > serde::Deserialize<'sv_de> for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                    where D: serde::Deserializer<'sv_deserializde_lifetime>,
+                    where D: serde::Deserializer<'sv_de>,
                 {
                     use serde::de::Error;
 
