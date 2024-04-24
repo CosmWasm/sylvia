@@ -4,10 +4,10 @@ exclude = ["examples/*"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.1"
+version = "1.0.2"
 
 [workspace.dependencies]
-sylvia-derive = { version = "1.0.1", path = "sylvia-derive" }
+sylvia-derive = { version = "1.0.2", path = "sylvia-derive" }
 anyhow = "1.0.82"
 cosmwasm-schema = "2.0.2"
 cosmwasm-std = "2.0.2"
