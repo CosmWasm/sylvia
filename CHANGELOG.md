@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.1...sylvia-derive-v1.0.2) - 2024-04-24
+
+### Other
+- Update `cw_multi_test`
+- Split big chunks of code in `sylvia_derive::multitest`
+- Provide `to_case` functionality to `syn::Ident`
+- Remove `stripped_return_type` from `MsgVariant`
+- Remove duplicated `querier` related code from `MsgVariant`
+- Move `Multitest` related `MsgVariant` logic to trait in multitest module
+- Unify MT proxy methods emit
+
 ## [1.0.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.0...sylvia-derive-v1.0.1) - 2024-04-15
 
 ### Added
