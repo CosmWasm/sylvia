@@ -62,7 +62,7 @@ use cosmwasm_std::{CodeInfoResponse, StdResult};
 use cw_multi_test::{
     Bank, BankKeeper, Distribution, DistributionKeeper, Executor, FailingModule, Gov,
     GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, Stargate,
-    StargateFailingModule, Wasm, WasmKeeper,
+    StargateFailing, Wasm, WasmKeeper,
 };
 use derivative::Derivative;
 use serde::Serialize;
@@ -126,7 +126,7 @@ impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
                 DistributionKeeper,
                 IbcFailingModule,
                 GovFailingModule,
-                StargateFailingModule,
+                StargateFailing,
             >,
             &dyn Api,
             &mut dyn Storage,
