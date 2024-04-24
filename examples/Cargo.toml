@@ -28,14 +28,14 @@ edition = "2021"
 
 [workspace.dependencies]
 anyhow = "1.0.81"
-cosmwasm-schema = "2.0.0"
-cosmwasm-std = "2.0.0"
-cw-multi-test = "2.0.0"
+cosmwasm-schema = "2.0.2"
+cosmwasm-std = "2.0.2"
+cw-multi-test = "2.0.1"
 cw-storage-plus = "2.0.0"
 cw-utils = "2.0.0"
 cw2 = "2.0.0"
-getrandom = "0.2.12"
+getrandom = "0.2.14"
 semver = "1.0.22"
-serde = { version = "1.0.197", default-features = false, features = ["derive"] }
-thiserror = "1.0.58"
+serde = { version = "1.0.198", default-features = false, features = ["derive"] }
+thiserror = "1.0.59"
 assert_matches = "1.5.0"
