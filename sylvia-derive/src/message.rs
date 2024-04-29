@@ -610,7 +610,6 @@ impl<'a> MsgVariant<'a> {
         &self,
         msg_ty: &MsgType,
         custom_msg: &Type,
-        mt_app: &Type,
         error_type: &Type,
         generics: &[&Generic],
     ) -> TokenStream
@@ -637,11 +636,11 @@ impl<'a> MsgVariant<'a> {
         match msg_ty {
             MsgType::Exec => quote! {
                 #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #enum_name, MtApp, #custom_msg>;
             },
             MsgType::Migrate => quote! {
                 #[track_caller]
-                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, #mt_app, #custom_msg>;
+                fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::MigrateProxy::< #error_type, #enum_name, MtApp, #custom_msg>;
             },
             MsgType::Query => quote! {
                 fn #name (&self, #(#params,)* ) -> Result<#stripped_return_type, #error_type>;
@@ -940,7 +939,6 @@ where
     pub fn emit_multitest_proxy_methods_declaration(
         &self,
         custom_msg: &Type,
-        mt_app: &Type,
         error_type: &Type,
     ) -> Vec<TokenStream> {
         self.variants
@@ -949,7 +947,6 @@ where
                 variant.emit_multitest_proxy_methods_declaration(
                     &self.msg_ty,
                     custom_msg,
-                    mt_app,
                     error_type,
                     &self.used_generics,
                 )

@@ -1,8 +1,8 @@
 use cosmwasm_std::{CustomMsg, Response, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::contract;
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+use sylvia::{contract, entry_points};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
 pub struct MyMsg;
@@ -201,6 +201,7 @@ mod impl_associated_interface {
     }
 }
 
+#[entry_points]
 #[contract]
 #[sv::messages(some_interface)]
 #[sv::messages(other_interface: custom(msg))]

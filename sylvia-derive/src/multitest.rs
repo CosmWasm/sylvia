@@ -148,23 +148,14 @@ impl<'a> ContractMtHelpers<'a> {
         let migrate_methods =
             migrate_variants.emit_multitest_proxy_methods(&custom_msg, &mt_app, error_type);
 
-        let exec_methods_delcaration = exec_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let query_methods_delcaration = query_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let sudo_methods_delcaration = sudo_variants.emit_multitest_proxy_methods_declaration(
-            &custom_msg,
-            &mt_app,
-            error_type,
-        );
-        let migrate_methods_delcaration = migrate_variants
-            .emit_multitest_proxy_methods_declaration(&custom_msg, &mt_app, error_type);
+        let exec_methods_delcaration =
+            exec_variants.emit_multitest_proxy_methods_declaration(&custom_msg, error_type);
+        let query_methods_delcaration =
+            query_variants.emit_multitest_proxy_methods_declaration(&custom_msg, error_type);
+        let sudo_methods_delcaration =
+            sudo_variants.emit_multitest_proxy_methods_declaration(&custom_msg, error_type);
+        let migrate_methods_delcaration =
+            migrate_variants.emit_multitest_proxy_methods_declaration(&custom_msg, error_type);
 
         let where_predicates = where_clause
             .as_ref()
@@ -180,7 +171,7 @@ impl<'a> ContractMtHelpers<'a> {
                 use super::*;
                 use #sylvia ::cw_multi_test::Executor;
 
-                pub trait #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                pub trait #trait_name <'app, MtApp, #(#generic_params,)* >
                     #where_clause
                 {
                     #( #exec_methods_delcaration )*
@@ -190,7 +181,7 @@ impl<'a> ContractMtHelpers<'a> {
                 }
 
                 impl<'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
-                    #trait_name <'app, BankT, ApiT, StorageT, CustomT, WasmT, StakingT, DistrT, IbcT, GovT, #(#generic_params,)* >
+                    #trait_name <'app, #mt_app , #(#generic_params,)* >
                         for #sylvia ::multitest::Proxy <'app, #mt_app, #contract_name >
                     where
                         CustomT: #sylvia ::cw_multi_test::Module,
