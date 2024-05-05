@@ -154,7 +154,10 @@ impl MsgType {
         let sylvia = crate_module();
         match self {
             MsgType::Query => quote! {
-                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_schema::QueryResponses)]
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_schema::QueryResponses, #sylvia:: cw_orch::QueryFns)]
+            },
+            MsgType::Exec => quote! {
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_orch::ExecuteFns)]
             },
             _ => quote! {
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]

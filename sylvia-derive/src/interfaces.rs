@@ -131,6 +131,41 @@ impl Interfaces {
         }).collect()
     }
 
+    pub fn emit_impl_into_underlying(&self, msg_ty: &MsgType) -> TokenStream {
+        let sylvia = crate_module();
+        let contract_enum_name = msg_ty.emit_msg_wrapper_name();
+
+        self.interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr {
+                    module,
+                    generics,
+                    variant,
+                    ..
+                } = interface;
+
+                let generics = if !generics.is_empty() {
+                    quote! { < #generics > }
+                } else {
+                    quote! {}
+                };
+                let interface_enum =
+                    quote! { <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> };
+                let type_name = msg_ty.as_accessor_name();
+                let whole_type_name = quote! {#interface_enum :: #type_name };
+
+                quote! {
+                    impl From<#whole_type_name> for #contract_enum_name {
+                        fn from(value: #whole_type_name) -> Self {
+                            Self::#variant(value)
+                        }
+                    }
+                }
+            })
+            .collect()
+    }
+
     pub fn as_generic_args(&self) -> Vec<&GenericArgument> {
         self.interfaces
             .iter()

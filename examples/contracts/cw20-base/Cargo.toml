@@ -30,6 +30,7 @@ getrandom = { workspace = true, features = ["js"] }
 semver = { workspace = true }
 serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
+cw-orch = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

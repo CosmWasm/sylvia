@@ -16,6 +16,7 @@ cosmwasm-std = { workspace = true, features = ["staking"] }
 cosmwasm-schema = { workspace = true }
 serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
+cw-orch = { workspace = true }
 cw-utils = { workspace = true }
 
 [dev-dependencies]

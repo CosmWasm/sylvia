@@ -355,7 +355,10 @@ impl<'a> ContractEnumMessage<'a> {
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), &error.error);
 
         let derive_query = match msg_ty {
-            MsgType::Query => quote! { #sylvia ::cw_schema::QueryResponses },
+            MsgType::Query => {
+                quote! { #sylvia ::cw_schema::QueryResponses, #sylvia:: cw_orch::QueryFns }
+            }
+            MsgType::Exec => quote! { #sylvia:: cw_orch::ExecuteFns },
             _ => quote! {},
         };
 
@@ -1276,6 +1279,7 @@ impl<'a> GlueMessage<'a> {
         let variants_cnt = messages_call.len();
 
         let dispatch_arms = interfaces.emit_dispatch_arms(msg_ty);
+        let impl_into_underlying = interfaces.emit_impl_into_underlying(msg_ty);
 
         let dispatch_arm =
             quote! {#contract_enum_name :: #contract_name (msg) => msg.dispatch(contract, ctx)};
@@ -1323,6 +1327,14 @@ impl<'a> GlueMessage<'a> {
             pub enum #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {
                 #(#variants,)*
                 #contract_variant
+            }
+
+            #impl_into_underlying
+
+            impl From<#enum_name #bracketed_used_generics> for #contract_enum_name {
+                fn from(value: #enum_name #bracketed_used_generics) -> Self {
+                    Self::#contract_name(value)
+                }
             }
 
             impl #bracketed_wrapper_generics #contract_enum_name #bracketed_wrapper_generics #wrapper_where_clause {

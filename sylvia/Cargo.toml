@@ -47,6 +47,7 @@ cw-multi-test = { version = "0.20.0", optional = true }
 anyhow = { version = "1.0", optional = true }
 derivative = { version = "2.2.0", optional = true }
 cw-utils = { version = "1.0.2", optional = true }
+cw-orch = { workspace = true }
 
 [dev-dependencies]
 anyhow = "1.0"
