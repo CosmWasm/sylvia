@@ -352,6 +352,7 @@ dependencies = [
 [[package]]
 name = "cw-orch"
 version = "0.22.1"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "anyhow",
  "cosmwasm-std",
@@ -371,6 +372,7 @@ dependencies = [
 [[package]]
 name = "cw-orch-contract-derive"
 version = "0.21.0"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "convert_case",
  "quote",
@@ -380,6 +382,7 @@ dependencies = [
 [[package]]
 name = "cw-orch-core"
 version = "1.0.0"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "abstract-cw-multi-test",
  "anyhow",
@@ -397,6 +400,7 @@ dependencies = [
 [[package]]
 name = "cw-orch-fns-derive"
 version = "0.19.1"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -407,6 +411,7 @@ dependencies = [
 [[package]]
 name = "cw-orch-mock"
 version = "0.22.0"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "abstract-cw-multi-test",
  "cosmwasm-std",
@@ -420,6 +425,7 @@ dependencies = [
 [[package]]
 name = "cw-orch-traits"
 version = "0.22.0"
+source = "git+https://github.com/abstractsdk/cw-orchestrator?branch=update/relax-bound-on-derive#0f35f959913c2289469ec83dc7a225a83f27323a"
 dependencies = [
  "cw-orch-core",
  "prost",

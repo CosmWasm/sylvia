@@ -150,6 +150,20 @@ impl MsgType {
         }
     }
 
+    #[cfg(not(feature = "orch"))]
+    pub fn emit_derive_call(&self) -> TokenStream {
+        let sylvia = crate_module();
+        match self {
+            MsgType::Query => quote! {
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_schema::QueryResponses)]
+            },
+            _ => quote! {
+                #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            },
+        }
+    }
+
+    #[cfg(feature = "orch")]
     pub fn emit_derive_call(&self) -> TokenStream {
         let sylvia = crate_module();
         match self {

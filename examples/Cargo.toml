@@ -40,4 +40,6 @@ serde = { version = "1.0.192", default-features = false, features = ["derive"] }
 thiserror = "1.0.50"
 assert_matches = "1.5.0"
 
+# This is only needed by the contracts that use the `orch` feature flag.
+# But put it here so we track the version in one place
 cw-orch = { git = "https://github.com/abstractsdk/cw-orchestrator", branch = "update/relax-bound-on-derive" }

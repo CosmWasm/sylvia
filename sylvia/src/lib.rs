@@ -24,6 +24,8 @@ pub use cw_utils;
 pub use derivative;
 pub use sylvia_derive::{contract, entry_points, interface};
 pub use {
-    cosmwasm_schema as cw_schema, cosmwasm_std as cw_std, cw_orch, schemars, serde,
+    cosmwasm_schema as cw_schema, cosmwasm_std as cw_std, schemars, serde,
     serde_cw_value as serde_value, serde_json_wasm as serde_json,
 };
+#[cfg(feature = "orch")]
+pub use cw_orch;

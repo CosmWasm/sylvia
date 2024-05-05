@@ -13,6 +13,7 @@ readme = "../README.md"
 
 [features]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow", "dep:derivative"]
+orch = ["sylvia-derive/orch", "dep:cw-orch"]
 stargate = ["cosmwasm-std/stargate"]
 iterator = ["cosmwasm-std/iterator"]
 cosmwasm_1_1 = ["cosmwasm-std/cosmwasm_1_1", "cw-multi-test?/cosmwasm_1_1"]
@@ -47,7 +48,7 @@ cw-multi-test = { version = "0.20.0", optional = true }
 anyhow = { version = "1.0", optional = true }
 derivative = { version = "2.2.0", optional = true }
 cw-utils = { version = "1.0.2", optional = true }
-cw-orch = { workspace = true }
+cw-orch = { workspace = true, optional = true}
 
 [dev-dependencies]
 anyhow = "1.0"

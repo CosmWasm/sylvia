@@ -29,7 +29,7 @@ cw20-minting = { path = "../../interfaces/cw20-minting" }
 getrandom = { workspace = true, features = ["js"] }
 semver = { workspace = true }
 serde = { workspace = true }
-sylvia = { path = "../../../sylvia" }
+sylvia = { path = "../../../sylvia", features = ["orch"] }
 cw-orch = { workspace = true }
 thiserror = { workspace = true }
 
