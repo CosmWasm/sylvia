@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Response, StdResult};
+use cosmwasm_std::{Response, StdError, StdResult};
 use sylvia::contract;
 use sylvia::types::InstantiateCtx;
 
@@ -37,8 +37,10 @@ impl SomeContract {
 // Making sure `Remote` can be stored in `#[cw_serde]` types
 #[cw_serde]
 #[allow(dead_code)]
-struct CustomStorage<Contract> {
-    remote: sylvia::types::Remote<'static, Contract>,
+struct CustomStorage<'a, Contract> {
+    remote: sylvia::types::Remote<'a, Contract>,
+    interface_remote:
+        sylvia::types::Remote<'static, dyn some_interface::SomeInterface<Error = StdError>>,
 }
 
 #[cfg(test)]
