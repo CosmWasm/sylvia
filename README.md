@@ -689,58 +689,6 @@ where
 }
 ```
 
-### Implement interface
-
-```rust
-impl<InstantiateParam, ExecParam, FieldType>
-    Generic
-    for crate::contract::GenericContract<
-        InstantiateParam,
-        ExecParam,
-        FieldType,
-    >
-{
-    type Error = StdError;
-    type ExecParam = ExecParam;
-    type QueryParam: SvCustomMsg;
-    type RetType = SvCustomMsg;
-
-    fn generic_exec(
-        &self,
-        _ctx: ExecCtx,
-        _msgs: Vec<CosmosMsg<Self::ExecParam>>,
-    ) -> StdResult<Response> {
-        Ok(Response::new())
-    }
-
-    fn generic_query(
-        &self,
-        _ctx: QueryCtx,
-        _msg: Self::QueryParam,
-    ) -> StdResult<Self::RetType> {
-        Ok(SvCustomMsg {})
-    }
-}
-```
-
-Now we have to inform Sylvia that the interface implemented for the contract has associated types.
-We have to list those types (generics or concrete) next to the interface in the `#[sv::messages]`
-attribute:
-
-```rust
-#[contract]
-#[sv::messages(generic<ExecParam, SvCustomMsg, SvCustomMsg> as Generic)]
-impl<InstantiateParam, ExecParam, FieldType>
-    GenericContract<InstantiateParam, ExecParam, FieldType>
-where
-    for<'msg_de> InstantiateParam: CustomMsg + Deserialize<'msg_de> + 'msg_de,
-    ExecParam: CustomMsg + DeserializeOwned + 'static,
-    FieldType: 'static,
-{
-    ...
-}
-```
-
 ### Generics in entry_points
 
 Entry points have to be generated with concrete types. Using the `entry_points` macro

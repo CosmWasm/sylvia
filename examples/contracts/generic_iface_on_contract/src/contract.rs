@@ -17,8 +17,8 @@ impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
-#[sv::messages(generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as Generic: custom(msg, query))]
-#[sv::messages(custom_and_generic<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg> as CustomAndGeneric)]
+#[sv::messages(generic as Generic: custom(msg, query))]
+#[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::messages(cw1 as Cw1: custom(msg, query))]
 /// Required if interface returns generic `Response`
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]

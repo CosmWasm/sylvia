@@ -2,6 +2,53 @@
 
 This guide explains what is needed to upgrade contracts when migrating over major releases of `sylvia`. Note that you can also view the [complete CHANGELOG](https://github.com/CosmWasm/sylvia/blob/main/CHANGELOG.md) to understand the differences.
 
+
+## 1.0.2 ->
+
+
+### Generics in `sv::messages` not required
+```diff
+-#[contract]
+-#[sv::messages(generic<SomeType1, SomeType2, SomeType3> as Generic
+-impl Contract {}
++#[contract]
++#[sv::messages(generic as Generic)]
++impl Contract {}
+```
+
+This change is optional, since the generics are still accepted by the parser. Though they are
+ignored in the further process.
+
+
+### CodeId generic over the Contract type
+```diff
+-let code_id: CodeId<
+-    SvCustomMsg,
+-    SvCustomMsg,
+-    _,
+-> = CodeId::store_code(&app);
++let code_id: CodeId<
++    GenericContract<
++        SvCustomMsg,
++        SvCustomMsg,
++    >,
++    _,
++> = CodeId::store_code(&app);
+```
+
+### Lifetime ellision in a contract's impl block not supported
+```diff
+-#[contract]
+-impl Cw1SubkeysContract<'_> {
+-    // [...]
+-}
++#[contract]
++impl<'a> Cw1SubkeysContract<'a> {
++    // [...]
++}
+```
+
+
 ## 0.9.3 -> 0.10.0
 
 ## Multitest proxy

@@ -5,8 +5,8 @@ use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, GenericParam, Ident, Path, PathArguments, ReturnType,
-    Signature, Type, WhereClause, WherePredicate,
+    parse_quote, FnArg, GenericArgument, Ident, Path, PathArguments, ReturnType, Signature, Type,
+    WhereClause, WherePredicate,
 };
 
 use crate::check_generics::{CheckGenerics, GetPath};
@@ -34,29 +34,6 @@ pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
                 .collect()
         })
         .unwrap_or_default()
-}
-
-/// Filters generic arguments, which are a concrete types,
-/// from the generic parameters
-///
-/// f.e.
-/// impl<A, B, C> MyTrait<A, B, D> for MyContract<C>
-///
-/// where generic parameters are `[A, B, C]` and generic arguments are `[A, B, D]`
-/// should return us the `[A, B]`.
-pub fn filter_generics<'a>(
-    generic_params: &'a [&'a GenericParam],
-    generic_args: &'a [&'a GenericArgument],
-) -> Vec<&'a GenericParam> {
-    generic_params
-        .iter()
-        .filter(|param| {
-            generic_args
-                .iter()
-                .any(|arg| param.get_path() == arg.get_path())
-        })
-        .copied()
-        .collect()
 }
 
 pub fn process_fields<'s, Generic>(

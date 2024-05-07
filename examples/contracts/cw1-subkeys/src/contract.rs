@@ -36,7 +36,7 @@ pub struct Cw1SubkeysContract<'a> {
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl Cw1SubkeysContract<'_> {
+impl<'abcd> Cw1SubkeysContract<'abcd> {
     pub const fn new() -> Self {
         Self {
             whitelist: Cw1WhitelistContract::new(),

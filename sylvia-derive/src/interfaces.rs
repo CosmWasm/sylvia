@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{GenericArgument, ItemImpl};
+use syn::{ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::MsgType;
@@ -18,29 +18,36 @@ impl Interfaces {
         Self { interfaces }
     }
 
-    pub fn emit_glue_message_variants(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
+    pub fn emit_glue_message_variants(
+        &self,
+        msg_ty: &MsgType,
+        contract: &Type,
+    ) -> Vec<TokenStream> {
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module,
-                    variant,
-                    generics,
-                    ..
+                    module, variant, ..
                 } = interface;
 
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
-                let interface_enum =
-                    quote! { <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> };
+                let interface_enum = quote! { < #contract as #module ::sv::InterfaceMessagesApi> };
                 let type_name = msg_ty.as_accessor_name();
 
                 quote! { #variant ( #interface_enum :: #type_name) }
+            })
+            .collect()
+    }
+
+    pub fn emit_glue_message_types(&self, msg_ty: &MsgType, contract: &Type) -> Vec<TokenStream> {
+        self.interfaces
+            .iter()
+            .map(|interface| {
+                let ContractMessageAttr { module, .. } = interface;
+
+                let interface_enum = quote! { < #contract as #module ::sv::InterfaceMessagesApi> };
+                let type_name = msg_ty.as_accessor_name();
+
+                quote! { #interface_enum :: #type_name }
             })
             .collect()
     }
@@ -83,25 +90,21 @@ impl Interfaces {
             .collect()
     }
 
-    pub fn emit_response_schemas_calls(&self, msg_ty: &MsgType) -> Vec<TokenStream> {
-        let sylvia = crate_module();
-
+    pub fn emit_response_schemas_calls(
+        &self,
+        msg_ty: &MsgType,
+        contract: &Type,
+    ) -> Vec<TokenStream> {
         self.interfaces
             .iter()
             .map(|interface| {
                 let ContractMessageAttr {
-                    module, generics, ..
+                    module, ..
                 } = interface;
-
-                let generics = if !generics.is_empty() {
-                    quote! { < #generics > }
-                } else {
-                    quote! {}
-                };
 
                 let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    <#module ::sv::Api #generics as #sylvia ::types::InterfaceApi> :: #type_name :: response_schemas_impl()
+                    <#contract as #module ::sv::InterfaceMessagesApi> :: #type_name :: response_schemas_impl()
                 }
             })
             .collect()
@@ -129,12 +132,5 @@ impl Interfaces {
                 },
             }
         }).collect()
-    }
-
-    pub fn as_generic_args(&self) -> Vec<&GenericArgument> {
-        self.interfaces
-            .iter()
-            .flat_map(|interface| &interface.generics)
-            .collect()
     }
 }
