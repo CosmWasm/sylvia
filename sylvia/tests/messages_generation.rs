@@ -12,7 +12,7 @@ pub struct MyQuery;
 
 impl CustomQuery for MyQuery {}
 
-mod interface {
+pub mod interface {
     use cosmwasm_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};

@@ -101,7 +101,7 @@ impl<'a, Contract: ?Sized> Remote<'a, Contract> {
     }
 }
 
-impl<'a, Contract> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
+impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
     fn as_ref(&self) -> &cosmwasm_std::Addr {
         &self.addr
     }
