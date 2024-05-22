@@ -74,7 +74,7 @@ where
                 #(#methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, &dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
+            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
                 #(type #generics = #generics;)*
 
                 #(#methods_trait_impl)*

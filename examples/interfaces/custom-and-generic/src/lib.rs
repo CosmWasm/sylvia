@@ -109,7 +109,7 @@ mod tests {
 
         let querier = sylvia::types::BoundQuerier::<
             _,
-            &dyn super::CustomAndGeneric<
+            dyn super::CustomAndGeneric<
                 RetT = SvCustomMsg,
                 Exec1T = SvCustomMsg,
                 Exec2T = SvCustomMsg,
