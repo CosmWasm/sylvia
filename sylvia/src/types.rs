@@ -121,13 +121,13 @@ use serde::{Deserialize, Serialize};
 ///
 /// fn main() {}
 /// ```
-pub struct BoundQuerier<'a, C: cosmwasm_std::CustomQuery, Contract> {
+pub struct BoundQuerier<'a, C: cosmwasm_std::CustomQuery, Contract: ?Sized> {
     contract: &'a cosmwasm_std::Addr,
     querier: &'a cosmwasm_std::QuerierWrapper<'a, C>,
     _phantom: std::marker::PhantomData<Contract>,
 }
 
-impl<'a, C: cosmwasm_std::CustomQuery, Contract> BoundQuerier<'a, C, Contract> {
+impl<'a, C: cosmwasm_std::CustomQuery, Contract: ?Sized> BoundQuerier<'a, C, Contract> {
     /// Returns reference to the underlying [QuerierWrapper](cosmwasm_std::QuerierWrapper).
     pub fn querier(&self) -> &'a cosmwasm_std::QuerierWrapper<'a, C> {
         self.querier
@@ -210,13 +210,13 @@ impl<'a, C: cosmwasm_std::CustomQuery, Contract> From<&'a BoundQuerier<'a, C, Co
 /// fn main() {}
 /// ```
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Remote<'a, Contract> {
+pub struct Remote<'a, Contract: ?Sized> {
     addr: std::borrow::Cow<'a, cosmwasm_std::Addr>,
     #[serde(skip)]
     _phantom: std::marker::PhantomData<Contract>,
 }
 
-impl<'a, Contract> Remote<'a, Contract> {
+impl<'a, Contract: ?Sized> Remote<'a, Contract> {
     /// Creates a new instance of [Remote] from owned contract address.
     pub fn new(addr: cosmwasm_std::Addr) -> Self {
         Self {
@@ -246,7 +246,7 @@ impl<'a, Contract> Remote<'a, Contract> {
     }
 }
 
-impl<'a, Contract> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
+impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
     /// Returns reference to the underlying contract address.
     fn as_ref(&self) -> &cosmwasm_std::Addr {
         &self.addr
