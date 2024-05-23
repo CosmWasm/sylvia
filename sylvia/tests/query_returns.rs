@@ -17,7 +17,7 @@ pub struct QueryResponse;
 
 type QueryResult<E> = Result<QueryResponse, E>;
 
-mod msg {
+pub mod msg {
     use cosmwasm_std::StdError;
     use sylvia::interface;
     use sylvia::types::QueryCtx;
