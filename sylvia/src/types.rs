@@ -1,5 +1,6 @@
 //! Module providing utilities to build and use sylvia contracts.
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
+use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -209,11 +210,38 @@ impl<'a, C: cosmwasm_std::CustomQuery, Contract> From<&'a BoundQuerier<'a, C, Co
 ///
 /// fn main() {}
 /// ```
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Derivative)]
+#[derivative(Clone, Debug, PartialEq)]
 pub struct Remote<'a, Contract: ?Sized> {
     addr: std::borrow::Cow<'a, cosmwasm_std::Addr>,
     #[serde(skip)]
     _phantom: std::marker::PhantomData<Contract>,
+}
+
+// Custom `JsonSchema` implementation to remove bounds for `Contract`.
+impl<'a, Contract: ?Sized> schemars::JsonSchema for Remote<'a, Contract> {
+    fn schema_name() -> std::string::String {
+        "Remote".to_owned()
+    }
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        {
+            let mut schema_object = schemars::schema::SchemaObject {
+                instance_type: Some(schemars::schema::InstanceType::Object.into()),
+                ..Default::default()
+            };
+            let object_validation = schema_object.object();
+            {
+                object_validation.properties.insert(
+                    "addr".to_owned(),
+                    gen.subschema_for::<std::borrow::Cow<'a, cosmwasm_std::Addr>>(),
+                );
+                if! <std::borrow::Cow<'a,cosmwasm_std::Addr>as schemars::JsonSchema> ::_schemars_private_is_option(){
+            object_validation.required.insert("addr".to_owned());
+          }
+            }
+            schemars::schema::Schema::Object(schema_object)
+        }
+    }
 }
 
 impl<'a, Contract: ?Sized> Remote<'a, Contract> {
