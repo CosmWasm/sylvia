@@ -1,5 +1,5 @@
 //! Module providing utilities to build and use sylvia contracts.
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, MessageInfo};
+use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
 use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -160,6 +160,60 @@ impl<'a, C: cosmwasm_std::CustomQuery, Contract> From<&'a BoundQuerier<'a, C, Co
     }
 }
 
+/// TODO tkulik: add docs here
+pub struct ExecutorEmptyBuilder<'a, Contract: ?Sized> {
+    contract: &'a cosmwasm_std::Addr,
+    funds: Vec<Coin>,
+    _phantom: std::marker::PhantomData<Contract>,
+}
+
+impl<'a, Contract: ?Sized> ExecutorEmptyBuilder<'a, Contract> {
+    pub fn new(contract: &'a cosmwasm_std::Addr) -> Self {
+        Self {
+            contract,
+            funds: vec![],
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn contract(&self) -> &'a cosmwasm_std::Addr {
+        self.contract
+    }
+
+    pub fn with_funds(self, funds: Vec<Coin>) -> Self {
+        Self { funds, ..self }
+    }
+
+    pub fn funds(&self) -> &Vec<Coin> {
+        &self.funds
+    }
+}
+
+/// TODO tkulik: add docs here
+pub struct ExecutorBuilder<'a> {
+    contract: &'a cosmwasm_std::Addr,
+    funds: Vec<Coin>,
+    msg: Binary,
+}
+
+impl<'a> ExecutorBuilder<'a> {
+    pub fn new(contract: &'a cosmwasm_std::Addr, funds: Vec<Coin>, msg: Binary) -> Self {
+        Self {
+            contract,
+            funds,
+            msg,
+        }
+    }
+
+    pub fn build(self) -> WasmMsg {
+        WasmMsg::Execute {
+            contract_addr: self.contract.to_string(),
+            msg: self.msg,
+            funds: self.funds,
+        }
+    }
+}
+
 /// Represents a contract on the chain and acts as a gateway to communicate with it.
 ///
 /// # Example
@@ -271,6 +325,10 @@ impl<'a, Contract: ?Sized> Remote<'a, Contract> {
             querier,
             _phantom: std::marker::PhantomData,
         }
+    }
+
+    pub fn executor(&self) -> ExecutorEmptyBuilder<Contract> {
+        ExecutorEmptyBuilder::new(&self.addr)
     }
 }
 

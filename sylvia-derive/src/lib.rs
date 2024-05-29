@@ -12,6 +12,7 @@ use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
 mod associated_types;
 pub(crate) mod check_generics;
+mod executor;
 mod input;
 mod interfaces;
 mod message;
