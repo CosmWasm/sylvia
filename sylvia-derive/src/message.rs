@@ -354,8 +354,19 @@ impl<'a> ContractEnumMessage<'a> {
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), &error.error);
 
+        #[cfg(feature = "orch")]
         let derive_query = match msg_ty {
-            MsgType::Query => quote! { #sylvia ::cw_schema::QueryResponses },
+            MsgType::Query => {
+                quote! { #sylvia ::cw_schema::QueryResponses, #sylvia:: cw_orch::QueryFns }
+            }
+            MsgType::Exec => quote! { #sylvia:: cw_orch::ExecuteFns },
+            _ => quote! {},
+        };
+        #[cfg(not(feature = "orch"))]
+        let derive_query = match msg_ty {
+            MsgType::Query => {
+                quote! { #sylvia ::cw_schema::QueryResponses }
+            }
             _ => quote! {},
         };
 
@@ -471,6 +482,7 @@ impl<'a> MsgVariant<'a> {
         let fields = fields.iter().map(MsgField::emit);
         let returns_attribute = match msg_type {
             MsgType::Query => quote! { #[returns(#stripped_return_type)] },
+            MsgType::Exec => quote! { #[payable] }, // for cw-orch, ideally dynamically derived
             _ => quote! {},
         };
 
@@ -1265,6 +1277,7 @@ impl<'a> GlueMessage<'a> {
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
         let contract_variant = quote! { #contract_name ( #enum_name #bracketed_used_generics ) };
+
         let mut messages_call = interfaces.emit_messages_call(msg_ty);
         let prefixed_used_generics = if !used_generics.is_empty() {
             quote! { :: #bracketed_used_generics }
@@ -1316,7 +1329,7 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
-        quote! {
+        let output = quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
             #[serde(rename_all="snake_case", untagged)]
@@ -1382,7 +1395,23 @@ impl<'a> GlueMessage<'a> {
                     Err(D::Error::custom(err_msg))
                 }
             }
+        };
+
+        // Append this derive for cw-orch contracts
+        // (Optionally you could always do this?)
+        #[cfg(feature = "orch")]
+        {
+            let extra = quote! {
+                impl From<#enum_name #bracketed_used_generics> for #contract_enum_name {
+                    fn from(value: #enum_name #bracketed_used_generics) -> Self {
+                        Self::#contract_name(value)
+                    }
+                }
+            };
+            TokenStream::from_iter(vec![output, extra].into_iter())
         }
+        #[cfg(not(feature = "orch"))]
+        output
     }
 }
 
