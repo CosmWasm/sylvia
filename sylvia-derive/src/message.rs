@@ -381,7 +381,6 @@ impl<'a> ContractEnumMessage<'a> {
             false => quote! {},
         };
 
-
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
@@ -483,6 +482,7 @@ impl<'a> MsgVariant<'a> {
         let fields = fields.iter().map(MsgField::emit);
         let returns_attribute = match msg_type {
             MsgType::Query => quote! { #[returns(#stripped_return_type)] },
+            MsgType::Exec => quote! { #[payable] }, // for cw-orch, ideally dynamically derived
             _ => quote! {},
         };
 
@@ -1277,7 +1277,7 @@ impl<'a> GlueMessage<'a> {
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
         let contract_variant = quote! { #contract_name ( #enum_name #bracketed_used_generics ) };
-        
+
         let mut messages_call = interfaces.emit_messages_call(msg_ty);
         let prefixed_used_generics = if !used_generics.is_empty() {
             quote! { :: #bracketed_used_generics }

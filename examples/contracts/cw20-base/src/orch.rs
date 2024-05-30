@@ -133,9 +133,19 @@ mod tests {
 
         // transfer some tokens to self
         contract
-            .transfer(Uint128::new(1_000_000), random.to_string())
+            .transfer(
+                Uint128::new(1_000_000),
+                random.to_string(),
+                &[coin(300_000, denom)],
+            )
             .unwrap();
         let bal = contract.balance(random.to_string()).unwrap();
         assert_eq!(bal.balance.u128(), 1_000_000);
+
+        let native = chain
+            .balance(&chain.sender(), Some(denom.to_string()))
+            .unwrap();
+        assert_eq!(native.len(), 1);
+        assert_eq!(native[0].amount.u128(), 700_000);
     }
 }
