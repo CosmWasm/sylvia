@@ -28,7 +28,6 @@ impl<Chain> Uploadable for Cw20Base<Chain> {
 // The following is done in Sylvia, ideally the other (interface) variants could be added there too:
 // impl From<ExecMsg> for ContractExecMsg
 
-
 // Since we know the regular structure here, this may be easy enough to
 // generate inside the `sv::messages` macro rather than the `contract` macro, eg.
 // #[sv::messages(cw20_marketing as Marketing)]
@@ -85,5 +84,58 @@ impl From<cw20_minting::sv::Cw20MintingQueryMsg> for ContractQueryMsg {
 impl From<cw20_minting::sv::Cw20MintingSudoMsg> for ContractSudoMsg {
     fn from(msg: cw20_minting::sv::Cw20MintingSudoMsg) -> Self {
         ContractSudoMsg::Minting(msg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cw_orch::prelude::*;
+
+    use crate::contract::sv::{ExecMsgFns, InstantiateMsg, QueryMsgFns};
+    use crate::contract::InstantiateMsgData;
+    use crate::responses::Cw20Coin;
+    use cosmwasm_std::{coin, Uint128};
+
+    // TODO: shared variable
+    const BECH_PREFIX: &str = "osmo";
+
+    // This makes sure we can call payable functions
+    #[test]
+    fn demo() {
+        let denom = "uosmo";
+        let chain = MockBech32::new(BECH_PREFIX);
+        let random = chain.addr_make("random guy");
+        chain
+            .add_balance(&chain.sender(), vec![coin(1_000_000, denom)])
+            .unwrap();
+
+        let contract = Cw20Base::new("cw20", chain.clone());
+        contract.upload().unwrap();
+        let msg = InstantiateMsg {
+            data: InstantiateMsgData {
+                symbol: "MINE".to_string(),
+                name: "My Token".to_string(),
+                decimals: 6,
+                marketing: None,
+                mint: None,
+                initial_balances: vec![Cw20Coin {
+                    address: chain.sender().into(),
+                    amount: Uint128::new(20_000_000),
+                }],
+            },
+        };
+        contract.instantiate(&msg, None, None).unwrap();
+
+        // query the balace
+        let bal = contract.balance(chain.sender().into()).unwrap();
+        assert_eq!(bal.balance.u128(), 20_000_000);
+
+        // transfer some tokens to self
+        contract
+            .transfer(Uint128::new(1_000_000), random.to_string())
+            .unwrap();
+        let bal = contract.balance(random.to_string()).unwrap();
+        assert_eq!(bal.balance.u128(), 1_000_000);
     }
 }

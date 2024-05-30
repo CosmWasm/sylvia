@@ -9,6 +9,7 @@ version = "0.10.1"
 [workspace.dependencies]
 sylvia-derive = { version = "0.10.1", path = "sylvia-derive" }
 cw-orch = { git = "https://github.com/abstractsdk/cw-orchestrator", branch = "update/relax-bound-on-derive" }
+# cw-orch = "0.22.2"
 
 [workspace.metadata.docs.rs]
 all-features = true
