@@ -77,6 +77,7 @@ impl<'a> StructMessage<'a> {
     fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemFn, MsgAttr)> {
         let mut methods = source.items.iter().filter_map(|item| match item {
             ImplItem::Fn(method) => {
+                // TODO tkulik: Implement variant attr forwarding here
                 let attr = ParsedSylviaAttributes::new(method.attrs.iter()).msg_attr?;
                 if attr == ty {
                     Some((method, attr))
@@ -111,9 +112,12 @@ impl<'a> StructMessage<'a> {
     pub fn emit(&self) -> TokenStream {
         use MsgAttr::*;
 
+        let instantiate_msg = Ident::new("InstantiateMsg", self.function_name.span());
+        let migrate_msg = Ident::new("MigrateMsg", self.function_name.span());
+
         match &self.msg_attr {
-            Instantiate { name } => self.emit_struct(name),
-            Migrate { name } => self.emit_struct(name),
+            Instantiate { .. } => self.emit_struct(&instantiate_msg),
+            Migrate { .. } => self.emit_struct(&migrate_msg),
             _ => {
                 emit_error!(Span::mixed_site(), "Invalid message type");
                 quote! {}
@@ -427,7 +431,7 @@ impl<'a> MsgVariant<'a> {
         let fields = process_fields(sig, generics_checker);
         let msg_type = msg_attr.msg_type();
 
-        let return_type = if let MsgAttr::Query { resp_type } = msg_attr {
+        let return_type = if let MsgAttr::Query { resp_type, .. } = msg_attr {
             match resp_type {
                 Some(resp_type) => {
                     let resp_type = parse_quote! { #resp_type };

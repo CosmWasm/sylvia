@@ -2,12 +2,14 @@ use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::{Attribute, PathSegment};
 
+pub mod attr;
 pub mod custom;
 pub mod error;
 pub mod messages;
 pub mod msg;
 pub mod override_entry_point;
 
+pub use attr::{MsgAttrForwarding, VariantAttrForwarding};
 pub use custom::Custom;
 pub use error::ContractErrorAttr;
 pub use messages::{ContractMessageAttr, Customs};
@@ -23,6 +25,8 @@ pub enum SylviaAttribute {
     Messages,
     Msg,
     OverrideEntryPoint,
+    VariantAttrs,
+    MsgAttrs,
 }
 
 impl SylviaAttribute {
@@ -42,6 +46,8 @@ impl SylviaAttribute {
             "messages" => Some(Self::Messages),
             "msg" => Some(Self::Msg),
             "override_entry_point" => Some(Self::OverrideEntryPoint),
+            "attr" => Some(Self::VariantAttrs),
+            "msg_attr" => Some(Self::MsgAttrs),
             _ => None,
         }
     }
@@ -57,6 +63,8 @@ pub struct ParsedSylviaAttributes {
     pub messages_attrs: Vec<ContractMessageAttr>,
     pub msg_attr: Option<MsgAttr>,
     pub override_entry_point_attrs: Vec<OverrideEntryPoint>,
+    pub variant_attrs_forward: Vec<VariantAttrForwarding>,
+    pub msg_attrs_forward: Vec<MsgAttrForwarding>,
 }
 
 impl ParsedSylviaAttributes {
@@ -120,6 +128,16 @@ impl ParsedSylviaAttributes {
             SylviaAttribute::OverrideEntryPoint => {
                 if let Ok(override_entry_point) = OverrideEntryPoint::new(attr) {
                     self.override_entry_point_attrs.push(override_entry_point)
+                }
+            }
+            SylviaAttribute::VariantAttrs => {
+                if let Ok(variant_attrs) = VariantAttrForwarding::new(attr) {
+                    self.variant_attrs_forward.push(variant_attrs);
+                }
+            }
+            SylviaAttribute::MsgAttrs => {
+                if let Ok(message_attrs) = MsgAttrForwarding::new(attr) {
+                    self.msg_attrs_forward.push(message_attrs);
                 }
             }
         }
