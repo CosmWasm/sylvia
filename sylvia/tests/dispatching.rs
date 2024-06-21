@@ -1,5 +1,6 @@
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
 use cosmwasm_std::{from_json, Addr, Decimal, Response};
+use cw_multi_test::IntoAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -178,7 +179,7 @@ fn dispatch() {
 
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let info = mock_info("owner", &[]);
+    let info = message_info(&"owner".into_addr(), &[]);
 
     // Instantiate the contract
     let resp = contract::sv::InstantiateMsg {}
