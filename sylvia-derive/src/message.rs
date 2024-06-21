@@ -2,6 +2,7 @@ use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
 use crate::check_generics::{CheckGenerics, GetPath};
 use crate::crate_module;
 use crate::interfaces::Interfaces;
+use crate::parser::attributes::{MsgAttrForwarding, VariantAttrForwarding};
 use crate::parser::{
     parse_associated_custom_type, ContractErrorAttr, Custom, EntryPointArgs,
     FilteredOverrideEntryPoints, MsgAttr, MsgType, OverrideEntryPoint, ParsedSylviaAttributes,
@@ -38,6 +39,7 @@ pub struct StructMessage<'a> {
     result: &'a ReturnType,
     msg_attr: MsgAttr,
     custom: &'a Custom,
+    msg_attrs_to_forward: Vec<MsgAttrForwarding>,
 }
 
 impl<'a> StructMessage<'a> {
@@ -60,6 +62,12 @@ impl<'a> StructMessage<'a> {
         let (used_generics, unused_generics) = generics_checker.used_unused();
         let wheres = filter_wheres(&source.generics.where_clause, generics, &used_generics);
 
+        let msg_attrs_to_forward = ParsedSylviaAttributes::new(source.attrs.iter())
+            .msg_attrs_forward
+            .into_iter()
+            .filter(|attr| attr.msg_type == ty)
+            .collect();
+
         Some(Self {
             contract_type,
             fields,
@@ -71,13 +79,13 @@ impl<'a> StructMessage<'a> {
             result: &method.sig.output,
             msg_attr,
             custom,
+            msg_attrs_to_forward,
         })
     }
 
     fn parse_struct_message(source: &ItemImpl, ty: MsgType) -> Option<(&ImplItemFn, MsgAttr)> {
         let mut methods = source.items.iter().filter_map(|item| match item {
             ImplItem::Fn(method) => {
-                // TODO tkulik: Implement variant attr forwarding here
                 let attr = ParsedSylviaAttributes::new(method.attrs.iter()).msg_attr?;
                 if attr == ty {
                     Some((method, attr))
@@ -139,6 +147,7 @@ impl<'a> StructMessage<'a> {
             result,
             msg_attr,
             custom,
+            msg_attrs_to_forward,
         } = self;
 
         let ctx_type = msg_attr
@@ -155,10 +164,12 @@ impl<'a> StructMessage<'a> {
         let where_clause = as_where_clause(wheres);
         let generics = emit_bracketed_generics(generics);
         let unused_generics = emit_bracketed_generics(unused_generics);
+        let msg_attrs_to_forward = msg_attrs_to_forward.iter().map(|attr| &attr.attrs);
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub struct #name #generics {
                 #(pub #fields,)*
@@ -188,6 +199,7 @@ pub struct EnumMessage<'a> {
     msg_ty: MsgType,
     resp_type: Type,
     query_type: Type,
+    msg_attrs_to_forward: Vec<MsgAttrForwarding>,
 }
 
 impl<'a> EnumMessage<'a> {
@@ -213,6 +225,12 @@ impl<'a> EnumMessage<'a> {
             .or(associated_query)
             .unwrap_or_else(Custom::default_type);
 
+        let msg_attrs_to_forward = ParsedSylviaAttributes::new(source.attrs.iter())
+            .msg_attrs_forward
+            .into_iter()
+            .filter(|attr| attr.msg_type == msg_ty)
+            .collect();
+
         Self {
             source,
             variants,
@@ -220,6 +238,7 @@ impl<'a> EnumMessage<'a> {
             msg_ty,
             resp_type,
             query_type,
+            msg_attrs_to_forward,
         }
     }
 
@@ -231,6 +250,7 @@ impl<'a> EnumMessage<'a> {
             msg_ty,
             resp_type,
             query_type,
+            msg_attrs_to_forward,
         } = self;
 
         let trait_name = &source.ident;
@@ -263,10 +283,12 @@ impl<'a> EnumMessage<'a> {
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), enum_name.span());
         let derive_call = msg_ty.emit_derive_call();
+        let msg_attrs_to_forward = msg_attrs_to_forward.iter().map(|attr| &attr.attrs);
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #derive_call
+            #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub enum #unique_enum_name #bracketed_used_generics {
                 #(#msg_variants,)*
@@ -306,6 +328,7 @@ pub struct ContractEnumMessage<'a> {
     error: &'a ContractErrorAttr,
     custom: &'a Custom,
     where_clause: &'a Option<WhereClause>,
+    msg_attrs_to_forward: Vec<MsgAttrForwarding>,
 }
 
 impl<'a> ContractEnumMessage<'a> {
@@ -318,6 +341,11 @@ impl<'a> ContractEnumMessage<'a> {
     ) -> Self {
         let where_clause = &source.generics.where_clause;
         let variants = MsgVariants::new(source.as_variants(), msg_ty, generics, where_clause);
+        let msg_attrs_to_forward = ParsedSylviaAttributes::new(source.attrs.iter())
+            .msg_attrs_forward
+            .into_iter()
+            .filter(|attr| attr.msg_type == msg_ty)
+            .collect();
 
         Self {
             variants,
@@ -326,6 +354,7 @@ impl<'a> ContractEnumMessage<'a> {
             error,
             custom,
             where_clause,
+            msg_attrs_to_forward,
         }
     }
 
@@ -339,6 +368,7 @@ impl<'a> ContractEnumMessage<'a> {
             error,
             custom,
             where_clause,
+            msg_attrs_to_forward,
             ..
         } = self;
 
@@ -373,10 +403,12 @@ impl<'a> ContractEnumMessage<'a> {
             },
             false => quote! {},
         };
+        let msg_attrs_to_forward = msg_attrs_to_forward.iter().map(|attr| &attr.attrs);
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
+            #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub enum #enum_name #bracketed_used_generics {
                 #(#variants,)*
@@ -413,6 +445,7 @@ pub struct MsgVariant<'a> {
     /// `returns` attribute.
     return_type: Option<Type>,
     msg_type: MsgType,
+    attrs_to_forward: Vec<VariantAttrForwarding>,
 }
 
 impl<'a> MsgVariant<'a> {
@@ -421,6 +454,7 @@ impl<'a> MsgVariant<'a> {
         sig: &'a Signature,
         generics_checker: &mut CheckGenerics<Generic>,
         msg_attr: MsgAttr,
+        attrs_to_forward: Vec<VariantAttrForwarding>,
     ) -> MsgVariant<'a>
     where
         Generic: GetPath + PartialEq,
@@ -455,6 +489,7 @@ impl<'a> MsgVariant<'a> {
             fields,
             return_type,
             msg_type,
+            attrs_to_forward,
         }
     }
 
@@ -465,13 +500,16 @@ impl<'a> MsgVariant<'a> {
             fields,
             msg_type,
             return_type,
+            attrs_to_forward,
             ..
         } = self;
         let fields = fields.iter().map(MsgField::emit);
         let returns_attribute = msg_type.emit_returns_attribute(return_type);
+        let attrs_to_forward = attrs_to_forward.iter().map(|attr| &attr.attrs);
 
         quote! {
             #returns_attribute
+            #( #[ #attrs_to_forward ] )*
             #name {
                 #(#fields,)*
             }
@@ -574,6 +612,7 @@ where
         let variants: Vec<_> = source
             .filter_map(|variant_desc| {
                 let msg_attr: MsgAttr = variant_desc.attr_msg()?;
+                let attrs_to_forward = variant_desc.attrs_to_forward();
 
                 if msg_attr.msg_type() != msg_ty {
                     return None;
@@ -583,6 +622,7 @@ where
                     variant_desc.into_sig(),
                     &mut generics_checker,
                     msg_attr,
+                    attrs_to_forward,
                 ))
             })
             .collect();

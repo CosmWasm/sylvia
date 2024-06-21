@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use syn::parse::{Error, Parse, ParseStream, Parser};
 use syn::spanned::Spanned;
@@ -6,8 +6,10 @@ use syn::{Attribute, Ident, Result, Token};
 
 use super::MsgType;
 
+#[derive(Clone, Debug)]
 pub struct VariantAttrForwarding {
     pub attrs: TokenStream,
+    pub span: Span,
 }
 
 impl VariantAttrForwarding {
@@ -15,6 +17,10 @@ impl VariantAttrForwarding {
         attr.meta
             .require_list()
             .and_then(|meta| VariantAttrForwarding::parse.parse2(meta.tokens.clone()))
+            .map(|mut variant| {
+                variant.span = attr.span();
+                variant
+            })
             .map_err(|err| {
                 emit_error!(attr.span(), err);
                 err
@@ -25,10 +31,14 @@ impl VariantAttrForwarding {
 impl Parse for VariantAttrForwarding {
     fn parse(input: ParseStream) -> Result<Self> {
         let attrs = input.parse()?;
-        Ok(Self { attrs })
+        Ok(Self {
+            attrs,
+            span: input.span(),
+        })
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct MsgAttrForwarding {
     pub msg_type: MsgType,
     pub attrs: TokenStream,
@@ -48,9 +58,17 @@ impl MsgAttrForwarding {
 
 impl Parse for MsgAttrForwarding {
     fn parse(input: ParseStream) -> Result<Self> {
-        let msg_type: Ident = input.parse()?;
-        let _: Token![,] = input.parse()?;
-        let attrs = input.parse()?;
+        let error_msg =
+            "Expected attribute of the form: `#[sv::msg_attr(msg_type, attribute_to_forward)]`";
+        let msg_type: Ident = input
+            .parse()
+            .map_err(|err| Error::new(err.span(), error_msg))?;
+        let _: Token![,] = input
+            .parse()
+            .map_err(|err| Error::new(err.span(), error_msg))?;
+        let attrs = input
+            .parse()
+            .map_err(|err| Error::new(err.span(), error_msg))?;
         let msg_type = match msg_type.to_string().as_str() {
             "exec" => MsgType::Exec,
             "query" => MsgType::Query,

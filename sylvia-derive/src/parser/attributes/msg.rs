@@ -35,7 +35,7 @@ impl Parse for ArgumentParser {
                 _ => {
                     return Err(Error::new(
                         input.span(),
-                        "Invalid argument type, expected one of: `resp` or `attr`.",
+                        "Invalid argument type, expected `resp` or no argument.",
                     ))
                 }
             }
@@ -75,7 +75,6 @@ impl PartialEq<MsgType> for MsgAttr {
 
 impl MsgAttr {
     pub fn msg_type(&self) -> MsgType {
-        MsgType::Exec.as_accessor_name();
         match self {
             Self::Exec { .. } => MsgType::Exec,
             Self::Query { .. } => MsgType::Query,

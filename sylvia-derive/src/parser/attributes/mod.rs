@@ -76,6 +76,21 @@ impl ParsedSylviaAttributes {
                 result.match_attribute(&sylvia_attr, attr);
             }
         }
+
+        if let Some(attr) = result.variant_attrs_forward.first() {
+            if let Some(MsgAttr::Instantiate) = result.msg_attr {
+                emit_error!(
+                    attr.span, "The attribute `sv::attr` is not supported for `instantiate`";
+                    note = "Message `instantiate` is a structure, use `#[sv::msg_attr] instead`";
+                );
+            } else if let Some(MsgAttr::Migrate) = result.msg_attr {
+                emit_error!(
+                    attr.span, "The attribute `sv::attr` is not supported for `migate`";
+                    note = "Message `migrate` is a structure, use `#[sv::msg_attr] instead`";
+                );
+            }
+        }
+
         result
     }
 
