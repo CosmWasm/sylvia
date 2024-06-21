@@ -56,12 +56,12 @@ impl<'a> Cw1WhitelistContract<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
     use cosmwasm_std::{
         coin, coins, to_json_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg,
     };
     use cw1::Cw1;
-    use cw_multi_test::IntoBech32;
+    use cw_multi_test::{IntoAddr, IntoBech32};
     use whitelist::responses::AdminListResponse;
     use whitelist::Whitelist;
 
@@ -75,12 +75,12 @@ mod tests {
         let mut admins = vec![alice.to_string(), bob.to_string(), carl.to_string()];
         admins.sort();
 
-        let anyone = "anyone";
+        let anyone = "anyone".into_addr();
 
         let contract = Cw1WhitelistContract::new();
 
         // instantiate the contract
-        let info = mock_info(anyone, &[]);
+        let info = message_info(&anyone, &[]);
         contract
             .instantiate(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -102,7 +102,7 @@ mod tests {
         );
 
         // anyone cannot modify the contract
-        let info = mock_info(anyone, &[]);
+        let info = message_info(&anyone, &[]);
         let err = contract
             .update_admins(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -112,7 +112,7 @@ mod tests {
         assert_eq!(err, ContractError::Unauthorized);
 
         // but alice can kick out carl
-        let info = mock_info(alice.as_str(), &[]);
+        let info = message_info(&alice, &[]);
         contract
             .update_admins(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -133,14 +133,14 @@ mod tests {
         );
 
         // carl cannot freeze it
-        let info = mock_info(carl.as_str(), &[]);
+        let info = message_info(&carl, &[]);
         let err = contract
             .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized);
 
         // but bob can
-        let info = mock_info(bob.as_str(), &[]);
+        let info = message_info(&bob, &[]);
         contract
             .freeze((deps.as_mut(), mock_env(), info).into())
             .unwrap();
@@ -156,7 +156,7 @@ mod tests {
         );
 
         // and now alice cannot change it again
-        let info = mock_info(alice.as_str(), &[]);
+        let info = message_info(&alice, &[]);
         let err = contract
             .update_admins(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -177,7 +177,7 @@ mod tests {
         let contract = Cw1WhitelistContract::new();
 
         // instantiate the contract
-        let info = mock_info(bob.as_str(), &[]);
+        let info = message_info(&bob, &[]);
         contract
             .instantiate(
                 (deps.as_mut(), mock_env(), info).into(),
@@ -202,14 +202,14 @@ mod tests {
         ];
 
         // bob cannot execute them
-        let info = mock_info(bob.as_str(), &[]);
+        let info = message_info(&bob, &[]);
         let err = contract
             .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized);
 
         // but carl can
-        let info = mock_info(carl.as_str(), &[]);
+        let info = message_info(&carl, &[]);
         let res = contract
             .execute((deps.as_mut(), mock_env(), info).into(), msgs.clone())
             .unwrap();
@@ -232,7 +232,7 @@ mod tests {
         let contract = Cw1WhitelistContract::new();
 
         // instantiate the contract
-        let info = mock_info(anyone.as_str(), &[]);
+        let info = message_info(&anyone, &[]);
         contract
             .instantiate(
                 (deps.as_mut(), mock_env(), info).into(),
