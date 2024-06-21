@@ -13,18 +13,31 @@ readme = "../README.md"
 
 [features]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow"]
-stargate = ["cosmwasm-std/stargate"]
+stargate = ["cosmwasm-std/stargate", "cw-multi-test/stargate"]
 iterator = ["cosmwasm-std/iterator"]
-cosmwasm_1_1 = ["cosmwasm-std/cosmwasm_1_1"]
+cosmwasm_1_1 = ["cosmwasm-std/cosmwasm_1_1", "cw-multi-test/cosmwasm_1_1"]
 cosmwasm_1_2 = [
     "cosmwasm-std/cosmwasm_1_2",
-    "dep:cw-utils",
+    "cw-multi-test/cosmwasm_1_2",
     "sylvia-derive/cosmwasm_1_2",
+    "dep:cw-utils",
     "cosmwasm_1_1",
 ]
-cosmwasm_1_3 = ["cosmwasm-std/cosmwasm_1_3", "cosmwasm_1_2"]
-cosmwasm_1_4 = ["cosmwasm-std/cosmwasm_1_4", "cosmwasm_1_3"]
-cosmwasm_2_0 = ["cosmwasm-std/cosmwasm_2_0", "cosmwasm_1_4"]
+cosmwasm_1_3 = [
+    "cosmwasm-std/cosmwasm_1_3",
+    "cw-multi-test/cosmwasm_1_3",
+    "cosmwasm_1_2",
+]
+cosmwasm_1_4 = [
+    "cosmwasm-std/cosmwasm_1_4",
+    "cw-multi-test/cosmwasm_1_4",
+    "cosmwasm_1_3",
+]
+cosmwasm_2_0 = [
+    "cosmwasm-std/cosmwasm_2_0",
+    "cw-multi-test/cosmwasm_2_0",
+    "cosmwasm_1_4",
+]
 
 [dependencies]
 sylvia-derive = { workspace = true }
@@ -35,14 +48,14 @@ serde = { workspace = true }
 serde-cw-value = "0.7.0"
 serde-json-wasm = "1.0.1"
 konst = "0.3.8"
-cw-multi-test = { workspace = true, optional = true }
+cw-multi-test = { workspace = true, features = ["staking"], optional = true }
 anyhow = { workspace = true, optional = true }
 derivative = { version = "2.2.0" }
 cw-utils = { workspace = true, optional = true }
 
 [dev-dependencies]
+cw-multi-test = { workspace = true, features = ["staking"] }
 anyhow = { workspace = true }
-cw-multi-test = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }

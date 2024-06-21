@@ -54,6 +54,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
+use cosmwasm_std::testing::MockApi;
 use cosmwasm_std::{
     Addr, Api, BlockInfo, Coin, Empty, Querier, QuerierResult, QuerierWrapper, Storage,
 };
@@ -128,7 +129,7 @@ impl<ExecC, QueryC> App<cw_multi_test::BasicApp<ExecC, QueryC>> {
                 GovFailingModule,
                 StargateFailing,
             >,
-            &dyn Api,
+            &MockApi,
             &mut dyn Storage,
         ),
     {

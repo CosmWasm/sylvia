@@ -2,9 +2,8 @@ use convert_case::{Case, Casing};
 use proc_macro_error::emit_warning;
 use syn::fold::Fold;
 use syn::parse::{Parse, ParseStream, Parser};
-use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{parenthesized, Error, GenericArgument, Ident, MetaList, Path, Result, Token};
+use syn::{parenthesized, Error, Ident, MetaList, Path, Result, Token};
 
 use proc_macro_error::emit_error;
 
@@ -16,7 +15,6 @@ pub struct ContractMessageAttr {
     pub module: Path,
     pub variant: Ident,
     pub customs: Customs,
-    pub generics: Punctuated<GenericArgument, Token![,]>,
 }
 
 impl ContractMessageAttr {
@@ -79,7 +77,8 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {
         let module = input.parse()?;
-        let generics = extract_generics_from_path(&module);
+        // If this is not for backwards compatibility we can remove it
+        let _ = extract_generics_from_path(&module);
         let module = StripGenerics.fold_path(module);
 
         let variant = if input.parse::<Token![as]>().is_ok() {
@@ -114,7 +113,6 @@ impl Parse for ContractMessageAttr {
             module,
             variant,
             customs,
-            generics,
         })
     }
 }
