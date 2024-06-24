@@ -10,23 +10,23 @@ use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
 use crate::utils::{emit_bracketed_generics, SvCasing};
 
-pub struct ExecutorMethods<'a, Generic> {
-    executor_variants: &'a MsgVariants<'a, Generic>,
+pub struct InterfaceExecutor<'a, Generic> {
+    variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a AssociatedTypes<'a>,
     interface_name: &'a Ident,
 }
 
-impl<'a, Generic> ExecutorMethods<'a, Generic>
+impl<'a, Generic> InterfaceExecutor<'a, Generic>
 where
     Generic: GetPath + PartialEq + ToTokens,
 {
     pub fn new(
-        executor_variants: &'a MsgVariants<'a, Generic>,
+        variants: &'a MsgVariants<'a, Generic>,
         associated_types: &'a AssociatedTypes,
         interface_name: &'a Ident,
     ) -> Self {
         Self {
-            executor_variants,
+            variants,
             associated_types,
             interface_name,
         }
@@ -35,7 +35,7 @@ where
     pub fn emit_executor_trait(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
-            executor_variants,
+            variants,
             associated_types,
             interface_name,
         } = self;
@@ -55,12 +55,12 @@ where
         let executor_api_path =
             quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
 
-        let executor_methods_trait_impl = executor_variants
+        let methods_trait_impl = variants
             .variants()
             .map(|variant| variant.emit_executor_impl(&executor_api_path))
             .collect::<Vec<_>>();
 
-        let executor_methods_declaration = executor_variants
+        let executor_methods_declaration = variants
             .variants()
             .map(|variant| variant.emit_executor_method_declaration());
 
@@ -68,19 +68,21 @@ where
         let where_clause = associated_types.as_where_clause();
 
         quote! {
-            pub trait Executor<'sv_executor_lifetime> {
+            pub trait Executor {
                 #(#types_declaration)*
                 #(#executor_methods_declaration)*
             }
 
-            impl <'sv_executor_lifetime, #(#all_generics,)*> Executor<'sv_executor_lifetime> for #sylvia ::types::ExecutorEmptyBuilder<'sv_executor_lifetime, dyn #interface_name <#( #all_generics = #all_generics,)* > > #where_clause {
+            impl <#(#all_generics,)*> Executor
+                for #sylvia ::types::ExecutorBuilder<(#sylvia ::types::EmptyExecutorBuilderState, dyn #interface_name <#( #all_generics = #all_generics,)* > ) > #where_clause {
                 #(type #generics = #generics;)*
-                #(#executor_methods_trait_impl)*
+                #(#methods_trait_impl)*
             }
 
-            impl <'sv_executor_lifetime, Contract: #interface_name> Executor<'sv_executor_lifetime> for #sylvia ::types::ExecutorEmptyBuilder<'sv_executor_lifetime, Contract> {
+            impl <Contract: #interface_name> Executor
+                for #sylvia ::types::ExecutorBuilder<( #sylvia ::types::EmptyExecutorBuilderState, Contract )> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*
-                #(#executor_methods_trait_impl)*
+                #(#methods_trait_impl)*
             }
         }
     }
@@ -89,19 +91,15 @@ where
 pub struct ContractExecutor<'a> {
     generics: Generics,
     self_ty: Type,
-    executor_variants: MsgVariants<'a, GenericParam>,
+    variants: MsgVariants<'a, GenericParam>,
 }
 
 impl<'a> ContractExecutor<'a> {
-    pub fn new(
-        generics: Generics,
-        self_ty: Type,
-        executor_variants: MsgVariants<'a, GenericParam>,
-    ) -> Self {
+    pub fn new(generics: Generics, self_ty: Type, variants: MsgVariants<'a, GenericParam>) -> Self {
         Self {
             generics,
             self_ty,
-            executor_variants,
+            variants,
         }
     }
 
@@ -110,7 +108,7 @@ impl<'a> ContractExecutor<'a> {
         let Self {
             generics,
             self_ty,
-            executor_variants,
+            variants,
             ..
         } = self;
 
@@ -121,11 +119,11 @@ impl<'a> ContractExecutor<'a> {
         let accessor = MsgType::Exec.as_accessor_name();
         let executor_api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
 
-        let executor_methods_impl = executor_variants
+        let executor_methods_impl = variants
             .variants()
             .map(|variant| variant.emit_executor_impl(&executor_api_path));
 
-        let executor_methods_declaration = executor_variants
+        let executor_methods_declaration = variants
             .variants()
             .map(|variant| variant.emit_executor_method_declaration());
 
@@ -140,12 +138,13 @@ impl<'a> ContractExecutor<'a> {
             .unwrap_or(vec![]);
 
         quote! {
-            pub trait Executor<'sv_executor_lifetime, #(#generics,)*> #where_clause {
+            pub trait Executor<#(#generics,)*> #where_clause {
                 #(#types_declaration)*
                 #(#executor_methods_declaration)*
             }
 
-            impl <'sv_executor_lifetime, #(#generics,)*> Executor<'sv_executor_lifetime, #(#generics,)*> for #sylvia ::types::ExecutorEmptyBuilder<'sv_executor_lifetime, #contract > #where_clause {
+            impl <#(#generics,)*> Executor<#(#generics,)*>
+                for #sylvia ::types::ExecutorBuilder<( #sylvia ::types::EmptyExecutorBuilderState, #contract )> #where_clause {
                 #(#types_implementation)*
                 #(#executor_methods_impl)*
             }
@@ -169,9 +168,9 @@ impl EmitExecutorMethod for MsgVariant<'_> {
         let variant_name = name.to_case(Case::Snake);
 
         quote! {
-            fn #variant_name(self, #(#parameters),*) -> Result<#sylvia ::types::ExecutorBuilder<'sv_executor_lifetime>, #sylvia ::cw_std::StdError> {
-                Ok(#sylvia ::types::ExecutorBuilder::<'sv_executor_lifetime>::new(
-                    self.contract(),
+            fn #variant_name(self, #(#parameters),*) -> Result<#sylvia ::types::ExecutorBuilder< #sylvia ::types::ReadyExecutorBuilderState >, #sylvia ::cw_std::StdError> {
+                Ok(#sylvia ::types::ExecutorBuilder::<#sylvia ::types::ReadyExecutorBuilderState>::new(
+                    self.contract().to_owned(),
                     self.funds().to_owned(),
                     #sylvia ::cw_std::to_json_binary( & #api_path :: #variant_name (#(#fields_names),*) )?,
                 ))
@@ -190,7 +189,7 @@ impl EmitExecutorMethod for MsgVariant<'_> {
         let variant_name = name.to_case(Case::Snake);
 
         quote! {
-            fn #variant_name(self, #(#parameters),*) -> Result< #sylvia ::types::ExecutorBuilder<'sv_executor_lifetime>, #sylvia ::cw_std::StdError>;
+            fn #variant_name(self, #(#parameters),*) -> Result< #sylvia ::types::ExecutorBuilder<#sylvia ::types::ReadyExecutorBuilderState>, #sylvia ::cw_std::StdError>;
         }
     }
 }

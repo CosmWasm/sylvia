@@ -10,23 +10,23 @@ use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
 use crate::utils::{emit_bracketed_generics, SvCasing};
 
-pub struct QuerierMethods<'a, Generic> {
-    querier_variants: &'a MsgVariants<'a, Generic>,
+pub struct InterfaceQuerier<'a, Generic> {
+    variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a AssociatedTypes<'a>,
     interface_name: &'a Ident,
 }
 
-impl<'a, Generic> QuerierMethods<'a, Generic>
+impl<'a, Generic> InterfaceQuerier<'a, Generic>
 where
     Generic: GetPath + PartialEq + ToTokens,
 {
     pub fn new(
-        querier_variants: &'a MsgVariants<'a, Generic>,
+        variants: &'a MsgVariants<'a, Generic>,
         associated_types: &'a AssociatedTypes,
         interface_name: &'a Ident,
     ) -> Self {
         Self {
-            querier_variants,
+            variants,
             associated_types,
             interface_name,
         }
@@ -35,7 +35,7 @@ where
     pub fn emit_querier_trait(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
-            querier_variants,
+            variants,
             associated_types,
             interface_name,
         } = self;
@@ -51,15 +51,15 @@ where
             .collect();
         let bracketed_generics = emit_bracketed_generics(&assoc_types);
         let accessor = MsgType::Query.as_accessor_name();
-        let querier_api_path =
+        let api_path =
             quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
 
-        let querier_methods_trait_impl = querier_variants
+        let methods_trait_impl = variants
             .variants()
-            .map(|variant| variant.emit_querier_impl(&querier_api_path))
+            .map(|variant| variant.emit_querier_impl(&api_path))
             .collect::<Vec<_>>();
 
-        let querier_methods_declaration = querier_variants
+        let querier_methods_declaration = variants
             .variants()
             .map(|variant| variant.emit_querier_method_declaration());
 
@@ -74,12 +74,12 @@ where
 
             impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
                 #(type #generics = #generics;)*
-                #(#querier_methods_trait_impl)*
+                #(#methods_trait_impl)*
             }
 
             impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for #sylvia ::types::BoundQuerier<'a, C, Contract> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*
-                #(#querier_methods_trait_impl)*
+                #(#methods_trait_impl)*
             }
         }
     }
@@ -88,19 +88,15 @@ where
 pub struct ContractQuerier<'a> {
     generics: Generics,
     self_ty: Type,
-    querier_variants: MsgVariants<'a, GenericParam>,
+    variants: MsgVariants<'a, GenericParam>,
 }
 
 impl<'a> ContractQuerier<'a> {
-    pub fn new(
-        generics: Generics,
-        self_ty: Type,
-        querier_variants: MsgVariants<'a, GenericParam>,
-    ) -> Self {
+    pub fn new(generics: Generics, self_ty: Type, variants: MsgVariants<'a, GenericParam>) -> Self {
         Self {
             generics,
             self_ty,
-            querier_variants,
+            variants,
         }
     }
 
@@ -109,7 +105,7 @@ impl<'a> ContractQuerier<'a> {
         let Self {
             generics,
             self_ty,
-            querier_variants,
+            variants,
             ..
         } = self;
 
@@ -118,13 +114,13 @@ impl<'a> ContractQuerier<'a> {
         let contract = &self_ty;
 
         let accessor = MsgType::Query.as_accessor_name();
-        let querier_api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
+        let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
 
-        let querier_methods_impl = querier_variants
+        let querier_methods_impl = variants
             .variants()
-            .map(|variant| variant.emit_querier_impl(&querier_api_path));
+            .map(|variant| variant.emit_querier_impl(&api_path));
 
-        let querier_methods_declaration = querier_variants
+        let querier_methods_declaration = variants
             .variants()
             .map(|variant| variant.emit_querier_method_declaration());
 

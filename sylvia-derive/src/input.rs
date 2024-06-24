@@ -4,7 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
-use crate::executor::{ContractExecutor, ExecutorMethods};
+use crate::executor::{ContractExecutor, InterfaceExecutor};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -16,7 +16,7 @@ use crate::parser::{
     assert_new_method_defined, ContractErrorAttr, Custom, OverrideEntryPoint,
     ParsedSylviaAttributes,
 };
-use crate::querier::{ContractQuerier, QuerierMethods};
+use crate::querier::{ContractQuerier, InterfaceQuerier};
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
@@ -96,9 +96,9 @@ impl<'a> TraitInput<'a> {
             MsgVariants::new(item.as_variants(), MsgType::Exec, &associated_names, &None);
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
-        let executor = ExecutorMethods::new(&executor_variants, associated_types, &item.ident)
+        let executor = InterfaceExecutor::new(&executor_variants, associated_types, &item.ident)
             .emit_executor_trait();
-        let querier = QuerierMethods::new(&query_variants, associated_types, &item.ident)
+        let querier = InterfaceQuerier::new(&query_variants, associated_types, &item.ident)
             .emit_querier_trait();
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
