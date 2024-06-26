@@ -188,15 +188,15 @@ where
 }
 
 pub mod manager {
-    use cosmwasm_std::{to_json_binary, Addr, Response, StdError, StdResult, WasmMsg};
+    use cosmwasm_std::{Addr, Response, StdError, StdResult};
     use cw_storage_plus::Item;
     use schemars::JsonSchema;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
     use sylvia::contract;
-    use sylvia::types::{ExecCtx, InstantiateCtx, InterfaceApi, QueryCtx};
+    use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 
-    use crate::counter::sv::{Api as CounterApi, Querier};
+    use crate::counter::sv::{Executor, Querier};
     use crate::{ExampleMsg, ExampleQuery, InterfaceStorage};
 
     pub struct ManagerContract<'a, CounterT> {
@@ -236,27 +236,14 @@ pub mod manager {
             ctx: ExecCtx<ExampleQuery>,
             value: CounterT,
         ) -> Result<Response<ExampleMsg>, StdError> {
-            // This should be simplified to something like
-            // ```rust
-            // let msg = self
-            //      .remote_counter
-            //      .load(ctx.deps.storage)?
-            //      .add(value)
-            //      .with_funds(&[])
-            //      .build();
-            // ```
-            // after https://github.com/CosmWasm/sylvia/issues/130
-            let msg = <CounterApi<_> as InterfaceApi>::Exec::add(value);
-            let wasm = WasmMsg::Execute {
-                contract_addr: self
-                    .remote_counter
-                    .load(ctx.deps.storage)?
-                    .interface_remote
-                    .as_ref()
-                    .to_string(),
-                msg: to_json_binary(&msg)?,
-                funds: vec![],
-            };
+            let wasm = self
+                .remote_counter
+                .load(ctx.deps.storage)?
+                .interface_remote
+                .executor()
+                .with_funds(vec![])
+                .add(value)?
+                .build();
             let resp = Response::new().add_message(wasm);
             Ok(resp)
         }
