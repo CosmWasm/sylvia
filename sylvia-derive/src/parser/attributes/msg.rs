@@ -1,8 +1,6 @@
-use syn::parse::{Error, Parse, ParseStream, Parser};
-use syn::spanned::Spanned;
-use syn::{Attribute, Ident, Result, Token};
-
 use proc_macro_error::emit_error;
+use syn::parse::{Error, Parse, ParseStream, Parser};
+use syn::{Ident, MetaList, Result, Token};
 
 /// Type of message to be generated
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -56,14 +54,11 @@ pub enum MsgAttr {
 }
 
 impl MsgAttr {
-    pub fn new(attr: &Attribute) -> Result<Self> {
-        attr.meta
-            .require_list()
-            .and_then(|meta| MsgAttr::parse.parse2(meta.tokens.clone()))
-            .map_err(|err| {
-                emit_error!(attr.span(), err);
-                err
-            })
+    pub fn new(attr: &MetaList) -> Result<Self> {
+        MsgAttr::parse.parse2(attr.tokens.clone()).map_err(|err| {
+            emit_error!(err.span(), err);
+            err
+        })
     }
 }
 

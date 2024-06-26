@@ -2,8 +2,7 @@ use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::parse::{Error, Parse, ParseStream, Parser};
-use syn::spanned::Spanned;
-use syn::{parenthesized, Attribute, Ident, Path, Result, Token, Type};
+use syn::{parenthesized, Ident, MetaList, Path, Result, Token, Type};
 
 use crate::crate_module;
 use crate::parser::MsgType;
@@ -16,12 +15,11 @@ pub struct OverrideEntryPoint {
 }
 
 impl OverrideEntryPoint {
-    pub fn new(attr: &Attribute) -> Result<Self> {
-        attr.meta
-            .require_list()
-            .and_then(|meta| OverrideEntryPoint::parse.parse2(meta.tokens.clone()))
+    pub fn new(attr: &MetaList) -> Result<Self> {
+        OverrideEntryPoint::parse
+            .parse2(attr.tokens.clone())
             .map_err(|err| {
-                emit_error!(attr.span(), err);
+                emit_error!(err.span(), err);
                 err
             })
     }

@@ -1,0 +1,23 @@
+error: Expected attribute of the form: `#[sv::msg_attr(msg_type, attribute_to_forward)]`
+ --> tests/ui/attributes/attr_forwarding/invalid_sv_attr.rs:8:16
+  |
+8 | #[sv::msg_attr(exec,)]
+  |                ^^^^
+
+error: Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`, `reply` or `sudo`.
+ --> tests/ui/attributes/attr_forwarding/invalid_sv_attr.rs:9:16
+  |
+9 | #[sv::msg_attr(random_msg, PartialOrd)]
+  |                ^^^^^^^^^^
+
+error: Expected attribute of the form: `#[sv::msg_attr(msg_type, attribute_to_forward)]`
+  --> tests/ui/attributes/attr_forwarding/invalid_sv_attr.rs:10:16
+   |
+10 | #[sv::msg_attr(exec PartialOrd)]
+   |                ^^^^
+
+error: Expected attribute of the form: `#[sv::msg_attr(msg_type, attribute_to_forward)]`
+  --> tests/ui/attributes/attr_forwarding/invalid_sv_attr.rs:11:16
+   |
+11 | #[sv::msg_attr(PartialOrd)]
+   |                ^^^^^^^^^^

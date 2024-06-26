@@ -1,7 +1,6 @@
 use proc_macro_error::emit_error;
 use syn::parse::{Parse, ParseStream, Parser};
-use syn::spanned::Spanned;
-use syn::{parse_quote, Attribute, Result, Type};
+use syn::{parse_quote, MetaList, Result, Type};
 
 use crate::crate_module;
 
@@ -20,12 +19,11 @@ impl Default for ContractErrorAttr {
 }
 
 impl ContractErrorAttr {
-    pub fn new(attr: &Attribute) -> Result<Self> {
-        attr.meta
-            .require_list()
-            .and_then(|meta| ContractErrorAttr::parse.parse2(meta.tokens.clone()))
+    pub fn new(attr: &MetaList) -> Result<Self> {
+        ContractErrorAttr::parse
+            .parse2(attr.tokens.clone())
             .map_err(|err| {
-                emit_error!(attr.span(), err);
+                emit_error!(err.span(), err);
                 err
             })
     }

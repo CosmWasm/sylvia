@@ -1,6 +1,6 @@
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
-use syn::{Attribute, PathSegment};
+use syn::{Attribute, MetaList, PathSegment};
 
 pub mod attr;
 pub mod custom;
@@ -72,7 +72,9 @@ impl ParsedSylviaAttributes {
         let mut result = Self::default();
         for attr in attrs {
             let sylvia_attr = SylviaAttribute::new(attr);
-            if let Some(sylvia_attr) = sylvia_attr {
+            let attr_content = attr.meta.require_list();
+
+            if let (Some(sylvia_attr), Ok(attr)) = (sylvia_attr, &attr_content) {
                 result.match_attribute(&sylvia_attr, attr);
             }
         }
@@ -85,7 +87,7 @@ impl ParsedSylviaAttributes {
                 );
             } else if let Some(MsgAttr::Migrate) = result.msg_attr {
                 emit_error!(
-                    attr.span, "The attribute `sv::attr` is not supported for `migate`";
+                    attr.span, "The attribute `sv::attr` is not supported for `migrate`";
                     note = "Message `migrate` is a structure, use `#[sv::msg_attr] instead`";
                 );
             }
@@ -94,7 +96,7 @@ impl ParsedSylviaAttributes {
         result
     }
 
-    fn match_attribute(&mut self, attribute_type: &SylviaAttribute, attr: &Attribute) {
+    fn match_attribute(&mut self, attribute_type: &SylviaAttribute, attr: &MetaList) {
         match attribute_type {
             SylviaAttribute::Custom => {
                 if self.custom_attr.is_none() {
@@ -146,9 +148,8 @@ impl ParsedSylviaAttributes {
                 }
             }
             SylviaAttribute::VariantAttrs => {
-                if let Ok(variant_attrs) = VariantAttrForwarding::new(attr) {
-                    self.variant_attrs_forward.push(variant_attrs);
-                }
+                self.variant_attrs_forward
+                    .push(VariantAttrForwarding::new(attr));
             }
             SylviaAttribute::MsgAttrs => {
                 if let Ok(message_attrs) = MsgAttrForwarding::new(attr) {
