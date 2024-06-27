@@ -4,6 +4,7 @@ use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
 
 use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
+use crate::executor::{ContractExecutor, InterfaceExecutor};
 use crate::interfaces::Interfaces;
 use crate::message::{
     ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
@@ -15,7 +16,7 @@ use crate::parser::{
     assert_new_method_defined, ContractErrorAttr, Custom, OverrideEntryPoint,
     ParsedSylviaAttributes,
 };
-use crate::querier::{ContractQuerier, TraitQuerier};
+use crate::querier::{ContractQuerier, InterfaceQuerier};
 use crate::variant_descs::AsVariantDescs;
 
 /// Preprocessed `interface` macro input
@@ -91,10 +92,14 @@ impl<'a> TraitInput<'a> {
         let messages = self.emit_messages();
         let associated_names: Vec<_> = associated_types.as_filtered_names().collect();
 
+        let executor_variants =
+            MsgVariants::new(item.as_variants(), MsgType::Exec, &associated_names, &None);
         let query_variants =
             MsgVariants::new(item.as_variants(), MsgType::Query, &associated_names, &None);
-        let querier =
-            TraitQuerier::new(&query_variants, associated_types, &item.ident).emit_trait_querier();
+        let executor = InterfaceExecutor::new(&executor_variants, associated_types, &item.ident)
+            .emit_executor_trait();
+        let querier = InterfaceQuerier::new(&query_variants, associated_types, &item.ident)
+            .emit_querier_trait();
 
         let interface_messages = InterfaceApi::new(item, associated_types, custom).emit();
 
@@ -106,6 +111,8 @@ impl<'a> TraitInput<'a> {
                 #messages
 
                 #querier
+
+                #executor
 
                 #interface_messages
 
@@ -204,7 +211,20 @@ impl<'a> ImplInput<'a> {
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
 
-        let querier = ContractQuerier::new(item).emit();
+        let executor_variants = MsgVariants::new(item.as_variants(), MsgType::Exec, &[], &None);
+        let querier_variants = MsgVariants::new(item.as_variants(), MsgType::Query, &[], &None);
+        let executor = ContractExecutor::new(
+            item.generics.clone(),
+            *item.self_ty.clone(),
+            executor_variants,
+        )
+        .emit();
+        let querier = ContractQuerier::new(
+            item.generics.clone(),
+            *item.self_ty.clone(),
+            querier_variants,
+        )
+        .emit();
         let messages = self.emit_messages();
         let contract_api = ContractApi::new(item, generics, custom).emit();
 
@@ -217,6 +237,8 @@ impl<'a> ImplInput<'a> {
                 #multitest_helpers
 
                 #querier
+
+                #executor
 
                 #contract_api
             }

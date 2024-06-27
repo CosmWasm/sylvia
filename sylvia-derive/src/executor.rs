@@ -10,13 +10,13 @@ use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
 use crate::utils::{emit_bracketed_generics, SvCasing};
 
-pub struct InterfaceQuerier<'a, Generic> {
+pub struct InterfaceExecutor<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a AssociatedTypes<'a>,
     interface_name: &'a Ident,
 }
 
-impl<'a, Generic> InterfaceQuerier<'a, Generic>
+impl<'a, Generic> InterfaceExecutor<'a, Generic>
 where
     Generic: GetPath + PartialEq + ToTokens,
 {
@@ -32,7 +32,7 @@ where
         }
     }
 
-    pub fn emit_querier_trait(&self) -> TokenStream {
+    pub fn emit_executor_trait(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self {
             variants,
@@ -50,34 +50,37 @@ where
             .map(|assoc| quote! {Self:: #assoc})
             .collect();
         let bracketed_generics = emit_bracketed_generics(&assoc_types);
-        let accessor = MsgType::Query.as_accessor_name();
-        let api_path =
+
+        let accessor = MsgType::Exec.as_accessor_name();
+        let executor_api_path =
             quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
 
         let methods_trait_impl = variants
             .variants()
-            .map(|variant| variant.emit_querier_impl(&api_path))
+            .map(|variant| variant.emit_executor_impl(&executor_api_path))
             .collect::<Vec<_>>();
 
-        let querier_methods_declaration = variants
+        let executor_methods_declaration = variants
             .variants()
-            .map(|variant| variant.emit_querier_method_declaration());
+            .map(|variant| variant.emit_executor_method_declaration());
 
         let types_declaration = associated_types.filtered().collect::<Vec<_>>();
         let where_clause = associated_types.as_where_clause();
 
         quote! {
-            pub trait Querier {
+            pub trait Executor {
                 #(#types_declaration)*
-                #(#querier_methods_declaration)*
+                #(#executor_methods_declaration)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, #(#all_generics,)*> Querier for #sylvia ::types::BoundQuerier<'a, C, dyn #interface_name <#( #all_generics = #all_generics,)*> > #where_clause {
+            impl <#(#all_generics,)*> Executor
+                for #sylvia ::types::ExecutorBuilder<(#sylvia ::types::EmptyExecutorBuilderState, dyn #interface_name <#( #all_generics = #all_generics,)* > ) > #where_clause {
                 #(type #generics = #generics;)*
                 #(#methods_trait_impl)*
             }
 
-            impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for #sylvia ::types::BoundQuerier<'a, C, Contract> {
+            impl <Contract: #interface_name> Executor
+                for #sylvia ::types::ExecutorBuilder<( #sylvia ::types::EmptyExecutorBuilderState, Contract )> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*
                 #(#methods_trait_impl)*
             }
@@ -85,13 +88,13 @@ where
     }
 }
 
-pub struct ContractQuerier<'a> {
+pub struct ContractExecutor<'a> {
     generics: Generics,
     self_ty: Type,
     variants: MsgVariants<'a, GenericParam>,
 }
 
-impl<'a> ContractQuerier<'a> {
+impl<'a> ContractExecutor<'a> {
     pub fn new(generics: Generics, self_ty: Type, variants: MsgVariants<'a, GenericParam>) -> Self {
         Self {
             generics,
@@ -113,16 +116,16 @@ impl<'a> ContractQuerier<'a> {
         let generics: Vec<_> = generics.params.iter().collect();
         let contract = &self_ty;
 
-        let accessor = MsgType::Query.as_accessor_name();
-        let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
+        let accessor = MsgType::Exec.as_accessor_name();
+        let executor_api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
 
-        let querier_methods_impl = variants
+        let executor_methods_impl = variants
             .variants()
-            .map(|variant| variant.emit_querier_impl(&api_path));
+            .map(|variant| variant.emit_executor_impl(&executor_api_path));
 
-        let querier_methods_declaration = variants
+        let executor_methods_declaration = variants
             .variants()
-            .map(|variant| variant.emit_querier_method_declaration());
+            .map(|variant| variant.emit_executor_method_declaration());
 
         let types_declaration = where_clause
             .as_ref()
@@ -134,54 +137,50 @@ impl<'a> ContractQuerier<'a> {
             .map(EmitAssociated::emit_implementation)
             .unwrap_or(vec![]);
 
-        let bracketed_generics = if !generics.is_empty() {
-            quote! { < #(#generics,)* > }
-        } else {
-            quote! {}
-        };
-
         quote! {
-            pub trait Querier #bracketed_generics {
+            pub trait Executor<#(#generics,)*> #where_clause {
                 #(#types_declaration)*
-                #(#querier_methods_declaration)*
+                #(#executor_methods_declaration)*
             }
 
-            impl <'sv_querier_lifetime, #(#generics,)* C: #sylvia ::cw_std::CustomQuery> Querier #bracketed_generics for #sylvia ::types::BoundQuerier<'sv_querier_lifetime, C, #contract > #where_clause {
+            impl <#(#generics,)*> Executor<#(#generics,)*>
+                for #sylvia ::types::ExecutorBuilder<( #sylvia ::types::EmptyExecutorBuilderState, #contract )> #where_clause {
                 #(#types_implementation)*
-                #(#querier_methods_impl)*
+                #(#executor_methods_impl)*
             }
         }
     }
 }
 
-trait EmitQuerierMethod {
-    fn emit_querier_impl(&self, api_path: &TokenStream) -> TokenStream;
-    fn emit_querier_method_declaration(&self) -> TokenStream;
+trait EmitExecutorMethod {
+    fn emit_executor_impl(&self, api_path: &TokenStream) -> TokenStream;
+    fn emit_executor_method_declaration(&self) -> TokenStream;
 }
 
-impl EmitQuerierMethod for MsgVariant<'_> {
-    fn emit_querier_impl(&self, api_path: &TokenStream) -> TokenStream {
-        let sylvia = crate_module();
+impl EmitExecutorMethod for MsgVariant<'_> {
+    fn emit_executor_impl(&self, api_path: &TokenStream) -> TokenStream {
         let name = self.name();
         let fields = self.fields();
-        let return_type = self.return_type();
+        let sylvia = crate_module();
 
         let parameters = fields.iter().map(MsgField::emit_method_field_folded);
         let fields_names = fields.iter().map(MsgField::name);
         let variant_name = name.to_case(Case::Snake);
 
         quote! {
-            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError> {
-                let query = #api_path :: #variant_name (#(#fields_names),*);
-                self.querier().query_wasm_smart(self.contract(), &query)
+            fn #variant_name(self, #(#parameters),*) -> Result<#sylvia ::types::ExecutorBuilder< #sylvia ::types::ReadyExecutorBuilderState >, #sylvia ::cw_std::StdError> {
+                Ok(#sylvia ::types::ExecutorBuilder::<#sylvia ::types::ReadyExecutorBuilderState>::new(
+                    self.contract().to_owned(),
+                    self.funds().to_owned(),
+                    #sylvia ::cw_std::to_json_binary( & #api_path :: #variant_name (#(#fields_names),*) )?,
+                ))
             }
         }
     }
 
-    fn emit_querier_method_declaration(&self) -> TokenStream {
-        let sylvia = crate_module();
+    fn emit_executor_method_declaration(&self) -> TokenStream {
         let name = self.name();
-        let return_type = self.return_type();
+        let sylvia = crate_module();
 
         let parameters = self
             .fields()
@@ -190,7 +189,7 @@ impl EmitQuerierMethod for MsgVariant<'_> {
         let variant_name = name.to_case(Case::Snake);
 
         quote! {
-            fn #variant_name(&self, #(#parameters),*) -> Result< #return_type, #sylvia:: cw_std::StdError>;
+            fn #variant_name(self, #(#parameters),*) -> Result< #sylvia ::types::ExecutorBuilder<#sylvia ::types::ReadyExecutorBuilderState>, #sylvia ::cw_std::StdError>;
         }
     }
 }
