@@ -1,14 +1,7 @@
 error: Invalid custom type.
 
-         = note: Expected `#[sv::custom(msg=SomeMsg, query=SomeQuery)]`
-
+         = note: Expected `#[sv::custom(msg=SomeMsg, query=SomeQuery)]`.
   --> tests/ui/attributes/custom/invalid_custom.rs:12:14
    |
 12 | #[sv::custom(mgs=MyMsg)]
    |              ^^^
-
-error: unexpected token
-  --> tests/ui/attributes/custom/invalid_custom.rs:12:1
-   |
-12 | #[sv::custom(mgs=MyMsg)]
-   | ^

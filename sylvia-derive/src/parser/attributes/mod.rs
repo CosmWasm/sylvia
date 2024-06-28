@@ -1,13 +1,15 @@
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
-use syn::{Attribute, PathSegment};
+use syn::{Attribute, MetaList, PathSegment};
 
+pub mod attr;
 pub mod custom;
 pub mod error;
 pub mod messages;
 pub mod msg;
 pub mod override_entry_point;
 
+pub use attr::{MsgAttrForwarding, VariantAttrForwarding};
 pub use custom::Custom;
 pub use error::ContractErrorAttr;
 pub use messages::{ContractMessageAttr, Customs};
@@ -23,6 +25,8 @@ pub enum SylviaAttribute {
     Messages,
     Msg,
     OverrideEntryPoint,
+    VariantAttrs,
+    MsgAttrs,
 }
 
 impl SylviaAttribute {
@@ -42,6 +46,8 @@ impl SylviaAttribute {
             "messages" => Some(Self::Messages),
             "msg" => Some(Self::Msg),
             "override_entry_point" => Some(Self::OverrideEntryPoint),
+            "attr" => Some(Self::VariantAttrs),
+            "msg_attr" => Some(Self::MsgAttrs),
             _ => None,
         }
     }
@@ -57,6 +63,8 @@ pub struct ParsedSylviaAttributes {
     pub messages_attrs: Vec<ContractMessageAttr>,
     pub msg_attr: Option<MsgAttr>,
     pub override_entry_point_attrs: Vec<OverrideEntryPoint>,
+    pub variant_attrs_forward: Vec<VariantAttrForwarding>,
+    pub msg_attrs_forward: Vec<MsgAttrForwarding>,
 }
 
 impl ParsedSylviaAttributes {
@@ -64,14 +72,31 @@ impl ParsedSylviaAttributes {
         let mut result = Self::default();
         for attr in attrs {
             let sylvia_attr = SylviaAttribute::new(attr);
-            if let Some(sylvia_attr) = sylvia_attr {
+            let attr_content = attr.meta.require_list();
+
+            if let (Some(sylvia_attr), Ok(attr)) = (sylvia_attr, &attr_content) {
                 result.match_attribute(&sylvia_attr, attr);
             }
         }
+
+        if let Some(attr) = result.variant_attrs_forward.first() {
+            if let Some(MsgAttr::Instantiate) = result.msg_attr {
+                emit_error!(
+                    attr.span, "The attribute `sv::attr` is not supported for `instantiate`";
+                    note = "Message `instantiate` is a structure, use `#[sv::msg_attr] instead`";
+                );
+            } else if let Some(MsgAttr::Migrate) = result.msg_attr {
+                emit_error!(
+                    attr.span, "The attribute `sv::attr` is not supported for `migrate`";
+                    note = "Message `migrate` is a structure, use `#[sv::msg_attr] instead`";
+                );
+            }
+        }
+
         result
     }
 
-    fn match_attribute(&mut self, attribute_type: &SylviaAttribute, attr: &Attribute) {
+    fn match_attribute(&mut self, attribute_type: &SylviaAttribute, attr: &MetaList) {
         match attribute_type {
             SylviaAttribute::Custom => {
                 if self.custom_attr.is_none() {
@@ -120,6 +145,15 @@ impl ParsedSylviaAttributes {
             SylviaAttribute::OverrideEntryPoint => {
                 if let Ok(override_entry_point) = OverrideEntryPoint::new(attr) {
                     self.override_entry_point_attrs.push(override_entry_point)
+                }
+            }
+            SylviaAttribute::VariantAttrs => {
+                self.variant_attrs_forward
+                    .push(VariantAttrForwarding::new(attr));
+            }
+            SylviaAttribute::MsgAttrs => {
+                if let Ok(message_attrs) = MsgAttrForwarding::new(attr) {
+                    self.msg_attrs_forward.push(message_attrs);
                 }
             }
         }

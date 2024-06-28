@@ -1,7 +1,6 @@
 use proc_macro_error::emit_error;
 use syn::parse::{Parse, ParseStream, Parser};
-use syn::spanned::Spanned;
-use syn::{parse_quote, Attribute, Ident, Result, Token, Type};
+use syn::{parse_quote, Error, Ident, MetaList, Result, Token, Type};
 
 use crate::crate_module;
 
@@ -12,14 +11,11 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(attr: &Attribute) -> Result<Self> {
-        attr.meta
-            .require_list()
-            .and_then(|meta| Custom::parse.parse2(meta.tokens.clone()))
-            .map_err(|err| {
-                emit_error!(attr.span(), err);
-                err
-            })
+    pub fn new(attr: &MetaList) -> Result<Self> {
+        Custom::parse.parse2(attr.tokens.clone()).map_err(|err| {
+            emit_error!(err.span(), err);
+            err
+        })
     }
 
     pub fn msg_or_default(&self) -> Type {
@@ -43,15 +39,17 @@ impl Parse for Custom {
         while !input.is_empty() {
             let ty: Ident = input.parse()?;
             let _: Token![=] = input.parse()?;
-            if ty == "msg" {
-                custom.msg = Some(input.parse()?)
-            } else if ty == "query" {
-                custom.query = Some(input.parse()?)
-            } else {
-                emit_error!(ty.span(), "Invalid custom type.";
-                    note = ty.span() => "Expected `#[sv::custom(msg=SomeMsg, query=SomeQuery)]`"
-                );
-            };
+            match ty.to_string().as_str() {
+                "msg" => custom.msg = Some(input.parse()?),
+                "query" => custom.query = Some(input.parse()?),
+                _ => {
+                    return Err(Error::new(
+                        ty.span(),
+                        "Invalid custom type.\n
+  = note: Expected `#[sv::custom(msg=SomeMsg, query=SomeQuery)]`.\n",
+                    ))
+                }
+            }
             if !input.peek(Token![,]) {
                 break;
             }
