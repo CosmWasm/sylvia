@@ -952,6 +952,9 @@ impl<'a> GlueMessage<'a> {
             }
         };
 
+        let modules_names = interfaces.variants_modules();
+        let variants_names = interfaces.variants_names();
+
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq)]
@@ -1058,6 +1061,22 @@ impl<'a> GlueMessage<'a> {
                     Err(D::Error::custom(err_msg))
                 }
             }
+
+            impl #bracketed_wrapper_generics From<<#contract as #sylvia ::types::ContractApi>:: #enum_accessor>
+                for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
+                fn from(a: <#contract as #sylvia ::types::ContractApi>:: #enum_accessor ) -> Self {
+                    Self:: #contract_name (a)
+                }
+            }
+
+            #(
+            impl #bracketed_wrapper_generics From<<#contract as #modules_names ::sv::InterfaceMessagesApi>:: #enum_accessor>
+                for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
+                fn from(a: <#contract as #modules_names ::sv::InterfaceMessagesApi>:: #enum_accessor ) -> Self {
+                    Self:: #variants_names (a)
+                }
+            }
+            )*
         }
     }
 }
