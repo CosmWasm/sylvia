@@ -1,0 +1,26 @@
+error: The message attribute `instantiate` is not supported in interfaces.
+
+         = note: Contracts need to implement `instantiate` method within their `impl` block.
+
+  --> tests/ui/missing_method/msgs_misused.rs:17:12
+   |
+17 |         fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response>;
+   |            ^^^^^^^^^^^
+
+error: The message attribute `migrate` is not supported in interfaces
+
+         = note: Contracts need to implement `migrate` method within their `impl` block.
+
+  --> tests/ui/missing_method/msgs_misused.rs:20:12
+   |
+20 |         fn migrate(&self, ctx: MigrateCtx) -> StdResult<Response>;
+   |            ^^^^^^^
+
+error: More than one instantiation or migration message
+
+         = note: Instantiation/Migration message previously defined here
+
+  --> tests/ui/missing_method/msgs_misused.rs:35:5
+   |
+35 |     #[sv::msg(instantiate)]
+   |     ^
