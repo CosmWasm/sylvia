@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{ItemImpl, Type};
+use syn::{ItemImpl, Path, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::MsgType;
@@ -132,5 +132,13 @@ impl Interfaces {
                 },
             }
         }).collect()
+    }
+
+    pub fn variants_names(&self) -> impl Iterator<Item = &Ident> {
+        self.interfaces.iter().map(|interface| &interface.variant)
+    }
+
+    pub fn variants_modules(&self) -> impl Iterator<Item = &Path> {
+        self.interfaces.iter().map(|interface| &interface.module)
     }
 }
