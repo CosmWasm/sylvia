@@ -7,7 +7,6 @@ use syn::{parenthesized, Error, Ident, MetaList, Path, Result, Token};
 
 use proc_macro_error::emit_error;
 
-use crate::parser::extract_generics_from_path;
 use crate::strip_generics::StripGenerics;
 
 #[derive(Debug)]
@@ -77,8 +76,6 @@ fn interface_has_custom(content: ParseStream) -> Result<Customs> {
 impl Parse for ContractMessageAttr {
     fn parse(input: ParseStream) -> Result<Self> {
         let module = input.parse()?;
-        // If this is not for backwards compatibility we can remove it
-        let _ = extract_generics_from_path(&module);
         let module = StripGenerics.fold_path(module);
 
         let variant = if input.parse::<Token![as]>().is_ok() {

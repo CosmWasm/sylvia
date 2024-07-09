@@ -126,6 +126,34 @@ impl<'a> TraitInput<'a> {
         let query = self.emit_msg(MsgType::Query);
         let sudo = self.emit_msg(MsgType::Sudo);
 
+        let instantiate = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Instantiate,
+            &[] as &[&Ident],
+            &None,
+        );
+
+        if let Some(msg_variant) = instantiate.variants().next() {
+            emit_error!(
+                msg_variant.name().span(), "The message attribute `instantiate` is not supported in interfaces.";
+                note = "Contracts need to implement `instantiate` method within their `impl` block.";
+            );
+        }
+
+        let migrate = MsgVariants::new(
+            self.item.as_variants(),
+            MsgType::Migrate,
+            &[] as &[&Ident],
+            &None,
+        );
+
+        if let Some(msg_variant) = migrate.variants().next() {
+            emit_error!(
+                msg_variant.name().span(), "The message attribute `migrate` is not supported in interfaces";
+                note = "Contracts need to implement `migrate` method within their `impl` block.";
+            );
+        }
+
         quote! {
             #exec
 
