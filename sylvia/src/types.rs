@@ -278,7 +278,9 @@ impl<Contract: ?Sized> ExecutorBuilder<(EmptyExecutorBuilderState, Contract)> {
             _state: std::marker::PhantomData,
         }
     }
+}
 
+impl<T, Contract: ?Sized> ExecutorBuilder<(T, Contract)> {
     /// Adds the funds to the execution message.
     pub fn with_funds(self, funds: Vec<Coin>) -> Self {
         Self { funds, ..self }

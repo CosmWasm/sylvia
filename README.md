@@ -273,9 +273,15 @@ impl CustomQuery for MyMsg {}
 #[sv::messages(interface as Interface)]
 #[sv::messages(interface as InterfaceWithCustomType: custom(msg, query))]
 #[sv::custom(msg=MyMsg, query=MyQuery)]
+#[sv::msg_attr(exec, PartialOrd)]
 #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::SudoMsg))]
 impl MyContract {
     // ...
+    #[sv::msg(query)]
+    #[sv::attr(serde(rename(serialize = "CustomQueryMsg")))]
+    fn query_msg(&self, _ctx: QueryCtx) -> StdResult<Response> {
+        // ...
+    }
 }
 ```
 
@@ -291,6 +297,10 @@ impl MyContract {
 
  * `sv::custom` allows to define CustomMsg and CustomQuery for the contract. By default generated code
     will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
+
+ * `sv::msg_attr` forwards any attribute to the message's type.
+
+ * `sv::attr` forwards any attribute to the enum's variant.
 
 
 ## Usage in external crates
@@ -376,6 +386,35 @@ pub fn evaluate_member(&self, ctx: ExecCtx, ...) -> StdResult<Response> {
         .querier(&ctx.deps.querier)
         .is_member(addr)?;
 }
+```
+
+
+## Executor message builder
+
+Sylvia defines the
+[`ExecutorBuilder`](https://docs.rs/sylvia/latest/sylvia/types/struct.ExecutorBuilder.html)
+type, which can be accessed through
+[`Remote::executor`](https://docs.rs/sylvia/latest/sylvia/types/struct.Remote.html#method.executor).
+It's generic over the contract type and exposes execute methods from the
+contract and every interface implemented on it through an auto-generated `Executor` traits.
+Execute messages of other contracts can be built with `Remote` as well by
+calling `executor` method. It returns a message builder that implements
+auto-generated `Executor` traits of all Sylvia contracts.
+Methods defined in the `Executor` traits constructs an execute message,
+which variant corresponds to the method name.
+The message is then wrapped in the `WasmMsg`, and returned once
+[`ExecutorBuilder::build()`](https://docs.rs/sylvia/latest/sylvia/types/struct.ExecutorBuilder.html#method.build)
+method is called.
+
+```rust
+use sylvia::types::Remote;
+use other_contract::contract::OtherContract;
+use other_contract::contract::sv::Executor;
+
+let some_exec_msg: WasmMsg = Remote::<OtherContract>::new(remote_addr)
+    .executor()
+    .some_exec_method()?
+    .build();
 ```
 
 ## Using unsupported entry points

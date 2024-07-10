@@ -27,7 +27,6 @@ thiserror = { workspace = true }
 cw2 = { workspace = true }
 cw-multi-test = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
-getrandom = { workspace = true, features = ["js"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }

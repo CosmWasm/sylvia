@@ -26,7 +26,6 @@ cw2 = { workspace = true }
 cw20-allowances = { path = "../../interfaces/cw20-allowances" }
 cw20-marketing = { path = "../../interfaces/cw20-marketing" }
 cw20-minting = { path = "../../interfaces/cw20-minting" }
-getrandom = { workspace = true, features = ["js"] }
 semver = { workspace = true }
 serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
