@@ -34,7 +34,6 @@ cw-multi-test = "2.1.0"
 cw-storage-plus = "2.0.0"
 cw-utils = "2.0.0"
 cw2 = "2.0.0"
-getrandom = "0.2.15"
 semver = "1.0.23"
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }
 thiserror = "1.0.61"

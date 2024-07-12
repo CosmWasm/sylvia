@@ -227,6 +227,20 @@ pub(crate) fn crate_module() -> Path {
 /// # fn main() {}
 /// ```
 ///
+/// ### `sv::msg_attr(msg_type, {...})`
+///
+/// This attribute can be used for the whole `trait Interface {}` block and
+/// for the following message types: `exec`, `query` and `sudo`.
+/// The `{...}` part will be forwarded as an attribute `#[{...}]` to the
+/// given message type (enum or struct).
+///
+/// ### `sv::attr({...})`
+///
+/// Forwards variant's attribute to the specific enum's field in the
+/// generated message type. It can be used along with `sv::msg(...)`
+/// and only for message types variants that resolves in an enum field,
+/// i.e. `exec`, `query` and `sudo`.
+///
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -599,6 +613,20 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// }
 /// # fn main() {}
 /// ```
+///
+/// ### `sv::msg_attr(msg_type, {...})`
+///
+/// This attribute can be used for the whole `impl Contract {}` block and
+/// for every message type: `exec`, `query`, `sudo`, `instantiate`,
+/// `migrate` and `reply`. The `{...}` part will be forwarded as an
+/// attribute `#[{...}]` to the given message type (enum or struct).
+///
+/// ### `sv::attr({...})`
+///
+/// Forwards variant's attribute to the specific enum's field in the
+/// generated message type. It can be used along with `sv::msg(...)`
+/// and only for message types variants that resolves in an enum field,
+/// i.e. `exec`, `query` and `sudo`.
 ///
 ///
 #[proc_macro_error]
