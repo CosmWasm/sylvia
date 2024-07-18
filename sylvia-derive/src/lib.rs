@@ -646,6 +646,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
         let input = StripInput.fold_item_impl(input);
 
         Ok(quote! {
+            #[cfg_attr(feature = "cargo-clippy", allow(clippy::new_without_default))]
             #input
 
             #expanded
