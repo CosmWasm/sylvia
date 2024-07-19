@@ -1,6 +1,6 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use serde::{Deserialize, Serialize};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[derive(
@@ -11,15 +11,21 @@ pub struct CanExecuteResp {
 }
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw1 {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
+    type CosmosCustomMsg: CustomMsg;
 
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender. Every implementation has it's own logic to
     /// determine in
     #[sv::msg(exec)]
-    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
+    fn execute(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        msgs: Vec<CosmosMsg<Self::CosmosCustomMsg>>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Checks permissions of the caller on this proxy.
     /// If CanExecute returns true then a call to `Execute` with the same message,
@@ -27,9 +33,9 @@ pub trait Cw1 {
     #[sv::msg(query)]
     fn can_execute(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        msg: CosmosMsg,
+        msg: CosmosMsg<Self::CosmosCustomMsg>,
     ) -> StdResult<CanExecuteResp>;
 }
 
