@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Order, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, Binary, Empty, Order, Response, StdError, StdResult, Uint128};
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
     AllowanceResponse, SpenderAllowanceInfo,
@@ -18,6 +18,8 @@ const DEFAULT_LIMIT: u32 = 10;
 
 impl Cw20Allowances for Cw20Base {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.

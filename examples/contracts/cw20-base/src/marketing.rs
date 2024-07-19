@@ -1,13 +1,15 @@
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;
-use cosmwasm_std::{Response, StdError, StdResult};
+use cosmwasm_std::{Empty, Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
 use sylvia::types::{ExecCtx, QueryCtx};
 
 impl Cw20Marketing for Cw20Base {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
 
     fn update_marketing(
         &self,
