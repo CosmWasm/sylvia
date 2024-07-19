@@ -41,11 +41,13 @@ pub trait Cw1 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg};
+    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg, Empty};
+
+    use crate::sv::{Cw1ExecMsg, Cw1QueryMsg};
 
     #[test]
     fn execute() {
-        let original = super::sv::ExecMsg::Execute {
+        let original: Cw1ExecMsg<Empty> = super::sv::ExecMsg::Execute {
             msgs: vec![BankMsg::Send {
                 to_address: "receiver".to_owned(),
                 amount: coins(10, "atom"),
@@ -61,13 +63,13 @@ mod tests {
 
     #[test]
     fn execute_from_json() {
-        let deserialized = from_json(br#"{"execute": { "msgs": [] }}"#).unwrap();
+        let deserialized: Cw1ExecMsg<Empty> = from_json(br#"{"execute": { "msgs": [] }}"#).unwrap();
         assert_eq!(super::sv::ExecMsg::Execute { msgs: vec![] }, deserialized);
     }
 
     #[test]
     fn query() {
-        let original = super::sv::QueryMsg::CanExecute {
+        let original: Cw1QueryMsg<Empty> = super::sv::QueryMsg::CanExecute {
             sender: "sender".to_owned(),
             msg: BankMsg::Send {
                 to_address: "receiver".to_owned(),
@@ -84,7 +86,7 @@ mod tests {
 
     #[test]
     fn query_from_json() {
-        let deserialized = from_json(
+        let deserialized: Cw1QueryMsg<Empty> = from_json(
             br#"{"can_execute": {
                 "sender": "address",
                 "msg": {
