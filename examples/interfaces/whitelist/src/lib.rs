@@ -1,23 +1,28 @@
-use cosmwasm_std::{Response, StdResult};
+use cosmwasm_std::{Response, StdError, StdResult};
 use responses::AdminListResponse;
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 pub mod responses;
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Whitelist {
-    type Error: From<cosmwasm_std::StdError>;
+    type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
 
     #[sv::msg(exec)]
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, Self::Error>;
+    fn freeze(&self, ctx: ExecCtx<Self::QueryC>) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(exec)]
-    fn update_admins(&self, ctx: ExecCtx, admins: Vec<String>) -> Result<Response, Self::Error>;
+    fn update_admins(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        admins: Vec<String>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(query)]
-    fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse>;
+    fn admin_list(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<AdminListResponse>;
 }
 
 #[cfg(test)]
