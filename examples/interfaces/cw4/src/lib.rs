@@ -69,7 +69,7 @@ pub trait Cw4 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_json, to_json_binary};
+    use cosmwasm_std::{from_json, to_json_binary, Empty};
 
     use super::sv::*;
 
@@ -90,7 +90,8 @@ mod tests {
         let original_msg = Cw4QueryMsg::Admin {};
 
         let serialized_msg = to_json_binary(&original_msg).unwrap();
-        let serialized_msg: Cw4QueryMsg = from_json(serialized_msg).unwrap();
+        let serialized_msg: Cw4QueryMsg<Empty, Empty, Empty, Empty, Empty> =
+            from_json(serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
@@ -109,7 +110,8 @@ mod tests {
 
     #[test]
     fn query_from_json() {
-        let deserialized: Cw4QueryMsg = from_json(br#"{"admin": {}}"#).unwrap();
+        let deserialized: Cw4QueryMsg<Empty, Empty, Empty, Empty, Empty> =
+            from_json(br#"{"admin": {}}"#).unwrap();
         assert_eq!(deserialized, Cw4QueryMsg::Admin {});
     }
 
