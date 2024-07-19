@@ -2,33 +2,34 @@ pub mod responses;
 
 use cosmwasm_std::{Response, StdError, StdResult, Uint128};
 use responses::MinterResponse;
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw20Minting {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
 
     /// If authorized, creates amount new tokens and adds to the recipient balance.
     #[sv::msg(exec)]
     fn mint(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// The current minter may set a new minter.
     /// Setting the minter to None will remove the token's minter forever.
     #[sv::msg(exec)]
     fn update_minter(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         new_minter: Option<String>,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Returns who can mint and the hard cap on maximum tokens after minting.
     #[sv::msg(query)]
-    fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>>;
+    fn minter(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<Option<MinterResponse>>;
 }
