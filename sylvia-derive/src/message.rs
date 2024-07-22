@@ -1175,6 +1175,7 @@ impl<'a> ContractApi<'a> {
         } else {
             quote! { type Migrate = #sylvia ::cw_std::Empty; }
         };
+        let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
 
         quote! {
@@ -1189,6 +1190,8 @@ impl<'a> ContractApi<'a> {
                 #migrate_type
                 type Remote<'remote> = #sylvia ::types::Remote<'remote, Self >;
                 type Querier<'querier> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Self >;
+                type CustomMsg = #custom_msg;
+                type CustomQuery = #custom_query;
             }
         }
     }
