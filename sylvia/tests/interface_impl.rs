@@ -1,6 +1,6 @@
 use cosmwasm_std::{Response, StdError, StdResult};
-use sylvia::contract;
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
+use sylvia::{contract, entry_points};
 
 mod interface1 {
     use cosmwasm_std::{Response, StdError, StdResult};
@@ -46,6 +46,7 @@ mod interface2 {
 
 pub struct Contract;
 
+#[entry_points]
 #[contract]
 #[sv::messages(interface1)]
 #[sv::messages(interface2)]

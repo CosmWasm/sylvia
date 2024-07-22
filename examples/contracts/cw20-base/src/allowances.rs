@@ -16,7 +16,7 @@ use crate::responses::Cw20ReceiveMsg;
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-impl Cw20Allowances for Cw20Base<'_> {
+impl Cw20Allowances for Cw20Base {
     type Error = ContractError;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.

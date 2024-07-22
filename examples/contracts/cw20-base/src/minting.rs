@@ -5,7 +5,7 @@ use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
 use sylvia::types::{ExecCtx, QueryCtx};
 
-impl Cw20Minting for Cw20Base<'_> {
+impl Cw20Minting for Cw20Base {
     type Error = ContractError;
 
     fn mint(

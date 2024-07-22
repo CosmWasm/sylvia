@@ -7,9 +7,11 @@ use sylvia::types::{
 use sylvia_derive::contract;
 
 pub struct SomeContract<Instantiate, Query, Exec, Migrate, Sudo, Ret, CMsg, CQuery> {
+    #[allow(clippy::complexity)]
     _phantom: PhantomData<(Instantiate, Query, Exec, Migrate, Sudo, Ret, CMsg, CQuery)>,
 }
 
+#[allow(dead_code)]
 #[contract]
 #[sv::custom(msg=CMsg, query=CQuery)]
 impl<Instantiate, Query, Exec, Migrate, Sudo, Ret, CMsg, CQuery>

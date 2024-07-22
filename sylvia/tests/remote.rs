@@ -159,14 +159,14 @@ pub mod unsigned_contract {
 // Making sure `Remote` can be stored in `#[cw_serde]` types
 #[cw_serde]
 #[allow(dead_code)]
-pub struct ContractStorage<'a, Contract> {
-    remote: Remote<'a, Contract>,
+pub struct ContractStorage<Contract> {
+    remote: Remote<'static, Contract>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct InterfaceStorage<'a, CounterT> {
+pub struct InterfaceStorage<CounterT> {
     interface_remote: Remote<
-        'a,
+        'static,
         dyn counter::Counter<
             Error = StdError,
             ExecC = ExampleMsg,
@@ -176,7 +176,7 @@ pub struct InterfaceStorage<'a, CounterT> {
     >,
 }
 
-impl<CounterT> InterfaceStorage<'_, CounterT>
+impl<CounterT> InterfaceStorage<CounterT>
 where
     CounterT: Serialize + DeserializeOwned,
 {
@@ -193,22 +193,20 @@ pub mod manager {
     use schemars::JsonSchema;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+    use sylvia::{contract, entry_points};
 
     use crate::counter::sv::{Executor, Querier};
     use crate::{ExampleMsg, ExampleQuery, InterfaceStorage};
 
-    pub struct ManagerContract<'a, CounterT> {
-        remote_counter: Item<InterfaceStorage<'a, CounterT>>,
+    pub struct ManagerContract<CounterT> {
+        remote_counter: Item<InterfaceStorage<CounterT>>,
     }
 
+    #[entry_points(generics<i32>)]
     #[contract]
-    // Due to how `cw_multi_test::App` is constructed to test two contracts they have
-    // to use the same custom types.
-    // Not sure if this limits testing of some real life scenarios.
     #[sv::custom(msg=ExampleMsg, query=ExampleQuery)]
-    impl<'a, CounterT> ManagerContract<'a, CounterT>
+    impl<CounterT> ManagerContract<CounterT>
     where
         CounterT: Serialize + DeserializeOwned + std::fmt::Debug + JsonSchema + 'static,
     {

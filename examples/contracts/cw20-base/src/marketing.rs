@@ -6,7 +6,7 @@ use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoRes
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
 use sylvia::types::{ExecCtx, QueryCtx};
 
-impl Cw20Marketing for Cw20Base<'_> {
+impl Cw20Marketing for Cw20Base {
     type Error = ContractError;
 
     fn update_marketing(

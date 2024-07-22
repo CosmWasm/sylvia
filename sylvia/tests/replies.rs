@@ -5,13 +5,14 @@ use sylvia::cw_std::{from_json, Reply, SubMsgResponse, SubMsgResult};
 
 #[allow(dead_code)]
 mod noop_contract {
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, InstantiateCtx};
+    use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::{Response, StdResult};
 
     pub struct NoopContract;
 
+    #[entry_points]
     #[contract]
     impl NoopContract {
         pub const fn new() -> Self {

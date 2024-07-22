@@ -6,7 +6,7 @@ use whitelist::Whitelist;
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
-impl Whitelist for Cw1WhitelistContract<'_> {
+impl Whitelist for Cw1WhitelistContract {
     type Error = ContractError;
 
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
