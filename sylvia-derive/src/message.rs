@@ -1296,7 +1296,6 @@ pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
     error: Type,
-    custom: Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
@@ -1313,13 +1312,11 @@ impl<'a> EntryPoints<'a> {
 
         let generics: Vec<_> = source.generics.params.iter().collect();
         let where_clause = &source.generics.where_clause;
-        let custom = parsed_attrs.custom_attr.unwrap_or_default();
 
         Self {
             source,
             name,
             error,
-            custom,
             override_entry_points,
             generics,
             where_clause,
@@ -1332,7 +1329,6 @@ impl<'a> EntryPoints<'a> {
             source,
             name,
             error,
-            custom,
             override_entry_points,
             generics,
             where_clause,
@@ -1340,13 +1336,17 @@ impl<'a> EntryPoints<'a> {
         } = self;
         let sylvia = crate_module();
 
-        let custom = match &attrs.custom {
-            Some(custom) => custom,
-            None => custom,
-        };
+        let bracketed_generics = attrs
+            .generics
+            .as_ref()
+            .map(|generics| match generics.is_empty() {
+                true => quote! {},
+                false => quote! { < #generics > },
+            })
+            .unwrap_or(quote! {});
 
-        let custom_msg = custom.msg_or_default();
-        let custom_query = custom.query_or_default();
+        let custom_msg = parse_quote! { < #name #bracketed_generics as #sylvia ::types::ContractApi > :: CustomMsg };
+        let custom_query = parse_quote! { < #name #bracketed_generics as #sylvia ::types::ContractApi > :: CustomQuery };
 
         let instantiate_variants = MsgVariants::new(
             source.as_variants(),

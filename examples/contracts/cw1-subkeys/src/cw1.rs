@@ -5,7 +5,7 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;
 
-impl Cw1 for Cw1SubkeysContract<'_> {
+impl Cw1 for Cw1SubkeysContract {
     type Error = ContractError;
 
     fn execute(

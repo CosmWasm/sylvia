@@ -4,8 +4,8 @@ use cosmwasm_std::{Addr, Response, StdResult};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::contract;
 use sylvia::types::InstantiateCtx;
+use sylvia::{contract, entry_points};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
 pub struct CountResponse {
@@ -38,7 +38,7 @@ use counter::Counter;
 use sv::Executor as ContractExecutor;
 use sylvia::types::{ExecCtx, QueryCtx};
 
-impl Counter for CounterContract<'_> {
+impl Counter for CounterContract {
     type Error = StdError;
 
     fn count(&self, ctx: QueryCtx) -> StdResult<CountResponse> {
@@ -56,15 +56,16 @@ impl Counter for CounterContract<'_> {
     }
 }
 
-pub struct CounterContract<'a> {
+pub struct CounterContract {
     pub count: Item<u64>,
-    pub remote_contract: Item<sylvia::types::Remote<'a, CounterContract<'a>>>,
-    pub remote_interface: Item<sylvia::types::Remote<'a, dyn Counter<Error = StdError>>>,
+    pub remote_contract: Item<sylvia::types::Remote<'static, CounterContract>>,
+    pub remote_interface: Item<sylvia::types::Remote<'static, dyn Counter<Error = StdError>>>,
 }
 
+#[entry_points]
 #[contract]
 #[sv::messages(counter)]
-impl<'a> CounterContract<'a> {
+impl CounterContract {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {

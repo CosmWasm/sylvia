@@ -50,7 +50,7 @@ pub struct GenericsForwardedContract<
     )>,
 }
 
-#[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>, custom(msg=SvCustomMsg, query=SvCustomQuery)))]
+#[cfg_attr(not(feature = "library"), sylvia::entry_points(generics<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomQuery, String>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(generic as Generic: custom(msg, query))]

@@ -2,8 +2,8 @@ use cosmwasm_std::{Response, StdError, StdResult};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::contract;
 use sylvia::types::{InstantiateCtx, QueryCtx};
+use sylvia::{contract, entry_points};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -36,6 +36,7 @@ pub mod msg {
 
 pub struct SomeContract {}
 
+#[entry_points]
 #[contract]
 #[sv::error(ContractError)]
 impl SomeContract {

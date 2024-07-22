@@ -12,8 +12,8 @@ use sylvia::entry_points;
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub struct Cw1WhitelistContract<'a> {
-    pub(crate) admins: Map<&'a Addr, Empty>,
+pub struct Cw1WhitelistContract {
+    pub(crate) admins: Map<&'static Addr, Empty>,
     pub(crate) mutable: Item<bool>,
 }
 
@@ -22,7 +22,7 @@ pub struct Cw1WhitelistContract<'a> {
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl<'a> Cw1WhitelistContract<'a> {
+impl Cw1WhitelistContract {
     pub const fn new() -> Self {
         Self {
             admins: Map::new("admins"),

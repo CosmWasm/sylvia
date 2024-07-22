@@ -572,7 +572,6 @@ pub trait InterfaceApi {
 
 /// Api trait for easier access to generated types and messages.
 pub trait ContractApi {
-    // Messages
     type Instantiate;
     type Query;
     type Exec;
@@ -581,10 +580,8 @@ pub trait ContractApi {
     type ContractSudo;
     type Migrate;
     type Sudo;
-    // Communication
     type Querier<'querier>;
     type Remote<'remote>;
-    // Customs
     type CustomMsg: CustomMsg;
     type CustomQuery: CustomQuery;
 }

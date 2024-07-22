@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{CustomQuery, Response, StdResult};
-use sylvia::contract;
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+use sylvia::{contract, entry_points};
 
 #[cw_serde]
 pub struct MyQuery;
@@ -206,6 +206,7 @@ mod impl_default_query_interface {
     }
 }
 
+#[entry_points]
 #[contract]
 #[sv::messages(some_interface)]
 #[sv::messages(associated_type_interface)]
