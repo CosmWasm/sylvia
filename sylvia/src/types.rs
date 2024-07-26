@@ -582,4 +582,6 @@ pub trait ContractApi {
     type Sudo;
     type Querier<'querier>;
     type Remote<'remote>;
+    type CustomMsg: CustomMsg;
+    type CustomQuery: CustomQuery;
 }

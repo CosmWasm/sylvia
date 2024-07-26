@@ -25,10 +25,10 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-pub struct Cw1SubkeysContract<'a> {
-    pub(crate) whitelist: Cw1WhitelistContract<'a>,
-    pub(crate) permissions: Map<&'a Addr, Permissions>,
-    pub(crate) allowances: Map<&'a Addr, Allowance>,
+pub struct Cw1SubkeysContract {
+    pub(crate) whitelist: Cw1WhitelistContract,
+    pub(crate) permissions: Map<&'static Addr, Permissions>,
+    pub(crate) allowances: Map<&'static Addr, Allowance>,
 }
 
 #[cfg_attr(not(feature = "library"), entry_points)]
@@ -36,7 +36,7 @@ pub struct Cw1SubkeysContract<'a> {
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl<'abcd> Cw1SubkeysContract<'abcd> {
+impl Cw1SubkeysContract {
     pub const fn new() -> Self {
         Self {
             whitelist: Cw1WhitelistContract::new(),

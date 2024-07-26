@@ -5,7 +5,7 @@ use sylvia::types::{ExecCtx, QueryCtx};
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
-impl Cw1 for Cw1WhitelistContract<'_> {
+impl Cw1 for Cw1WhitelistContract {
     type Error = ContractError;
     type ExecC = Empty;
     type QueryC = Empty;

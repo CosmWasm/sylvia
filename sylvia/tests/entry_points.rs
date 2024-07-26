@@ -135,8 +135,8 @@ pub mod entry_points {
 mod contract {
     use cosmwasm_std::{Response, StdError, StdResult};
     use cw_storage_plus::Item;
-    use sylvia::contract;
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+    use sylvia::{contract, entry_points};
 
     use crate::CountResponse;
 
@@ -146,6 +146,7 @@ mod contract {
         pub(crate) migrates: Item<u32>,
     }
 
+    #[entry_points]
     #[contract]
     #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::sudo::SudoWrapperMsg))]
     #[sv::override_entry_point(migrate=crate::entry_points::migrate(crate::migrate::MigrateMsg))]
