@@ -13,12 +13,11 @@ where
     type Error = ContractError;
     type ExecC = E;
     type QueryC = Q;
-    type CosmosCustomMsg = E;
 
     fn execute(
         &self,
         ctx: ExecCtx<Self::QueryC>,
-        msgs: Vec<CosmosMsg<Self::CosmosCustomMsg>>,
+        msgs: Vec<CosmosMsg<Self::ExecC>>,
     ) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
@@ -34,7 +33,7 @@ where
         &self,
         ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        _msg: CosmosMsg<Self::CosmosCustomMsg>,
+        _msg: CosmosMsg<Self::ExecC>,
     ) -> StdResult<CanExecuteResp> {
         let resp = CanExecuteResp {
             can_execute: self.is_admin(ctx.deps, &Addr::unchecked(sender)),

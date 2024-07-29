@@ -79,6 +79,9 @@ mod tests {
     #[cosmwasm_schema::cw_serde]
     pub struct SvCustomMsg;
     impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+    #[cosmwasm_schema::cw_serde]
+    pub struct SvCustomQuery;
+    impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
     #[test]
     fn construct_messages() {
@@ -121,8 +124,8 @@ mod tests {
                 Sudo2T = SvCustomMsg,
                 Sudo3T = SvCustomMsg,
                 Error = (),
-                ExecC = (),
-                QueryC = (),
+                ExecC = SvCustomMsg,
+                QueryC = SvCustomQuery,
             >,
         >::borrowed(&contract, &querier_wrapper);
 
@@ -147,6 +150,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomQuery,
+            SvCustomMsg,
         > as InterfaceApi>::Query::custom_generic_query_one(
             SvCustomMsg {}, SvCustomMsg {}
         );
@@ -161,6 +166,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomQuery,
             SvCustomMsg,
         > as InterfaceApi>::Exec::custom_generic_execute_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -178,6 +185,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomQuery,
+            SvCustomMsg,
         > as InterfaceApi>::Exec::custom_generic_execute_two(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -194,6 +203,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomQuery,
+            SvCustomMsg,
         > as InterfaceApi>::Sudo::custom_generic_sudo_one(
             CosmosMsg::Custom(SvCustomMsg {}),
             CosmosMsg::Custom(SvCustomMsg {}),
@@ -209,6 +220,8 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
+            SvCustomMsg,
+            SvCustomQuery,
             SvCustomMsg,
         > as InterfaceApi>::Sudo::custom_generic_sudo_one(
             CosmosMsg::Custom(SvCustomMsg {}),

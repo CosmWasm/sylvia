@@ -13,12 +13,11 @@ where
     type Error = ContractError;
     type ExecC = E;
     type QueryC = Q;
-    type CosmosCustomMsg = E;
 
     fn execute(
         &self,
         ctx: ExecCtx<Self::QueryC>,
-        msgs: Vec<CosmosMsg<Self::CosmosCustomMsg>>,
+        msgs: Vec<CosmosMsg<Self::ExecC>>,
     ) -> Result<Response<Self::ExecC>, Self::Error> {
         let authorized: StdResult<_> = msgs.iter().try_fold(true, |acc, msg| {
             Ok(acc & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
@@ -37,7 +36,7 @@ where
         &self,
         ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        msg: CosmosMsg<Self::CosmosCustomMsg>,
+        msg: CosmosMsg<Self::ExecC>,
     ) -> StdResult<CanExecuteResp> {
         let sender = Addr::unchecked(sender);
 

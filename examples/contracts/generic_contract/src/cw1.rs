@@ -35,7 +35,6 @@ impl<
     type Error = StdError;
     type ExecC = Empty;
     type QueryC = Empty;
-    type CosmosCustomMsg = Empty;
 
     fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> StdResult<Response> {
         Ok(Response::new())

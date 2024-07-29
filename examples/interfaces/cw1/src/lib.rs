@@ -15,7 +15,6 @@ pub trait Cw1 {
     type Error: From<StdError>;
     type ExecC: CustomMsg;
     type QueryC: CustomQuery;
-    type CosmosCustomMsg: CustomMsg;
 
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender. Every implementation has it's own logic to
@@ -24,7 +23,7 @@ pub trait Cw1 {
     fn execute(
         &self,
         ctx: ExecCtx<Self::QueryC>,
-        msgs: Vec<CosmosMsg<Self::CosmosCustomMsg>>,
+        msgs: Vec<CosmosMsg<Self::ExecC>>,
     ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Checks permissions of the caller on this proxy.
@@ -35,7 +34,7 @@ pub trait Cw1 {
         &self,
         ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        msg: CosmosMsg<Self::CosmosCustomMsg>,
+        msg: CosmosMsg<Self::ExecC>,
     ) -> StdResult<CanExecuteResp>;
 }
 
