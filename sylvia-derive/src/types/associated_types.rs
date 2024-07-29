@@ -5,7 +5,6 @@ use syn::{parse_quote, ItemTrait, TraitItem, TraitItemType, WhereClause, WherePr
 pub const ERROR_TYPE: &str = "Error";
 pub const EXEC_TYPE: &str = "ExecC";
 pub const QUERY_TYPE: &str = "QueryC";
-pub const RESERVED_TYPES: [&str; 3] = [ERROR_TYPE, EXEC_TYPE, QUERY_TYPE];
 
 #[derive(Default)]
 pub struct AssociatedTypes<'a>(Vec<&'a TraitItemType>);
@@ -35,19 +34,8 @@ impl<'a> AssociatedTypes<'a> {
             .cloned()
     }
 
-    pub fn without_special(&self) -> impl Iterator<Item = &TraitItemType> {
-        self.0
-            .iter()
-            .filter(|associated| {
-                !RESERVED_TYPES
-                    .iter()
-                    .any(|reserved| reserved == &associated.ident.to_string().as_str())
-            })
-            .cloned()
-    }
-
     pub fn as_where_predicates(&self) -> Vec<WherePredicate> {
-        self.without_special()
+        self.without_error()
             .map(|associated| {
                 let name = &associated.ident;
                 let colon = &associated.colon_token;
@@ -66,10 +54,6 @@ impl<'a> AssociatedTypes<'a> {
         }
     }
 
-    pub fn as_filtered_names(&self) -> impl Iterator<Item = &Ident> {
-        self.filtered().map(|associated| &associated.ident)
-    }
-
     pub fn emit_contract_predicate(&self, trait_name: &Ident) -> TokenStream {
         let predicate = quote! { ContractT: #trait_name };
         if self.0.is_empty() {
@@ -84,17 +68,6 @@ impl<'a> AssociatedTypes<'a> {
         quote! {
             #predicate < #(#bounds,)* >
         }
-    }
-
-    pub fn filtered(&self) -> impl Iterator<Item = &TraitItemType> {
-        self.0
-            .iter()
-            .filter(|associated| {
-                !RESERVED_TYPES
-                    .iter()
-                    .any(|reserved| reserved == &associated.ident.to_string().as_str())
-            })
-            .cloned()
     }
 }
 

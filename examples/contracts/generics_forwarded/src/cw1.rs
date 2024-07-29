@@ -59,7 +59,6 @@ where
     type Error = ContractError;
     type ExecC = Empty;
     type QueryC = Empty;
-    type CosmosCustomMsg = Empty;
 
     fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error> {
         Ok(Response::new())
