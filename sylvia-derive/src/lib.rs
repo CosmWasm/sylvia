@@ -29,6 +29,7 @@ mod variant_descs;
 use strip_input::StripInput;
 
 use crate::message::EntryPoints;
+use crate::parser::EntryPointArgs;
 
 #[cfg(not(test))]
 pub(crate) fn crate_module() -> Path {
@@ -757,8 +758,8 @@ pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
-        let attrs: parser::EntryPointArgs = parse2(attr)?;
         let input: ItemImpl = parse2(item)?;
+        let attrs = EntryPointArgs::new(&attr, &input)?;
         let expanded = EntryPoints::new(&input, attrs).emit();
 
         Ok(quote! {

@@ -1,7 +1,9 @@
+use proc_macro2::TokenStream as TokenStream2;
+use proc_macro_error::emit_error;
 use syn::parse::{Error, Nothing, Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{GenericArgument, Path, Result, Token};
+use syn::{parse2, GenericArgument, ItemImpl, Path, Result, Token};
 
 use super::extract_generics_from_path;
 
@@ -9,7 +11,26 @@ use super::extract_generics_from_path;
 #[derive(Default)]
 pub struct EntryPointArgs {
     /// Types used in place of contracts generics.
-    pub generics: Option<Punctuated<GenericArgument, Token![,]>>,
+    pub generics: Punctuated<GenericArgument, Token![,]>,
+}
+
+impl EntryPointArgs {
+    pub fn new(attr: &TokenStream2, source: &ItemImpl) -> Result<Self> {
+        let args: Self = parse2(attr.clone()).map_err(|err| {
+            emit_error!(attr, err);
+            err
+        })?;
+
+        if args.generics.len() != source.generics.params.len() {
+            emit_error!(
+                attr.span(),
+                "Missing concrete types.";
+                note = "For every generic type in the contract, a concrete type must be provided in `#[entry_points(generics<T1, T2, ...>)]`.";
+            );
+        }
+
+        Ok(args)
+    }
 }
 
 impl Parse for EntryPointArgs {
@@ -22,7 +43,7 @@ impl Parse for EntryPointArgs {
         let generics: Path = input.parse()?;
         match generics.segments.last() {
             Some(segment) if segment.ident == "generics" => {
-                entry_points_args.generics = Some(extract_generics_from_path(&generics))
+                entry_points_args.generics = extract_generics_from_path(&generics)
             }
             _ => return Err(Error::new(generics.span(), "Expected `generics`.")),
         };
