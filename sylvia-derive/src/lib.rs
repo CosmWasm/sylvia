@@ -2,12 +2,15 @@
 //!
 //! Please refer to the [Sylvia-book](https://cosmwasm.github.io/sylvia-book/index.html) on how to use these macros.
 
-use input::{ImplInput, TraitInput};
+use crate::parser::EntryPointArgs;
+use input::{EntryPointInput, ImplInput, TraitInput};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
+use strip_input::StripInput;
 use syn::fold::Fold;
+use syn::spanned::Spanned;
 use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
 mod associated_types;
@@ -25,11 +28,6 @@ mod strip_input;
 mod strip_self_path;
 mod utils;
 mod variant_descs;
-
-use strip_input::StripInput;
-
-use crate::message::EntryPoints;
-use crate::parser::EntryPointArgs;
 
 #[cfg(not(test))]
 pub(crate) fn crate_module() -> Path {
@@ -759,8 +757,8 @@ pub fn entry_points(attr: TokenStream, item: TokenStream) -> TokenStream {
 fn entry_points_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemImpl = parse2(item)?;
-        let attrs = EntryPointArgs::new(&attr, &input)?;
-        let expanded = EntryPoints::new(&input, attrs).emit();
+        let args = EntryPointArgs::new(&attr)?;
+        let expanded = EntryPointInput::new(&input, args, attr.span()).process();
 
         Ok(quote! {
             #input

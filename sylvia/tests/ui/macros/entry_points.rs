@@ -60,4 +60,23 @@ pub mod missing_generics {
     }
 }
 
+pub mod wrong_order {
+    use super::*;
+
+    pub struct Contract;
+
+    #[contract]
+    #[entry_points]
+    impl Contract {
+        pub fn new() -> Self {
+            Self
+        }
+
+        #[sv::msg(instantiate)]
+        fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+    }
+}
+
 fn main() {}

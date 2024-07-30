@@ -1,4 +1,4 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::{emit_error, emit_warning};
 use quote::quote;
 use syn::{GenericParam, Ident, ItemImpl, ItemTrait, TraitItem};
@@ -7,13 +7,13 @@ use crate::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
 use crate::executor::{ContractExecutor, InterfaceExecutor};
 use crate::interfaces::Interfaces;
 use crate::message::{
-    ContractApi, ContractEnumMessage, EnumMessage, GlueMessage, InterfaceApi, MsgVariants,
-    StructMessage,
+    ContractApi, ContractEnumMessage, EntryPoints, EnumMessage, GlueMessage, InterfaceApi,
+    MsgVariants, StructMessage,
 };
 use crate::multitest::{ContractMtHelpers, TraitMtHelpers};
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::{
-    assert_new_method_defined, ContractErrorAttr, Custom, OverrideEntryPoint,
+    assert_new_method_defined, ContractErrorAttr, Custom, EntryPointArgs, OverrideEntryPoint,
     ParsedSylviaAttributes,
 };
 use crate::querier::{ContractQuerier, InterfaceQuerier};
@@ -337,5 +337,41 @@ impl<'a> ImplInput<'a> {
 
         let generic_params = &self.generics;
         ContractMtHelpers::new(item, generic_params, custom, override_entry_points.clone()).emit()
+    }
+}
+
+pub struct EntryPointInput<'a> {
+    item: &'a ItemImpl,
+    args: EntryPointArgs,
+}
+
+impl<'a> EntryPointInput<'a> {
+    pub fn new(item: &'a ItemImpl, args: EntryPointArgs, attr_span: Span) -> Self {
+        let instantiate =
+            MsgVariants::<GenericParam>::new(item.as_variants(), MsgType::Instantiate, &[], &None);
+
+        if args.generics.len() != item.generics.params.len() {
+            emit_error!(
+                attr_span,
+                "Missing concrete types.";
+                note = "For every generic type in the contract, a concrete type must be provided in `#[entry_points(generics<T1, T2, ...>)]`.";
+            );
+        }
+
+        if instantiate.get_only_variant().is_none() {
+            emit_error!(
+                attr_span, "Missing instantiation message.";
+                note = "`sylvia::entry_points` requires exactly one method marked with `#[sv::msg(instantiation)]` attribute.";
+                note = "Make sure you implemented the `entry_points` macro above the `contract` macro."
+            );
+        }
+
+        Self { item, args }
+    }
+
+    pub fn process(&self) -> TokenStream {
+        let Self { item, args } = self;
+
+        EntryPoints::new(item, args).emit()
     }
 }
