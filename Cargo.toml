@@ -9,14 +9,14 @@ version = "1.1.0"
 [workspace.dependencies]
 sylvia-derive = { version = "1.1.0", path = "sylvia-derive" }
 anyhow = "1.0.86"
-cosmwasm-schema = "2.0.4"
-cosmwasm-std = "2.0.4"
+cosmwasm-schema = "2.1.1"
+cosmwasm-std = "2.1.1"
 cw-multi-test = "2.1.0"
 cw-storage-plus = "2.0.0"
 schemars = "0.8.21"
 cw-utils = "2.0.0"
-serde = { version = "1.0.203", default-features = false, features = ["derive"] }
-thiserror = "1.0.61"
+serde = { version = "1.0.204", default-features = false, features = ["derive"] }
+thiserror = "1.0.63"
 
 [workspace.metadata.docs.rs]
 all-features = true
