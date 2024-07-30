@@ -1264,11 +1264,11 @@ pub struct EntryPoints<'a> {
     override_entry_points: Vec<OverrideEntryPoint>,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
-    attrs: EntryPointArgs,
+    attrs: &'a EntryPointArgs,
 }
 
 impl<'a> EntryPoints<'a> {
-    pub fn new(source: &'a ItemImpl, attrs: EntryPointArgs) -> Self {
+    pub fn new(source: &'a ItemImpl, attrs: &'a EntryPointArgs) -> Self {
         let name = StripGenerics.fold_type(*source.self_ty.clone());
         let parsed_attrs = ParsedSylviaAttributes::new(source.attrs.iter());
         let override_entry_points = parsed_attrs.override_entry_point_attrs;

@@ -17,3 +17,55 @@ error: Missing concrete types.
    |
 42 |     #[entry_points(generics<Empty>)]
    |                    ^^^^^^^^
+
+error: Missing instantiation message.
+
+         = note: `sylvia::entry_points` requires exactly one method marked with `#[sv::msg(instantiation)]` attribute.
+         = note: Make sure you implemented the `entry_points` macro above the `contract` macro.
+
+  --> tests/ui/macros/entry_points.rs:69:5
+   |
+69 |     #[entry_points]
+   |     ^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the attribute macro `entry_points` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0599]: no method named `instantiate` found for reference `&wrong_order::Contract` in the current scope
+  --> tests/ui/macros/entry_points.rs:76:12
+   |
+76 |         fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+   |            ^^^^^^^^^^^ method not found in `&Contract`
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: trait `Contract` which provides `instantiate` is implemented but not in scope; perhaps you want to import it
+   |
+68 +     use sylvia::cw_multi_test::Contract;
+   |
+
+error[E0599]: no function or associated item named `new` found for struct `wrong_order::Contract` in the current scope
+  --> tests/ui/macros/entry_points.rs:68:5
+   |
+66 |     pub struct Contract;
+   |     ------------------- function or associated item `new` not found for this struct
+67 |
+68 |     #[contract]
+   |     ^^^^^^^^^^^ function or associated item not found in `Contract`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following traits define an item `new`, perhaps you need to implement one of them:
+           candidate #1: `ark_ec::hashing::HashToCurve`
+           candidate #2: `ark_ec::hashing::map_to_curve_hasher::MapToCurve`
+           candidate #3: `ark_ff::fields::field_hashers::HashToField`
+           candidate #4: `ark_poly::domain::EvaluationDomain`
+           candidate #5: `ark_poly::polynomial::multivariate::Term`
+           candidate #6: `crypto_common::KeyInit`
+           candidate #7: `crypto_common::KeyIvInit`
+           candidate #8: `curve25519_dalek::traits::VartimePrecomputedMultiscalarMul`
+           candidate #9: `digest::VariableOutput`
+           candidate #10: `digest::core_api::VariableOutputCore`
+           candidate #11: `digest::digest::Digest`
+           candidate #12: `digest::mac::Mac`
+           candidate #13: `itertools::adaptors::coalesce::CountItem`
+           candidate #14: `rand::distributions::uniform::UniformSampler`
+           candidate #15: `typenum::marker_traits::Bit`
+   = note: this error originates in the attribute macro `contract` (in Nightly builds, run with -Z macro-backtrace for more info)

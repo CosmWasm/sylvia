@@ -11,9 +11,7 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
         let msg = match self.msg {
             CosmosMsg::Wasm(wasm) => CosmosMsg::Wasm(wasm),
             CosmosMsg::Bank(bank) => CosmosMsg::Bank(bank),
-            #[cfg(feature = "staking")]
             CosmosMsg::Staking(staking) => CosmosMsg::Staking(staking),
-            #[cfg(feature = "staking")]
             CosmosMsg::Distribution(distribution) => CosmosMsg::Distribution(distribution),
             CosmosMsg::Custom(_) => Err(StdError::generic_err(
                 "Custom Empty message should not be sent",
