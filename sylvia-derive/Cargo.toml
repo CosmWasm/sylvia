@@ -19,14 +19,14 @@ cosmwasm_1_2 = []
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0.65", features = [
+syn = { version = "2.0.72", features = [
     "fold",
     "visit",
     "full",
     "extra-traits",
 ] }
 quote = "1.0.36"
-proc-macro2 = "1.0.83"
+proc-macro2 = "1.0.86"
 convert_case = "0.6.0"
 proc-macro-error = "1.0.4"
 proc-macro-crate = "3.1.0"
