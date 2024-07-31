@@ -103,7 +103,7 @@ jobs:
 
   # Errors differ between Rust versions. We test only the latest output.
   test_ui:
-    name: ${{ matrix.build }}
+    name: Test UI
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
