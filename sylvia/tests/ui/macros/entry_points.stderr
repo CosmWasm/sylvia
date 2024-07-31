@@ -1,0 +1,19 @@
+error: Missing concrete types.
+
+         = note: For every generic type in the contract, a concrete type must be provided in `#[entry_points(generics<T1, T2, ...>)]`.
+
+  --> tests/ui/macros/entry_points.rs:14:5
+   |
+14 |     #[entry_points]
+   |     ^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the attribute macro `entry_points` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: Missing concrete types.
+
+         = note: For every generic type in the contract, a concrete type must be provided in `#[entry_points(generics<T1, T2, ...>)]`.
+
+  --> tests/ui/macros/entry_points.rs:42:20
+   |
+42 |     #[entry_points(generics<Empty>)]
+   |                    ^^^^^^^^

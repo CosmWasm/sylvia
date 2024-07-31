@@ -19,12 +19,11 @@ use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::fold::Fold;
-use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, Attribute, GenericArgument, GenericParam, Ident, ImplItem, ImplItemFn, ItemImpl,
-    ItemTrait, Pat, PatType, ReturnType, Signature, Token, Type, WhereClause, WherePredicate,
+    parse_quote, Attribute, GenericParam, Ident, ImplItem, ImplItemFn, ItemImpl, ItemTrait, Pat,
+    PatType, ReturnType, Signature, Type, WhereClause, WherePredicate,
 };
 
 /// Representation of single struct message
@@ -660,41 +659,6 @@ where
         &self.unused_generics
     }
 
-    pub fn emit_default_entry_point(
-        &self,
-        custom_msg: &Type,
-        custom_query: &Type,
-        name: &Type,
-        error: &Type,
-        contract_generics: &Option<Punctuated<GenericArgument, Token![,]>>,
-    ) -> TokenStream {
-        let Self { msg_ty, .. } = self;
-        let sylvia = crate_module();
-
-        let resp_type = match msg_ty {
-            MsgType::Query => quote! { #sylvia ::cw_std::Binary },
-            _ => quote! { #sylvia ::cw_std::Response < #custom_msg > },
-        };
-        let params = msg_ty.emit_ctx_params(custom_query);
-        let values = msg_ty.emit_ctx_values();
-        let ep_name = msg_ty.emit_ep_name();
-        let bracketed_generics = match &contract_generics {
-            Some(generics) => quote! { ::< #generics > },
-            None => quote! {},
-        };
-        let associated_name = msg_ty.as_accessor_wrapper_name();
-
-        quote! {
-            #[#sylvia ::cw_std::entry_point]
-            pub fn #ep_name (
-                #params ,
-                msg: < #name < #contract_generics > as #sylvia ::types::ContractApi> :: #associated_name,
-            ) -> Result<#resp_type, #error> {
-                msg.dispatch(&#name #bracketed_generics ::new() , ( #values )).map_err(Into::into)
-            }
-        }
-    }
-
     pub fn emit_phantom_match_arm(&self) -> TokenStream {
         let sylvia = crate_module();
         let Self { used_generics, .. } = self;
@@ -1296,6 +1260,7 @@ pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
     error: Type,
+    reply: Option<Ident>,
     override_entry_points: Vec<OverrideEntryPoint>,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
@@ -1313,10 +1278,17 @@ impl<'a> EntryPoints<'a> {
         let generics: Vec<_> = source.generics.params.iter().collect();
         let where_clause = &source.generics.where_clause;
 
+        let reply =
+            MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
+                .variants()
+                .map(|variant| variant.function_name.clone())
+                .next();
+
         Self {
             source,
             name,
             error,
+            reply,
             override_entry_points,
             generics,
             where_clause,
@@ -1327,119 +1299,120 @@ impl<'a> EntryPoints<'a> {
     pub fn emit(&self) -> TokenStream {
         let Self {
             source,
-            name,
-            error,
+            reply,
             override_entry_points,
             generics,
             where_clause,
-            attrs,
+            ..
         } = self;
-        let sylvia = crate_module();
 
-        let bracketed_generics = attrs
-            .generics
-            .as_ref()
-            .map(|generics| match generics.is_empty() {
-                true => quote! {},
-                false => quote! { < #generics > },
-            })
-            .unwrap_or(quote! {});
-
-        let custom_msg = parse_quote! { < #name #bracketed_generics as #sylvia ::types::ContractApi > :: CustomMsg };
-        let custom_query = parse_quote! { < #name #bracketed_generics as #sylvia ::types::ContractApi > :: CustomQuery };
-
-        let instantiate_variants = MsgVariants::new(
-            source.as_variants(),
+        let entry_points = [
             MsgType::Instantiate,
-            generics,
-            where_clause,
+            MsgType::Exec,
+            MsgType::Query,
+            MsgType::Sudo,
+        ]
+        .into_iter()
+        .map(
+            |msg_ty| match override_entry_points.get_entry_point(msg_ty) {
+                Some(_) => quote! {},
+                None => self.emit_default_entry_point(msg_ty),
+            },
         );
-        let exec_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Exec, generics, where_clause);
-        let query_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Query, generics, where_clause);
-        let migrate_variants = MsgVariants::new(
+
+        let is_migrate = MsgVariants::new(
             source.as_variants(),
             MsgType::Migrate,
             generics,
             where_clause,
-        );
-        let reply =
-            MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
-                .variants()
-                .map(|variant| variant.function_name.clone())
-                .next();
-        let sudo_variants =
-            MsgVariants::new(source.as_variants(), MsgType::Sudo, generics, where_clause);
-        let contract_generics = match &attrs.generics {
-            Some(generics) => quote! { ::< #generics > },
-            None => quote! {},
+        )
+        .get_only_variant()
+        .is_some();
+
+        let migrate_not_overridden = override_entry_points
+            .get_entry_point(MsgType::Migrate)
+            .is_none();
+
+        let migrate = if migrate_not_overridden && is_migrate {
+            self.emit_default_entry_point(MsgType::Migrate)
+        } else {
+            quote! {}
         };
 
-        {
-            let entry_points = [
-                instantiate_variants,
-                exec_variants,
-                query_variants,
-                sudo_variants,
-            ]
-            .into_iter()
-            .map(|variants| {
-                match override_entry_points.get_entry_point(variants.msg_ty) {
-                    Some(_) => quote! {},
-                    None => variants.emit_default_entry_point(
-                        &custom_msg,
-                        &custom_query,
-                        name,
-                        error,
-                        &attrs.generics,
-                    ),
+        let reply_ep = override_entry_points
+            .get_entry_point(MsgType::Reply)
+            .map(|_| quote! {})
+            .unwrap_or_else(|| {
+                if reply.is_some() {
+                    self.emit_default_entry_point(MsgType::Reply)
+                } else {
+                    quote! {}
                 }
             });
 
-            let migrate_not_overridden = override_entry_points
-                .get_entry_point(MsgType::Migrate)
-                .is_none();
+        quote! {
+            pub mod entry_points {
+                use super::*;
 
-            let migrate = if migrate_not_overridden && migrate_variants.get_only_variant().is_some()
-            {
-                migrate_variants.emit_default_entry_point(
-                    &custom_msg,
-                    &custom_query,
-                    name,
-                    error,
-                    &attrs.generics,
-                )
-            } else {
-                quote! {}
-            };
+                #(#entry_points)*
 
-            let reply_ep = override_entry_points.get_entry_point(MsgType::Reply)
-                .map(|_| quote! {})
-                .unwrap_or_else(|| match reply {
-                    Some(reply) => quote! {
-                        #[#sylvia ::cw_std::entry_point]
-                        pub fn reply(
-                            deps: #sylvia ::cw_std::DepsMut< #custom_query >,
-                            env: #sylvia ::cw_std::Env,
-                            msg: #sylvia ::cw_std::Reply,
-                        ) -> Result<#sylvia ::cw_std::Response < #custom_msg >, #error> {
-                            #name #contract_generics ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
-                        }
-                    },
-                    _ => quote! {},
-                });
+                #migrate
 
-            quote! {
-                pub mod entry_points {
-                    use super::*;
+                #reply_ep
+            }
+        }
+    }
 
-                    #(#entry_points)*
+    pub fn emit_default_entry_point(&self, msg_ty: MsgType) -> TokenStream {
+        let Self {
+            name,
+            error,
+            attrs,
+            reply,
+            ..
+        } = self;
+        let sylvia = crate_module();
 
-                    #migrate
+        let attr_generics = &attrs.generics;
+        let (contract, contract_turbo) = if attr_generics.is_empty() {
+            (quote! { #name }, quote! { #name })
+        } else {
+            (
+                quote! { #name < #attr_generics > },
+                quote! { #name :: < #attr_generics > },
+            )
+        };
 
-                    #reply_ep
-                }
+        let custom_msg: Type =
+            parse_quote! { < #contract as #sylvia ::types::ContractApi > :: CustomMsg };
+        let custom_query: Type =
+            parse_quote! { < #contract as #sylvia ::types::ContractApi > :: CustomQuery };
+
+        let result = msg_ty.emit_result_type(&custom_msg, error);
+        let params = msg_ty.emit_ctx_params(&custom_query);
+        let values = msg_ty.emit_ctx_values();
+        let ep_name = msg_ty.emit_ep_name();
+        let associated_name = msg_ty.as_accessor_wrapper_name();
+        let msg = match msg_ty {
+            MsgType::Reply => quote! { msg: #sylvia ::cw_std::Reply },
+            _ => quote! { msg: < #contract as #sylvia ::types::ContractApi> :: #associated_name },
+        };
+        let dispatch = match msg_ty {
+            MsgType::Reply => quote! {
+                #contract_turbo ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
+            },
+            _ => quote! {
+                msg.dispatch(& #contract_turbo ::new() , ( #values )).map_err(Into::into)
+            },
+        };
+
+        quote! {
+            #[#sylvia ::cw_std::entry_point]
+            pub fn #ep_name (
+                #params ,
+                #msg
+            ) -> #result {
+                #dispatch
             }
         }
     }
