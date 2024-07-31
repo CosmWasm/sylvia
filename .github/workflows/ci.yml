@@ -101,6 +101,45 @@ jobs:
           path: |
             examples/contracts/**/schema/*.json
 
+  # Errors differ between Rust versions. We test only the latest output.
+  test_ui:
+    name: ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: macOS
+            os: macOS-latest
+          - build: Windows
+            os: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          profile: minimal
+          override: true
+      - name: Test project
+        run: cargo test --locked -- --ignored
+
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
