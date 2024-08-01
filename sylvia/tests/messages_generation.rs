@@ -93,7 +93,11 @@ mod contract {
         }
 
         #[sv::msg(instantiate)]
-        pub fn instantiate(&self, _ctx: InstantiateCtx<MyQuery>) -> StdResult<Response> {
+        pub fn instantiate(
+            &self,
+            _ctx: InstantiateCtx<MyQuery>,
+            #[serde(default)] _desc: String,
+        ) -> StdResult<Response> {
             Ok(Response::new())
         }
 
@@ -201,7 +205,9 @@ fn contract_messages_constructible() {
     let _ = contract::sv::SudoMsg::ArgumentedSudo {
         _user: Addr::unchecked("owner"),
     };
-    let _ = contract::sv::InstantiateMsg {};
+    let _ = contract::sv::InstantiateMsg {
+        _desc: "".to_string(),
+    };
     let _ = contract::sv::MigrateMsg {};
 
     // Ensure no extra variants are generated
@@ -246,7 +252,9 @@ fn attributes_forwarding_for_message_structs_and_enums() {
     let sudo_msg_contract = contract::sv::SudoMsg::NoArgsSudo {};
     let _partial_ord_implemented = sudo_msg_contract < sudo_msg_contract;
 
-    let instantiate_msg_contract = contract::sv::InstantiateMsg {};
+    let instantiate_msg_contract = contract::sv::InstantiateMsg {
+        _desc: "".to_string(),
+    };
     let _partial_ord_implemented = instantiate_msg_contract < instantiate_msg_contract;
 
     let migrate_msg_contract = contract::sv::MigrateMsg {};
@@ -304,7 +312,13 @@ fn attributes_forwarding_for_message_variants() {
         .to_string(),
         "ArgumentedSudo"
     );
-    assert_eq!(contract::sv::InstantiateMsg {}.to_string(), "Instantiate");
+    assert_eq!(
+        contract::sv::InstantiateMsg {
+            _desc: "".to_string()
+        }
+        .to_string(),
+        "Instantiate"
+    );
     assert_eq!(contract::sv::MigrateMsg {}.to_string(), "Migrate");
 
     assert_eq!(

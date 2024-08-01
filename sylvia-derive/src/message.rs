@@ -153,12 +153,8 @@ impl<'a> StructMessage<'a> {
             .msg_type()
             .emit_ctx_type(&custom.query_or_default());
         let fields_names: Vec<_> = fields.iter().map(MsgField::name).collect();
-        let parameters = fields.iter().map(|field| {
-            let name = field.name;
-            let ty = &field.ty;
-            quote! { #name : #ty}
-        });
-        let fields = fields.iter().map(MsgField::emit);
+        let parameters = fields.iter().map(MsgField::emit_method_field);
+        let fields = fields.iter().map(MsgField::emit_pub);
 
         let where_clause = as_where_clause(wheres);
         let generics = emit_bracketed_generics(generics);
@@ -171,7 +167,7 @@ impl<'a> StructMessage<'a> {
             #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub struct #name #generics {
-                #(pub #fields,)*
+                #(#fields,)*
             }
 
             impl #generics #name #generics #where_clause {
@@ -571,6 +567,13 @@ impl<'a> MsgVariant<'a> {
         self.fields.iter().map(MsgField::emit).collect()
     }
 
+    pub fn emit_method_field(&self) -> Vec<TokenStream> {
+        self.fields
+            .iter()
+            .map(MsgField::emit_method_field)
+            .collect()
+    }
+
     pub fn name(&self) -> &Ident {
         &self.name
     }
@@ -788,6 +791,21 @@ impl<'a> MsgField<'a> {
         quote! {
             #(#attrs)*
             #name: #stripped_ty
+        }
+    }
+
+    /// Emits struct field
+    pub fn emit_pub(&self) -> TokenStream {
+        let Self {
+            name,
+            stripped_ty,
+            attrs,
+            ..
+        } = self;
+
+        quote! {
+            #(#attrs)*
+            pub #name: #stripped_ty
         }
     }
 
