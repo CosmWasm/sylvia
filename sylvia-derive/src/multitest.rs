@@ -31,7 +31,7 @@ pub struct ContractMtHelpers<'a> {
     where_clause: &'a Option<syn::WhereClause>,
     custom: &'a Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
-    instantiate_variants: MsgVariants<'a, GenericParam>,
+    instantiate_variant: MsgVariants<'a, GenericParam>,
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
     migrate_variants: MsgVariants<'a, GenericParam>,
@@ -47,7 +47,7 @@ impl<'a> ContractMtHelpers<'a> {
         override_entry_points: Vec<OverrideEntryPoint>,
     ) -> Self {
         let where_clause = &source.generics.where_clause;
-        let instantiate_variants = MsgVariants::new(
+        let instantiate_variant = MsgVariants::new(
             source.as_variants(),
             MsgType::Instantiate,
             generic_params,
@@ -100,7 +100,7 @@ impl<'a> ContractMtHelpers<'a> {
             contract_name,
             custom,
             override_entry_points,
-            instantiate_variants,
+            instantiate_variant,
             exec_variants,
             query_variants,
             sudo_variants,
@@ -235,7 +235,7 @@ impl<'a> ContractMtHelpers<'a> {
             generic_params,
             where_clause,
             contract_name,
-            instantiate_variants,
+            instantiate_variant,
             ..
         } = self;
 
@@ -248,17 +248,17 @@ impl<'a> ContractMtHelpers<'a> {
                 }
             });
 
-        let fields_names = instantiate_variants
+        let fields_names = instantiate_variant
             .get_only_variant()
             .map(MsgVariant::as_fields_names)
             .unwrap_or(vec![]);
 
-        let fields = instantiate_variants
+        let fields = instantiate_variant
             .get_only_variant()
-            .map(MsgVariant::emit_fields)
+            .map(MsgVariant::emit_method_field)
             .unwrap_or(vec![]);
 
-        let used_generics = instantiate_variants.used_generics();
+        let used_generics = instantiate_variant.used_generics();
 
         let where_predicates = where_clause
             .as_ref()
@@ -361,11 +361,11 @@ impl<'a> ContractMtHelpers<'a> {
             generic_params,
             where_clause,
             contract_name,
-            instantiate_variants,
+            instantiate_variant,
             ..
         } = self;
 
-        let used_generics = instantiate_variants.used_generics();
+        let used_generics = instantiate_variant.used_generics();
         let bracketed_used_generics = emit_bracketed_generics(used_generics);
 
         let where_predicates = where_clause
