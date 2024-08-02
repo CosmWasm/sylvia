@@ -563,10 +563,6 @@ impl<'a> MsgVariant<'a> {
         self.fields.iter().map(MsgField::name).collect()
     }
 
-    pub fn emit_fields(&self) -> Vec<TokenStream> {
-        self.fields.iter().map(MsgField::emit).collect()
-    }
-
     pub fn emit_method_field(&self) -> Vec<TokenStream> {
         self.fields
             .iter()
