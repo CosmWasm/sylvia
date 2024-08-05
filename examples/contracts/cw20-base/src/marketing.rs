@@ -1,23 +1,27 @@
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;
-use cosmwasm_std::{Empty, Response, StdError, StdResult};
+use cosmwasm_std::{Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
-impl Cw20Marketing for Cw20Base {
+impl<E, Q> Cw20Marketing for Cw20Base<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
     fn update_marketing(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         project: Option<String>,
         description: Option<String>,
         marketing: Option<String>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?
@@ -67,7 +71,11 @@ impl Cw20Marketing for Cw20Base {
         Ok(res)
     }
 
-    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error> {
+    fn upload_logo(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        logo: Logo,
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let mut marketing_info = self
             .marketing_info
             .may_load(ctx.deps.storage)?
@@ -99,14 +107,14 @@ impl Cw20Marketing for Cw20Base {
         Ok(res)
     }
 
-    fn marketing_info(&self, ctx: QueryCtx) -> StdResult<MarketingInfoResponse> {
+    fn marketing_info(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<MarketingInfoResponse> {
         Ok(self
             .marketing_info
             .may_load(ctx.deps.storage)?
             .unwrap_or_default())
     }
 
-    fn download_logo(&self, ctx: QueryCtx) -> StdResult<DownloadLogoResponse> {
+    fn download_logo(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<DownloadLogoResponse> {
         let logo = self.logo.load(ctx.deps.storage)?;
         match logo {
             Logo::Embedded(EmbeddedLogo::Svg(logo)) => Ok(DownloadLogoResponse {
