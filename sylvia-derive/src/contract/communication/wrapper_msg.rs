@@ -1,6 +1,6 @@
 use crate::crate_module;
+use crate::fold::StripGenerics;
 use crate::parser::{ContractErrorAttr, Custom, MsgType};
-use crate::strip_generics::StripGenerics;
 use crate::types::interfaces::Interfaces;
 use crate::utils::emit_bracketed_generics;
 use proc_macro2::TokenStream;

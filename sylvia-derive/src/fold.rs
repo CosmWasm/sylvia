@@ -1,7 +1,7 @@
 use syn::fold::{self, Fold};
 use syn::punctuated::Punctuated;
 use syn::{
-    FnArg, ImplItemFn, ItemImpl, ItemTrait, PatType, Receiver, Signature, Token, TraitItemFn,
+    FnArg, ImplItemFn, ItemImpl, ItemTrait, PatType, Path, Receiver, Signature, Token, TraitItemFn,
 };
 
 use crate::parser::SylviaAttribute;
@@ -75,5 +75,28 @@ impl Fold for StripInput {
             .collect();
 
         fold::fold_item_impl(self, ItemImpl { attrs, ..i })
+    }
+}
+
+/// Removes all generics from type assumning default values for it
+pub struct StripGenerics;
+
+impl Fold for StripGenerics {
+    fn fold_path_arguments(&mut self, _: syn::PathArguments) -> syn::PathArguments {
+        syn::PathArguments::None
+    }
+}
+
+/// Removes `Self` from associated type [Path].
+pub struct StripSelfPath;
+
+impl Fold for StripSelfPath {
+    fn fold_path(&mut self, path: Path) -> Path {
+        let segments = path
+            .segments
+            .into_iter()
+            .filter(|segment| segment.ident != "Self")
+            .collect();
+        syn::fold::fold_path(self, Path { segments, ..path })
     }
 }

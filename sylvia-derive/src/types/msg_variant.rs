@@ -1,9 +1,9 @@
 use crate::crate_module;
+use crate::fold::StripSelfPath;
 use crate::parser::attributes::VariantAttrForwarding;
 use crate::parser::check_generics::{CheckGenerics, GetPath};
 use crate::parser::variant_descs::VariantDescs;
 use crate::parser::{MsgAttr, MsgType};
-use crate::strip_self_path::StripSelfPath;
 use crate::utils::{extract_return_type, filter_wheres, process_fields, SvCasing};
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;

@@ -5,12 +5,12 @@ use syn::fold::Fold;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type, WhereClause};
 
 use crate::crate_module;
+use crate::fold::StripGenerics;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::parser::{
     EntryPointArgs, FilteredOverrideEntryPoints, OverrideEntryPoint, ParsedSylviaAttributes,
 };
-use crate::strip_generics::StripGenerics;
 use crate::types::msg_variant::MsgVariants;
 
 pub struct EntryPointInput<'a> {

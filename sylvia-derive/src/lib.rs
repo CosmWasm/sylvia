@@ -5,23 +5,21 @@
 use crate::parser::EntryPointArgs;
 use contract::ContractInput;
 use entry_points::EntryPointInput;
+use fold::StripInput;
 use interface::InterfaceInput;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use strip_input::StripInput;
 use syn::fold::Fold;
 use syn::spanned::Spanned;
 use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
 mod contract;
 mod entry_points;
+mod fold;
 mod interface;
 mod parser;
-mod strip_generics;
-mod strip_input;
-mod strip_self_path;
 mod types;
 mod utils;
 
