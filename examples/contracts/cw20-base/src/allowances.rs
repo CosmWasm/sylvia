@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Empty, Order, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, Binary, Order, Response, StdError, StdResult, Uint128};
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
     AllowanceResponse, SpenderAllowanceInfo,
@@ -6,7 +6,7 @@ use cw20_allowances::responses::{
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
@@ -16,20 +16,24 @@ use crate::responses::Cw20ReceiveMsg;
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-impl Cw20Allowances for Cw20Base {
+impl<E, Q> Cw20Allowances for Cw20Base<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
     /// Allows spender to access an additional amount tokens from the owner's (env.sender) account.
     /// If expires is Some(), overwrites current allowance expiration with this one.
     fn increase_allowance(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let spender_addr = ctx.deps.api.addr_validate(&spender)?;
         if spender_addr == ctx.info.sender {
             return Err(ContractError::CannotSetOwnAccount);
@@ -69,11 +73,11 @@ impl Cw20Allowances for Cw20Base {
     /// If expires is Some(), overwrites current allowance expiration with this one.
     fn decrease_allowance(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         spender: String,
         amount: Uint128,
         expires: Option<Expiration>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let spender_addr = Addr::unchecked(&spender);
         if spender_addr == ctx.info.sender {
             return Err(ContractError::CannotSetOwnAccount);
@@ -118,11 +122,11 @@ impl Cw20Allowances for Cw20Base {
     /// if `env.sender` has sufficient pre-approval.
     fn transfer_from(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         owner: String,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let rcpt_addr = ctx.deps.api.addr_validate(&recipient)?;
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
@@ -174,12 +178,12 @@ impl Cw20Allowances for Cw20Base {
     /// if `env.sender` has sufficient pre-approval.
     fn send_from(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         owner: String,
         contract: String,
         amount: Uint128,
         msg: Binary,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let rcpt_addr = ctx.deps.api.addr_validate(&contract)?;
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
@@ -228,10 +232,10 @@ impl Cw20Allowances for Cw20Base {
     /// Destroys amount of tokens forever
     fn burn_from(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         owner: String,
         amount: Uint128,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let owner_addr = ctx.deps.api.addr_validate(&owner)?;
 
         // deduct allowance before doing anything else have enough allowance
@@ -269,7 +273,7 @@ impl Cw20Allowances for Cw20Base {
     /// Returns how much spender can use from owner account, 0 if unset.
     fn allowance(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         owner: String,
         spender: String,
     ) -> StdResult<AllowanceResponse> {
@@ -285,7 +289,7 @@ impl Cw20Allowances for Cw20Base {
     /// Returns all allowances this owner has approved. Supports pagination.
     fn all_allowances(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         owner: String,
         start_after: Option<String>,
         limit: Option<u32>,
@@ -313,7 +317,7 @@ impl Cw20Allowances for Cw20Base {
     /// Returns all allowances this spender has been granted. Supports pagination.
     fn all_spender_allowances(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         spender: String,
         start_after: Option<String>,
         limit: Option<u32>,
@@ -342,7 +346,7 @@ impl Cw20Allowances for Cw20Base {
     /// Returns all allowances this spender has been granted. Supports pagination.
     fn all_accounts(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllAccountsResponse> {
