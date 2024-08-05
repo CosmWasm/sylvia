@@ -1,5 +1,5 @@
+use crate::fold::StripSelfPath;
 use crate::parser::check_generics::{CheckGenerics, GetPath};
-use crate::strip_self_path::StripSelfPath;
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;

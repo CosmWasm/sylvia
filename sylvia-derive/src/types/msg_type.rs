@@ -5,9 +5,9 @@ use syn::fold::Fold;
 use syn::{parse_quote, GenericParam, Ident, Type};
 
 use crate::crate_module;
+use crate::fold::StripSelfPath;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::Customs;
-use crate::strip_self_path::StripSelfPath;
 
 impl MsgType {
     pub fn emit_ctx_type(self, query_type: &Type) -> TokenStream {
