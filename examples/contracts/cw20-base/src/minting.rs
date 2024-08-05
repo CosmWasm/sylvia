@@ -1,21 +1,25 @@
 use crate::contract::{Cw20Base, MinterData};
 use crate::error::ContractError;
-use cosmwasm_std::{Empty, Response, StdResult, Uint128};
+use cosmwasm_std::{Response, StdResult, Uint128};
 use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
-impl Cw20Minting for Cw20Base {
+impl<E, Q> Cw20Minting for Cw20Base<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
     fn mint(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         if amount == Uint128::zero() {
             return Err(ContractError::InvalidZeroAmount);
         }
@@ -61,9 +65,9 @@ impl Cw20Minting for Cw20Base {
 
     fn update_minter(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         new_minter: Option<String>,
-    ) -> Result<Response, Self::Error> {
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let mut config = self
             .token_info
             .may_load(ctx.deps.storage)?
@@ -98,7 +102,7 @@ impl Cw20Minting for Cw20Base {
         Ok(resp)
     }
 
-    fn minter(&self, ctx: QueryCtx) -> StdResult<Option<MinterResponse>> {
+    fn minter(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<Option<MinterResponse>> {
         let meta = self.token_info.load(ctx.deps.storage)?;
         let minter = match meta.mint {
             Some(m) => Some(MinterResponse {
