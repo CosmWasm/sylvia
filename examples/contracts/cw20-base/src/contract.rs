@@ -12,7 +12,7 @@ use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
 use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
-use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -21,6 +21,14 @@ use sylvia::entry_points;
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-base";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cw_serde]
+pub struct SvCustomMsg;
+impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+
+#[cw_serde]
+pub struct SvCustomQuery;
+impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 #[cw_serde]
 pub struct TokenInfo {
@@ -62,7 +70,7 @@ pub struct InstantiateMsgData {
     pub marketing: Option<InstantiateMarketingInfo>,
 }
 
-pub struct Cw20Base {
+pub struct Cw20Base<E, Q> {
     pub(crate) token_info: Item<TokenInfo>,
     pub(crate) marketing_info: Item<MarketingInfoResponse>,
     pub(crate) logo: Item<Logo>,
@@ -70,15 +78,21 @@ pub struct Cw20Base {
     pub(crate) allowances: Map<(&'static Addr, &'static Addr), AllowanceResponse>,
     // TODO: After https://github.com/CosmWasm/cw-plus/issues/670 is implemented, replace this with a `MultiIndex` over `ALLOWANCES`
     pub(crate) allowances_spender: Map<(&'static Addr, &'static Addr), AllowanceResponse>,
+    pub(crate) _phantom: std::marker::PhantomData<(E, Q)>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points)]
+#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomQuery>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw20_allowances as Allowances)]
 #[sv::messages(cw20_marketing as Marketing)]
 #[sv::messages(cw20_minting as Minting)]
-impl Cw20Base {
+#[sv::custom(msg=E, query=Q)]
+impl<E, Q> Cw20Base<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     pub const fn new() -> Self {
         Self {
             token_info: Item::new("token_info"),
@@ -87,12 +101,13 @@ impl Cw20Base {
             balances: Map::new("balances"),
             allowances: Map::new("allowances"),
             allowances_spender: Map::new("allowances_spender"),
+            _phantom: std::marker::PhantomData,
         }
     }
 
     pub fn create_accounts(
         &self,
-        deps: &mut DepsMut,
+        deps: &mut DepsMut<Q>,
         accounts: &[Cw20Coin],
     ) -> Result<Uint128, ContractError> {
         validate_accounts(accounts)?;
@@ -140,9 +155,9 @@ impl Cw20Base {
     #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
-        mut ctx: InstantiateCtx,
+        mut ctx: InstantiateCtx<Q>,
         data: InstantiateMsgData,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         let InstantiateMsgData {
             name,
             symbol,
@@ -215,10 +230,10 @@ impl Cw20Base {
     #[sv::msg(exec)]
     fn transfer(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Q>,
         recipient: String,
         amount: Uint128,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         let rcpt_addr = ctx.deps.api.addr_validate(&recipient)?;
@@ -242,7 +257,7 @@ impl Cw20Base {
 
     /// Burn is a base message to destroy tokens forever
     #[sv::msg(exec)]
-    fn burn(&self, ctx: ExecCtx, amount: Uint128) -> Result<Response, ContractError> {
+    fn burn(&self, ctx: ExecCtx<Q>, amount: Uint128) -> Result<Response<E>, ContractError> {
         ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         // lower balance
@@ -269,11 +284,11 @@ impl Cw20Base {
     #[sv::msg(exec)]
     fn send(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Q>,
         contract: String,
         amount: Uint128,
         msg: Binary,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         ensure!(amount != Uint128::zero(), ContractError::InvalidZeroAmount);
 
         let rcpt_addr = ctx.deps.api.addr_validate(&contract)?;
@@ -287,7 +302,7 @@ impl Cw20Base {
             .update(ctx.deps.storage, &rcpt_addr, |balance| {
                 Ok::<_, StdError>(balance.unwrap_or_default().checked_add(amount)?)
             })?;
-        let res = Response::new()
+        let res = Response::<E>::new()
             .add_attribute("action", "send")
             .add_attribute("from", &ctx.info.sender)
             .add_attribute("to", &contract)
@@ -298,7 +313,7 @@ impl Cw20Base {
             amount,
             msg,
         }
-        .into_cosmos_msg(contract)?;
+        .into_cosmos_msg::<_, E>(contract)?;
 
         let res = res.add_message(msg);
         Ok(res)
@@ -306,7 +321,7 @@ impl Cw20Base {
 
     /// Returns the current balance of the given address, 0 if unset.
     #[sv::msg(query)]
-    fn balance(&self, ctx: QueryCtx, address: String) -> StdResult<BalanceResponse> {
+    fn balance(&self, ctx: QueryCtx<Q>, address: String) -> StdResult<BalanceResponse> {
         let address = ctx.deps.api.addr_validate(&address)?;
         let balance = self
             .balances
@@ -317,7 +332,7 @@ impl Cw20Base {
 
     /// Returns metadata on the contract - name, decimals, supply, etc.
     #[sv::msg(query)]
-    fn token_info(&self, ctx: QueryCtx) -> StdResult<TokenInfoResponse> {
+    fn token_info(&self, ctx: QueryCtx<Q>) -> StdResult<TokenInfoResponse> {
         let info = self.token_info.load(ctx.deps.storage)?;
         let res = TokenInfoResponse {
             name: info.name,
@@ -329,7 +344,7 @@ impl Cw20Base {
     }
 
     #[sv::msg(migrate)]
-    fn migrate(&self, ctx: MigrateCtx) -> Result<Response, ContractError> {
+    fn migrate(&self, ctx: MigrateCtx<Q>) -> Result<Response<E>, ContractError> {
         let original_version =
             ensure_from_older_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
