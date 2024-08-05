@@ -3,7 +3,9 @@
 //! Please refer to the [Sylvia-book](https://cosmwasm.github.io/sylvia-book/index.html) on how to use these macros.
 
 use crate::parser::EntryPointArgs;
-use input::{EntryPointInput, ImplInput, TraitInput};
+use contract::ContractInput;
+use entry_points::EntryPointInput;
+use interface::InterfaceInput;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro_error::proc_macro_error;
@@ -13,21 +15,15 @@ use syn::fold::Fold;
 use syn::spanned::Spanned;
 use syn::{parse2, parse_quote, ItemImpl, ItemTrait, Path};
 
-mod associated_types;
-pub(crate) mod check_generics;
-mod executor;
-mod input;
-mod interfaces;
-mod message;
-mod message_type;
-mod multitest;
+mod contract;
+mod entry_points;
+mod interface;
 mod parser;
-mod querier;
 mod strip_generics;
 mod strip_input;
 mod strip_self_path;
+mod types;
 mod utils;
-mod variant_descs;
 
 #[cfg(not(test))]
 pub(crate) fn crate_module() -> Path {
@@ -250,7 +246,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemTrait = parse2(item)?;
 
-        let expanded = TraitInput::new(&input).process();
+        let expanded = InterfaceInput::new(&input).process();
         let input = StripInput.fold_item_trait(input);
 
         Ok(quote! {
@@ -638,7 +634,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
     fn inner(attr: TokenStream2, item: TokenStream2) -> syn::Result<TokenStream2> {
         let input: ItemImpl = parse2(item)?;
         let expanded = if attr.is_empty() {
-            ImplInput::new(&input).process()
+            ContractInput::new(&input).process()
         } else {
             quote! {}
         };

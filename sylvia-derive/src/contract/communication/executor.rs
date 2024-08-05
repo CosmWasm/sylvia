@@ -1,100 +1,22 @@
 use convert_case::Case;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{GenericParam, Generics, Ident, Type};
+use quote::quote;
+use syn::{GenericParam, Generics, Type};
 
-use crate::associated_types::{AssociatedTypes, EmitAssociated, ItemType};
-use crate::check_generics::GetPath;
 use crate::crate_module;
-use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
-use crate::utils::{emit_bracketed_generics, SvCasing};
+use crate::types::associated_types::EmitAssociated;
+use crate::types::msg_field::MsgField;
+use crate::types::msg_variant::{MsgVariant, MsgVariants};
+use crate::utils::SvCasing;
 
-pub struct InterfaceExecutor<'a, Generic> {
-    variants: &'a MsgVariants<'a, Generic>,
-    associated_types: &'a AssociatedTypes<'a>,
-    interface_name: &'a Ident,
-}
-
-impl<'a, Generic> InterfaceExecutor<'a, Generic>
-where
-    Generic: GetPath + PartialEq + ToTokens,
-{
-    pub fn new(
-        variants: &'a MsgVariants<'a, Generic>,
-        associated_types: &'a AssociatedTypes,
-        interface_name: &'a Ident,
-    ) -> Self {
-        Self {
-            variants,
-            associated_types,
-            interface_name,
-        }
-    }
-
-    pub fn emit_executor_trait(&self) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            variants,
-            associated_types,
-            interface_name,
-        } = self;
-
-        let generics: Vec<_> = associated_types
-            .without_special()
-            .map(ItemType::as_name)
-            .collect();
-        let all_generics: Vec<_> = associated_types.all_names().collect();
-        let assoc_types: Vec<_> = generics
-            .iter()
-            .map(|assoc| quote! {Self:: #assoc})
-            .collect();
-        let bracketed_generics = emit_bracketed_generics(&assoc_types);
-
-        let accessor = MsgType::Exec.as_accessor_name();
-        let executor_api_path =
-            quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
-
-        let methods_trait_impl = variants
-            .variants()
-            .map(|variant| variant.emit_executor_impl(&executor_api_path))
-            .collect::<Vec<_>>();
-
-        let executor_methods_declaration = variants
-            .variants()
-            .map(|variant| variant.emit_executor_method_declaration());
-
-        let types_declaration = associated_types.filtered().collect::<Vec<_>>();
-        let where_clause = associated_types.as_where_clause();
-
-        quote! {
-            pub trait Executor {
-                #(#types_declaration)*
-                #(#executor_methods_declaration)*
-            }
-
-            impl <#(#all_generics,)*> Executor
-                for #sylvia ::types::ExecutorBuilder<(#sylvia ::types::EmptyExecutorBuilderState, dyn #interface_name <#( #all_generics = #all_generics,)* > ) > #where_clause {
-                #(type #generics = #generics;)*
-                #(#methods_trait_impl)*
-            }
-
-            impl <Contract: #interface_name> Executor
-                for #sylvia ::types::ExecutorBuilder<( #sylvia ::types::EmptyExecutorBuilderState, Contract )> {
-                #(type #generics = <Contract as #interface_name > :: #generics;)*
-                #(#methods_trait_impl)*
-            }
-        }
-    }
-}
-
-pub struct ContractExecutor<'a> {
+pub struct Executor<'a> {
     generics: Generics,
     self_ty: Type,
     variants: MsgVariants<'a, GenericParam>,
 }
 
-impl<'a> ContractExecutor<'a> {
+impl<'a> Executor<'a> {
     pub fn new(generics: Generics, self_ty: Type, variants: MsgVariants<'a, GenericParam>) -> Self {
         Self {
             generics,
