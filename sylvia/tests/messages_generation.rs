@@ -1,7 +1,8 @@
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use cosmwasm_std::{Addr, CustomQuery, Decimal};
+use contract::sv::{ExecMsg, InstantiateMsg, MigrateMsg, QueryMsg, SudoMsg};
+use cosmwasm_std::{from_json, Addr, CustomQuery, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -102,7 +103,11 @@ mod contract {
         }
 
         #[sv::msg(migrate)]
-        pub fn migrate(&self, _ctx: MigrateCtx<MyQuery>) -> StdResult<Response> {
+        pub fn migrate(
+            &self,
+            _ctx: MigrateCtx<MyQuery>,
+            #[serde(default)] _desc: String,
+        ) -> StdResult<Response> {
             Ok(Response::new())
         }
 
@@ -132,7 +137,12 @@ mod contract {
 
         #[sv::msg(query)]
         #[sv::attr(error("ArgumentedQuery"))]
-        fn argumented_query(&self, _ctx: QueryCtx<MyQuery>, _user: Addr) -> StdResult<QueryResult> {
+        fn argumented_query(
+            &self,
+            _ctx: QueryCtx<MyQuery>,
+            _user: Addr,
+            #[serde(default)] _desc: String,
+        ) -> StdResult<QueryResult> {
             Ok(QueryResult {})
         }
 
@@ -149,7 +159,12 @@ mod contract {
 
         #[sv::msg(sudo)]
         #[sv::attr(error("ArgumentedSudo"))]
-        fn argumented_sudo(&self, _ctx: SudoCtx<MyQuery>, _user: Addr) -> StdResult<Response> {
+        fn argumented_sudo(
+            &self,
+            _ctx: SudoCtx<MyQuery>,
+            _user: Addr,
+            #[serde(default)] _desc: String,
+        ) -> StdResult<Response> {
             Ok(Response::new())
         }
     }
@@ -200,15 +215,19 @@ fn contract_messages_constructible() {
     let no_args_query = contract::sv::QueryMsg::NoArgsQuery {};
     let _argumented_query = contract::sv::QueryMsg::ArgumentedQuery {
         _user: Addr::unchecked("owner"),
+        _desc: "".to_string(),
     };
     let no_args_sudo = contract::sv::SudoMsg::NoArgsSudo {};
     let _ = contract::sv::SudoMsg::ArgumentedSudo {
         _user: Addr::unchecked("owner"),
+        _desc: "".to_string(),
     };
     let _ = contract::sv::InstantiateMsg {
         _desc: "".to_string(),
     };
-    let _ = contract::sv::MigrateMsg {};
+    let _ = contract::sv::MigrateMsg {
+        _desc: "".to_string(),
+    };
 
     // Ensure no extra variants are generated
     match no_args_exec {
@@ -257,7 +276,9 @@ fn attributes_forwarding_for_message_structs_and_enums() {
     };
     let _partial_ord_implemented = instantiate_msg_contract < instantiate_msg_contract;
 
-    let migrate_msg_contract = contract::sv::MigrateMsg {};
+    let migrate_msg_contract = contract::sv::MigrateMsg {
+        _desc: "".to_string(),
+    };
     let _partial_ord_implemented = migrate_msg_contract < migrate_msg_contract;
 
     let exec_msg_interface = interface::sv::ExecMsg::NoArgsExecution {};
@@ -297,6 +318,7 @@ fn attributes_forwarding_for_message_variants() {
     assert_eq!(
         contract::sv::QueryMsg::ArgumentedQuery {
             _user: Addr::unchecked("input"),
+            _desc: "".to_string(),
         }
         .to_string(),
         "ArgumentedQuery"
@@ -308,6 +330,7 @@ fn attributes_forwarding_for_message_variants() {
     assert_eq!(
         contract::sv::SudoMsg::ArgumentedSudo {
             _user: Addr::unchecked("input"),
+            _desc: "".to_string(),
         }
         .to_string(),
         "ArgumentedSudo"
@@ -319,7 +342,13 @@ fn attributes_forwarding_for_message_variants() {
         .to_string(),
         "Instantiate"
     );
-    assert_eq!(contract::sv::MigrateMsg {}.to_string(), "Migrate");
+    assert_eq!(
+        contract::sv::MigrateMsg {
+            _desc: "".to_string(),
+        }
+        .to_string(),
+        "Migrate"
+    );
 
     assert_eq!(
         interface::sv::ExecMsg::NoArgsExecution {}.to_string(),
@@ -355,5 +384,59 @@ fn attributes_forwarding_for_message_variants() {
         }
         .to_string(),
         "ArgumentedSudo"
+    );
+}
+
+/// When deserializing some fields should be created using [Default::default] even though they are
+/// missing
+#[test]
+fn forward_attribute_to_message_field() {
+    let json = br#"{
+            "instantiate": {}
+        }"#;
+
+    assert_eq!(
+        InstantiateMsg::new(Default::default()),
+        from_json(json).unwrap()
+    );
+
+    let json = br#"{
+            "argumented_query": {"_user" : "addr"}
+        }"#;
+
+    assert_eq!(
+        QueryMsg::argumented_query(Addr::unchecked("addr"), Default::default()),
+        from_json(json).unwrap()
+    );
+
+    let json = br#"{
+            "argumented_sudo": {"_user" : "addr"}
+        }"#;
+
+    assert_eq!(
+        SudoMsg::argumented_sudo(Addr::unchecked("addr"), Default::default()),
+        from_json(json).unwrap()
+    );
+
+    let json = br#"{
+            "argumented_execution": {"_addr" : "addr"}
+        }"#;
+
+    assert_eq!(
+        ExecMsg::argumented_execution(
+            Addr::unchecked("addr"),
+            Default::default(),
+            Default::default()
+        ),
+        from_json(json).unwrap()
+    );
+
+    let json = br#"{
+            "migrate": {}
+        }"#;
+
+    assert_eq!(
+        MigrateMsg::new(Default::default()),
+        from_json(json).unwrap()
     );
 }
