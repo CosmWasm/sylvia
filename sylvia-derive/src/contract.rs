@@ -125,7 +125,7 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_struct_msg(&self, msg_ty: MsgType) -> TokenStream {
-        StructMessage::new(self.item, msg_ty, &self.generics, &self.custom)
+        StructMessage::new(self.item, msg_ty, &self.generics, &self.error, &self.custom)
             .map_or(quote! {}, |msg| msg.emit())
     }
 

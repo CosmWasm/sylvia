@@ -5,12 +5,11 @@ use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, FnArg, GenericArgument, Ident, Path, PathArguments, ReturnType, Signature, Type,
-    WhereClause, WherePredicate,
+    parse_quote, GenericArgument, Ident, Path, PathArguments, ReturnType, Type, WhereClause,
+    WherePredicate,
 };
 
 use crate::parser::check_generics::{CheckGenerics, GetPath};
-use crate::types::msg_field::MsgField;
 
 pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
     clause: &'a Option<WhereClause>,
@@ -34,27 +33,6 @@ pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
                 .collect()
         })
         .unwrap_or_default()
-}
-
-pub fn process_fields<'s, Generic>(
-    sig: &'s Signature,
-    generics_checker: &mut CheckGenerics<Generic>,
-) -> Vec<MsgField<'s>>
-where
-    Generic: GetPath + PartialEq,
-{
-    sig.inputs
-        .iter()
-        .skip(2)
-        .filter_map(|arg| match arg {
-            FnArg::Receiver(item) => {
-                emit_error!(item.span(), "Unexpected `self` argument");
-                None
-            }
-
-            FnArg::Typed(item) => MsgField::new(item, generics_checker),
-        })
-        .collect()
 }
 
 pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
