@@ -1,4 +1,4 @@
-use cosmwasm_std::{ensure, Addr, Response, StdResult};
+use cosmwasm_std::{ensure, Addr, Empty, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 use sylvia::types::{ExecCtx, QueryCtx};
 
@@ -7,6 +7,9 @@ use crate::error::ContractError;
 
 impl Cw1 for Cw1SubkeysContract {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
+    type CosmosCustomMsg = Empty;
 
     fn execute(
         &self,

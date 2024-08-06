@@ -1,39 +1,70 @@
-use cosmwasm_std::{Response, StdError};
+pub mod responses;
 
-use sylvia::types::{ExecCtx, QueryCtx};
+use cosmwasm_std::{Response, StdError};
+use responses::{
+    AdminResponse, HooksResponse, MemberListResponse, MemberResponse, TotalWeightResponse,
+};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw4 {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
 
     #[sv::msg(exec)]
-    fn update_admin(&self, ctx: ExecCtx, admin: String) -> Result<Response, Self::Error>;
+    fn update_admin(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        admin: String,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(exec)]
-    fn update_members(&self, ctx: ExecCtx, members: Vec<String>) -> Result<Response, Self::Error>;
+    fn update_members(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        members: Vec<String>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(exec)]
-    fn add_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
+    fn add_hook(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        hook: String,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(exec)]
-    fn remove_hook(&self, ctx: ExecCtx, hook: String) -> Result<Response, Self::Error>;
+    fn remove_hook(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        hook: String,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     #[sv::msg(query)]
-    fn member(&self, ctx: QueryCtx, member: String) -> Result<Response, Self::Error>;
+    fn member(
+        &self,
+        ctx: QueryCtx<Self::QueryC>,
+        member: String,
+    ) -> Result<Response<MemberResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn list_members(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
+    fn list_members(
+        &self,
+        ctx: QueryCtx<Self::QueryC>,
+    ) -> Result<Response<MemberListResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn total_weight(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
+    fn total_weight(
+        &self,
+        ctx: QueryCtx<Self::QueryC>,
+    ) -> Result<Response<TotalWeightResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn admin(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
+    fn admin(&self, ctx: QueryCtx<Self::QueryC>) -> Result<Response<AdminResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn hooks(&self, ctx: QueryCtx) -> Result<Response, Self::Error>;
+    fn hooks(&self, ctx: QueryCtx<Self::QueryC>) -> Result<Response<HooksResponse>, Self::Error>;
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use serde::{Deserialize, Serialize};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[derive(
@@ -11,15 +11,21 @@ pub struct CanExecuteResp {
 }
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw1 {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
+    type CosmosCustomMsg: CustomMsg;
 
     /// Execute requests the contract to re-dispatch all these messages with the
     /// contract's address as sender. Every implementation has it's own logic to
     /// determine in
     #[sv::msg(exec)]
-    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error>;
+    fn execute(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        msgs: Vec<CosmosMsg<Self::CosmosCustomMsg>>,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Checks permissions of the caller on this proxy.
     /// If CanExecute returns true then a call to `Execute` with the same message,
@@ -27,19 +33,21 @@ pub trait Cw1 {
     #[sv::msg(query)]
     fn can_execute(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        msg: CosmosMsg,
+        msg: CosmosMsg<Self::CosmosCustomMsg>,
     ) -> StdResult<CanExecuteResp>;
 }
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg};
+    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg, Empty};
+
+    use crate::sv::{Cw1ExecMsg, Cw1QueryMsg};
 
     #[test]
     fn execute() {
-        let original = super::sv::ExecMsg::Execute {
+        let original: Cw1ExecMsg<Empty> = super::sv::ExecMsg::Execute {
             msgs: vec![BankMsg::Send {
                 to_address: "receiver".to_owned(),
                 amount: coins(10, "atom"),
@@ -55,13 +63,13 @@ mod tests {
 
     #[test]
     fn execute_from_json() {
-        let deserialized = from_json(br#"{"execute": { "msgs": [] }}"#).unwrap();
+        let deserialized: Cw1ExecMsg<Empty> = from_json(br#"{"execute": { "msgs": [] }}"#).unwrap();
         assert_eq!(super::sv::ExecMsg::Execute { msgs: vec![] }, deserialized);
     }
 
     #[test]
     fn query() {
-        let original = super::sv::QueryMsg::CanExecute {
+        let original: Cw1QueryMsg<Empty> = super::sv::QueryMsg::CanExecute {
             sender: "sender".to_owned(),
             msg: BankMsg::Send {
                 to_address: "receiver".to_owned(),
@@ -78,7 +86,7 @@ mod tests {
 
     #[test]
     fn query_from_json() {
-        let deserialized = from_json(
+        let deserialized: Cw1QueryMsg<Empty> = from_json(
             br#"{"can_execute": {
                 "sender": "address",
                 "msg": {

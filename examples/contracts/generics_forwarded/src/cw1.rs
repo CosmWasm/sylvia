@@ -1,5 +1,5 @@
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::{CosmosMsg, CustomMsg, Response, StdResult};
+use cosmwasm_std::{CosmosMsg, CustomMsg, Empty, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
@@ -57,6 +57,9 @@ where
     FieldT: 'static,
 {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
+    type CosmosCustomMsg = Empty;
 
     fn execute(&self, _ctx: ExecCtx, _msgs: Vec<CosmosMsg>) -> Result<Response, Self::Error> {
         Ok(Response::new())
