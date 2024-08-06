@@ -3,8 +3,8 @@ use crate::fold::StripSelfPath;
 use crate::parser::attributes::VariantAttrForwarding;
 use crate::parser::check_generics::{CheckGenerics, GetPath};
 use crate::parser::variant_descs::VariantDescs;
-use crate::parser::{MsgAttr, MsgType};
-use crate::utils::{extract_return_type, filter_wheres, process_fields, SvCasing};
+use crate::parser::{process_fields, MsgAttr, MsgType};
+use crate::utils::{extract_return_type, filter_wheres, SvCasing};
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -244,6 +244,10 @@ where
 
     pub fn unused_generics(&self) -> &Vec<&'a Generic> {
         &self.unused_generics
+    }
+
+    pub fn msg_ty(&self) -> MsgType {
+        self.msg_ty
     }
 
     pub fn emit_phantom_match_arm(&self) -> TokenStream {

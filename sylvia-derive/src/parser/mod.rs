@@ -7,15 +7,18 @@ pub use attributes::{
     ContractErrorAttr, ContractMessageAttr, Custom, Customs, FilteredOverrideEntryPoints, MsgAttr,
     MsgType, OverrideEntryPoint, ParsedSylviaAttributes, SylviaAttribute,
 };
+use check_generics::{CheckGenerics, GetPath};
 pub use entry_point::EntryPointArgs;
 
 use proc_macro_error::emit_error;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parse_quote, GenericArgument, Ident, ImplItem, ItemImpl, ItemTrait, Path, PathArguments, Token,
-    TraitItem, Type,
+    parse_quote, FnArg, GenericArgument, Ident, ImplItem, ItemImpl, ItemTrait, Path, PathArguments,
+    Signature, Token, TraitItem, Type,
 };
+
+use crate::types::msg_field::MsgField;
 
 fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Token![,]> {
     let generics = module
@@ -63,4 +66,25 @@ pub fn assert_new_method_defined(item: &ItemImpl) {
         }
         _ => (),
     }
+}
+
+pub fn process_fields<'s, Generic>(
+    sig: &'s Signature,
+    generics_checker: &mut CheckGenerics<Generic>,
+) -> Vec<MsgField<'s>>
+where
+    Generic: GetPath + PartialEq,
+{
+    sig.inputs
+        .iter()
+        .skip(2)
+        .filter_map(|arg| match arg {
+            FnArg::Receiver(item) => {
+                emit_error!(item.span(), "Unexpected `self` argument");
+                None
+            }
+
+            FnArg::Typed(item) => MsgField::new(item, generics_checker),
+        })
+        .collect()
 }
