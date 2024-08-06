@@ -1,22 +1,23 @@
 use convert_case::Case;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{GenericParam, Generics, Ident, Type};
+use syn::Ident;
 
-use crate::associated_types::{AssociatedTypes, EmitAssociated, ItemType};
-use crate::check_generics::GetPath;
 use crate::crate_module;
-use crate::message::{MsgField, MsgVariant, MsgVariants};
 use crate::parser::attributes::msg::MsgType;
+use crate::parser::check_generics::GetPath;
+use crate::types::associated_types::{AssociatedTypes, ItemType};
+use crate::types::msg_field::MsgField;
+use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::{emit_bracketed_generics, SvCasing};
 
-pub struct InterfaceQuerier<'a, Generic> {
+pub struct Querier<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a AssociatedTypes<'a>,
     interface_name: &'a Ident,
 }
 
-impl<'a, Generic> InterfaceQuerier<'a, Generic>
+impl<'a, Generic> Querier<'a, Generic>
 where
     Generic: GetPath + PartialEq + ToTokens,
 {
@@ -80,75 +81,6 @@ where
             impl <'a, C: #sylvia ::cw_std::CustomQuery, Contract: #interface_name> Querier for #sylvia ::types::BoundQuerier<'a, C, Contract> {
                 #(type #generics = <Contract as #interface_name > :: #generics;)*
                 #(#methods_trait_impl)*
-            }
-        }
-    }
-}
-
-pub struct ContractQuerier<'a> {
-    generics: Generics,
-    self_ty: Type,
-    variants: MsgVariants<'a, GenericParam>,
-}
-
-impl<'a> ContractQuerier<'a> {
-    pub fn new(generics: Generics, self_ty: Type, variants: MsgVariants<'a, GenericParam>) -> Self {
-        Self {
-            generics,
-            self_ty,
-            variants,
-        }
-    }
-
-    pub fn emit(&self) -> TokenStream {
-        let sylvia = crate_module();
-        let Self {
-            generics,
-            self_ty,
-            variants,
-            ..
-        } = self;
-
-        let where_clause = &generics.where_clause;
-        let generics: Vec<_> = generics.params.iter().collect();
-        let contract = &self_ty;
-
-        let accessor = MsgType::Query.as_accessor_name();
-        let api_path = quote! { < #contract as #sylvia ::types::ContractApi>:: #accessor };
-
-        let querier_methods_impl = variants
-            .variants()
-            .map(|variant| variant.emit_querier_impl(&api_path));
-
-        let querier_methods_declaration = variants
-            .variants()
-            .map(|variant| variant.emit_querier_method_declaration());
-
-        let types_declaration = where_clause
-            .as_ref()
-            .map(EmitAssociated::emit_declaration)
-            .unwrap_or(vec![]);
-
-        let types_implementation = where_clause
-            .as_ref()
-            .map(EmitAssociated::emit_implementation)
-            .unwrap_or(vec![]);
-
-        let bracketed_generics = if !generics.is_empty() {
-            quote! { < #(#generics,)* > }
-        } else {
-            quote! {}
-        };
-
-        quote! {
-            pub trait Querier #bracketed_generics {
-                #(#types_declaration)*
-                #(#querier_methods_declaration)*
-            }
-
-            impl <'sv_querier_lifetime, #(#generics,)* C: #sylvia ::cw_std::CustomQuery> Querier #bracketed_generics for #sylvia ::types::BoundQuerier<'sv_querier_lifetime, C, #contract > #where_clause {
-                #(#types_implementation)*
-                #(#querier_methods_impl)*
             }
         }
     }

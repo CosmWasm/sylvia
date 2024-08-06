@@ -1,5 +1,7 @@
 pub mod attributes;
+pub mod check_generics;
 pub mod entry_point;
+pub mod variant_descs;
 
 pub use attributes::{
     ContractErrorAttr, ContractMessageAttr, Custom, Customs, FilteredOverrideEntryPoints, MsgAttr,

@@ -7,7 +7,7 @@ use syn::{parenthesized, Error, Ident, MetaList, Path, Result, Token};
 
 use proc_macro_error::emit_error;
 
-use crate::strip_generics::StripGenerics;
+use crate::fold::StripGenerics;
 
 #[derive(Debug)]
 pub struct ContractMessageAttr {

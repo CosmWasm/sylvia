@@ -9,8 +9,8 @@ use syn::{
     WhereClause, WherePredicate,
 };
 
-use crate::check_generics::{CheckGenerics, GetPath};
-use crate::message::MsgField;
+use crate::parser::check_generics::{CheckGenerics, GetPath};
+use crate::types::msg_field::MsgField;
 
 pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
     clause: &'a Option<WhereClause>,
