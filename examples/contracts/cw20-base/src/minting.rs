@@ -1,12 +1,14 @@
 use crate::contract::{Cw20Base, MinterData};
 use crate::error::ContractError;
-use cosmwasm_std::{Response, StdResult, Uint128};
+use cosmwasm_std::{Empty, Response, StdResult, Uint128};
 use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 impl Cw20Minting for Cw20Base {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
 
     fn mint(
         &self,

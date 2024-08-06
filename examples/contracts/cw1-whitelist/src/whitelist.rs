@@ -8,6 +8,8 @@ use crate::error::ContractError;
 
 impl Whitelist for Cw1WhitelistContract {
     type Error = ContractError;
+    type ExecC = Empty;
+    type QueryC = Empty;
 
     fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {

@@ -3,7 +3,7 @@ pub mod responses;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Binary, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 /// This is used for uploading logo data, or setting it in InstantiateData
@@ -29,9 +29,10 @@ pub enum EmbeddedLogo {
 }
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
 pub trait Cw20Marketing {
     type Error: From<StdError>;
+    type ExecC: CustomMsg;
+    type QueryC: CustomQuery;
 
     /// If authorized, updates marketing metadata.
     /// Setting None/null for any of these will leave it unchanged.
@@ -42,23 +43,27 @@ pub trait Cw20Marketing {
     #[sv::msg(exec)]
     fn update_marketing(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         project: Option<String>,
         description: Option<String>,
         marketing: Option<String>,
-    ) -> Result<Response, Self::Error>;
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// If set as the "marketing" role on the contract, upload a new URL, SVG, or PNG for the token
     #[sv::msg(exec)]
-    fn upload_logo(&self, ctx: ExecCtx, logo: Logo) -> Result<Response, Self::Error>;
+    fn upload_logo(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        logo: Logo,
+    ) -> Result<Response<Self::ExecC>, Self::Error>;
 
     /// Returns more metadata on the contract to display in the client:
     /// - description, logo, project url, etc.
     #[sv::msg(query)]
-    fn marketing_info(&self, ctx: QueryCtx) -> StdResult<MarketingInfoResponse>;
+    fn marketing_info(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<MarketingInfoResponse>;
 
     /// Downloads the embedded logo data (if stored on chain). Errors if no logo data is stored for this
     /// contract.
     #[sv::msg(query)]
-    fn download_logo(&self, ctx: QueryCtx) -> StdResult<DownloadLogoResponse>;
+    fn download_logo(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<DownloadLogoResponse>;
 }
