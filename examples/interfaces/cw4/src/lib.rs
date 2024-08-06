@@ -1,4 +1,9 @@
+pub mod responses;
+
 use cosmwasm_std::{Response, StdError};
+use responses::{
+    AdminResponse, HooksResponse, MemberListResponse, MemberResponse, TotalWeightResponse,
+};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -7,11 +12,6 @@ pub trait Cw4 {
     type Error: From<StdError>;
     type ExecC: CustomMsg;
     type QueryC: CustomQuery;
-    type MemberCustomMsg: CustomMsg;
-    type ListMembersCustomMsg: CustomMsg;
-    type TotalWeightCustomMsg: CustomMsg;
-    type AdminCustomMsg: CustomMsg;
-    type HooksCustomMsg: CustomMsg;
 
     #[sv::msg(exec)]
     fn update_admin(
@@ -46,36 +46,30 @@ pub trait Cw4 {
         &self,
         ctx: QueryCtx<Self::QueryC>,
         member: String,
-    ) -> Result<Response<Self::MemberCustomMsg>, Self::Error>;
+    ) -> Result<Response<MemberResponse>, Self::Error>;
 
     #[sv::msg(query)]
     fn list_members(
         &self,
         ctx: QueryCtx<Self::QueryC>,
-    ) -> Result<Response<Self::ListMembersCustomMsg>, Self::Error>;
+    ) -> Result<Response<MemberListResponse>, Self::Error>;
 
     #[sv::msg(query)]
     fn total_weight(
         &self,
         ctx: QueryCtx<Self::QueryC>,
-    ) -> Result<Response<Self::TotalWeightCustomMsg>, Self::Error>;
+    ) -> Result<Response<TotalWeightResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn admin(
-        &self,
-        ctx: QueryCtx<Self::QueryC>,
-    ) -> Result<Response<Self::AdminCustomMsg>, Self::Error>;
+    fn admin(&self, ctx: QueryCtx<Self::QueryC>) -> Result<Response<AdminResponse>, Self::Error>;
 
     #[sv::msg(query)]
-    fn hooks(
-        &self,
-        ctx: QueryCtx<Self::QueryC>,
-    ) -> Result<Response<Self::HooksCustomMsg>, Self::Error>;
+    fn hooks(&self, ctx: QueryCtx<Self::QueryC>) -> Result<Response<HooksResponse>, Self::Error>;
 }
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_json, to_json_binary, Empty};
+    use cosmwasm_std::{from_json, to_json_binary};
 
     use super::sv::*;
 
@@ -96,8 +90,7 @@ mod tests {
         let original_msg = Cw4QueryMsg::Admin {};
 
         let serialized_msg = to_json_binary(&original_msg).unwrap();
-        let serialized_msg: Cw4QueryMsg<Empty, Empty, Empty, Empty, Empty> =
-            from_json(serialized_msg).unwrap();
+        let serialized_msg: Cw4QueryMsg = from_json(serialized_msg).unwrap();
 
         assert_eq!(serialized_msg, original_msg);
     }
@@ -116,8 +109,7 @@ mod tests {
 
     #[test]
     fn query_from_json() {
-        let deserialized: Cw4QueryMsg<Empty, Empty, Empty, Empty, Empty> =
-            from_json(br#"{"admin": {}}"#).unwrap();
+        let deserialized: Cw4QueryMsg = from_json(br#"{"admin": {}}"#).unwrap();
         assert_eq!(deserialized, Cw4QueryMsg::Admin {});
     }
 
