@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Env, Order, Response,
-    StakingMsg, StdResult,
+    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Empty, Env, Order,
+    Response, StakingMsg, StdResult,
 };
 use cw1_whitelist::contract::Cw1WhitelistContract;
 use cw2::set_contract_version;
@@ -25,21 +25,13 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-#[cosmwasm_schema::cw_serde]
-pub struct SvCustomMsg;
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
-
-#[cosmwasm_schema::cw_serde]
-pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
-
 pub struct Cw1SubkeysContract<E, Q> {
     pub(crate) whitelist: Cw1WhitelistContract<E, Q>,
     pub(crate) permissions: Map<&'static Addr, Permissions>,
     pub(crate) allowances: Map<&'static Addr, Allowance>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomQuery>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, Empty>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]

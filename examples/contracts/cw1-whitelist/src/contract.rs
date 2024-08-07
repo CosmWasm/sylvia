@@ -1,6 +1,5 @@
 use crate::error::ContractError;
 use cosmwasm_std::{Addr, Deps, Empty, Response};
-
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
 use sylvia::types::{CustomMsg, CustomQuery, InstantiateCtx};
@@ -12,17 +11,13 @@ use sylvia::entry_points;
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cosmwasm_schema::cw_serde]
-pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
-
 pub struct Cw1WhitelistContract<E, Q> {
     pub(crate) admins: Map<&'static Addr, Empty>,
     pub(crate) mutable: Item<bool>,
     pub(crate) _phantom: std::marker::PhantomData<(E, Q)>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, SvCustomQuery>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, Empty>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
