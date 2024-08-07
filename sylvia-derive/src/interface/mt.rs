@@ -8,7 +8,7 @@ use crate::parser::attributes::msg::MsgType;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::types::associated_types::AssociatedTypes;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
-use crate::utils::{emit_bracketed_generics, SvCasing};
+use crate::utils::SvCasing;
 
 pub struct MtHelpers<'a> {
     source: &'a ItemTrait,
@@ -88,16 +88,9 @@ impl<'a> MtHelpers<'a> {
             .map(|associated| &associated.ident)
             .collect();
 
-        let associated_args_for_api: Vec<_> = associated_types
-            .without_error()
-            .map(|associated| {
-                let assoc = &associated.ident;
-                quote! { Self:: #assoc }
-            })
-            .collect();
-
-        let bracketed_generics = emit_bracketed_generics(&associated_args_for_api);
-        let api = quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi> };
+        let api = quote! {
+            < dyn #interface_name < Error = (), #(#associated_args = Self:: #associated_args,)* > as InterfaceMessagesApi >
+        };
 
         let associated_types_declaration = associated_types.without_error();
 
