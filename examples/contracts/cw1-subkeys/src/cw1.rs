@@ -1,21 +1,24 @@
-use cosmwasm_std::{ensure, Addr, Empty, Response, StdResult};
+use cosmwasm_std::{ensure, Addr, CosmosMsg, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;
 
-impl Cw1 for Cw1SubkeysContract {
+impl<E, Q> Cw1 for Cw1SubkeysContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
-    type CosmosCustomMsg = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
     fn execute(
         &self,
-        ctx: ExecCtx,
-        msgs: Vec<cosmwasm_std::CosmosMsg>,
-    ) -> Result<cosmwasm_std::Response, Self::Error> {
+        ctx: ExecCtx<Self::QueryC>,
+        msgs: Vec<CosmosMsg<Self::ExecC>>,
+    ) -> Result<Response<Self::ExecC>, Self::Error> {
         let authorized: StdResult<_> = msgs.iter().try_fold(true, |acc, msg| {
             Ok(acc & self.is_authorized(ctx.deps.as_ref(), &ctx.env, &ctx.info.sender, msg)?)
         });
@@ -31,9 +34,9 @@ impl Cw1 for Cw1SubkeysContract {
 
     fn can_execute(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        msg: cosmwasm_std::CosmosMsg,
+        msg: CosmosMsg<Self::ExecC>,
     ) -> StdResult<CanExecuteResp> {
         let sender = Addr::unchecked(sender);
 

@@ -88,7 +88,10 @@ impl<'a> InterfaceInput<'a> {
             custom,
         } = self;
         let messages = self.emit_messages();
-        let associated_names: Vec<_> = associated_types.as_filtered_names().collect();
+        let associated_names: Vec<_> = associated_types
+            .without_error()
+            .map(ItemType::as_name)
+            .collect();
 
         let executor_variants =
             MsgVariants::new(item.as_variants(), MsgType::Exec, &associated_names, &None);

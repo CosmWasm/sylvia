@@ -1,12 +1,12 @@
 use cosmwasm_std::{
-    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Env, Order, Response,
-    StakingMsg, StdResult,
+    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Empty, Env, Order,
+    Response, StakingMsg, StdResult,
 };
 use cw1_whitelist::contract::Cw1WhitelistContract;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
-use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -25,18 +25,23 @@ pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 
-pub struct Cw1SubkeysContract {
-    pub(crate) whitelist: Cw1WhitelistContract,
+pub struct Cw1SubkeysContract<E, Q> {
+    pub(crate) whitelist: Cw1WhitelistContract<E, Q>,
     pub(crate) permissions: Map<&'static Addr, Permissions>,
     pub(crate) allowances: Map<&'static Addr, Allowance>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points)]
+#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, Empty>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl Cw1SubkeysContract {
+#[sv::custom(msg=E, query=Q)]
+impl<E, Q> Cw1SubkeysContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     pub const fn new() -> Self {
         Self {
             whitelist: Cw1WhitelistContract::new(),
@@ -48,10 +53,10 @@ impl Cw1SubkeysContract {
     #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
-        mut ctx: InstantiateCtx,
+        mut ctx: InstantiateCtx<Q>,
         admins: Vec<String>,
         mutable: bool,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         let result = self.whitelist.instantiate(ctx.branch(), admins, mutable)?;
         set_contract_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
         Ok(result)
@@ -60,11 +65,11 @@ impl Cw1SubkeysContract {
     #[sv::msg(exec)]
     pub fn increase_allowance(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Q>,
         spender: String,
         amount: Coin,
         expires: Option<Expiration>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
             ContractError::Unauthorized
@@ -110,11 +115,11 @@ impl Cw1SubkeysContract {
     #[sv::msg(exec)]
     pub fn decrease_allowance(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Q>,
         spender: String,
         amount: Coin,
         expires: Option<Expiration>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
             ContractError::Unauthorized
@@ -161,10 +166,10 @@ impl Cw1SubkeysContract {
     #[sv::msg(exec)]
     pub fn set_permissions(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Q>,
         spender: String,
         permissions: Permissions,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         ensure!(
             self.whitelist.is_admin(ctx.deps.as_ref(), &ctx.info.sender),
             ContractError::Unauthorized
@@ -184,7 +189,7 @@ impl Cw1SubkeysContract {
     }
 
     #[sv::msg(query)]
-    pub fn allowance(&self, ctx: QueryCtx, spender: String) -> StdResult<Allowance> {
+    pub fn allowance(&self, ctx: QueryCtx<Q>, spender: String) -> StdResult<Allowance> {
         // we can use unchecked here as it is a query - bad value means a miss, we never write it
         let spender = Addr::unchecked(spender);
         let allow = self
@@ -197,7 +202,7 @@ impl Cw1SubkeysContract {
     }
 
     #[sv::msg(query)]
-    pub fn permissions(&self, ctx: QueryCtx, spender: String) -> StdResult<Permissions> {
+    pub fn permissions(&self, ctx: QueryCtx<Q>, spender: String) -> StdResult<Permissions> {
         let spender = Addr::unchecked(spender);
         let permissions = self
             .permissions
@@ -210,7 +215,7 @@ impl Cw1SubkeysContract {
     #[sv::msg(query)]
     pub fn all_allowances(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Q>,
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllAllowancesResponse> {
@@ -246,7 +251,7 @@ impl Cw1SubkeysContract {
     #[sv::msg(query)]
     pub fn all_permissions(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Q>,
         start_after: Option<String>,
         limit: Option<u32>,
     ) -> StdResult<AllPermissionsResponse> {
@@ -272,10 +277,10 @@ impl Cw1SubkeysContract {
 
     pub fn is_authorized(
         &self,
-        deps: Deps,
+        deps: Deps<Q>,
         env: &Env,
         sender: &Addr,
-        msg: &CosmosMsg,
+        msg: &CosmosMsg<E>,
     ) -> StdResult<bool> {
         if self.whitelist.is_admin(deps, sender) {
             return Ok(true);

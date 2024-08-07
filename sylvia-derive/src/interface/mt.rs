@@ -89,7 +89,7 @@ impl<'a> MtHelpers<'a> {
             .collect();
 
         let associated_args_for_api: Vec<_> = associated_types
-            .without_special()
+            .without_error()
             .map(|associated| {
                 let assoc = &associated.ident;
                 quote! { Self:: #assoc }

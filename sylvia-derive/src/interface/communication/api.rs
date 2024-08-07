@@ -36,7 +36,7 @@ impl<'a> Api<'a> {
 
         let interface_name = &source.ident;
         let generics: Vec<_> = associated_types
-            .without_special()
+            .without_error()
             .map(ItemType::as_name)
             .collect();
         let exec_variants = MsgVariants::new(

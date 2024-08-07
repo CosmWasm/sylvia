@@ -1,17 +1,21 @@
 use cosmwasm_std::{Empty, Order, Response, StdResult};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use whitelist::responses::AdminListResponse;
 use whitelist::Whitelist;
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
-impl Whitelist for Cw1WhitelistContract {
+impl<E, Q> Whitelist for Cw1WhitelistContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
-    fn freeze(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
+    fn freeze(&self, ctx: ExecCtx<Self::QueryC>) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
         }
@@ -24,9 +28,9 @@ impl Whitelist for Cw1WhitelistContract {
 
     fn update_admins(
         &self,
-        ctx: ExecCtx,
+        ctx: ExecCtx<Self::QueryC>,
         mut admins: Vec<String>,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
         }
@@ -81,7 +85,7 @@ impl Whitelist for Cw1WhitelistContract {
         Ok(resp)
     }
 
-    fn admin_list(&self, ctx: QueryCtx) -> StdResult<AdminListResponse> {
+    fn admin_list(&self, ctx: QueryCtx<Self::QueryC>) -> StdResult<AdminListResponse> {
         let admins: Result<_, _> = self
             .admins
             .keys(ctx.deps.storage, None, None, Order::Ascending)

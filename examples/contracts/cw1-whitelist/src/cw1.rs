@@ -1,17 +1,24 @@
-use cosmwasm_std::{Addr, CosmosMsg, Empty, Response, StdResult};
+use cosmwasm_std::{Addr, CosmosMsg, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
-use sylvia::types::{ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
 use crate::contract::Cw1WhitelistContract;
 use crate::error::ContractError;
 
-impl Cw1 for Cw1WhitelistContract {
+impl<E, Q> Cw1 for Cw1WhitelistContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     type Error = ContractError;
-    type ExecC = Empty;
-    type QueryC = Empty;
-    type CosmosCustomMsg = Empty;
+    type ExecC = E;
+    type QueryC = Q;
 
-    fn execute(&self, ctx: ExecCtx, msgs: Vec<CosmosMsg>) -> Result<Response, ContractError> {
+    fn execute(
+        &self,
+        ctx: ExecCtx<Self::QueryC>,
+        msgs: Vec<CosmosMsg<Self::ExecC>>,
+    ) -> Result<Response<Self::ExecC>, ContractError> {
         if !self.is_admin(ctx.deps.as_ref(), &ctx.info.sender) {
             return Err(ContractError::Unauthorized);
         }
@@ -24,9 +31,9 @@ impl Cw1 for Cw1WhitelistContract {
 
     fn can_execute(
         &self,
-        ctx: QueryCtx,
+        ctx: QueryCtx<Self::QueryC>,
         sender: String,
-        _msg: CosmosMsg,
+        _msg: CosmosMsg<Self::ExecC>,
     ) -> StdResult<CanExecuteResp> {
         let resp = CanExecuteResp {
             can_execute: self.is_admin(ctx.deps, &Addr::unchecked(sender)),

@@ -1,9 +1,8 @@
 use crate::error::ContractError;
 use cosmwasm_std::{Addr, Deps, Empty, Response};
-
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
-use sylvia::types::InstantiateCtx;
+use sylvia::types::{CustomMsg, CustomQuery, InstantiateCtx};
 use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
@@ -12,30 +11,37 @@ use sylvia::entry_points;
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub struct Cw1WhitelistContract {
+pub struct Cw1WhitelistContract<E, Q> {
     pub(crate) admins: Map<&'static Addr, Empty>,
     pub(crate) mutable: Item<bool>,
+    pub(crate) _phantom: std::marker::PhantomData<(E, Q)>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points)]
+#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, Empty>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw1 as Cw1)]
 #[sv::messages(whitelist as Whitelist)]
-impl Cw1WhitelistContract {
+#[sv::custom(msg=E, query=Q)]
+impl<E, Q> Cw1WhitelistContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
     pub const fn new() -> Self {
         Self {
             admins: Map::new("admins"),
             mutable: Item::new("mutable"),
+            _phantom: std::marker::PhantomData,
         }
     }
     #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
-        ctx: InstantiateCtx,
+        ctx: InstantiateCtx<Q>,
         admins: Vec<String>,
         mutable: bool,
-    ) -> Result<Response, ContractError> {
+    ) -> Result<Response<E>, ContractError> {
         set_contract_version(ctx.deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
         for admin in admins {
@@ -48,7 +54,7 @@ impl Cw1WhitelistContract {
         Ok(Response::new())
     }
 
-    pub fn is_admin(&self, deps: Deps, addr: &Addr) -> bool {
+    pub fn is_admin(&self, deps: Deps<Q>, addr: &Addr) -> bool {
         self.admins.has(deps.storage, addr)
     }
 }
@@ -77,7 +83,7 @@ mod tests {
 
         let anyone = "anyone".into_addr();
 
-        let contract = Cw1WhitelistContract::new();
+        let contract: Cw1WhitelistContract<Empty, Empty> = Cw1WhitelistContract::new();
 
         // instantiate the contract
         let info = message_info(&anyone, &[]);
@@ -174,7 +180,7 @@ mod tests {
         let bob = "bob".into_bech32();
         let carl = "carl".into_bech32();
 
-        let contract = Cw1WhitelistContract::new();
+        let contract: Cw1WhitelistContract<Empty, Empty> = Cw1WhitelistContract::new();
 
         // instantiate the contract
         let info = message_info(&bob, &[]);
@@ -229,7 +235,7 @@ mod tests {
 
         let anyone = "anyone".into_bech32();
 
-        let contract = Cw1WhitelistContract::new();
+        let contract: Cw1WhitelistContract<Empty, Empty> = Cw1WhitelistContract::new();
 
         // instantiate the contract
         let info = message_info(&anyone, &[]);
@@ -293,7 +299,7 @@ mod tests {
     }
 
     mod msgs {
-        use cosmwasm_std::{from_json, to_json_binary, BankMsg};
+        use cosmwasm_std::{from_json, to_json_binary, BankMsg, Empty};
 
         use crate::contract::sv::{ContractExecMsg, ContractQueryMsg};
 
@@ -301,14 +307,14 @@ mod tests {
         fn freeze() {
             let original = whitelist::sv::ExecMsg::Freeze {};
             let serialized = to_json_binary(&original).unwrap();
-            let deserialized = from_json(serialized).unwrap();
+            let deserialized: ContractExecMsg<Empty, Empty> = from_json(serialized).unwrap();
 
             assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "freeze": {}
             }"#;
-            let deserialized = from_json(json).unwrap();
+            let deserialized: ContractExecMsg<Empty, Empty> = from_json(json).unwrap();
 
             assert_eq!(
                 ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::Freeze {}),
@@ -322,7 +328,7 @@ mod tests {
                 admins: vec!["admin1".to_owned(), "admin2".to_owned()],
             };
             let serialized = to_json_binary(&original).unwrap();
-            let deserialized = from_json(serialized).unwrap();
+            let deserialized: ContractExecMsg<Empty, Empty> = from_json(serialized).unwrap();
 
             assert_eq!(ContractExecMsg::Whitelist(original), deserialized);
 
@@ -331,7 +337,7 @@ mod tests {
                     "admins": ["admin1", "admin3"]
                 }
             }"#;
-            let deserialized = from_json(json).unwrap();
+            let deserialized: ContractExecMsg<Empty, Empty> = from_json(json).unwrap();
 
             assert_eq!(
                 ContractExecMsg::Whitelist(whitelist::sv::ExecMsg::UpdateAdmins {
@@ -345,14 +351,14 @@ mod tests {
         fn admin_list() {
             let original = whitelist::sv::QueryMsg::AdminList {};
             let serialized = to_json_binary(&original).unwrap();
-            let deserialized = from_json(serialized).unwrap();
+            let deserialized: ContractQueryMsg<Empty, Empty> = from_json(serialized).unwrap();
 
             assert_eq!(ContractQueryMsg::Whitelist(original), deserialized);
 
             let json = br#"{
                 "admin_list": {}
             }"#;
-            let deserialized = from_json(json).unwrap();
+            let deserialized: ContractQueryMsg<Empty, Empty> = from_json(json).unwrap();
 
             assert_eq!(
                 ContractQueryMsg::Whitelist(whitelist::sv::QueryMsg::AdminList {}),
@@ -370,7 +376,7 @@ mod tests {
                 .into()],
             };
             let serialized = to_json_binary(&original).unwrap();
-            let deserialized = from_json(serialized).unwrap();
+            let deserialized: ContractExecMsg<Empty, Empty> = from_json(serialized).unwrap();
             assert_eq!(ContractExecMsg::Cw1(original), deserialized);
         }
 
@@ -385,7 +391,7 @@ mod tests {
                 .into(),
             };
             let serialized = to_json_binary(&original).unwrap();
-            let deserialized = from_json(serialized).unwrap();
+            let deserialized: ContractQueryMsg<Empty, Empty> = from_json(serialized).unwrap();
             assert_eq!(ContractQueryMsg::Cw1(original), deserialized);
         }
     }

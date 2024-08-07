@@ -42,7 +42,7 @@ where
         } = self;
 
         let generics: Vec<_> = associated_types
-            .without_special()
+            .without_error()
             .map(ItemType::as_name)
             .collect();
         let all_generics: Vec<_> = associated_types.all_names().collect();
@@ -65,7 +65,7 @@ where
             .variants()
             .map(|variant| variant.emit_executor_method_declaration());
 
-        let types_declaration = associated_types.filtered().collect::<Vec<_>>();
+        let types_declaration = associated_types.without_error().collect::<Vec<_>>();
         let where_clause = associated_types.as_where_clause();
 
         quote! {

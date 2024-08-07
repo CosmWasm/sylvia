@@ -3,7 +3,7 @@ use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoRespo
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    ensure, Addr, Binary, BlockInfo, DepsMut, Order, Response, StdError, StdResult, Storage,
+    ensure, Addr, Binary, BlockInfo, DepsMut, Empty, Order, Response, StdError, StdResult, Storage,
     Uint128,
 };
 use cw2::{ensure_from_older_version, set_contract_version};
@@ -21,14 +21,6 @@ use sylvia::entry_points;
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-base";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[cw_serde]
-pub struct SvCustomMsg;
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
-
-#[cw_serde]
-pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
 
 #[cw_serde]
 pub struct TokenInfo {
@@ -81,7 +73,7 @@ pub struct Cw20Base<E, Q> {
     pub(crate) _phantom: std::marker::PhantomData<(E, Q)>,
 }
 
-#[cfg_attr(not(feature = "library"), entry_points(generics<SvCustomMsg, SvCustomQuery>))]
+#[cfg_attr(not(feature = "library"), entry_points(generics<Empty, Empty>))]
 #[contract]
 #[sv::error(ContractError)]
 #[sv::messages(cw20_allowances as Allowances)]
