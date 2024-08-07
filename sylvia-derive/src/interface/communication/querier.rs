@@ -9,7 +9,7 @@ use crate::parser::check_generics::GetPath;
 use crate::types::associated_types::{AssociatedTypes, ItemType};
 use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
-use crate::utils::{emit_bracketed_generics, SvCasing};
+use crate::utils::SvCasing;
 
 pub struct Querier<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
@@ -46,14 +46,10 @@ where
             .map(ItemType::as_name)
             .collect();
         let all_generics: Vec<_> = associated_types.all_names().collect();
-        let assoc_types: Vec<_> = generics
-            .iter()
-            .map(|assoc| quote! {Self:: #assoc})
-            .collect();
-        let bracketed_generics = emit_bracketed_generics(&assoc_types);
         let accessor = MsgType::Query.as_accessor_name();
-        let api_path =
-            quote! { < Api #bracketed_generics as #sylvia ::types::InterfaceApi>:: #accessor };
+        let api_path = quote! {
+            < dyn #interface_name < Error = (), #(#generics = Self:: #generics,)* > as InterfaceMessagesApi > :: #accessor
+        };
 
         let methods_trait_impl = variants
             .variants()

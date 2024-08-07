@@ -71,7 +71,6 @@ pub trait Generic {
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
-    use sylvia::types::InterfaceApi;
 
     use crate::sv::Querier;
 
@@ -129,88 +128,100 @@ mod tests {
         let _: Result<SvCustomMsg, _> = querier.generic_query_two(SvCustomMsg {}, SvCustomMsg {});
 
         // Construct messages with Interface extension
-        let _ = <super::sv::Api<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            _,
-            _,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-        > as InterfaceApi>::Query::generic_query_one(SvCustomMsg {}, SvCustomMsg {});
-        let _ = <super::sv::Api<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            _,
-            _,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-        > as InterfaceApi>::Query::generic_query_two(SvCustomMsg {}, SvCustomMsg {});
-        let _ = <super::sv::Api<
-            _,
-            _,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            cosmwasm_std::Empty,
-        > as InterfaceApi>::Exec::generic_exec_one(
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = SvCustomMsg,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Query::generic_query_one(
+            SvCustomMsg {},
+            SvCustomMsg {},
+        );
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = SvCustomMsg,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Query::generic_query_two(
+            SvCustomMsg {},
+            SvCustomMsg {},
+        );
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = Empty,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Exec::generic_exec_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
         );
-        let _ = <super::sv::Api<
-            SvCustomMsg,
-            _,
-            _,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            cosmwasm_std::Empty,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-        > as InterfaceApi>::Exec::generic_exec_two(
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = Empty,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Exec::generic_exec_two(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
         );
 
-        let _ = <super::sv::Api<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            _,
-            _,
-            SvCustomMsg,
-            cosmwasm_std::Empty,
-        > as InterfaceApi>::Sudo::generic_sudo_one(
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = Empty,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Sudo::generic_sudo_one(
             CosmosMsg::Custom(SvCustomMsg {}),
             CosmosMsg::Custom(SvCustomMsg {}),
         );
-        let _ = <super::sv::Api<
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            SvCustomMsg,
-            cosmwasm_std::Empty,
-            SvCustomMsg,
-            SvCustomMsg,
-            _,
-            _,
-            SvCustomMsg,
-        > as InterfaceApi>::Sudo::generic_sudo_two(
+        let _ = <dyn super::Generic<
+            Exec1T = SvCustomMsg,
+            Exec2T = SvCustomMsg,
+            Exec3T = SvCustomMsg,
+            Query1T = SvCustomMsg,
+            Query2T = SvCustomMsg,
+            Query3T = SvCustomMsg,
+            Sudo1T = SvCustomMsg,
+            Sudo2T = SvCustomMsg,
+            Sudo3T = SvCustomMsg,
+            RetT = Empty,
+            Error = (),
+        > as super::sv::InterfaceMessagesApi>::Sudo::generic_sudo_two(
             CosmosMsg::Custom(SvCustomMsg {}),
             CosmosMsg::Custom(SvCustomMsg {}),
         );
