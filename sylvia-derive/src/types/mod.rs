@@ -1,3 +1,4 @@
+//! Module defining wrapper types around parsed input.
 pub mod associated_types;
 pub mod interfaces;
 pub mod msg_field;

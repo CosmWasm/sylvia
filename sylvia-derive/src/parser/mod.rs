@@ -1,3 +1,6 @@
+//! Module defining parsing utilities for Sylvia attributes.
+//! All parsing done for the [crate::types] should be done here.
+
 pub mod attributes;
 pub mod check_generics;
 pub mod entry_point;
@@ -13,10 +16,7 @@ pub use entry_point::EntryPointArgs;
 use proc_macro_error::emit_error;
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{
-    parse_quote, FnArg, GenericArgument, Ident, ImplItem, ItemImpl, ItemTrait, Path, PathArguments,
-    Signature, Token, TraitItem, Type,
-};
+use syn::{FnArg, GenericArgument, ImplItem, ItemImpl, Path, PathArguments, Signature, Token};
 
 use crate::types::msg_field::MsgField;
 
@@ -34,17 +34,8 @@ fn extract_generics_from_path(module: &Path) -> Punctuated<GenericArgument, Toke
     generics
 }
 
-pub fn parse_associated_custom_type(source: &ItemTrait, type_name: &str) -> Option<Type> {
-    let trait_name = &source.ident;
-    source.items.iter().find_map(|item| match item {
-        TraitItem::Type(ty) if ty.ident == type_name => {
-            let type_name = Ident::new(type_name, ty.span());
-            Some(parse_quote! { <ContractT as #trait_name>:: #type_name})
-        }
-        _ => None,
-    })
-}
-
+/// Use to make sure that [contract](crate::contract) is used over implementation containing
+/// mandatory `new` method.
 pub fn assert_new_method_defined(item: &ItemImpl) {
     const ERROR_NOTE: &str = "`sylvia::contract` requires parameterless `new` method to be defined for dispatch to work correctly.";
 
@@ -68,6 +59,7 @@ pub fn assert_new_method_defined(item: &ItemImpl) {
     }
 }
 
+/// Parses method signature and returns a vector of [`MsgField`].
 pub fn process_fields<'s, Generic>(
     sig: &'s Signature,
     generics_checker: &mut CheckGenerics<Generic>,
