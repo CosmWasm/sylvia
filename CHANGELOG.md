@@ -4,6 +4,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.1.0...sylvia-derive-v1.2.0) - 2024-08-09
+
+### Added
+- Emit error if contract macro is above entry_points
+- Remove support for `, custom(msg=.. ,query=..)` in entry_points
+- Add CustomMsg and CustomQuery to ContractApi
+
+### Fixed
+- Pass attribute to struct fields
+
+### Other
+- Fix duplicated instantiation error
+- Refactor struct message generation
+- Generic cw1-whitelist example ([#404](https://github.com/CosmWasm/sylvia/pull/404))
+- Create fold module
+- Setup new directory structure
+- Fix clippy
+- Update to cosmwasm-std 2.1.1
+- Cleanup in entry_points macro
+- Silence clippy warn about lack of Default ([#396](https://github.com/CosmWasm/sylvia/pull/396))
+
 ## [1.1.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.2...sylvia-derive-v1.1.0) - 2024-07-12
 
 ### Added
