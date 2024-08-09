@@ -4,6 +4,7 @@ use syn::{parse_quote, Error, Ident, MetaList, Result, Token, Type};
 
 use crate::crate_module;
 
+/// Type wrapping data parsed from `sv::custom` attribute.
 #[derive(Debug, Default)]
 pub struct Custom {
     pub msg: Option<Type>,

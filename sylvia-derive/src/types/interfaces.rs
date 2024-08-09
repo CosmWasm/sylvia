@@ -7,6 +7,7 @@ use crate::crate_module;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::{ContractMessageAttr, ParsedSylviaAttributes};
 
+/// Wrapper around [ContractMessageAttr] vector.
 #[derive(Debug, Default)]
 pub struct Interfaces {
     interfaces: Vec<ContractMessageAttr>,

@@ -7,6 +7,7 @@ use syn::{parenthesized, Ident, MetaList, Path, Result, Token, Type};
 use crate::crate_module;
 use crate::parser::MsgType;
 
+/// Type wrapping data parsed from `sv::override_entry_points` attribute.
 #[derive(Debug, Clone)]
 pub struct OverrideEntryPoint {
     entry_point: Path,

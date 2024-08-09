@@ -13,6 +13,11 @@ use crate::parser::{
 };
 use crate::types::msg_variant::MsgVariants;
 
+/// Preprocessed [`entry_points`](crate::entry_points) macro input.
+///
+/// Generates `entry_points` module containing:
+///     - instantiate, execute, query and sudo entry points by default
+///     - migrate and reply entry points if respective messages are defined
 pub struct EntryPointInput<'a> {
     item: &'a ItemImpl,
     args: EntryPointArgs,
@@ -42,6 +47,7 @@ impl<'a> EntryPointInput<'a> {
         Self { item, args }
     }
 
+    /// Process the input and generate the interface code.
     pub fn process(&self) -> TokenStream {
         let Self { item, args } = self;
 
@@ -49,6 +55,7 @@ impl<'a> EntryPointInput<'a> {
     }
 }
 
+/// Defines logic for generating entry points.
 pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
@@ -156,7 +163,7 @@ impl<'a> EntryPoints<'a> {
         }
     }
 
-    pub fn emit_default_entry_point(&self, msg_ty: MsgType) -> TokenStream {
+    fn emit_default_entry_point(&self, msg_ty: MsgType) -> TokenStream {
         let Self {
             name,
             error,

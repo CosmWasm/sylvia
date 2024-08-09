@@ -1,3 +1,6 @@
+//! Module defining parsing of Sylvia attributes.
+//! Every Sylvia attribute should be prefixed with `sv::`
+
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::{Attribute, MetaList, PathSegment};
@@ -18,7 +21,6 @@ pub use override_entry_point::{FilteredOverrideEntryPoints, OverrideEntryPoint};
 
 /// This struct represents all possible attributes that
 /// are parsed and utilized by sylvia.
-///
 pub enum SylviaAttribute {
     Custom,
     Error,
@@ -55,7 +57,6 @@ impl SylviaAttribute {
 
 /// The structure parses all attributes provided in `new` method
 /// and stores the one relevant for sylvia.
-///
 #[derive(Default)]
 pub struct ParsedSylviaAttributes {
     pub custom_attr: Option<Custom>,

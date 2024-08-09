@@ -2,6 +2,7 @@ use crate::parser::attributes::VariantAttrForwarding;
 use crate::parser::{MsgAttr, ParsedSylviaAttributes};
 use syn::{Attribute, ImplItem, ItemImpl, ItemTrait, Signature, TraitItem};
 
+/// Type wrapping common data between [ItemImpl] and [ItemTrait].
 pub struct VariantDesc<'a> {
     msg_attr: Option<MsgAttr>,
     attrs_to_forward: Vec<VariantAttrForwarding>,

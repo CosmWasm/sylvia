@@ -1,11 +1,12 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{parse_quote, ItemTrait, TraitItem, TraitItemType, WhereClause, WherePredicate};
+use syn::{parse_quote, ItemTrait, TraitItem, TraitItemType, Type, WhereClause, WherePredicate};
 
 pub const ERROR_TYPE: &str = "Error";
 pub const EXEC_TYPE: &str = "ExecC";
 pub const QUERY_TYPE: &str = "QueryC";
 
+/// Wrapper around associated types in parsed from a trait.
 #[derive(Default)]
 pub struct AssociatedTypes<'a>(Vec<&'a TraitItemType>);
 
@@ -23,10 +24,13 @@ impl<'a> AssociatedTypes<'a> {
         Self(associated_types)
     }
 
-    pub fn all_names(&self) -> impl Iterator<Item = &Ident> {
+    /// Returns [Iterator] over underlying [TraitItemType]s mapped to [Ident]s.
+    pub fn as_names(&self) -> impl Iterator<Item = &Ident> {
         self.0.iter().map(|associated| &associated.ident)
     }
 
+    /// Returns [Iterator] over underlying [TraitItemType]s without the `Error` type.
+    /// Used for generating generics for generated types.
     pub fn without_error(&self) -> impl Iterator<Item = &TraitItemType> {
         self.0
             .iter()
@@ -34,6 +38,7 @@ impl<'a> AssociatedTypes<'a> {
             .cloned()
     }
 
+    /// Returns [WherePredicate] from underlying [TraitItemType]s.
     pub fn as_where_predicates(&self) -> Vec<WherePredicate> {
         self.without_error()
             .map(|associated| {
@@ -45,6 +50,7 @@ impl<'a> AssociatedTypes<'a> {
             .collect()
     }
 
+    /// Returns [WhereClause] from underlying [TraitItemType]s.
     pub fn as_where_clause(&self) -> Option<WhereClause> {
         let predicates = self.as_where_predicates();
         if !predicates.is_empty() {
@@ -54,6 +60,7 @@ impl<'a> AssociatedTypes<'a> {
         }
     }
 
+    /// Returns [WhereClause] from underlying [TraitItemType]s.
     pub fn emit_contract_predicate(&self, trait_name: &Ident) -> TokenStream {
         let predicate = quote! { ContractT: #trait_name };
         if self.0.is_empty() {
@@ -69,8 +76,28 @@ impl<'a> AssociatedTypes<'a> {
             #predicate < #(#bounds,)* >
         }
     }
+
+    /// Returns `Some(Type)` if `type_name` is present in the underlying associated types.
+    /// Returns `None` if it is not.
+    pub fn emit_contract_custom_type_accessor(
+        &self,
+        trait_name: &Ident,
+        type_name: &str,
+    ) -> Option<Type> {
+        match self
+            .as_names()
+            .find(|name| name.to_string().as_str() == type_name)
+        {
+            Some(name) => {
+                let type_name = Ident::new(type_name, name.span());
+                Some(parse_quote! { <ContractT as #trait_name>:: #type_name})
+            }
+            None => None,
+        }
+    }
 }
 
+/// Trait defining convertion to [Ident] and [WherePredicate].
 pub trait ItemType {
     fn as_name(&self) -> &Ident;
     fn as_where_predicate(&self) -> WherePredicate;
@@ -89,6 +116,7 @@ impl ItemType for TraitItemType {
     }
 }
 
+/// Trait generating associated types.
 pub trait EmitAssociated {
     fn emit_declaration(&self) -> Vec<TokenStream>;
     fn emit_implementation(&self) -> Vec<TokenStream>;
