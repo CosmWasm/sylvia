@@ -20,7 +20,7 @@ error: More than one instantiation or migration message
 
          = note: Instantiation/Migration message previously defined here
 
-  --> tests/ui/missing_method/msgs_misused.rs:35:5
+  --> tests/ui/missing_method/msgs_misused.rs:31:12
    |
-35 |     #[sv::msg(instantiate)]
-   |     ^
+31 |     pub fn instantiate(&self, ctx: InstantiateCtx) -> StdResult<Response> {
+   |            ^^^^^^^^^^^
