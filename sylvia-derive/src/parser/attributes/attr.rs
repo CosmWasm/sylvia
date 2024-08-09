@@ -6,6 +6,7 @@ use syn::{Ident, MetaList, Result, Token};
 
 use super::MsgType;
 
+/// Type wrapping data parsed from `sv::msg_attr` attribute.
 #[derive(Clone, Debug)]
 pub struct VariantAttrForwarding {
     pub attrs: TokenStream,
@@ -21,6 +22,7 @@ impl VariantAttrForwarding {
     }
 }
 
+/// Type wrapping data parsed from `sv::attr` attribute.
 #[derive(Clone, Debug)]
 pub struct MsgAttrForwarding {
     pub msg_type: MsgType,

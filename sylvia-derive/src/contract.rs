@@ -21,11 +21,26 @@ use crate::types::msg_variant::MsgVariants;
 mod communication;
 mod mt;
 
-/// Preprocessed `contract` macro input for non-trait impl block
+/// Preprocessed `contract` macro input for struct impl block.
+///
+/// Generates:
+///     - [Messages](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/message-types#contract-messages)
+///         - InstantiateMsg
+///         - ExecMsg
+///         - QueryMsg
+///         - SudoMsg
+///         - MigrateMsg
+///         - ContractExecMsg
+///         - ContractQueryMsg
+///         - ContractSudoMsg
+///     - [MultiTest](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/multitest) helpers
+///     - [Querier](https://cosmwasm-docs.vercel.app/cw-multi-test) trait implementation
+///     - [Executor](https://cosmwasm-docs.vercel.app/cw-multi-test) trait implementation
+///     - Api trait implementation
 pub struct ContractInput<'a> {
-    error: ContractErrorAttr,
     item: &'a ItemImpl,
     generics: Vec<&'a GenericParam>,
+    error: ContractErrorAttr,
     custom: Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
     interfaces: Interfaces,
@@ -52,6 +67,7 @@ impl<'a> ContractInput<'a> {
         }
     }
 
+    /// Process the input and generate the contract code.
     pub fn process(&self) -> TokenStream {
         let Self {
             item,

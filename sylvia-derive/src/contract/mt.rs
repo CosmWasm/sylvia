@@ -22,6 +22,7 @@ fn get_ident_from_type(contract_name: &Type) -> &Ident {
     &segment.ident
 }
 
+/// Emits helpers for testing contract messages using MultiTest.
 pub struct MtHelpers<'a> {
     error_type: Type,
     contract_name: &'a Type,

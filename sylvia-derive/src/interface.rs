@@ -17,7 +17,17 @@ use crate::types::msg_variant::MsgVariants;
 mod communication;
 mod mt;
 
-/// Preprocessed `interface` macro input
+/// Preprocessed [`interface`](crate::interface) macro input.
+///
+/// Generates `sv` module containing:
+///     - [Messages](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/message-types#interface-messages)
+///         - ExecMsg
+///         - QueryMsg
+///         - SudoMsg
+///     - [MultiTest](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/multitest#proxy-trait) helpers
+///     - [Querier](https://cosmwasm-docs.vercel.app/cw-multi-test) trait implementation
+///     - [Executor](https://cosmwasm-docs.vercel.app/cw-multi-test) trait implementation
+///     - Api trait implementation
 pub struct InterfaceInput<'a> {
     item: &'a ItemTrait,
     custom: Custom,
@@ -52,7 +62,7 @@ impl<'a> InterfaceInput<'a> {
 
         if custom.msg.is_none()
             && !associated_types
-                .all_names()
+                .as_names()
                 .any(|assoc_type| assoc_type == EXEC_TYPE)
         {
             emit_warning!(
@@ -64,7 +74,7 @@ impl<'a> InterfaceInput<'a> {
 
         if custom.query.is_none()
             && !associated_types
-                .all_names()
+                .as_names()
                 .any(|assoc_type| assoc_type == QUERY_TYPE)
         {
             emit_warning!(
@@ -81,6 +91,7 @@ impl<'a> InterfaceInput<'a> {
         }
     }
 
+    /// Process the input and generate the interface code.
     pub fn process(&self) -> TokenStream {
         let Self {
             associated_types,

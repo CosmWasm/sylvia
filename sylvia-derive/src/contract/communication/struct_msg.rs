@@ -23,7 +23,6 @@ pub struct StructMessage<'a> {
 }
 
 impl<'a> StructMessage<'a> {
-    /// Creates new struct message of given type from impl block
     pub fn new(
         source: &'a ItemImpl,
         msg_ty: MsgType,

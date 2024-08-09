@@ -6,6 +6,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::ItemTrait;
 
+/// Emits `InterfaceMessagesApi` trait.
 pub struct Api<'a> {
     source: &'a ItemTrait,
     associated_types: &'a AssociatedTypes<'a>,

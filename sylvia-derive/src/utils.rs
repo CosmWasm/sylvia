@@ -11,6 +11,7 @@ use syn::{
 
 use crate::parser::check_generics::{CheckGenerics, GetPath};
 
+/// Filters where predicates leaving only ones found in `used_generics`
 pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
     clause: &'a Option<WhereClause>,
     generics: &[&Generic],
@@ -35,6 +36,7 @@ pub fn filter_wheres<'a, Generic: GetPath + PartialEq>(
         .unwrap_or_default()
 }
 
+/// Extracts return type from the method return type.
 pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
     let ReturnType::Type(_, ty) = ret_type else {
         unreachable!()
@@ -68,6 +70,8 @@ pub fn extract_return_type(ret_type: &ReturnType) -> &Path {
     &type_path.path
 }
 
+/// Creates [`Option<WhereClause>`] based on the provided predicates.
+/// Returns [`None`] if predicates array is empty.
 pub fn as_where_clause(where_predicates: &[&WherePredicate]) -> Option<WhereClause> {
     match where_predicates.is_empty() {
         true => None,
@@ -75,6 +79,7 @@ pub fn as_where_clause(where_predicates: &[&WherePredicate]) -> Option<WhereClau
     }
 }
 
+/// Creates a bracketed generics [`TokenStream`].
 pub fn emit_bracketed_generics<GenericT: ToTokens>(unbonded_generics: &[GenericT]) -> TokenStream {
     match unbonded_generics.is_empty() {
         true => quote! {},
@@ -82,6 +87,7 @@ pub fn emit_bracketed_generics<GenericT: ToTokens>(unbonded_generics: &[GenericT
     }
 }
 
+/// Trait for converting `Ident` to different cases preserving original [proc_macro2::Span].
 pub trait SvCasing {
     fn to_case(&self, case: convert_case::Case) -> Self;
 }
