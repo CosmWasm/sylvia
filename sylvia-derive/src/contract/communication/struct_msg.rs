@@ -47,9 +47,12 @@ impl<'a> StructMessage<'a> {
             );
             return None;
         } else if variants.variants().count() > 1 {
+            let mut variants = variants.variants();
+            let first_method = variants.next().map(|v| v.function_name());
+            let obsolete = variants.next().map(|v| v.function_name());
             emit_error!(
-                source.span(), "More than one instantiation or migration message";
-                note = source.span() => "Instantiation/Migration message previously defined here"
+                first_method.span(), "More than one instantiation or migration message";
+                note = obsolete.span() => "Instantiation/Migration message previously defined here"
             );
             return None;
         }
