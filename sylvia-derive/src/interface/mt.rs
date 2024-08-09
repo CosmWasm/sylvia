@@ -10,6 +10,7 @@ use crate::types::associated_types::AssociatedTypes;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::SvCasing;
 
+/// Emits helpers for testing interface messages using MultiTest.
 pub struct MtHelpers<'a> {
     source: &'a ItemTrait,
     error_type: Type,

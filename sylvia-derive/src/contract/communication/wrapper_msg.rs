@@ -9,7 +9,8 @@ use syn::fold::Fold;
 use syn::spanned::Spanned;
 use syn::{Ident, ItemImpl, Type};
 
-/// Glue message is the message composing Exec/Query messages from several traits
+/// Glue message is the message composing Exec/Query/Sudo messages from several traits and a
+/// contract
 #[derive(Debug)]
 pub struct GlueMessage<'a> {
     source: &'a ItemImpl,

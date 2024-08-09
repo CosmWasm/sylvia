@@ -11,6 +11,7 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::SvCasing;
 
+/// Emits query helper
 pub struct Querier<'a, Generic> {
     variants: &'a MsgVariants<'a, Generic>,
     associated_types: &'a AssociatedTypes<'a>,
@@ -45,7 +46,7 @@ where
             .without_error()
             .map(ItemType::as_name)
             .collect();
-        let all_generics: Vec<_> = associated_types.all_names().collect();
+        let all_generics: Vec<_> = associated_types.as_names().collect();
         let accessor = MsgType::Query.as_accessor_name();
         let api_path = quote! {
             < dyn #interface_name < Error = (), #(#generics = Self:: #generics,)* > as InterfaceMessagesApi > :: #accessor

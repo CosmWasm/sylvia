@@ -13,6 +13,7 @@ pub enum MsgType {
     Sudo,
 }
 
+/// ArgumentParser holds `resp` parameter parsed from `sv::msg` attribute.
 #[derive(Default)]
 struct ArgumentParser {
     pub resp_type: Option<Ident>,

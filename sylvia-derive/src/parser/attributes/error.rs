@@ -4,6 +4,7 @@ use syn::{parse_quote, MetaList, Result, Type};
 
 use crate::crate_module;
 
+/// Type wrapping data parsed from `sv::error` attribute.
 #[derive(Debug)]
 pub struct ContractErrorAttr {
     pub error: Type,

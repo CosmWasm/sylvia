@@ -45,7 +45,7 @@ where
             .without_error()
             .map(ItemType::as_name)
             .collect();
-        let all_generics: Vec<_> = associated_types.all_names().collect();
+        let all_generics: Vec<_> = associated_types.as_names().collect();
 
         let accessor = MsgType::Exec.as_accessor_name();
         let executor_api_path = quote! {

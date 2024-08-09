@@ -10,6 +10,7 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::SvCasing;
 
+/// Emits execute helper
 pub struct Executor<'a> {
     generics: Generics,
     self_ty: Type,

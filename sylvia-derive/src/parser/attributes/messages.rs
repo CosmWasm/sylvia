@@ -9,6 +9,7 @@ use proc_macro_error::emit_error;
 
 use crate::fold::StripGenerics;
 
+/// Type wrapping data parsed from `sv::message` attribute.
 #[derive(Debug)]
 pub struct ContractMessageAttr {
     pub module: Path,
@@ -27,6 +28,11 @@ impl ContractMessageAttr {
     }
 }
 
+/// The `Customs` struct is used to represent the presence of `: custom(msg, query)` parameter
+/// within a `sv::message` attribute.
+///
+/// It is used to determine if an interface implemented on the contract uses `Empty` in place
+/// of custom types.
 #[derive(Debug)]
 pub struct Customs {
     pub has_msg: bool,

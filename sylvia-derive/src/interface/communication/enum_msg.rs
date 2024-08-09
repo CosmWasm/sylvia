@@ -1,5 +1,5 @@
 use crate::parser::attributes::MsgAttrForwarding;
-use crate::parser::{parse_associated_custom_type, Custom, MsgType, ParsedSylviaAttributes};
+use crate::parser::{Custom, MsgType, ParsedSylviaAttributes};
 use crate::types::associated_types::{AssociatedTypes, ItemType, EXEC_TYPE, QUERY_TYPE};
 use crate::types::msg_variant::MsgVariants;
 use crate::utils::emit_bracketed_generics;
@@ -26,8 +26,11 @@ impl<'a> EnumMessage<'a> {
         variants: MsgVariants<'a, Ident>,
         associated_types: &'a AssociatedTypes<'a>,
     ) -> Self {
-        let associated_exec = parse_associated_custom_type(source, EXEC_TYPE);
-        let associated_query = parse_associated_custom_type(source, QUERY_TYPE);
+        let trait_name = &source.ident;
+        let associated_exec =
+            associated_types.emit_contract_custom_type_accessor(trait_name, EXEC_TYPE);
+        let associated_query =
+            associated_types.emit_contract_custom_type_accessor(trait_name, QUERY_TYPE);
 
         let resp_type = custom
             .msg
