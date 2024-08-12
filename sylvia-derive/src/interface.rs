@@ -85,7 +85,7 @@ impl<'a> InterfaceInput<'a> {
         let Self {
             associated_types,
             item,
-            custom,
+            ..
         } = self;
         let messages = self.emit_messages();
         let associated_names: Vec<_> = associated_types
@@ -102,7 +102,7 @@ impl<'a> InterfaceInput<'a> {
         let querier =
             Querier::new(&query_variants, associated_types, &item.ident).emit_querier_trait();
 
-        let interface_messages = Api::new(item, associated_types, custom).emit();
+        let interface_messages = Api::new(item, associated_types).emit();
 
         let multitest_helpers = self.emit_multitest_helpers();
 
