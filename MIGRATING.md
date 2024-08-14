@@ -2,11 +2,41 @@
 
 This guide explains what is needed to upgrade contracts when migrating over major releases of `sylvia`. Note that you can also view the [complete CHANGELOG](https://github.com/CosmWasm/sylvia/blob/main/CHANGELOG.md) to understand the differences.
 
+## 1.1.0 -> 1.2.0
 
-## 1.0.2 ->
+### Explicit generic customs in entry_points macro
 
+Sylvia can deduce the types used in place of generic customs.
+The `, custom(msg=..., query=...)` part is now not supported and can be safely removed.
+
+```diff
+-#[entry_points(generics<Empty, Empty>, custom(msg=Empty, query=Empty))]
++#[entry_points(generics<msg=Empty, query=Empty>)]
+#[contract]
+#[sv::custom(msg=E, query=Q)]
+impl<E, Q> CounterContract<E, Q>
+where
+    E: CustomMsg + 'static,
+    Q: CustomQuery + 'static,
+{
+}
+```
+
+### Removed `InterfaceApi` trait
+
+The `InterfaceApi` trait has been removed in favor of the `InterfaceMessagesApi`.
+
+```diff
+-let _ = <dyn super::sv::Api as sylvia::types::InterfaceApi>::Query::query_something();
++let _ = <dyn super::MyInterface as super::sv::InterfaceMessagesApi>::Query::query_something();
+```
+
+Note: the `InterfaceMessagesApi` does not expose Querier type.
+
+## 1.0.2 -> 1.1.0
 
 ### Generics in `sv::messages` not required
+
 ```diff
 -#[contract]
 -#[sv::messages(generic<SomeType1, SomeType2, SomeType3> as Generic
@@ -19,8 +49,8 @@ This guide explains what is needed to upgrade contracts when migrating over majo
 This change is optional, since the generics are still accepted by the parser. Though they are
 ignored in the further process.
 
-
 ### CodeId generic over the Contract type
+
 ```diff
 -let code_id: CodeId<
 -    SvCustomMsg,
@@ -37,6 +67,7 @@ ignored in the further process.
 ```
 
 ### Lifetime ellision in a contract's impl block not supported
+
 ```diff
 -#[contract]
 -impl Cw1SubkeysContract<'_> {
@@ -49,8 +80,11 @@ ignored in the further process.
 ```
 
 ## 0.10.0 -> 1.0.0
+
 ### Update deps to 2.0.0
+
 In Cargo.toml:
+
 ```diff
 -cosmwasm-schema = "1.5.0"
 -cosmwasm-std = "1.5.0"
@@ -67,6 +101,7 @@ In Cargo.toml:
 ```
 
 In a multi-test code:
+
 ```diff
 -let addr = Addr::unchecked("addr0001");
 +use cw_multi_test::IntoBech32;
@@ -80,6 +115,7 @@ let contract = code_id
 ```
 
 In the contract's code:
+
 ```diff
 struct Contract<'a> {
 -    data: Item<'static, ContractData>,
@@ -89,11 +125,10 @@ struct Contract<'a> {
 }
 ```
 
-
 ## 0.9.3 -> 0.10.0
 
-
 ### Querier in Multitest App
+
 ```diff
 let version: ContractVersion =
 -        query_contract_info(&app.app_mut().wrap(), contract.contract_addr.to_string()).unwrap();
@@ -101,12 +136,14 @@ let version: ContractVersion =
 ```
 
 ### Multitest module name
+
 ```diff
 -use contract::multitest_utils::Group;
 +use contract::mt::Group;
 ```
 
 ### BoundQuerier improve
+
 ```diff
 let querier = sylvia::types::BoundQuerier::<
     _,
@@ -129,7 +166,9 @@ let querier = sylvia::types::BoundQuerier::<
 ```
 
 ### Remove `#[contract(module=...)]` support
+
 There is no need to provide any additional data to an interface implementation on a contract.
+
 ```diff
 -#[contract(module=crate::contract)]
 -#[sv::messages(cw1 as Cw1)]
@@ -144,7 +183,9 @@ impl Cw1 for CustomContract {
 ```
 
 ### Sylvia attributes
+
 Each sylvia attribute that is used by `#[contract]` and `#[interface]` macro needs to be prefixed with `sv::`, for e.g.:
+
 ```diff
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
