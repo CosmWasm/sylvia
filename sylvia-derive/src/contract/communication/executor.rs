@@ -10,7 +10,10 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::SvCasing;
 
-/// Emits execute helper
+/// Emits [execute helper](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/communication#executor-helpers).
+///
+/// Generates trait containing methods for each execute message variant and implements it on
+/// `sylvia::types::ExecutorBuilder<EmptyExecutorBuilderState>`.
 pub struct Executor<'a> {
     generics: Generics,
     self_ty: Type,

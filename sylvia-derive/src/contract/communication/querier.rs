@@ -10,7 +10,10 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::SvCasing;
 
-/// Emits query helper
+/// Emits [query helper](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/communication#query-helpers).
+///
+/// Generates trait containing methods for each query message variant and implements it on
+/// `sylvia::types::BoundQuerier<Contract>`.
 pub struct Querier<'a> {
     generics: Generics,
     self_ty: Type,

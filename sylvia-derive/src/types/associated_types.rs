@@ -84,16 +84,12 @@ impl<'a> AssociatedTypes<'a> {
         trait_name: &Ident,
         type_name: &str,
     ) -> Option<Type> {
-        match self
-            .as_names()
+        self.as_names()
             .find(|name| name.to_string().as_str() == type_name)
-        {
-            Some(name) => {
+            .map(|name| {
                 let type_name = Ident::new(type_name, name.span());
-                Some(parse_quote! { <ContractT as #trait_name>:: #type_name})
-            }
-            None => None,
-        }
+                parse_quote! { <ContractT as #trait_name>:: #type_name}
+            })
     }
 }
 

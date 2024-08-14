@@ -10,7 +10,10 @@ use syn::spanned::Spanned;
 use syn::{Ident, ItemImpl, Type};
 
 /// Glue message is the message composing Exec/Query/Sudo messages from several traits and a
-/// contract
+/// contract.
+///
+/// It's required for the contract to receive all possible message variants in the entry points.
+/// More info [here](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/message-types).
 #[derive(Debug)]
 pub struct GlueMessage<'a> {
     source: &'a ItemImpl,
