@@ -23,6 +23,8 @@ fn get_ident_from_type(contract_name: &Type) -> &Ident {
 }
 
 /// Emits helpers for testing contract messages using MultiTest.
+///
+/// More info here: [MultiTest helpers](https://cosmwasm-docs.vercel.app/sylvia/macros/generated-types/multitest).
 pub struct MtHelpers<'a> {
     error_type: Type,
     contract_name: &'a Type,

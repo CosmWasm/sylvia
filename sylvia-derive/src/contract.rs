@@ -67,7 +67,7 @@ impl<'a> ContractInput<'a> {
         }
     }
 
-    /// Process the input and generate the contract code.
+    /// Processes the input and generates the contract code.
     pub fn process(&self) -> TokenStream {
         let Self {
             item,

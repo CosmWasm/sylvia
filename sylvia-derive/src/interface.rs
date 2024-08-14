@@ -91,7 +91,7 @@ impl<'a> InterfaceInput<'a> {
         }
     }
 
-    /// Process the input and generate the interface code.
+    /// Processes the input and generates the interface code.
     pub fn process(&self) -> TokenStream {
         let Self {
             associated_types,

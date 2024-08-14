@@ -47,7 +47,7 @@ impl<'a> EntryPointInput<'a> {
         Self { item, args }
     }
 
-    /// Process the input and generate the interface code.
+    /// Process the input and generate the entry points code.
     pub fn process(&self) -> TokenStream {
         let Self { item, args } = self;
 
@@ -56,6 +56,9 @@ impl<'a> EntryPointInput<'a> {
 }
 
 /// Defines logic for generating entry points.
+///
+/// By default generates entry points for `instantiate`, `execute`, `query` and `sudo` messages.
+/// Generates `reply` and `migrate` entry points if respective messages are defined.
 pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
