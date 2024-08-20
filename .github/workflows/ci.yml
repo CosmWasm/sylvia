@@ -51,7 +51,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.74.0
+          toolchain: 1.75.0
           target: wasm32-unknown-unknown
           profile: minimal
           override: true
@@ -144,7 +144,7 @@ jobs:
     name: Code coverage
     runs-on: ubuntu-latest
     container:
-      image:                    xd009642/tarpaulin:0.27.1
+      image:                    xd009642/tarpaulin:0.31.1
       options:                  --security-opt seccomp=unconfined
     steps:
       - name:                   Checkout sources
