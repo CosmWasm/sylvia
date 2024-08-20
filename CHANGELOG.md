@@ -4,9 +4,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.1.0...sylvia-derive-v1.2.0) - 2024-08-20
+
+### Added
+
+- Emit error if contract macro is above entry_points
+- Remove support for `, custom(msg=.. ,query=..)` in entry_points
+- Add CustomMsg and CustomQuery to ContractApi
+
+### Fixed
+
+- Pass attribute to struct fields
+
+### Other
+
+- *(sylvia-derive)* Document inner types
+- [**breaking**] Remove `InterfaceApi` in favor of `InterfaceMessagesApi` ([#413](https://github.com/CosmWasm/sylvia/pull/413))
+- Fix duplicated instantiation error
+- Refactor struct message generation
+- Generic cw1-whitelist example ([#404](https://github.com/CosmWasm/sylvia/pull/404))
+- Create fold module
+- Setup new directory structure
+- Update to cosmwasm-std 2.1.1
+- Cleanup in entry_points macro
+- Silence clippy warn about lack of Default ([#396](https://github.com/CosmWasm/sylvia/pull/396))
+
 ## [1.1.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.2...sylvia-derive-v1.1.0) - 2024-07-12
 
 ### Added
+
 - `From` implementation for contract messages of interface messages ([#391](https://github.com/CosmWasm/sylvia/pull/391))
 - Attributes forwarding to message enums and fields ([#388](https://github.com/CosmWasm/sylvia/pull/388))
 - Executors ([#386](https://github.com/CosmWasm/sylvia/pull/386))
@@ -14,6 +40,7 @@ and this project adheres to
 - Remove types forwarding to interface in sv::messages ([#361](https://github.com/CosmWasm/sylvia/pull/361))
 
 ### Other
+
 - Update documentation and refactoring ([#393](https://github.com/CosmWasm/sylvia/pull/393))
 - Add trybuild check for two instantiate methods ([#392](https://github.com/CosmWasm/sylvia/pull/392))
 - Update dependecies
@@ -22,6 +49,7 @@ and this project adheres to
 ## [1.0.2](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.1...sylvia-derive-v1.0.2) - 2024-04-24
 
 ### Other
+
 - Update `cw_multi_test`
 - Split big chunks of code in `sylvia_derive::multitest`
 - Provide `to_case` functionality to `syn::Ident`
@@ -33,12 +61,15 @@ and this project adheres to
 ## [1.0.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.0.0...sylvia-derive-v1.0.1) - 2024-04-15
 
 ### Added
+
 - Assert `new` method defined ([#342](https://github.com/CosmWasm/sylvia/pull/342))
 
 ### Fixed
+
 - Add missing `map_err` on `IntoResponse` result
 
 ### Other
+
 - Improve error message in `sv::custom` attribute ([#348](https://github.com/CosmWasm/sylvia/pull/348))
 - Improve errors in `sv::messages` attribute ([#345](https://github.com/CosmWasm/sylvia/pull/345))
 - Improve `no instantiation` error message
@@ -46,11 +77,13 @@ and this project adheres to
 ## [1.0.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.10.1...sylvia-derive-v1.0.0) - 2024-03-27
 
 ### Added
+
 - Update deps to 2.0.0 ([#308](https://github.com/CosmWasm/sylvia/pull/308))
 
 ## [0.10.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.9.3...sylvia-derive-v0.10.0) - 2024-03-26
 
 ### Added
+
 - Implement Querier on App ([#154](https://github.com/CosmWasm/sylvia/pull/154))
 - Change multitest modules names to unified `mt` ([#324](https://github.com/CosmWasm/sylvia/pull/324))
 - Handle missing explicite custom types ([#323](https://github.com/CosmWasm/sylvia/pull/323))
@@ -79,6 +112,7 @@ and this project adheres to
 - Make as Variant optional for #[messages(...)] attribtue
 
 ### Other
+
 - Update README ([#331](https://github.com/CosmWasm/sylvia/pull/331))
 - Enable all features in docs.rs and add multitest docs comments
 - Enable code examples in macros doc tests
@@ -95,6 +129,7 @@ and this project adheres to
 ## [0.9.2](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.9.1...sylvia-derive-v0.9.2) - 2023-11-29
 
 ### Added
+
 - Allow querying code_info from CodeId and App
 - Add cosmwasm_1_2 feature flag
 - Allow specifying salt for contract address
@@ -102,11 +137,13 @@ and this project adheres to
 ## [0.9.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.9.0...sylvia-derive-v0.9.1) - 2023-11-17
 
 ### Other
+
 - Update deps
 
 ## [0.9.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.8.1...sylvia-derive-v0.9.0) - 2023-11-13
 
 ### Added
+
 - Support generic types in entry points
 - Impl ContractApi extension trait
 - Wrap contract types in `sv` module
@@ -123,16 +160,19 @@ and this project adheres to
 - Add support for generics in interface
 
 ### Fixed
+
 - [**breaking**] Expect `,` in `:custom(msg, query)`
 
 ## [0.8.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.8.0...sylvia-derive-v0.8.1) - 2023-09-18
 
 ### Added
+
 - Generate migrate entry point if message defined on contract
 
 ## [0.8.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.7.1...sylvia-derive-v0.8.0) - 2023-09-05
 
 ### Added
+
 - Cast `deps` to empty
 - Support QueryC associated type on interface
 - Support custom queries on contracts
@@ -140,15 +180,18 @@ and this project adheres to
 ## [0.7.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.7.0...sylvia-derive-v0.7.1) - 2023-08-14
 
 ### Fixed
+
 - Prefix interface proxy with module as Path
 
 ## [0.7.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v0.6.1...sylvia-derive-v0.7.0) - 2023-08-01
 
 ### Added
+
 - Override generated entry_points
 - Override entry_points in multitest helpers
 
 ### Fixed
+
 - [**breaking**] `Remote` type implements all relevant traits so it can be stored in `#[cw_serde]` types
 
 ## [0.6.1] - 2023-06-28
