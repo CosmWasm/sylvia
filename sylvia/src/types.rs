@@ -563,6 +563,10 @@ pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema
 impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
 /// Api trait for easier access to generated types and messages.
+#[deprecated(
+    since = "1.2.1",
+    note = "InterfaceApi will be removed in 2.0.0. Please use generated sv::InterfaceMessagesApi instead."
+)]
 pub trait InterfaceApi {
     type Exec;
     type Query;
