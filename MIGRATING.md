@@ -11,7 +11,7 @@ The `, custom(msg=..., query=...)` part is now not supported and can be safely r
 
 ```diff
 -#[entry_points(generics<Empty, Empty>, custom(msg=Empty, query=Empty))]
-+#[entry_points(generics<msg=Empty, query=Empty>)]
++#[entry_points(generics<Empty, Empty>)]
 #[contract]
 #[sv::custom(msg=E, query=Q)]
 impl<E, Q> CounterContract<E, Q>
@@ -24,14 +24,13 @@ where
 
 ### Removed `InterfaceApi` trait
 
-The `InterfaceApi` trait has been removed in favor of the `InterfaceMessagesApi`.
+The `InterfaceApi` trait has been deprecated in favor of the `InterfaceMessagesApi`.
+It will be removed in the `2.0.0` release.
 
 ```diff
 -let _ = <dyn super::sv::Api as sylvia::types::InterfaceApi>::Query::query_something();
 +let _ = <dyn super::MyInterface as super::sv::InterfaceMessagesApi>::Query::query_something();
 ```
-
-Note: the `InterfaceMessagesApi` does not expose Querier type.
 
 ## 1.0.2 -> 1.1.0
 
