@@ -563,6 +563,14 @@ pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema
 impl<T> CustomQuery for T where T: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}
 
 /// Api trait for easier access to generated types and messages.
+pub trait InterfaceApi {
+    type Exec;
+    type Query;
+    type Sudo;
+    type Querier<'querier, Contract>;
+}
+
+/// Api trait for easier access to generated types and messages.
 pub trait ContractApi {
     type Instantiate;
     type Query;
