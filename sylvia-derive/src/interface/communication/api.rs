@@ -103,6 +103,7 @@ impl<'a> Api<'a> {
                 #phantom
             }
 
+            #[allow(deprecated)]
             impl < #(#generics,)* > #sylvia ::types::InterfaceApi for Api < #(#generics,)* > #where_clause {
                 type Exec = ExecMsg < #(#exec_generics,)* >;
                 type Query = QueryMsg < #(#query_generics,)* >;

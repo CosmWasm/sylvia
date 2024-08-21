@@ -68,6 +68,7 @@ pub trait Generic {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use cosmwasm_std::testing::mock_dependencies;
     use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
