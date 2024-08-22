@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.2.0...sylvia-derive-v1.2.1) - 2024-08-22
+
+### Fixed
+
+- Allow deprecated InterfaceApi in generated code
+- Revert removal of `, custom` parameter support in entry_points macro
+- Revert removal of InterfaceApi
+- Deprecate `, custom` parameter in `entry_points` macro. Will be removed in `2.0.0`.
+- Deprecate `InterfaceApi`. Will be removed in `2.0.0`. Use generated `sv::InterfaceMessagesApi` instead.
+
 ## [1.2.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.1.0...sylvia-derive-v1.2.0) - 2024-08-20
 
 ### Added
