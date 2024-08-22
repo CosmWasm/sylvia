@@ -9,7 +9,7 @@ and this project adheres to
 ### Added
 
 - Emit error if contract macro is above entry_points
-- Deprecate support for `, custom(msg=.. ,query=..)` in entry_points
+- Remove support for `, custom(msg=.. ,query=..)` in entry_points
 - Add CustomMsg and CustomQuery to ContractApi
 
 ### Fixed
@@ -19,7 +19,7 @@ and this project adheres to
 ### Other
 
 - *(sylvia-derive)* Document inner types
-- Deprecate `InterfaceApi` in favor of `InterfaceMessagesApi` ([#413](https://github.com/CosmWasm/sylvia/pull/413))
+- [**breaking**] Remove `InterfaceApi` in favor of `InterfaceMessagesApi` ([#413](https://github.com/CosmWasm/sylvia/pull/413))
 - Fix duplicated instantiation error
 - Refactor struct message generation
 - Generic cw1-whitelist example ([#404](https://github.com/CosmWasm/sylvia/pull/404))
