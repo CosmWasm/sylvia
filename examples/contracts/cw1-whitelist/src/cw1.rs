@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, CosmosMsg, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::cw_std::{Addr, CosmosMsg, Response, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
 use crate::contract::Cw1WhitelistContract;

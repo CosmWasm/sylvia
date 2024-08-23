@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
-use cosmwasm_std::Empty;
 use cw20_base::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
+use sylvia::cw_std::Empty;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {

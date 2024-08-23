@@ -1,6 +1,6 @@
-use cosmwasm_std::{Reply, Response, StdResult};
 use cw_storage_plus::Item;
 use serde::Deserialize;
+use sylvia::cw_std::{Reply, Response, StdResult};
 use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
 use sylvia::{contract, schemars};
 
@@ -9,11 +9,11 @@ use sylvia::entry_points;
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomMsg;
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
+impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 
 pub struct GenericContract<
     InstantiateT,

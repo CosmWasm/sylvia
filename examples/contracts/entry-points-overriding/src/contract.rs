@@ -1,5 +1,5 @@
-use cosmwasm_std::{Response, StdError, StdResult};
 use cw_storage_plus::Item;
+use sylvia::cw_std::{Response, StdError, StdResult};
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 

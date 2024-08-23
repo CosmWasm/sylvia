@@ -1,9 +1,9 @@
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;
-use cosmwasm_std::{Response, StdError, StdResult};
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
+use sylvia::cw_std::{Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
 impl<E, Q> Cw20Marketing for Cw20Base<E, Q>

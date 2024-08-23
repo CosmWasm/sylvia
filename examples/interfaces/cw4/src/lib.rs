@@ -1,9 +1,9 @@
 pub mod responses;
 
-use cosmwasm_std::{Response, StdError};
 use responses::{
     AdminResponse, HooksResponse, MemberListResponse, MemberResponse, TotalWeightResponse,
 };
+use sylvia::cw_std::{Response, StdError};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -69,7 +69,7 @@ pub trait Cw4 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_json, to_json_binary};
+    use sylvia::cw_std::{from_json, to_json_binary};
 
     use super::sv::*;
 

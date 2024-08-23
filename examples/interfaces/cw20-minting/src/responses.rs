@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Uint128;
+use sylvia::cw_std::Uint128;
 
 #[cw_serde]
 pub struct MinterResponse {

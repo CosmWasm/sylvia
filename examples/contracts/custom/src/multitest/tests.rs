@@ -7,8 +7,8 @@ use super::custom_module::CustomModule;
 
 use crate::contract::sv::mt::CustomContractProxy;
 
-use cosmwasm_std::CosmosMsg;
 use cw1::sv::mt::Cw1Proxy;
+use sylvia::cw_std::CosmosMsg;
 
 #[test]
 fn test_custom() {
@@ -29,7 +29,7 @@ fn test_custom() {
     contract.send_custom().call(&owner).unwrap();
 
     contract
-        .can_execute("".to_string(), CosmosMsg::Custom(cosmwasm_std::Empty {}))
+        .can_execute("".to_string(), CosmosMsg::Custom(sylvia::cw_std::Empty {}))
         .unwrap();
     contract.execute(vec![]).call(&owner).unwrap();
 

@@ -1,4 +1,4 @@
-use cosmwasm_std::{CosmosMsg, Response, StdError};
+use sylvia::cw_std::{CosmosMsg, Response, StdError};
 
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 use sylvia::{interface, schemars};
@@ -71,18 +71,18 @@ pub trait CustomAndGeneric {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-    use cosmwasm_std::testing::mock_dependencies;
-    use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
+    use sylvia::cw_std::testing::mock_dependencies;
+    use sylvia::cw_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
     use sylvia::types::InterfaceApi;
 
     use crate::sv::Querier;
 
     #[cosmwasm_schema::cw_serde]
     pub struct SvCustomMsg;
-    impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+    impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
     #[cosmwasm_schema::cw_serde]
     pub struct SvCustomQuery;
-    impl cosmwasm_std::CustomQuery for SvCustomQuery {}
+    impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 
     #[test]
     fn construct_messages() {

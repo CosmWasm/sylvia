@@ -1,8 +1,8 @@
-use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
-use cosmwasm_std::{from_json, Addr, Decimal, Response};
 use cw_multi_test::IntoAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::testing::{message_info, mock_dependencies, mock_env};
+use sylvia::cw_std::{from_json, Addr, Decimal, Response};
 
 use crate::contract::Contract;
 
@@ -18,14 +18,14 @@ pub struct QueryResponse {
 }
 
 mod interface {
-    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use sylvia::cw_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
     #[interface]
-    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
 
@@ -57,7 +57,7 @@ mod interface {
 }
 
 mod impl_interface {
-    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use sylvia::cw_std::{Addr, Decimal, Response, StdError};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
@@ -126,8 +126,8 @@ mod impl_interface {
 mod contract {
     use std::cell::RefCell;
 
-    use cosmwasm_std::{Addr, Response, StdError, StdResult};
     use cw_storage_plus::{Item, Map};
+    use sylvia::cw_std::{Addr, Response, StdError, StdResult};
     use sylvia::types::{InstantiateCtx, SudoCtx};
     use sylvia_derive::{contract, entry_points};
 

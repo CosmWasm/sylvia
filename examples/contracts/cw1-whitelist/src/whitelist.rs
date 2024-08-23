@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Order, Response, StdResult};
+use sylvia::cw_std::{Empty, Order, Response, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use whitelist::responses::AdminListResponse;
 use whitelist::Whitelist;

@@ -1,9 +1,9 @@
 #![cfg(feature = "mt")]
 
-use cosmwasm_std::{Addr, Response, StdResult};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::{Addr, Response, StdResult};
 use sylvia::types::InstantiateCtx;
 use sylvia::{contract, entry_points};
 
@@ -13,14 +13,14 @@ pub struct CountResponse {
 }
 
 pub mod counter {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx};
 
     use crate::CountResponse;
 
     #[interface]
-    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
     pub trait Counter {
         type Error: From<StdError>;
 
@@ -32,10 +32,10 @@ pub mod counter {
     }
 }
 
-use cosmwasm_std::StdError;
 use counter::sv::Executor as InterfaceExecutor;
 use counter::Counter;
 use sv::Executor as ContractExecutor;
+use sylvia::cw_std::StdError;
 use sylvia::types::{ExecCtx, QueryCtx};
 
 impl Counter for CounterContract {
@@ -114,8 +114,8 @@ impl CounterContract {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::Addr;
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::Addr;
     use sylvia::multitest::App;
 
     use crate::counter::sv::mt::CounterProxy;

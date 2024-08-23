@@ -1,7 +1,7 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Reply, Response};
 use cw_storage_plus::Item;
 use serde::Deserialize;
+use sylvia::cw_std::{Reply, Response};
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
 };
@@ -9,11 +9,11 @@ use sylvia::{contract, schemars};
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomMsg;
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
+impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 
 pub struct GenericsForwardedContract<
     InstantiateT,
@@ -90,7 +90,7 @@ impl<
         FieldT,
     >
 where
-    for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
+    for<'msg_de> InstantiateT: sylvia::cw_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
     Exec1T: CustomMsg + 'static,
     Exec2T: CustomMsg + 'static,
     Exec3T: CustomMsg + 'static,

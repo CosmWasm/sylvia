@@ -1,5 +1,5 @@
-use cosmwasm_std::{Response, StdError, StdResult};
 use responses::AdminListResponse;
+use sylvia::cw_std::{Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -27,7 +27,7 @@ pub trait Whitelist {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{from_json, to_json_binary};
+    use sylvia::cw_std::{from_json, to_json_binary};
 
     use super::*;
 

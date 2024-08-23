@@ -1,9 +1,9 @@
-use cosmwasm_std::{Empty, Response, StdError, StdResult};
+use sylvia::cw_std::{Empty, Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, entry_points};
 
 mod interface1 {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 
@@ -34,7 +34,7 @@ mod interface1 {
 }
 
 mod interface2 {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 

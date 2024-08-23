@@ -3,8 +3,8 @@ mod test {
     use crate::contract::sv::mt::{CodeId, CounterContractProxy};
     use crate::contract::sv::{ContractExecMsg, ExecMsg};
     use crate::messages::{CustomExecMsg, SudoMsg, UserExecMsg};
-    use cosmwasm_std::Addr;
     use cw_multi_test::{Executor, IntoBech32};
+    use sylvia::cw_std::Addr;
     use sylvia::multitest::App;
 
     #[test]

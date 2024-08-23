@@ -1,8 +1,8 @@
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::{CosmosMsg, CustomMsg, Empty, Response, StdResult};
 use cw1::{CanExecuteResp, Cw1};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use sylvia::cw_std::{CosmosMsg, CustomMsg, Empty, Response, StdResult};
 use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
 
 use crate::contract::GenericsForwardedContract;
@@ -78,9 +78,9 @@ where
 mod tests {
     use crate::contract::sv::mt::CodeId;
     use crate::contract::{GenericsForwardedContract, SvCustomMsg, SvCustomQuery};
-    use cosmwasm_std::{CosmosMsg, Empty};
     use cw1::sv::mt::Cw1Proxy;
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::{CosmosMsg, Empty};
     use sylvia::multitest::App;
 
     #[test]

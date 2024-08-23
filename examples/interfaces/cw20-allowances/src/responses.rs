@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Uint128;
 use cw_utils::Expiration;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::Uint128;
 use sylvia::schemars;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{to_json_binary, Addr, WasmMsg};
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::{to_json_binary, Addr, WasmMsg};
     use whitelist::responses::AdminListResponse;
 
     use crate::contract::sv::mt::CodeId;

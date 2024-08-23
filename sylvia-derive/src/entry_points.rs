@@ -209,8 +209,10 @@ impl<'a> EntryPoints<'a> {
             },
         };
 
+        let cw_std = quote! { #sylvia ::cw_std }.to_string();
+
         quote! {
-            #[#sylvia ::cw_std::entry_point]
+            #[#sylvia ::cw_std::entry_point(crate = #cw_std )]
             pub fn #ep_name (
                 #params ,
                 #msg

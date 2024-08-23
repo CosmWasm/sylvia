@@ -8,7 +8,7 @@ pub struct CountResponse {
 
 pub mod sudo {
     use cosmwasm_schema::cw_serde;
-    use cosmwasm_std::{Coin, DepsMut, Env, Response, StdError, StdResult};
+    use sylvia::cw_std::{Coin, DepsMut, Env, Response, StdError, StdResult};
     use sylvia::types::SudoCtx;
 
     #[cw_serde]
@@ -61,7 +61,7 @@ pub mod migrate {
 
 pub mod exec {
     use cosmwasm_schema::cw_serde;
-    use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+    use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
     use sylvia::types::ExecCtx;
 
     use crate::contract::Contract;
@@ -99,7 +99,7 @@ pub mod exec {
 }
 
 pub mod entry_points {
-    use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+    use sylvia::cw_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
     use crate::contract::Contract;
     use crate::exec::CustomExecMsg;
@@ -133,8 +133,8 @@ pub mod entry_points {
 }
 
 mod contract {
-    use cosmwasm_std::{Response, StdError, StdResult};
     use cw_storage_plus::Item;
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
     use sylvia::{contract, entry_points};
 
@@ -212,8 +212,8 @@ mod contract {
 
 #[cfg(all(test, feature = "mt"))]
 mod tests {
-    use cosmwasm_std::Addr;
     use cw_multi_test::{Executor, IntoBech32};
+    use sylvia::cw_std::Addr;
     use sylvia::multitest::App;
 
     use crate::contract::sv::mt::{CodeId, ContractProxy};

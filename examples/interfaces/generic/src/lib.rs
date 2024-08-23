@@ -1,10 +1,10 @@
-use cosmwasm_std::{CosmosMsg, Response, StdError};
+use sylvia::cw_std::{CosmosMsg, Response, StdError};
 
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx};
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+#[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
 pub trait Generic {
     type Error: From<StdError>;
     type Exec1T: CustomMsg;
@@ -70,15 +70,15 @@ pub trait Generic {
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests {
-    use cosmwasm_std::testing::mock_dependencies;
-    use cosmwasm_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
+    use sylvia::cw_std::testing::mock_dependencies;
+    use sylvia::cw_std::{Addr, CosmosMsg, Empty, QuerierWrapper};
     use sylvia::types::InterfaceApi;
 
     use crate::sv::Querier;
 
     #[cosmwasm_schema::cw_serde]
     pub struct SvCustomMsg;
-    impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+    impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 
     #[test]
     fn construct_messages() {
@@ -282,7 +282,7 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            cosmwasm_std::Empty,
+            sylvia::cw_std::Empty,
         > as InterfaceApi>::Exec::generic_exec_one(
             vec![CosmosMsg::Custom(SvCustomMsg {})],
             vec![CosmosMsg::Custom(SvCustomMsg {})],
@@ -295,7 +295,7 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            cosmwasm_std::Empty,
+            sylvia::cw_std::Empty,
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
@@ -314,7 +314,7 @@ mod tests {
             _,
             _,
             SvCustomMsg,
-            cosmwasm_std::Empty,
+            sylvia::cw_std::Empty,
         > as InterfaceApi>::Sudo::generic_sudo_one(
             CosmosMsg::Custom(SvCustomMsg {}),
             CosmosMsg::Custom(SvCustomMsg {}),
@@ -325,7 +325,7 @@ mod tests {
             SvCustomMsg,
             SvCustomMsg,
             SvCustomMsg,
-            cosmwasm_std::Empty,
+            sylvia::cw_std::Empty,
             SvCustomMsg,
             SvCustomMsg,
             _,

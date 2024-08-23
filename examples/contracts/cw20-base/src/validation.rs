@@ -1,5 +1,5 @@
-use cosmwasm_std::{StdError, StdResult};
 use cw20_marketing::{EmbeddedLogo, Logo};
+use sylvia::cw_std::{StdError, StdResult};
 
 use crate::error::ContractError;
 use crate::responses::Cw20Coin;

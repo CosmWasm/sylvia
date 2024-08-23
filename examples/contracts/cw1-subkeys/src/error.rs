@@ -1,6 +1,6 @@
-use cosmwasm_std::StdError;
 use cw1_whitelist::error::ContractError as WhitelistError;
 use cw_utils::Expiration;
+use sylvia::cw_std::StdError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]

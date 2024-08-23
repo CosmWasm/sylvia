@@ -1,5 +1,5 @@
-use cosmwasm_std::{Response, StdResult};
 use std::marker::PhantomData;
+use sylvia::cw_std::{Response, StdResult};
 
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx,
@@ -66,16 +66,16 @@ where
 mod tests {
     use crate::SomeContract;
     use cosmwasm_schema::cw_serde;
-    use cosmwasm_std::testing::mock_dependencies;
-    use cosmwasm_std::{Addr, QuerierWrapper};
+    use sylvia::cw_std::testing::mock_dependencies;
+    use sylvia::cw_std::{Addr, QuerierWrapper};
     use sylvia::types::ContractApi;
 
     #[cw_serde]
     pub struct SvCustomMsg;
-    impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+    impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
     #[cw_serde]
     pub struct SvCustomQuery;
-    impl cosmwasm_std::CustomQuery for SvCustomQuery {}
+    impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 
     pub type ConcreteContract = SomeContract<
         SvCustomMsg,
