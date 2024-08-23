@@ -406,7 +406,6 @@ name = "custom"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-storage-plus",
  "cw1",
@@ -419,7 +418,6 @@ name = "custom-and-generic"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -474,7 +472,6 @@ name = "cw1"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -485,7 +482,6 @@ name = "cw1-subkeys"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
@@ -504,7 +500,6 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "assert_matches",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-storage-plus",
  "cw1",
@@ -535,7 +530,6 @@ name = "cw20-allowances"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-utils",
  "serde",
@@ -548,7 +542,6 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "assert_matches",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
@@ -567,7 +560,6 @@ name = "cw20-marketing"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -578,7 +570,6 @@ name = "cw20-minting"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -589,7 +580,6 @@ name = "cw4"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -721,7 +711,6 @@ name = "entry-points-overriding"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
@@ -756,7 +745,6 @@ name = "generic"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",
@@ -778,7 +766,6 @@ name = "generic_contract"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "custom-and-generic",
  "cw-multi-test",
  "cw-storage-plus",
@@ -794,7 +781,6 @@ name = "generic_iface_on_contract"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "custom-and-generic",
  "cw-multi-test",
  "cw-storage-plus",
@@ -810,7 +796,6 @@ name = "generics_forwarded"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "custom-and-generic",
  "cw-multi-test",
  "cw-storage-plus",
@@ -1462,7 +1447,6 @@ name = "whitelist"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cosmwasm-schema",
  "cw-multi-test",
  "serde",
  "sylvia",

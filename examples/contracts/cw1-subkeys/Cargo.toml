@@ -12,7 +12,6 @@ mt = ["library", "cw-multi-test", "anyhow"]
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
-cosmwasm-schema = { workspace = true }
 cw-multi-test = { workspace = true, optional = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }

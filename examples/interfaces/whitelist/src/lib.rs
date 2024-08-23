@@ -1,7 +1,7 @@
 use responses::AdminListResponse;
 use sylvia::cw_std::{Response, StdError, StdResult};
+use sylvia::interface;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
-use sylvia::{interface, schemars};
 
 pub mod responses;
 

@@ -1,7 +1,7 @@
-use cosmwasm_schema::schemars::JsonSchema;
 use cw1::{CanExecuteResp, Cw1};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use sylvia::cw_schema::schemars::JsonSchema;
 use sylvia::cw_std::{CosmosMsg, CustomMsg, Empty, Response, StdResult};
 use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
 

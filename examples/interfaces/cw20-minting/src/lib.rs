@@ -2,8 +2,8 @@ pub mod responses;
 
 use responses::MinterResponse;
 use sylvia::cw_std::{Response, StdError, StdResult, Uint128};
+use sylvia::interface;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
-use sylvia::{interface, schemars};
 
 #[interface]
 pub trait Cw20Minting {

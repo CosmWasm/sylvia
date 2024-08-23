@@ -12,7 +12,6 @@ homepage = "https://cosmwasm.com"
 mt = ["sylvia/mt"]
 
 [dependencies]
-cosmwasm-schema = { workspace = true }
 serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 cw-utils = { workspace = true }

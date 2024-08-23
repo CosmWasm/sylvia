@@ -5,8 +5,8 @@ use responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
 use sylvia::cw_std::{Binary, Response, StdError, StdResult, Uint128};
+use sylvia::interface;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
-use sylvia::{interface, schemars};
 
 #[interface]
 pub trait Cw20Allowances {

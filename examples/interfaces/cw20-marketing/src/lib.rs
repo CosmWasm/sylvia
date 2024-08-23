@@ -1,13 +1,13 @@
 pub mod responses;
 
-use cosmwasm_schema::cw_serde;
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
+use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{Binary, Response, StdError, StdResult};
+use sylvia::interface;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
-use sylvia::{interface, schemars};
 
 /// This is used for uploading logo data, or setting it in InstantiateData
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum Logo {
     /// A reference to an externally hosted logo. Must be a valid HTTP or HTTPS URL.
     Url(String),
@@ -17,7 +17,7 @@ pub enum Logo {
 
 /// This is used to store the logo on the blockchain in an accepted format.
 /// Enforce maximum size of 5KB on all variants.
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum EmbeddedLogo {
     /// Store the Logo as an SVG file. The content must conform to the spec
     /// at https://en.wikipedia.org/wiki/Scalable_Vector_Graphics

@@ -1,21 +1,21 @@
-use cosmwasm_schema::cw_serde;
+use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use sylvia::types::ExecCtx;
 
 use crate::contract::sv::ContractExecMsg;
 use crate::contract::CounterContract;
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct CountResponse {
     pub count: u32,
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum SudoMsg {
     SetCountToThree {},
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum UserExecMsg {
     IncreaseByOne {},
 }
@@ -29,7 +29,7 @@ pub fn increase_by_one(ctx: ExecCtx) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum CustomExecMsg {
     ContractExec(ContractExecMsg),
     CustomExec(UserExecMsg),

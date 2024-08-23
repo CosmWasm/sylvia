@@ -4,8 +4,8 @@ use responses::{
     AdminResponse, HooksResponse, MemberListResponse, MemberResponse, TotalWeightResponse,
 };
 use sylvia::cw_std::{Response, StdError};
+use sylvia::interface;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
-use sylvia::{interface, schemars};
 
 #[interface]
 pub trait Cw4 {

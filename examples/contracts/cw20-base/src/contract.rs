@@ -1,13 +1,13 @@
 use crate::error::ContractError;
 use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
-use cosmwasm_schema::cw_serde;
 use cw2::{ensure_from_older_version, set_contract_version};
 use cw20_allowances::responses::AllowanceResponse;
 use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
 use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
+use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{
     ensure, Addr, Binary, BlockInfo, DepsMut, Empty, Order, Response, StdError, StdResult, Storage,
     Uint128,
@@ -22,7 +22,7 @@ use sylvia::entry_points;
 const CONTRACT_NAME: &str = "crates.io:cw20-base";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
@@ -37,14 +37,14 @@ impl TokenInfo {
     }
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct MinterData {
     pub minter: Addr,
     /// cap is how many more tokens can be issued by the minter
     pub cap: Option<Uint128>,
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct InstantiateMarketingInfo {
     pub project: Option<String>,
     pub description: Option<String>,
@@ -52,7 +52,7 @@ pub struct InstantiateMarketingInfo {
     pub logo: Option<Logo>,
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct InstantiateMsgData {
     pub name: String,
     pub symbol: String,
