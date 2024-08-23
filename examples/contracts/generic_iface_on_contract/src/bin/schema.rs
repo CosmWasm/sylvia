@@ -1,4 +1,4 @@
-use cosmwasm_schema::write_api;
+use sylvia::cw_schema::write_api;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
@@ -7,6 +7,7 @@ fn main() {
     };
 
     write_api! {
+        crate_name: sylvia::cw_schema,
         instantiate: InstantiateMsg,
         execute: ContractExecMsg,
         query: ContractQueryMsg,

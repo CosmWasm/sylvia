@@ -76,12 +76,7 @@ impl<'a> EnumMessage<'a> {
 
         let ctx_type = msg_ty.emit_ctx_type(&custom.query_or_default());
         let ret_type = msg_ty.emit_result_type(&custom.msg_or_default(), &error.error);
-
-        let derive_query = match msg_ty {
-            MsgType::Query => quote! { #sylvia ::cw_schema::QueryResponses },
-            _ => quote! {},
-        };
-
+        let derive_call = msg_ty.emit_derive_call();
         let ep_name = msg_ty.emit_ep_name();
         let messages_fn_name = Ident::new(&format!("{}_messages", ep_name), contract.span());
 
@@ -96,7 +91,7 @@ impl<'a> EnumMessage<'a> {
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #derive_query )]
+            #derive_call
             #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub enum #enum_name #bracketed_used_generics {

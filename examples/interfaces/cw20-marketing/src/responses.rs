@@ -1,11 +1,11 @@
-use cosmwasm_schema::cw_serde;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{Addr, Binary};
 use sylvia::schemars;
 
 /// This is used to display logo info, provide a link or inform there is one
 /// that can be downloaded from the blockchain itself
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub enum LogoInfo {
     /// A reference to an externally hosted logo. Must be a valid HTTP or HTTPS URL.
     Url(String),
@@ -27,7 +27,7 @@ pub struct MarketingInfoResponse {
 
 /// When we download an embedded logo, we get this response type.
 /// We expect a SPA to be able to accept this info and display it.
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct DownloadLogoResponse {
     pub mime_type: String,
     pub data: Binary,

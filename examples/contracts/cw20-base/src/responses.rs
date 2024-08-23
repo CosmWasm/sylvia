@@ -1,9 +1,9 @@
-use cosmwasm_schema::cw_serde;
 use std::fmt;
+use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{to_json_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 
 /// Cw20ReceiveMsg should be de/serialized under `Receive()` variant in a ExecuteMsg
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct Cw20ReceiveMsg {
     pub sender: String,
     pub amount: Uint128,
@@ -30,12 +30,12 @@ impl Cw20ReceiveMsg {
 }
 
 // This is just a helper to properly serialize the above message
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 enum ReceiverExecuteMsg {
     Receive(Cw20ReceiveMsg),
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct Cw20Coin {
     pub address: String,
     pub amount: Uint128,
@@ -53,7 +53,7 @@ impl fmt::Display for Cw20Coin {
     }
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct Cw20CoinVerified {
     pub address: Addr,
     pub amount: Uint128,
@@ -71,12 +71,12 @@ impl fmt::Display for Cw20CoinVerified {
     }
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct BalanceResponse {
     pub balance: Uint128,
 }
 
-#[cw_serde]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct TokenInfoResponse {
     pub name: String,
     pub symbol: String,

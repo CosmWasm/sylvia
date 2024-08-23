@@ -1,4 +1,4 @@
-use cosmwasm_schema::write_api;
+use sylvia::cw_schema::write_api;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
@@ -6,6 +6,7 @@ fn main() {
     use generic_contract::contract::SvCustomMsg;
 
     write_api! {
+        crate_name: sylvia::cw_schema,
         instantiate: InstantiateMsg<SvCustomMsg>,
         execute: ContractExecMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,>,
         query: ContractQueryMsg<SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg, SvCustomMsg,>,

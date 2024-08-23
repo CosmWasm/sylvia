@@ -7,11 +7,11 @@ use sylvia::entry_points;
 
 pub struct NonGenericContract;
 
-#[cosmwasm_schema::cw_serde]
+#[sylvia::cw_schema::cw_serde(crate = "sylvia::cw_schema")]
 pub struct SvCustomMsg;
 impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 
-#[cosmwasm_schema::cw_serde]
+#[sylvia::cw_schema::cw_serde(crate = "sylvia::cw_schema")]
 pub struct SvCustomQuery;
 impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 

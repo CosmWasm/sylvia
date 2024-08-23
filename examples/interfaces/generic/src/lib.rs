@@ -1,7 +1,7 @@
 use sylvia::cw_std::{CosmosMsg, Response, StdError};
 
+use sylvia::interface;
 use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx};
-use sylvia::{interface, schemars};
 
 #[interface]
 #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
@@ -76,7 +76,7 @@ mod tests {
 
     use crate::sv::Querier;
 
-    #[cosmwasm_schema::cw_serde]
+    #[sylvia::cw_schema::cw_serde(crate = "sylvia::cw_schema")]
     pub struct SvCustomMsg;
     impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 

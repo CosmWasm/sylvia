@@ -1,6 +1,6 @@
 use sylvia::cw_std::{Binary, Response, StdError, Uint128};
+use sylvia::interface;
 use sylvia::types::ExecCtx;
-use sylvia::{interface, schemars};
 
 #[interface]
 #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]

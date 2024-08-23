@@ -1,4 +1,4 @@
-use cosmwasm_schema::write_api;
+use sylvia::cw_schema::write_api;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
@@ -6,6 +6,7 @@ fn main() {
     use generics_forwarded::contract::{SvCustomMsg, SvCustomQuery};
 
     write_api! {
+        crate_name: sylvia::cw_schema,
         instantiate: InstantiateMsg<SvCustomMsg>,
         // We should rethink this. We generate messages generic over types used in the methods.
         // To do so we however have to merge generics from the contract and interfaces methods.
