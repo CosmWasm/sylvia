@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary};
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::{Addr, Binary};
 use sylvia::schemars;
 
 /// This is used to display logo info, provide a link or inform there is one

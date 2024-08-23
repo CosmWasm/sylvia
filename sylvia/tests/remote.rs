@@ -1,21 +1,21 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, StdError};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::{Addr, StdError};
 use sylvia::types::Remote;
 
 #[cw_serde]
 pub struct ExampleMsg;
-impl cosmwasm_std::CustomMsg for ExampleMsg {}
+impl sylvia::cw_std::CustomMsg for ExampleMsg {}
 
 #[cw_serde]
 pub struct ExampleQuery;
-impl cosmwasm_std::CustomQuery for ExampleQuery {}
+impl sylvia::cw_std::CustomQuery for ExampleQuery {}
 
 pub mod counter {
-    use cosmwasm_std::{Response, StdError};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use sylvia::cw_std::{Response, StdError};
     use sylvia::interface;
     use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 
@@ -39,9 +39,9 @@ pub mod counter {
 }
 
 pub mod signed_contract {
-    use cosmwasm_std::{Response, StdError, StdResult};
     use cw_storage_plus::Item;
     use sylvia::contract;
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 
     use crate::counter::Counter;
@@ -98,9 +98,9 @@ pub mod signed_contract {
 }
 
 pub mod unsigned_contract {
-    use cosmwasm_std::{Response, StdError, StdResult};
     use cw_storage_plus::Item;
     use sylvia::contract;
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 
     use crate::counter::Counter;
@@ -188,11 +188,11 @@ where
 }
 
 pub mod manager {
-    use cosmwasm_std::{Addr, Response, StdError, StdResult};
     use cw_storage_plus::Item;
     use schemars::JsonSchema;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use sylvia::cw_std::{Addr, Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
     use sylvia::{contract, entry_points};
 
@@ -262,8 +262,8 @@ pub mod manager {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{Addr, StdError};
     use cw_multi_test::{BasicApp, IntoBech32};
+    use sylvia::cw_std::{Addr, StdError};
     use sylvia::multitest::{App, Proxy};
     use sylvia::types::Remote;
 

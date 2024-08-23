@@ -1,4 +1,4 @@
-use cosmwasm_std::{Response, StdError, StdResult};
+use sylvia::cw_std::{Response, StdError, StdResult};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,14 +18,14 @@ pub struct QueryResponse;
 type QueryResult<E> = Result<QueryResponse, E>;
 
 pub mod msg {
-    use cosmwasm_std::StdError;
+    use sylvia::cw_std::StdError;
     use sylvia::interface;
     use sylvia::types::QueryCtx;
 
     use crate::{QueryResponse, QueryResult};
 
     #[interface(module=msg)]
-    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
 

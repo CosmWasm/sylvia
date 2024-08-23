@@ -1,4 +1,4 @@
-use cosmwasm_std::{Response, StdResult};
+use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;
 use sylvia::{contract, schemars};
 
@@ -9,11 +9,11 @@ pub struct NonGenericContract;
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomMsg;
-impl cosmwasm_std::CustomMsg for SvCustomMsg {}
+impl sylvia::cw_std::CustomMsg for SvCustomMsg {}
 
 #[cosmwasm_schema::cw_serde]
 pub struct SvCustomQuery;
-impl cosmwasm_std::CustomQuery for SvCustomQuery {}
+impl sylvia::cw_std::CustomQuery for SvCustomQuery {}
 
 #[cfg_attr(not(feature = "library"), entry_points)]
 #[contract]
@@ -39,8 +39,8 @@ impl NonGenericContract {
 #[cfg(test)]
 mod tests {
     use super::{SvCustomMsg, SvCustomQuery};
-    use cosmwasm_std::{CosmosMsg, Empty};
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::{CosmosMsg, Empty};
     use sylvia::multitest::App;
 
     use super::NonGenericContract;

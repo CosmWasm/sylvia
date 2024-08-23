@@ -1,6 +1,6 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 use std::fmt;
+use sylvia::cw_std::{to_json_binary, Addr, Binary, CosmosMsg, StdResult, Uint128, WasmMsg};
 
 /// Cw20ReceiveMsg should be de/serialized under `Receive()` variant in a ExecuteMsg
 #[cw_serde]

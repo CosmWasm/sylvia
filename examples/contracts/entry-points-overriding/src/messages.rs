@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use sylvia::types::ExecCtx;
 
 use crate::contract::sv::ContractExecMsg;

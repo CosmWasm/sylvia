@@ -1,7 +1,7 @@
 use crate::error::ContractError;
-use cosmwasm_std::{Addr, Deps, Empty, Response};
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
+use sylvia::cw_std::{Addr, Deps, Empty, Response};
 use sylvia::types::{CustomMsg, CustomQuery, InstantiateCtx};
 use sylvia::{contract, schemars};
 
@@ -62,12 +62,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
-    use cosmwasm_std::{
-        coin, coins, to_json_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg,
-    };
     use cw1::Cw1;
     use cw_multi_test::{IntoAddr, IntoBech32};
+    use sylvia::cw_std::testing::{message_info, mock_dependencies, mock_env};
+    use sylvia::cw_std::{
+        coin, coins, to_json_binary, BankMsg, CosmosMsg, StakingMsg, SubMsg, WasmMsg,
+    };
     use whitelist::responses::AdminListResponse;
     use whitelist::Whitelist;
 
@@ -299,7 +299,7 @@ mod tests {
     }
 
     mod msgs {
-        use cosmwasm_std::{from_json, to_json_binary, BankMsg, Empty};
+        use sylvia::cw_std::{from_json, to_json_binary, BankMsg, Empty};
 
         use crate::contract::sv::{ContractExecMsg, ContractQueryMsg};
 

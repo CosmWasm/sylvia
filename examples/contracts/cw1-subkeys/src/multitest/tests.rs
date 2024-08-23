@@ -1,7 +1,7 @@
-use cosmwasm_std::{coin, coins, Addr};
 use cw2::{query_contract_info, ContractVersion};
 use cw_multi_test::IntoBech32;
 use cw_utils::{Expiration, NativeBalance};
+use sylvia::cw_std::{coin, coins, Addr};
 use sylvia::multitest::App;
 
 use crate::contract::sv::mt::CodeId;
@@ -382,7 +382,7 @@ mod permissions {
 }
 
 mod cw1_execute {
-    use cosmwasm_std::BankMsg;
+    use sylvia::cw_std::BankMsg;
 
     use super::*;
 

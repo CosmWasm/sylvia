@@ -2,16 +2,16 @@ use crate::error::ContractError;
 use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{
-    ensure, Addr, Binary, BlockInfo, DepsMut, Empty, Order, Response, StdError, StdResult, Storage,
-    Uint128,
-};
 use cw2::{ensure_from_older_version, set_contract_version};
 use cw20_allowances::responses::AllowanceResponse;
 use cw20_marketing::responses::{LogoInfo, MarketingInfoResponse};
 use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
+use sylvia::cw_std::{
+    ensure, Addr, Binary, BlockInfo, DepsMut, Empty, Order, Response, StdError, StdResult, Storage,
+    Uint128,
+};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 

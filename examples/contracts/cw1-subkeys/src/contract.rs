@@ -1,11 +1,11 @@
-use cosmwasm_std::{
-    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Empty, Env, Order,
-    Response, StakingMsg, StdResult,
-};
 use cw1_whitelist::contract::Cw1WhitelistContract;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
+use sylvia::cw_std::{
+    ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Empty, Env, Order,
+    Response, StakingMsg, StdResult,
+};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::{contract, schemars};
 

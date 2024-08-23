@@ -1,8 +1,8 @@
 #![cfg(feature = "mt")]
 
-use cosmwasm_std::{CodeInfoResponse, Empty, Response, StdResult};
 use cw_multi_test::IntoBech32;
 use std::marker::PhantomData;
+use sylvia::cw_std::{CodeInfoResponse, Empty, Response, StdResult};
 use sylvia::entry_points;
 use sylvia::multitest::App;
 use sylvia::types::InstantiateCtx;

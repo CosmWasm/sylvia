@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{CustomMsg, CustomQuery};
+use sylvia::cw_std::{CustomMsg, CustomQuery};
 
 #[cw_serde]
 pub struct CountResponse {

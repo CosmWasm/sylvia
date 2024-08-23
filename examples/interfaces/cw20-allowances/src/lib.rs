@@ -1,10 +1,10 @@
 pub mod responses;
 
-use cosmwasm_std::{Binary, Response, StdError, StdResult, Uint128};
 use cw_utils::Expiration;
 use responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
+use sylvia::cw_std::{Binary, Response, StdError, StdResult, Uint128};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 

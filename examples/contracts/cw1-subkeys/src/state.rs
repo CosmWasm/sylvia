@@ -48,7 +48,7 @@ impl Allowance {
     /// ```
     /// # use cw_utils::{Expiration, NativeBalance};
     /// # use cw1_subkeys::state::Allowance;
-    /// # use cosmwasm_std::coin;
+    /// # use sylvia::cw_std::coin;
     ///
     /// let allow1 = Allowance {
     ///   balance: NativeBalance(vec![coin(1, "token1"), coin(0, "token2"), coin(2, "token1"), coin(3, "token3")]),

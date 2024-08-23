@@ -1,7 +1,7 @@
-use cosmwasm_std::{Binary, StdError, Uint128};
 use cw20_allowances::responses::{AllAllowancesResponse, SpenderAllowanceInfo};
 use cw_multi_test::IntoBech32;
 use cw_utils::Expiration;
+use sylvia::cw_std::{Binary, StdError, Uint128};
 use sylvia::multitest::App;
 
 use crate::contract::sv::mt::{CodeId, Cw20BaseProxy};

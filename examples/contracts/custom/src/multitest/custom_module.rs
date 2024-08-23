@@ -1,12 +1,12 @@
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::{
-    to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
-    Storage,
-};
 use cw_multi_test::{AppResponse, CosmosRouter, Module};
 use cw_storage_plus::Item;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
+use sylvia::cw_std::{
+    to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
+    Storage,
+};
 
 use crate::messages::{CountResponse, CounterMsg, CounterQuery};
 

@@ -1,6 +1,6 @@
-use cosmwasm_std::{CosmosMsg, Response};
 use custom_and_generic::CustomAndGeneric;
 use serde::Deserialize;
+use sylvia::cw_std::{CosmosMsg, Response};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 
 use crate::contract::{GenericsForwardedContract, SvCustomMsg};
@@ -39,7 +39,7 @@ impl<
         FieldT,
     >
 where
-    for<'msg_de> InstantiateT: cosmwasm_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
+    for<'msg_de> InstantiateT: sylvia::cw_std::CustomMsg + Deserialize<'msg_de> + 'msg_de,
     Exec1T: CustomMsg + 'static,
     Exec2T: CustomMsg + 'static,
     Exec3T: CustomMsg + 'static,
@@ -127,9 +127,9 @@ where
 mod tests {
     use crate::contract::sv::mt::CodeId;
     use crate::contract::{GenericsForwardedContract, SvCustomMsg, SvCustomQuery};
-    use cosmwasm_std::CosmosMsg;
     use custom_and_generic::sv::mt::CustomAndGenericProxy;
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::CosmosMsg;
     use sylvia::multitest::App;
 
     #[test]

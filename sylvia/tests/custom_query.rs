@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{CustomQuery, Response, StdResult};
+use sylvia::cw_std::{CustomQuery, Response, StdResult};
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, entry_points};
 
@@ -19,14 +19,14 @@ pub struct MyContract;
 pub struct SomeResponse;
 
 mod interface {
-    use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::cw_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
     #[interface]
-    #[sv::custom(query=MyQuery, msg=cosmwasm_std::Empty)]
+    #[sv::custom(query=MyQuery, msg=sylvia::cw_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
@@ -43,7 +43,7 @@ mod interface {
 }
 
 mod impl_interface {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, OtherQuery, SomeResponse};
@@ -67,14 +67,14 @@ mod impl_interface {
 }
 
 mod some_interface {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
     #[interface]
-    #[sv::custom(query=MyQuery, msg=cosmwasm_std::Empty)]
+    #[sv::custom(query=MyQuery, msg=sylvia::cw_std::Empty)]
     pub trait SomeInterface {
         type Error: From<StdError>;
 
@@ -90,7 +90,7 @@ mod some_interface {
 }
 
 mod impl_some_interface {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
@@ -113,14 +113,14 @@ mod impl_some_interface {
 }
 
 mod associated_type_interface {
-    use cosmwasm_std::{CustomQuery, Response, StdError, StdResult};
+    use sylvia::cw_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
     #[interface]
-    #[sv::custom(msg=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty)]
     pub trait AssociatedTypeInterface {
         type Error: From<StdError>;
         type QueryC: CustomQuery;
@@ -139,7 +139,7 @@ mod associated_type_interface {
 mod impl_associated_type_interface {
     use crate::associated_type_interface::AssociatedTypeInterface;
     use crate::{MyQuery, SomeResponse};
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl AssociatedTypeInterface for crate::MyContract {
@@ -161,14 +161,14 @@ mod impl_associated_type_interface {
 }
 
 mod default_query_interface {
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
     #[interface]
-    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
     pub trait DefaultQueryInterface {
         type Error: From<StdError>;
 
@@ -186,7 +186,7 @@ mod default_query_interface {
 mod impl_default_query_interface {
     use crate::default_query_interface::DefaultQueryInterface;
     use crate::SomeResponse;
-    use cosmwasm_std::{Response, StdError, StdResult};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl DefaultQueryInterface for crate::MyContract {
@@ -254,8 +254,8 @@ mod tests {
     use crate::sv::mt::MyContractProxy;
     use crate::{MyContract, MyQuery};
 
-    use cosmwasm_std::{Addr, Empty};
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::{Addr, Empty};
     use sylvia::multitest::App;
 
     #[test]

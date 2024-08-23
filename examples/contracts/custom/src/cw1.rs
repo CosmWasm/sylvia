@@ -1,5 +1,5 @@
-use cosmwasm_std::{CosmosMsg, Empty, Response, StdError, StdResult};
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::cw_std::{CosmosMsg, Empty, Response, StdError, StdResult};
 use sylvia::types::{ExecCtx, QueryCtx};
 
 use crate::contract::CustomContract;

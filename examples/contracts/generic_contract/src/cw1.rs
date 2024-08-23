@@ -1,6 +1,6 @@
 use crate::contract::GenericContract;
-use cosmwasm_std::{CosmosMsg, Empty, Response, StdError, StdResult};
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::cw_std::{CosmosMsg, Empty, Response, StdError, StdResult};
 use sylvia::types::{ExecCtx, QueryCtx};
 
 impl<
@@ -54,9 +54,9 @@ impl<
 mod tests {
     use crate::contract::sv::mt::CodeId;
     use crate::contract::{GenericContract, SvCustomMsg, SvCustomQuery};
-    use cosmwasm_std::{CosmosMsg, Empty};
     use cw1::sv::mt::Cw1Proxy;
     use cw_multi_test::IntoBech32;
+    use sylvia::cw_std::{CosmosMsg, Empty};
     use sylvia::multitest::App;
 
     #[test]

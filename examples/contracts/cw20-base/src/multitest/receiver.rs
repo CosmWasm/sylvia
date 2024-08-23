@@ -1,9 +1,9 @@
-use cosmwasm_std::{Binary, Response, StdError, Uint128};
+use sylvia::cw_std::{Binary, Response, StdError, Uint128};
 use sylvia::types::ExecCtx;
 use sylvia::{interface, schemars};
 
 #[interface]
-#[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+#[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
 pub trait Receiver {
     type Error: From<StdError>;
 
@@ -19,7 +19,7 @@ pub trait Receiver {
 
 pub mod impl_receiver {
     use crate::multitest::receiver_contract::ReceiverContract;
-    use cosmwasm_std::{Response, StdError};
+    use sylvia::cw_std::{Response, StdError};
     use sylvia::types::ExecCtx;
 
     impl super::Receiver for ReceiverContract {
@@ -29,8 +29,8 @@ pub mod impl_receiver {
             &self,
             _ctx: ExecCtx,
             _sender: String,
-            _amount: cosmwasm_std::Uint128,
-            _msg: cosmwasm_std::Binary,
+            _amount: sylvia::cw_std::Uint128,
+            _msg: sylvia::cw_std::Binary,
         ) -> Result<Response, Self::Error> {
             Ok(Response::default())
         }

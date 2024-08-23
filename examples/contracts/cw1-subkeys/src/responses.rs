@@ -1,8 +1,8 @@
 use crate::state::Permissions;
 use cosmwasm_schema::schemars::JsonSchema;
-use cosmwasm_std::Addr;
 use cw_utils::{Expiration, NativeBalance};
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::Addr;
 use sylvia::schemars;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
@@ -44,7 +44,7 @@ impl AllowanceInfo {
     /// # use cw_utils::{Expiration, NativeBalance};
     /// # use cw1_subkeys::msg::AllowanceInfo;
     /// # use cosmwasm_schema::{cw_serde, QueryResponses};
-    /// # use cosmwasm_std::coin;
+    /// # use sylvia::cw_std::coin;
     ///
     /// let mut allows = vec![Allowance {
     ///   spender: "spender2".to_owned(),

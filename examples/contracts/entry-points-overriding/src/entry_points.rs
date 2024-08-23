@@ -1,4 +1,4 @@
-use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdResult};
+use sylvia::cw_std::{entry_point, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::contract::CounterContract;
 use crate::messages::{CustomExecMsg, SudoMsg};

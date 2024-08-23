@@ -1,8 +1,8 @@
 pub mod responses;
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Binary, Response, StdError, StdResult};
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
+use sylvia::cw_std::{Binary, Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 

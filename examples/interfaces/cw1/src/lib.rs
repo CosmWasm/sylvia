@@ -1,5 +1,5 @@
-use cosmwasm_std::{CosmosMsg, Response, StdError, StdResult};
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::{CosmosMsg, Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
@@ -40,7 +40,7 @@ pub trait Cw1 {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, from_json, to_json_binary, BankMsg, Empty};
+    use sylvia::cw_std::{coins, from_json, to_json_binary, BankMsg, Empty};
 
     use crate::sv::{Cw1ExecMsg, Cw1QueryMsg};
 

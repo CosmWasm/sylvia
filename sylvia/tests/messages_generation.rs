@@ -2,9 +2,9 @@ use std::fmt::Debug;
 use std::str::FromStr;
 
 use contract::sv::{ExecMsg, InstantiateMsg, MigrateMsg, QueryMsg, SudoMsg};
-use cosmwasm_std::{from_json, Addr, CustomQuery, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::cw_std::{from_json, Addr, CustomQuery, Decimal};
 
 #[derive(
     serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema,
@@ -17,7 +17,7 @@ pub struct MyQuery;
 impl CustomQuery for MyQuery {}
 
 pub mod interface {
-    use cosmwasm_std::{Addr, Decimal, Response, StdError};
+    use sylvia::cw_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
     use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use thiserror::Error;
@@ -28,7 +28,7 @@ pub mod interface {
     #[sv::msg_attr(exec, derive(PartialOrd, Error))]
     #[sv::msg_attr(query, derive(PartialOrd, Error))]
     #[sv::msg_attr(sudo, derive(PartialOrd, Error))]
-    #[sv::custom(msg=cosmwasm_std::Empty, query=cosmwasm_std::Empty)]
+    #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
     pub trait Interface {
         type Error: From<StdError>;
 
@@ -65,8 +65,8 @@ pub mod interface {
 }
 
 mod contract {
-    use cosmwasm_std::{Addr, Reply, Response, StdResult};
     use sylvia::contract;
+    use sylvia::cw_std::{Addr, Reply, Response, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
     use sylvia_derive::entry_points;
     use thiserror::Error;
@@ -122,8 +122,8 @@ mod contract {
         fn argumented_execution(
             &self,
             _ctx: ExecCtx<MyQuery>,
-            _addr: cosmwasm_std::Addr,
-            #[serde(default)] _coef: cosmwasm_std::Decimal,
+            _addr: sylvia::cw_std::Addr,
+            #[serde(default)] _coef: sylvia::cw_std::Decimal,
             #[serde(default)] _desc: String,
         ) -> StdResult<Response> {
             Ok(Response::new())
