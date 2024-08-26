@@ -1,6 +1,6 @@
+use sylvia::contract;
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;
-use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
@@ -39,7 +39,7 @@ impl NonGenericContract {
 #[cfg(test)]
 mod tests {
     use super::{SvCustomMsg, SvCustomQuery};
-    use cw_multi_test::IntoBech32;
+    use sylvia::cw_multi_test::{BasicApp, IntoBech32};
     use sylvia::cw_std::{CosmosMsg, Empty};
     use sylvia::multitest::App;
 
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn mt_helpers() {
         let _ = NonGenericContract::new();
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        let app = App::<BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = super::sv::mt::CodeId::store_code(&app);
 
         let owner = "owner".into_bech32();

@@ -1,6 +1,6 @@
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{EmbeddedLogo, Logo};
-use cw_multi_test::IntoBech32;
+use sylvia::cw_multi_test::IntoBech32;
 use sylvia::cw_std::{Addr, StdError};
 use sylvia::multitest::App;
 

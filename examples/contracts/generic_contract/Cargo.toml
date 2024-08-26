@@ -13,14 +13,12 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-mt = ["library", "cw-multi-test", "anyhow"]
+mt = ["library", "sylvia/mt", "anyhow"]
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
-cw-multi-test = { workspace = true, optional = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
-serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 cw1 = { path = "../../interfaces/cw1" }
 generic = { path = "../../interfaces/generic" }
@@ -28,5 +26,4 @@ custom-and-generic = { path = "../../interfaces/custom-and-generic" }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-cw-multi-test = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }

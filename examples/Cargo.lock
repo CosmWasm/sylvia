@@ -409,7 +409,6 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw1",
- "serde",
  "sylvia",
 ]
 
@@ -418,8 +417,6 @@ name = "custom-and-generic"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -472,8 +469,6 @@ name = "cw1"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -482,13 +477,11 @@ name = "cw1-subkeys"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "cw1",
  "cw1-whitelist",
  "cw2",
- "serde",
  "sylvia",
  "thiserror",
  "whitelist",
@@ -500,11 +493,9 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "assert_matches",
- "cw-multi-test",
  "cw-storage-plus",
  "cw1",
  "cw2",
- "serde",
  "sylvia",
  "thiserror",
  "whitelist",
@@ -530,9 +521,7 @@ name = "cw20-allowances"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
  "cw-utils",
- "serde",
  "sylvia",
 ]
 
@@ -542,7 +531,6 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "assert_matches",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "cw2",
@@ -550,7 +538,6 @@ dependencies = [
  "cw20-marketing",
  "cw20-minting",
  "semver",
- "serde",
  "sylvia",
  "thiserror",
 ]
@@ -560,8 +547,6 @@ name = "cw20-marketing"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -570,8 +555,6 @@ name = "cw20-minting"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -580,8 +563,6 @@ name = "cw4"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -714,7 +695,6 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
- "serde",
  "sylvia",
 ]
 
@@ -745,8 +725,6 @@ name = "generic"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 
@@ -767,12 +745,10 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "custom-and-generic",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "cw1",
  "generic",
- "serde",
  "sylvia",
 ]
 
@@ -782,12 +758,10 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "custom-and-generic",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "cw1",
  "generic",
- "serde",
  "sylvia",
 ]
 
@@ -797,12 +771,10 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "custom-and-generic",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "cw1",
  "generic",
- "serde",
  "sylvia",
  "thiserror",
 ]
@@ -1447,8 +1419,6 @@ name = "whitelist"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cw-multi-test",
- "serde",
  "sylvia",
 ]
 

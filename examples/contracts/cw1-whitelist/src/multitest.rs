@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use cw_multi_test::IntoBech32;
+    use sylvia::cw_multi_test::IntoBech32;
     use sylvia::cw_std::{to_json_binary, Addr, WasmMsg};
     use whitelist::responses::AdminListResponse;
 

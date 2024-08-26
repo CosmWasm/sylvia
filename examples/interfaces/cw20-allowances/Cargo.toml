@@ -12,10 +12,9 @@ homepage = "https://cosmwasm.com"
 mt = ["sylvia/mt"]
 
 [dependencies]
-serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-cw-multi-test = { workspace = true }
+sylvia = { path = "../../../sylvia", features = ["mt"] }

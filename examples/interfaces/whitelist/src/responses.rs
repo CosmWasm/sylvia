@@ -1,13 +1,12 @@
-use serde::{Deserialize, Serialize};
-use sylvia::schemars;
+use sylvia::cw_schema::cw_serde;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, schemars::JsonSchema, Debug, Default)]
+#[cw_serde(crate = "sylvia::cw_schema")]
 pub struct AdminListResponse {
     pub admins: Vec<String>,
     pub mutable: bool,
 }
 
-#[cfg(any(test, feature = "test-utils"))]
+#[cfg(any(test, feature = "mt"))]
 impl AdminListResponse {
     /// Utility function for converting message to its canonical form, so two messages with
     /// different representation but same semantical meaning can be easily compared.

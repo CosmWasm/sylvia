@@ -1,4 +1,3 @@
-use crate::crate_module;
 use crate::parser::attributes::MsgAttrForwarding;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::parser::{ContractErrorAttr, Custom, MsgType, ParsedSylviaAttributes};
@@ -74,8 +73,6 @@ impl<'a> StructMessage<'a> {
     }
 
     pub fn emit(&self) -> TokenStream {
-        let sylvia = crate_module();
-
         let Self {
             source,
             contract_type,
@@ -112,10 +109,11 @@ impl<'a> StructMessage<'a> {
         let fields = variant.fields().iter().map(MsgField::emit_pub);
 
         let msg_attrs_to_forward = msg_attrs_to_forward.iter().map(|attr| &attr.attrs);
+        let derive_call = variant.msg_type().emit_derive_call();
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
-            #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
+            #derive_call
             #( #[ #msg_attrs_to_forward ] )*
             #[serde(rename_all="snake_case")]
             pub struct #name #bracketed_used_generics {

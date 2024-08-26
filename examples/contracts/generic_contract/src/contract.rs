@@ -1,8 +1,8 @@
 use cw_storage_plus::Item;
-use serde::Deserialize;
+use sylvia::contract;
 use sylvia::cw_std::{Reply, Response, StdResult};
+use sylvia::serde::Deserialize;
 use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
-use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
@@ -196,12 +196,12 @@ mod tests {
     use super::sv::mt::CodeId;
     use super::{GenericContract, SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::GenericContractProxy;
-    use cw_multi_test::IntoBech32;
+    use sylvia::cw_multi_test::{BasicApp, IntoBech32};
     use sylvia::multitest::App;
 
     #[test]
     fn generic_contract() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        let app = App::<BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         #[allow(clippy::type_complexity)]
         let code_id: CodeId<
             GenericContract<

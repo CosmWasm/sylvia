@@ -1,11 +1,12 @@
 use crate::state::Permissions;
 use cw_utils::{Expiration, NativeBalance};
-use serde::{Deserialize, Serialize};
 use sylvia::cw_schema::schemars::JsonSchema;
 use sylvia::cw_std::Addr;
 use sylvia::schemars;
+use sylvia::serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[serde(crate = "sylvia::serde")]
 pub struct AllAllowancesResponse {
     pub allowances: Vec<AllowanceInfo>,
 }
@@ -24,6 +25,7 @@ impl AllAllowancesResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(crate = "sylvia::serde")]
 pub struct AllowanceInfo {
     pub spender: Addr,
     pub balance: NativeBalance,
@@ -74,17 +76,19 @@ impl AllowanceInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
+#[serde(crate = "sylvia::serde")]
 pub struct AllPermissionsResponse {
     pub permissions: Vec<PermissionsInfo>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+#[serde(crate = "sylvia::serde")]
 pub struct PermissionsInfo {
     pub spender: Addr,
     pub permissions: Permissions,
 }
 
-#[cfg(any(test, feature = "test-utils"))]
+#[cfg(any(test, feature = "mt"))]
 impl PermissionsInfo {
     /// Utility function providing some ordering to be used with `slice::sort_by`.
     ///

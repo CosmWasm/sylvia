@@ -8,24 +8,21 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-mt = ["library", "cw-multi-test", "anyhow"]
+mt = ["library", "anyhow", "sylvia/mt"]
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
-cw-multi-test = { workspace = true, optional = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw1 = { path = "../../interfaces/cw1" }
 whitelist = { path = "../../interfaces/whitelist" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = { workspace = true }
-serde = { workspace = true }
 sylvia = { path = "../../../sylvia" }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-cw-multi-test = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }
-cw1-whitelist = { path = "../cw1-whitelist", features = ["library", "mt"] }
+cw1-whitelist = { path = "../cw1-whitelist", features = ["mt"] }
 cw1 = { path = "../../interfaces/cw1", features = ["mt"] }

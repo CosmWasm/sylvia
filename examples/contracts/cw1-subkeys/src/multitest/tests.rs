@@ -1,6 +1,6 @@
 use cw2::{query_contract_info, ContractVersion};
-use cw_multi_test::IntoBech32;
 use cw_utils::{Expiration, NativeBalance};
+use sylvia::cw_multi_test::IntoBech32;
 use sylvia::cw_std::{coin, coins, Addr};
 use sylvia::multitest::App;
 
@@ -59,7 +59,7 @@ fn get_contract_version_works() {
 }
 
 mod allowance {
-    use cw_multi_test::next_block;
+    use sylvia::cw_multi_test::next_block;
 
     use crate::responses::AllowanceInfo;
     use crate::state::Allowance;
@@ -425,7 +425,7 @@ mod cw1_execute {
         let admin = "admin".into_bech32();
         let non_admin = Addr::unchecked("non_admin");
 
-        let app = cw_multi_test::App::new(|router, _api, storage| {
+        let app = sylvia::cw_multi_test::App::new(|router, _api, storage| {
             router
                 .bank
                 .init_balance(storage, &admin, coins(2345, ATOM))

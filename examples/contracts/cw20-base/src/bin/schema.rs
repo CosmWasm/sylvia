@@ -2,7 +2,6 @@ use cw20_base::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg}
 use sylvia::cw_schema::write_api;
 use sylvia::cw_std::Empty;
 
-#[cfg(not(tarpaulin_include))]
 fn main() {
     write_api! {
         crate_name: sylvia::cw_schema,

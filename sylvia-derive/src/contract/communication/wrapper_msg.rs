@@ -116,11 +116,13 @@ impl<'a> GlueMessage<'a> {
 
         let modules_names = interfaces.variants_modules();
         let variants_names = interfaces.variants_names();
+        let serde = quote! { #sylvia:: serde }.to_string();
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
             #[derive(#sylvia ::serde::Serialize, Clone, Debug, PartialEq)]
             #[serde(rename_all="snake_case", untagged)]
+            #[serde(crate = #serde )]
             pub enum #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
                 #(#variants,)*
                 #contract_variant
@@ -186,11 +188,11 @@ impl<'a> GlueMessage<'a> {
 
             #response_schemas
 
-            impl<'sv_de, #(#generics,)* > serde::Deserialize<'sv_de> for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
+            impl<'sv_de, #(#generics,)* > #sylvia ::serde::Deserialize<'sv_de> for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                    where D: serde::Deserializer<'sv_de>,
+                    where D: #sylvia ::serde::Deserializer<'sv_de>,
                 {
-                    use serde::de::Error;
+                    use #sylvia ::serde::de::Error;
 
                     let val = #sylvia ::serde_value::Value::deserialize(deserializer)?;
                     let map = match &val {

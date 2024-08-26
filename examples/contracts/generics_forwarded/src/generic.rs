@@ -1,6 +1,6 @@
 use generic::Generic;
-use serde::Deserialize;
 use sylvia::cw_std::{CosmosMsg, Response};
+use sylvia::serde::Deserialize;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
 
 use crate::contract::{GenericsForwardedContract, SvCustomMsg};
@@ -125,14 +125,14 @@ where
 mod tests {
     use crate::contract::sv::mt::CodeId;
     use crate::contract::{GenericsForwardedContract, SvCustomMsg, SvCustomQuery};
-    use cw_multi_test::IntoBech32;
     use generic::sv::mt::GenericProxy;
+    use sylvia::cw_multi_test::{BasicApp, IntoBech32};
     use sylvia::cw_std::CosmosMsg;
     use sylvia::multitest::App;
 
     #[test]
     fn proxy_methods() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        let app = App::<BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         #[allow(clippy::type_complexity)]
         let code_id: CodeId<
             GenericsForwardedContract<

@@ -2,8 +2,8 @@ use cw20_allowances::responses::{
     AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo, AllowanceResponse,
     SpenderAllowanceInfo,
 };
-use cw_multi_test::{next_block, IntoBech32};
 use cw_utils::Expiration;
+use sylvia::cw_multi_test::{next_block, IntoBech32};
 use sylvia::cw_std::{Binary, StdError, Timestamp, Uint128};
 use sylvia::multitest::App;
 

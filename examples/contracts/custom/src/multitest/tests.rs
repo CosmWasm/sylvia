@@ -1,10 +1,8 @@
-use cw_multi_test::IntoBech32;
+use sylvia::cw_multi_test::{BasicAppBuilder, IntoBech32};
 use sylvia::multitest::App;
 
-use crate::contract::sv::mt::CodeId;
-
 use super::custom_module::CustomModule;
-
+use crate::contract::sv::mt::CodeId;
 use crate::contract::sv::mt::CustomContractProxy;
 
 use cw1::sv::mt::Cw1Proxy;
@@ -14,7 +12,7 @@ use sylvia::cw_std::CosmosMsg;
 fn test_custom() {
     let owner = "owner".into_bech32();
 
-    let mt_app = cw_multi_test::BasicAppBuilder::new_custom()
+    let mt_app = BasicAppBuilder::new_custom()
         .with_custom(CustomModule::default())
         .build(|router, _, storage| {
             router.custom.save_counter(storage, 0).unwrap();

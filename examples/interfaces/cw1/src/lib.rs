@@ -1,11 +1,12 @@
-use serde::{Deserialize, Serialize};
 use sylvia::cw_std::{CosmosMsg, Response, StdError, StdResult};
+use sylvia::serde::{Deserialize, Serialize};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
 use sylvia::{interface, schemars};
 
 #[derive(
     Serialize, Deserialize, Clone, PartialEq, Eq, sylvia::schemars::JsonSchema, Debug, Default,
 )]
+#[serde(crate = "sylvia::serde")]
 pub struct CanExecuteResp {
     pub can_execute: bool,
 }
