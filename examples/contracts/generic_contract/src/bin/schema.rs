@@ -1,6 +1,5 @@
 use sylvia::cw_schema::write_api;
 
-#[cfg(not(tarpaulin_include))]
 fn main() {
     use generic_contract::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
     use generic_contract::contract::SvCustomMsg;

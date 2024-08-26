@@ -1,5 +1,5 @@
 use cw20_minting::responses::MinterResponse;
-use cw_multi_test::IntoBech32;
+use sylvia::cw_multi_test::IntoBech32;
 use sylvia::cw_std::{Addr, StdError, Uint128};
 use sylvia::multitest::App;
 

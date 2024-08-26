@@ -107,12 +107,12 @@ mod tests {
     use super::{GenericContract, SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::CodeId;
     use custom_and_generic::sv::mt::CustomAndGenericProxy;
-    use cw_multi_test::IntoBech32;
+    use sylvia::cw_multi_test::{BasicApp, IntoBech32};
     use sylvia::multitest::App;
 
     #[test]
     fn proxy_methods() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        let app = App::<BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         let code_id = CodeId::<
             GenericContract<
                 SvCustomMsg,

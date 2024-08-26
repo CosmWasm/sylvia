@@ -1,11 +1,11 @@
 use crate::error::ContractError;
 use cw_storage_plus::Item;
-use serde::Deserialize;
+use sylvia::contract;
 use sylvia::cw_std::{Reply, Response};
+use sylvia::serde::Deserialize;
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
 };
-use sylvia::{contract, schemars};
 
 #[sylvia::cw_schema::cw_serde(crate = "sylvia::cw_schema")]
 pub struct SvCustomMsg;
@@ -206,12 +206,12 @@ mod tests {
     use super::sv::mt::CodeId;
     use super::{GenericsForwardedContract, SvCustomMsg, SvCustomQuery};
     use crate::contract::sv::mt::GenericsForwardedContractProxy;
-    use cw_multi_test::IntoBech32;
+    use sylvia::cw_multi_test::{BasicApp, IntoBech32};
     use sylvia::multitest::App;
 
     #[test]
     fn generic_contract() {
-        let app = App::<cw_multi_test::BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
+        let app = App::<BasicApp<SvCustomMsg, SvCustomQuery>>::custom(|_, _, _| {});
         #[allow(clippy::type_complexity)]
         let code_id: CodeId<
             GenericsForwardedContract<

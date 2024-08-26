@@ -1,6 +1,6 @@
+use sylvia::contract;
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;
-use sylvia::{contract, schemars};
 
 use super::receiver;
 pub struct ReceiverContract {}

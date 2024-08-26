@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{Addr, Binary};
 use sylvia::schemars;
+use sylvia::serde::{Deserialize, Serialize};
 
 /// This is used to display logo info, provide a link or inform there is one
 /// that can be downloaded from the blockchain itself
@@ -14,6 +14,7 @@ pub enum LogoInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, schemars::JsonSchema, Debug, Default)]
+#[serde(crate = "sylvia::serde")]
 pub struct MarketingInfoResponse {
     /// A URL pointing to the project behind this token.
     pub project: Option<String>,

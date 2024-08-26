@@ -1,6 +1,5 @@
 use sylvia::cw_schema::write_api;
 
-#[cfg(not(tarpaulin_include))]
 fn main() {
     use generics_forwarded::contract::sv::{ContractExecMsg, ContractQueryMsg, InstantiateMsg};
     use generics_forwarded::contract::{SvCustomMsg, SvCustomQuery};

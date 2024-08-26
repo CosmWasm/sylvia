@@ -1,7 +1,7 @@
 use cw_storage_plus::Item;
+use sylvia::contract;
 use sylvia::cw_std::{CosmosMsg, QueryRequest, Response, StdResult};
 use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
-use sylvia::{contract, schemars};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;

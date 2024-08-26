@@ -157,16 +157,19 @@ impl MsgType {
         let sylvia = crate_module();
         let cw_schema = quote! { #sylvia:: cw_schema }.to_string();
         let schemars = quote! { #sylvia:: cw_schema::schemars }.to_string();
+        let serde = quote! { #sylvia:: serde }.to_string();
 
         match self {
             MsgType::Query => quote! {
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema, #sylvia:: cw_schema::QueryResponses)]
                 #[schemars(crate = #schemars )]
                 #[query_responses(crate = #cw_schema )]
+                #[serde(crate = #serde )]
             },
             _ => quote! {
                 #[derive(#sylvia ::serde::Serialize, #sylvia ::serde::Deserialize, Clone, Debug, PartialEq, #sylvia ::schemars::JsonSchema)]
                 #[schemars(crate = #schemars )]
+                #[serde(crate = #serde )]
             },
         }
     }
