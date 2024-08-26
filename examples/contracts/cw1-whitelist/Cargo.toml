@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-mt = ["sylvia/mt", "library", "anyhow"]
+mt = ["sylvia/mt", "library"]
 
 [dependencies]
 sylvia = { path = "../../../sylvia" }
@@ -22,9 +22,7 @@ whitelist = { path = "../../interfaces/whitelist" }
 cw-storage-plus = { workspace = true }
 thiserror = { workspace = true }
 cw2 = { workspace = true }
-anyhow = { workspace = true, optional = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 assert_matches = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }

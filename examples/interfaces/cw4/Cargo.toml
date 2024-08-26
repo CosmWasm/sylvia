@@ -15,5 +15,4 @@ mt = ["sylvia/mt"]
 sylvia = { path = "../../../sylvia" }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }

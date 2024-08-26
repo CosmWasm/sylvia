@@ -405,8 +405,6 @@ dependencies = [
 name = "custom"
 version = "0.5.0"
 dependencies = [
- "anyhow",
- "cw-multi-test",
  "cw-storage-plus",
  "cw1",
  "sylvia",
@@ -416,7 +414,6 @@ dependencies = [
 name = "custom-and-generic"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -468,7 +465,6 @@ dependencies = [
 name = "cw1"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -476,7 +472,6 @@ dependencies = [
 name = "cw1-subkeys"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "cw-storage-plus",
  "cw-utils",
  "cw1",
@@ -491,7 +486,6 @@ dependencies = [
 name = "cw1-whitelist"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "assert_matches",
  "cw-storage-plus",
  "cw1",
@@ -520,7 +514,6 @@ dependencies = [
 name = "cw20-allowances"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "cw-utils",
  "sylvia",
 ]
@@ -529,7 +522,6 @@ dependencies = [
 name = "cw20-base"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "assert_matches",
  "cw-storage-plus",
  "cw-utils",
@@ -546,7 +538,6 @@ dependencies = [
 name = "cw20-marketing"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -554,7 +545,6 @@ dependencies = [
 name = "cw20-minting"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -562,7 +552,6 @@ dependencies = [
 name = "cw4"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -691,8 +680,6 @@ dependencies = [
 name = "entry-points-overriding"
 version = "0.5.0"
 dependencies = [
- "anyhow",
- "cw-multi-test",
  "cw-storage-plus",
  "cw-utils",
  "sylvia",
@@ -724,7 +711,6 @@ checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
 name = "generic"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
@@ -743,7 +729,6 @@ dependencies = [
 name = "generic_contract"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "custom-and-generic",
  "cw-storage-plus",
  "cw-utils",
@@ -756,7 +741,6 @@ dependencies = [
 name = "generic_iface_on_contract"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "custom-and-generic",
  "cw-storage-plus",
  "cw-utils",
@@ -769,7 +753,6 @@ dependencies = [
 name = "generics_forwarded"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "custom-and-generic",
  "cw-storage-plus",
  "cw-utils",
@@ -1418,7 +1401,6 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 name = "whitelist"
 version = "0.5.0"
 dependencies = [
- "anyhow",
  "sylvia",
 ]
 
