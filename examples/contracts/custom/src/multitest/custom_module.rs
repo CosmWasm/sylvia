@@ -1,5 +1,6 @@
 use cw_storage_plus::Item;
 use std::fmt::Debug;
+use sylvia::anyhow::Result as AnyResult;
 use sylvia::cw_multi_test::{AppResponse, CosmosRouter, Module};
 use sylvia::cw_schema::schemars::JsonSchema;
 use sylvia::cw_std::{
@@ -41,7 +42,7 @@ impl Module for CustomModule {
         _block: &BlockInfo,
         _sender: Addr,
         msg: Self::ExecT,
-    ) -> anyhow::Result<AppResponse>
+    ) -> AnyResult<AppResponse>
     where
         ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
         QueryC: CustomQuery + DeserializeOwned + 'static,
@@ -62,7 +63,7 @@ impl Module for CustomModule {
         _router: &dyn CosmosRouter<ExecC = ExecC, QueryC = QueryC>,
         _block: &BlockInfo,
         _msg: Self::SudoT,
-    ) -> anyhow::Result<AppResponse>
+    ) -> AnyResult<AppResponse>
     where
         ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
         QueryC: CustomQuery + DeserializeOwned + 'static,
@@ -77,7 +78,7 @@ impl Module for CustomModule {
         _querier: &dyn Querier,
         _block: &BlockInfo,
         request: Self::QueryT,
-    ) -> anyhow::Result<Binary> {
+    ) -> AnyResult<Binary> {
         match request {
             CounterQuery::Count {} => {
                 let count = self.counter.load(storage)?;

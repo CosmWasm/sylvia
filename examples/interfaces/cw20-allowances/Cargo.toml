@@ -16,5 +16,4 @@ sylvia = { path = "../../../sylvia" }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }

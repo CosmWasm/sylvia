@@ -13,10 +13,9 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 library = []
-mt = ["library", "sylvia/mt", "anyhow"]
+mt = ["library", "sylvia/mt"]
 
 [dependencies]
-anyhow = { workspace = true, optional = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
@@ -28,7 +27,6 @@ sylvia = { path = "../../../sylvia" }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 assert_matches = { workspace = true }
 cw-utils = { workspace = true }
 sylvia = { path = "../../../sylvia", features = ["mt"] }
