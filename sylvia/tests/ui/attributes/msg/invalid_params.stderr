@@ -1,0 +1,5 @@
+error: Invalid argument type, expected `resp`, `handlers`, `reply_on` or no argument.
+  --> tests/ui/attributes/msg/invalid_params.rs:19:22
+   |
+19 |     #[sv::msg(reply, unknown_parameter)]
+   |                      ^^^^^^^^^^^^^^^^^
