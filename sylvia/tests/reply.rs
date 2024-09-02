@@ -44,3 +44,31 @@ impl Contract {
         Ok(Response::new())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use itertools::Itertools;
+
+    #[test]
+    fn reply_id_generation() {
+        // Assert IDs uniqueness
+        let unique_ids_count = [
+            super::sv::CLEAN_REPLY_ID,
+            super::sv::HANDLER_ONE_REPLY_ID,
+            super::sv::HANDLER_TWO_REPLY_ID,
+            super::sv::REPLY_ON_REPLY_ID,
+            super::sv::REPLY_ON_ALWAYS_REPLY_ID,
+        ]
+        .iter()
+        .unique()
+        .count();
+
+        assert_eq!(unique_ids_count, 5);
+
+        assert_eq!(super::sv::CLEAN_REPLY_ID, 0);
+        assert_eq!(super::sv::HANDLER_ONE_REPLY_ID, 1);
+        assert_eq!(super::sv::HANDLER_TWO_REPLY_ID, 2);
+        assert_eq!(super::sv::REPLY_ON_REPLY_ID, 3);
+        assert_eq!(super::sv::REPLY_ON_ALWAYS_REPLY_ID, 4);
+    }
+}

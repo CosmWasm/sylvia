@@ -170,6 +170,10 @@ impl<'a> MsgVariant<'a> {
         self.msg_attr.msg_type()
     }
 
+    pub fn msg_attr(&self) -> &MsgAttr {
+        &self.msg_attr
+    }
+
     pub fn return_type(&self) -> &Option<Type> {
         &self.return_type
     }
