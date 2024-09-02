@@ -2,7 +2,8 @@ use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::fold::Fold;
-use syn::{parse_quote, GenericParam, Ident, Type};
+use syn::parse::Error;
+use syn::{parse_quote, GenericParam, Ident, Result, Type};
 
 use crate::crate_module;
 use crate::fold::StripSelfPath;
@@ -10,6 +11,21 @@ use crate::parser::attributes::msg::MsgType;
 use crate::parser::Customs;
 
 impl MsgType {
+    pub fn new(msg_type: &Ident) -> Result<Self> {
+        match msg_type.to_string().as_str() {
+            "exec" => Ok(Self::Exec),
+            "query" => Ok(Self::Query ),
+            "instantiate" => Ok(Self::Instantiate),
+            "migrate" => Ok(Self::Migrate),
+            "reply" => Ok(Self::Reply ),
+            "sudo" => Ok(Self::Sudo),
+            _ => return Err(Error::new(
+                msg_type.span(),
+                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`, `reply` or `sudo`.",
+            ))
+        }
+    }
+
     pub fn emit_ctx_type(self, query_type: &Type) -> TokenStream {
         use MsgType::*;
 
