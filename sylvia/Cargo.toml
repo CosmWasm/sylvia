@@ -60,6 +60,7 @@ cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }
 trybuild = "1.0.91"
+itertools = "0.13.0"
 
 [package.metadata.docs.rs]
 all-features = true

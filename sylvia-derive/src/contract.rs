@@ -2,6 +2,7 @@ use communication::api::Api;
 use communication::enum_msg::EnumMessage;
 use communication::executor::Executor;
 use communication::querier::Querier;
+use communication::reply::Reply;
 use communication::struct_msg::StructMessage;
 use communication::wrapper_msg::GlueMessage;
 use mt::MtHelpers;
@@ -76,23 +77,11 @@ impl<'a> ContractInput<'a> {
             ..
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
-
-        let executor_variants = MsgVariants::new(item.as_variants(), MsgType::Exec, &[], &None);
-        let querier_variants = MsgVariants::new(item.as_variants(), MsgType::Query, &[], &None);
-        let executor = Executor::new(
-            item.generics.clone(),
-            *item.self_ty.clone(),
-            executor_variants,
-        )
-        .emit();
-        let querier = Querier::new(
-            item.generics.clone(),
-            *item.self_ty.clone(),
-            querier_variants,
-        )
-        .emit();
         let messages = self.emit_messages();
         let contract_api = Api::new(item, generics, custom).emit();
+        let querier = self.emit_querier();
+        let executor = self.emit_executor();
+        let reply = self.emit_reply();
 
         quote! {
             pub mod sv {
@@ -105,6 +94,8 @@ impl<'a> ContractInput<'a> {
                 #querier
 
                 #executor
+
+                #reply
 
                 #contract_api
             }
@@ -174,5 +165,24 @@ impl<'a> ContractInput<'a> {
 
         let generic_params = &self.generics;
         MtHelpers::new(item, generic_params, custom, override_entry_points.clone()).emit()
+    }
+
+    fn emit_executor(&self) -> TokenStream {
+        let item = self.item;
+        let variants = MsgVariants::new(item.as_variants(), MsgType::Exec, &[], &None);
+
+        Executor::new(item.generics.clone(), *item.self_ty.clone(), variants).emit()
+    }
+    fn emit_querier(&self) -> TokenStream {
+        let item = self.item;
+        let variants = MsgVariants::new(item.as_variants(), MsgType::Query, &[], &None);
+
+        Querier::new(item.generics.clone(), *item.self_ty.clone(), variants).emit()
+    }
+
+    fn emit_reply(&self) -> TokenStream {
+        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
+
+        Reply::new(&variants).emit()
     }
 }

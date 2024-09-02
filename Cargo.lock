@@ -1115,6 +1115,7 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "derivative",
+ "itertools 0.13.0",
  "konst",
  "schemars",
  "serde",

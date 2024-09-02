@@ -95,7 +95,7 @@ impl ReplyOn {
 pub struct MsgAttr {
     msg_type: MsgType,
     query_resp_type: Option<Ident>,
-    _reply_handlers: Vec<Ident>,
+    reply_handlers: Vec<Ident>,
     _reply_on: ReplyOn,
 }
 
@@ -113,6 +113,10 @@ impl MsgAttr {
 
     pub fn resp_type(&self) -> &Option<Ident> {
         &self.query_resp_type
+    }
+
+    pub fn handlers(&self) -> &[Ident] {
+        &self.reply_handlers
     }
 }
 
@@ -135,7 +139,7 @@ impl Parse for MsgAttr {
         Ok(Self {
             msg_type,
             query_resp_type,
-            _reply_handlers: reply_handlers,
+            reply_handlers,
             _reply_on: reply_on.unwrap_or_default(),
         })
     }
