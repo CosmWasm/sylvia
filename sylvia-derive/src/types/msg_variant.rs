@@ -23,7 +23,7 @@ pub struct MsgVariant<'a> {
     /// Type extracted only in case of `Query` and used in `cosmwasm_schema::QueryResponses`
     /// `returns` attribute.
     return_type: Option<Type>,
-    msg_type: MsgType,
+    msg_attr: MsgAttr,
     attrs_to_forward: Vec<VariantAttrForwarding>,
 }
 
@@ -42,7 +42,6 @@ impl<'a> MsgVariant<'a> {
 
         let name = function_name.to_case(Case::UpperCamel);
         let fields = process_fields(sig, generics_checker);
-        let msg_type = msg_attr.msg_type();
 
         let return_type = if msg_attr.msg_type() == MsgType::Query {
             let resp_type = &msg_attr.resp_type();
@@ -68,7 +67,7 @@ impl<'a> MsgVariant<'a> {
             function_name,
             fields,
             return_type,
-            msg_type,
+            msg_attr,
             attrs_to_forward,
         }
     }
@@ -78,13 +77,13 @@ impl<'a> MsgVariant<'a> {
         let Self {
             name,
             fields,
-            msg_type,
+            msg_attr,
             return_type,
             attrs_to_forward,
             ..
         } = self;
         let fields = fields.iter().map(MsgField::emit);
-        let returns_attribute = msg_type.emit_returns_attribute(return_type);
+        let returns_attribute = msg_attr.msg_type().emit_returns_attribute(return_type);
         let attrs_to_forward = attrs_to_forward.iter().map(|attr| &attr.attrs);
 
         quote! {
@@ -104,7 +103,7 @@ impl<'a> MsgVariant<'a> {
             name,
             fields,
             function_name,
-            msg_type,
+            msg_attr,
             ..
         } = self;
 
@@ -120,7 +119,7 @@ impl<'a> MsgVariant<'a> {
             .zip(args.clone())
             .map(|(field, num_field)| quote!(#field : #num_field));
 
-        let method_call = msg_type.emit_dispatch_leg(function_name, &args);
+        let method_call = msg_attr.msg_type().emit_dispatch_leg(function_name, &args);
 
         quote! {
             #name {
@@ -167,8 +166,8 @@ impl<'a> MsgVariant<'a> {
         &self.fields
     }
 
-    pub fn msg_type(&self) -> &MsgType {
-        &self.msg_type
+    pub fn msg_type(&self) -> MsgType {
+        self.msg_attr.msg_type()
     }
 
     pub fn return_type(&self) -> &Option<Type> {

@@ -19,7 +19,7 @@ impl MsgType {
             "migrate" => Ok(Self::Migrate),
             "reply" => Ok(Self::Reply ),
             "sudo" => Ok(Self::Sudo),
-            _ => return Err(Error::new(
+            _ => Err(Error::new(
                 msg_type.span(),
                 "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`, `reply` or `sudo`.",
             ))
