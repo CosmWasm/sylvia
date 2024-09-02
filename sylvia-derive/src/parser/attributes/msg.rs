@@ -2,7 +2,8 @@ use proc_macro_error::emit_error;
 use syn::parse::{Error, Parse, ParseStream, Parser};
 use syn::{bracketed, Ident, MetaList, Result, Token};
 
-/// Type of message to be generated
+/// Supported message types.
+/// Representation of the first parameter in `#[sv::msg(..)] attribute.
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum MsgType {
     Exec,
@@ -16,7 +17,7 @@ pub enum MsgType {
 /// ArgumentParser holds `resp` parameter parsed from `sv::msg` attribute.
 #[derive(Default)]
 struct ArgumentParser {
-    pub resp_type: Option<Ident>,
+    pub query_resp_type: Option<Ident>,
     pub reply_handlers: Vec<Ident>,
     pub reply_on: Option<ReplyOn>,
 }
@@ -32,7 +33,7 @@ impl Parse for ArgumentParser {
                 "resp" => {
                     let _: Token![=] = input.parse()?;
                     let resp_type: Ident = input.parse()?;
-                    result.resp_type = Some(resp_type);
+                    result.query_resp_type = Some(resp_type);
                 }
                 "handlers" => {
                     let _: Token![=] = input.parse()?;
@@ -91,18 +92,11 @@ impl ReplyOn {
 
 /// Parsed representation of `#[sv::msg(...)]` attribute.
 #[derive(Clone)]
-pub enum MsgAttr {
-    Exec,
-    Query {
-        resp_type: Option<Ident>,
-    },
-    Instantiate,
-    Migrate,
-    Reply {
-        _handlers: Vec<Ident>,
-        _reply_on: ReplyOn,
-    },
-    Sudo,
+pub struct MsgAttr {
+    msg_type: MsgType,
+    query_resp_type: Option<Ident>,
+    _reply_handlers: Vec<Ident>,
+    _reply_on: ReplyOn,
 }
 
 impl MsgAttr {
@@ -112,6 +106,14 @@ impl MsgAttr {
             err
         })
     }
+
+    pub fn msg_type(&self) -> MsgType {
+        self.msg_type
+    }
+
+    pub fn resp_type(&self) -> &Option<Ident> {
+        &self.query_resp_type
+    }
 }
 
 impl PartialEq<MsgType> for MsgAttr {
@@ -120,40 +122,21 @@ impl PartialEq<MsgType> for MsgAttr {
     }
 }
 
-impl MsgAttr {
-    pub fn msg_type(&self) -> MsgType {
-        match self {
-            Self::Exec { .. } => MsgType::Exec,
-            Self::Query { .. } => MsgType::Query,
-            Self::Instantiate { .. } => MsgType::Instantiate,
-            Self::Migrate { .. } => MsgType::Migrate,
-            Self::Reply { .. } => MsgType::Reply,
-            Self::Sudo { .. } => MsgType::Sudo,
-        }
-    }
-}
-
 impl Parse for MsgAttr {
     fn parse(input: ParseStream) -> Result<Self> {
-        let ty: Ident = input.parse()?;
+        let msg_type: Ident = input.parse()?;
+        let msg_type = MsgType::new(&msg_type)?;
         let ArgumentParser {
-            resp_type,
+            query_resp_type,
             reply_handlers,
             reply_on,
         } = ArgumentParser::parse(input)?;
 
-        let result = match ty.to_string().as_str() {
-            "exec" => Self::Exec,
-            "query" => Self::Query { resp_type },
-            "instantiate" => Self::Instantiate,
-            "migrate" => Self::Migrate,
-            "reply" => Self::Reply {_handlers: reply_handlers, _reply_on: reply_on.unwrap_or_default()},
-            "sudo" => Self::Sudo,
-            _ => return Err(Error::new(
-                input.span(),
-                "Invalid message type, expected one of: `exec`, `query`, `instantiate`, `migrate`, `reply` or `sudo`.",
-            ))
-        };
-        Ok(result)
+        Ok(Self {
+            msg_type,
+            query_resp_type,
+            _reply_handlers: reply_handlers,
+            _reply_on: reply_on.unwrap_or_default(),
+        })
     }
 }

@@ -81,12 +81,13 @@ impl ParsedSylviaAttributes {
         }
 
         if let Some(attr) = result.variant_attrs_forward.first() {
-            if let Some(MsgAttr::Instantiate) = result.msg_attr {
+            let msg_type = result.msg_attr.as_ref().map(MsgAttr::msg_type);
+            if let Some(MsgType::Instantiate) = msg_type {
                 emit_error!(
                     attr.span, "The attribute `sv::attr` is not supported for `instantiate`";
                     note = "Message `instantiate` is a structure, use `#[sv::msg_attr] instead`";
                 );
-            } else if let Some(MsgAttr::Migrate) = result.msg_attr {
+            } else if let Some(MsgType::Migrate) = msg_type {
                 emit_error!(
                     attr.span, "The attribute `sv::attr` is not supported for `migrate`";
                     note = "Message `migrate` is a structure, use `#[sv::msg_attr] instead`";
