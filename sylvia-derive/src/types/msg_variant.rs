@@ -44,7 +44,8 @@ impl<'a> MsgVariant<'a> {
         let fields = process_fields(sig, generics_checker);
         let msg_type = msg_attr.msg_type();
 
-        let return_type = if let MsgAttr::Query { resp_type, .. } = msg_attr {
+        let return_type = if msg_attr.msg_type() == MsgType::Query {
+            let resp_type = &msg_attr.resp_type();
             match resp_type {
                 Some(resp_type) => {
                     let resp_type = parse_quote! { #resp_type };
