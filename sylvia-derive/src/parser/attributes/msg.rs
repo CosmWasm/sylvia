@@ -68,7 +68,7 @@ impl Parse for ArgumentParser {
 }
 
 /// Representation of `reply_on` parameter in `#[sv::msg(reply(...))]` attribute.
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub enum ReplyOn {
     Success,
     Failure,
@@ -91,7 +91,7 @@ impl ReplyOn {
 }
 
 /// Parsed representation of `#[sv::msg(...)]` attribute.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MsgAttr {
     msg_type: MsgType,
     query_resp_type: Option<Ident>,
