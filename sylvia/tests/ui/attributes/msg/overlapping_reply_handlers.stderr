@@ -1,0 +1,17 @@
+error: Duplicated reply handler.
+
+         = note: Previous definition of handler=HANDLER_1_REPLY_ID for reply_on=always
+
+  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:26:31
+   |
+26 |     #[sv::msg(reply, handlers(handler1), reply_on=success)]
+   |                               ^^^^^^^^
+
+error: Duplicated reply handler.
+
+         = note: Previous definition of handler=HANDLER_2_REPLY_ID for reply_on=failure
+
+  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:41:8
+   |
+41 |     fn handler2(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
+   |        ^^^^^^^^

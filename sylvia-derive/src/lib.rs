@@ -264,7 +264,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// ## Example usage
 /// ```rust
 /// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
-/// # use sylvia::cw_std::{Response, StdError, Reply};
+/// # use sylvia::cw_std::{Binary, Response, StdError, SubMsgResult};
 /// # use cw_storage_plus::Item;
 /// # use thiserror::Error;
 /// #
@@ -310,7 +310,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///     }
 ///
 ///     #[sv::msg(reply)]
-///     fn reply(&self, ctx: ReplyCtx, reply: Reply) -> Result<Response, ContractError> {
+///     fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, payload: Binary) -> Result<Response, ContractError> {
 /// #        Ok(Response::new())
 ///     }
 ///
@@ -326,7 +326,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ```rust
 /// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
-/// # use sylvia::cw_std::{Response, StdError};
+/// # use sylvia::cw_std::{Binary, Response, StdError, SubMsgResult};
 /// # use cw_storage_plus::Item;
 /// # use thiserror::Error;
 /// #
@@ -655,7 +655,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// ## Example usage
 /// ```rust
 /// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
-/// # use sylvia::cw_std::{Reply, Response, StdResult};
+/// # use sylvia::cw_std::{Binary, Reply, Response, StdResult, SubMsgResult};
 /// #
 /// pub struct SvContract;
 ///
@@ -687,7 +687,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// #    }
 /// #
 /// #    #[sv::msg(reply)]
-/// #    fn reply(&self, ctx: ReplyCtx, reply: Reply) -> StdResult<Response> {
+/// #    fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, payload: Binary) -> StdResult<Response> {
 /// #        Ok(Response::new())
 /// #    }
 /// #

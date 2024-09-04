@@ -16,7 +16,7 @@ library = []
 mt = ["sylvia/mt", "library"]
 
 [dependencies]
-sylvia = { path = "../../../sylvia" }
+sylvia = { workspace = true }
 cw1 = { path = "../../interfaces/cw1" }
 whitelist = { path = "../../interfaces/whitelist" }
 cw-storage-plus = { workspace = true }
@@ -25,4 +25,4 @@ cw2 = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
-sylvia = { path = "../../../sylvia", features = ["mt"] }
+sylvia = { workspace = true, features = ["mt"] }

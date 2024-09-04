@@ -1,6 +1,6 @@
 use cw_storage_plus::Item;
 use sylvia::contract;
-use sylvia::cw_std::{Reply, Response, StdResult};
+use sylvia::cw_std::{Binary, Response, StdResult, SubMsgResult};
 use sylvia::serde::Deserialize;
 use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
 
@@ -185,7 +185,8 @@ where
     fn reply(
         &self,
         _ctx: ReplyCtx<SvCustomQuery>,
-        _reply: Reply,
+        _result: SubMsgResult,
+        _payload: Binary,
     ) -> StdResult<Response<SvCustomMsg>> {
         Ok(Response::new())
     }

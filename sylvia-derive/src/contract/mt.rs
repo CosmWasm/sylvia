@@ -531,10 +531,24 @@ impl<'a> MtHelpers<'a> {
             None => reply_variants
                 .get_only_variant()
                 .as_ref()
-                .map(|reply| {
-                    let reply_name = reply.name().to_case(Case::Snake);
-                    quote! {
-                        self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
+                .map(|_reply| {
+                    let contract_ident = get_ident_from_type(contract_name);
+                    let contract_turbo = if !generic_params.is_empty() {
+                        quote! { #contract_ident ::< #(#generic_params,)* > }
+                    } else {
+                        quote! { #contract_ident }
+                    };
+
+                    if cfg!(feature = "sv_replies") {
+                        quote! {
+                            let contract = #contract_turbo ::new();
+                            dispatch_reply(deps, env, msg, contract).map_err(Into::into)
+                        }
+                    } else {
+                        let reply_name = _reply.name().to_case(Case::Snake);
+                        quote! {
+                            self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
+                        }
                     }
                 })
                 .unwrap_or_else(|| {

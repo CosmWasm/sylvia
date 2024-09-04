@@ -201,6 +201,10 @@ impl<'a> EntryPoints<'a> {
             _ => quote! { msg: < #contract as #sylvia ::types::ContractApi> :: #associated_name },
         };
         let dispatch = match msg_ty {
+            MsgType::Reply if cfg!(feature = "sv_replies") => quote! {
+                let contract = #contract_turbo ::new();
+                sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
+            },
             MsgType::Reply => quote! {
                 #contract_turbo ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
             },

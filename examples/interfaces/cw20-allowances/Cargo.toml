@@ -12,8 +12,8 @@ homepage = "https://cosmwasm.com"
 mt = ["sylvia/mt"]
 
 [dependencies]
-sylvia = { path = "../../../sylvia" }
+sylvia = { workspace = true }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
-sylvia = { path = "../../../sylvia", features = ["mt"] }
+sylvia = { workspace = true, features = ["mt"] }

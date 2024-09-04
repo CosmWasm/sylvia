@@ -74,11 +74,12 @@ impl<'a> ContractInput<'a> {
             item,
             generics,
             custom,
+            error,
             ..
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
         let messages = self.emit_messages();
-        let contract_api = Api::new(item, generics, custom).emit();
+        let contract_api = Api::new(item, generics, custom, error).emit();
         let querier = self.emit_querier();
         let executor = self.emit_executor();
         let reply = self.emit_reply();
@@ -181,8 +182,12 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_reply(&self) -> TokenStream {
-        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
+        if cfg!(feature = "sv_replies") {
+            let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
 
-        Reply::new(&variants).emit()
+            Reply::new(self.item, &self.generics, &variants).emit()
+        } else {
+            quote! {}
+        }
     }
 }

@@ -1,3 +1,5 @@
+#![cfg(not(feature = "sv_replies"))]
+
 #[cfg(all(test, feature = "mt"))]
 use cw_multi_test::IntoBech32;
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
@@ -32,10 +34,11 @@ mod noop_contract {
 }
 
 mod reply_contract {
+    use cosmwasm_std::{Binary, Reply, SubMsgResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, ReplyCtx};
     use sylvia::{contract, entry_points};
 
-    use sylvia::cw_std::{to_json_binary, Reply, Response, StdResult, SubMsg, WasmMsg};
+    use sylvia::cw_std::{to_json_binary, Response, StdResult, SubMsg, WasmMsg};
 
     use super::noop_contract;
 
@@ -69,7 +72,7 @@ mod reply_contract {
         }
 
         #[sv::msg(reply)]
-        fn reply(&self, _ctx: ReplyCtx, _msg: Reply) -> StdResult<Response> {
+        fn reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
             let resp = Response::new().set_data(to_json_binary("data")?);
             Ok(resp)
         }

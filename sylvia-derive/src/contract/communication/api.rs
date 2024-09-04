@@ -1,6 +1,6 @@
 use crate::crate_module;
 use crate::parser::variant_descs::AsVariantDescs;
-use crate::parser::{Custom, MsgType};
+use crate::parser::{ContractErrorAttr, Custom, MsgType};
 use crate::types::msg_variant::MsgVariants;
 use crate::utils::emit_bracketed_generics;
 use proc_macro2::TokenStream;
@@ -16,10 +16,16 @@ pub struct Api<'a> {
     sudo_variants: MsgVariants<'a, GenericParam>,
     generics: &'a [&'a GenericParam],
     custom: &'a Custom,
+    error: &'a ContractErrorAttr,
 }
 
 impl<'a> Api<'a> {
-    pub fn new(source: &'a ItemImpl, generics: &'a [&'a GenericParam], custom: &'a Custom) -> Self {
+    pub fn new(
+        source: &'a ItemImpl,
+        generics: &'a [&'a GenericParam],
+        custom: &'a Custom,
+        error: &'a ContractErrorAttr,
+    ) -> Self {
         let exec_variants = MsgVariants::new(
             source.as_variants(),
             MsgType::Exec,
@@ -64,6 +70,7 @@ impl<'a> Api<'a> {
             sudo_variants,
             generics,
             custom,
+            error,
         }
     }
 
@@ -78,7 +85,7 @@ impl<'a> Api<'a> {
             sudo_variants,
             generics,
             custom,
-            ..
+            error,
         } = self;
 
         let where_clause = &source.generics.where_clause;
@@ -103,6 +110,7 @@ impl<'a> Api<'a> {
         };
         let custom_msg = custom.msg_or_default();
         let custom_query = custom.query_or_default();
+        let error = &error.error;
 
         quote! {
             impl #bracket_generics #sylvia ::types::ContractApi for #contract_name #where_clause {
@@ -118,6 +126,7 @@ impl<'a> Api<'a> {
                 type Querier<'querier> = #sylvia ::types::BoundQuerier<'querier, #custom_query, Self >;
                 type CustomMsg = #custom_msg;
                 type CustomQuery = #custom_query;
+                type Error = #error;
             }
         }
     }
