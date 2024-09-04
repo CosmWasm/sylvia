@@ -1,7 +1,9 @@
+#![allow(clippy::type_complexity)]
+
 use crate::error::ContractError;
 use cw_storage_plus::Item;
 use sylvia::contract;
-use sylvia::cw_std::{Reply, Response};
+use sylvia::cw_std::{Binary, Response, SubMsgResult};
 use sylvia::serde::Deserialize;
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
@@ -32,7 +34,6 @@ pub struct GenericsForwardedContract<
     FieldT,
 > {
     _field: Item<FieldT>,
-    #[allow(clippy::type_complexity)]
     _phantom: std::marker::PhantomData<(
         InstantiateT,
         Exec1T,
@@ -195,7 +196,8 @@ where
     fn reply(
         &self,
         _ctx: ReplyCtx<CustomQueryT>,
-        _reply: Reply,
+        _result: SubMsgResult,
+        _payload: Binary,
     ) -> Result<Response<CustomMsgT>, ContractError> {
         Ok(Response::new())
     }

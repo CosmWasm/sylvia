@@ -23,13 +23,13 @@ cw20-allowances = { path = "../../interfaces/cw20-allowances" }
 cw20-marketing = { path = "../../interfaces/cw20-marketing" }
 cw20-minting = { path = "../../interfaces/cw20-minting" }
 semver = { workspace = true }
-sylvia = { path = "../../../sylvia" }
+sylvia = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
 cw-utils = { workspace = true }
-sylvia = { path = "../../../sylvia", features = ["mt"] }
+sylvia = { workspace = true, features = ["mt"] }
 cw20-allowances = { path = "../../interfaces/cw20-allowances", features = [
     "mt",
 ] }

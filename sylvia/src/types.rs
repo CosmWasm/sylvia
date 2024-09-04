@@ -1,5 +1,7 @@
 //! Module providing utilities to build and use sylvia contracts.
 use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
+#[cfg(feature = "sv_replies")]
+use cosmwasm_std::{Event, MsgResponse};
 use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -441,45 +443,50 @@ impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
     }
 }
 
-/// Represantation of `reply` context received in entry point as
-/// (DepsMut, Env) tuple.
+/// Represantation of `reply` context received in entry point.
+#[cfg(feature = "sv_replies")]
+pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
+    pub deps: DepsMut<'a, C>,
+    pub env: Env,
+    pub gas_used: u64,
+    pub events: Vec<Event>,
+    pub msg_responses: Vec<MsgResponse>,
+}
+
+/// Represantation of `reply` context received in entry point.
+#[cfg(not(feature = "sv_replies"))]
 pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
 }
 
-/// Represantation of `reply` context received in entry point as
-/// (DepsMut, Env) tuple.
+/// Represantation of `migrate` context received in entry point.
 pub struct MigrateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
 }
 
-/// Represantation of `reply` context received in entry point as
-/// (DepsMut, Env, MessageInfo) tuple.
+/// Represantation of `execute` context received in entry point.
 pub struct ExecCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
     pub info: MessageInfo,
 }
 
-/// Represantation of `instantiate` context received in entry point as
-/// (DepsMut, Env, MessageInfo) tuple.
+/// Represantation of `instantiate` context received in entry point.
 pub struct InstantiateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
     pub info: MessageInfo,
 }
 
-/// Represantation of `query` context received in entry point as
-/// (Deps, Env) tuple.
+/// Represantation of `query` context received in entry point.
 pub struct QueryCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: Deps<'a, C>,
     pub env: Env,
 }
 
-/// Represantation of `sudo` context received in entry point as
-/// (DepsMut, Env) tuple.
+/// Represantation of `sudo` context received in entry point.
 pub struct SudoCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
@@ -520,6 +527,30 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for MigrateCt
     }
 }
 
+#[cfg(feature = "sv_replies")]
+impl<'a, C: cosmwasm_std::CustomQuery>
+    From<(DepsMut<'a, C>, Env, u64, Vec<Event>, Vec<MsgResponse>)> for ReplyCtx<'a, C>
+{
+    fn from(
+        (deps, env, gas_used, events, msg_responses): (
+            DepsMut<'a, C>,
+            Env,
+            u64,
+            Vec<Event>,
+            Vec<MsgResponse>,
+        ),
+    ) -> Self {
+        Self {
+            deps,
+            env,
+            gas_used,
+            events,
+            msg_responses,
+        }
+    }
+}
+
+#[cfg(not(feature = "sv_replies"))]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for ReplyCtx<'a, C> {
     fn from((deps, env): (DepsMut<'a, C>, Env)) -> Self {
         Self { deps, env }
@@ -588,4 +619,5 @@ pub trait ContractApi {
     type Remote<'remote>;
     type CustomMsg: CustomMsg;
     type CustomQuery: CustomQuery;
+    type Error: From<cosmwasm_std::StdError>;
 }

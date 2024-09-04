@@ -14,6 +14,7 @@ readme = "../README.md"
 [features]
 mt = []
 cosmwasm_1_2 = []
+sv_replies = []
 
 [lib]
 proc-macro = true
@@ -42,6 +43,7 @@ sylvia = { path = "../sylvia", features = [
     "cosmwasm_1_2",
     "cosmwasm_1_3",
     "cosmwasm_1_4",
+    "sv_replies",
 ] }
 serde = { workspace = true }
 cosmwasm-schema = { workspace = true }
