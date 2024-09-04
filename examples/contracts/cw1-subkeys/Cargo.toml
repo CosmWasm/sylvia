@@ -17,10 +17,10 @@ cw1 = { path = "../../interfaces/cw1" }
 whitelist = { path = "../../interfaces/whitelist" }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["library"] }
 cw2 = { workspace = true }
-sylvia = { path = "../../../sylvia" }
+sylvia = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-sylvia = { path = "../../../sylvia", features = ["mt"] }
+sylvia = { workspace = true, features = ["mt"] }
 cw1-whitelist = { path = "../cw1-whitelist", features = ["mt"] }
 cw1 = { path = "../../interfaces/cw1", features = ["mt"] }

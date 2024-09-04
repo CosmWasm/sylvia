@@ -18,11 +18,11 @@ mt = ["library", "sylvia/mt"]
 [dependencies]
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
-sylvia = { path = "../../../sylvia" }
+sylvia = { workspace = true }
 generic = { path = "../../interfaces/generic" }
 custom-and-generic = { path = "../../interfaces/custom-and-generic/" }
 cw1 = { path = "../../interfaces/cw1/" }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-sylvia = { path = "../../../sylvia", features = ["mt"] }
+sylvia = { workspace = true, features = ["mt"] }

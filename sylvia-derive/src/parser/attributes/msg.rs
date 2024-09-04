@@ -68,12 +68,22 @@ impl Parse for ArgumentParser {
 }
 
 /// Representation of `reply_on` parameter in `#[sv::msg(reply(...))]` attribute.
-#[derive(Debug, Default, Clone)]
+#[derive(Copy, Debug, Default, Clone, PartialEq)]
 pub enum ReplyOn {
     Success,
     Failure,
     #[default]
     Always,
+}
+
+impl std::fmt::Display for ReplyOn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ReplyOn::Success => f.write_str("success"),
+            ReplyOn::Failure => f.write_str("failure"),
+            ReplyOn::Always => f.write_str("always"),
+        }
+    }
 }
 
 impl ReplyOn {
@@ -88,6 +98,15 @@ impl ReplyOn {
             )),
         }
     }
+
+    /// Checks if two [ReplyOn] values are unique and if [ReplyOn::Always] is not one of them as it is exclusive
+    /// and cannot be paired with any other value.
+    pub fn excludes(&self, other: &Self) -> bool {
+        let are_equal = self == other;
+        let is_any_always = self == &ReplyOn::Always || other == &ReplyOn::Always;
+
+        are_equal || is_any_always
+    }
 }
 
 /// Parsed representation of `#[sv::msg(...)]` attribute.
@@ -96,7 +115,7 @@ pub struct MsgAttr {
     msg_type: MsgType,
     query_resp_type: Option<Ident>,
     reply_handlers: Vec<Ident>,
-    _reply_on: ReplyOn,
+    reply_on: ReplyOn,
 }
 
 impl MsgAttr {
@@ -117,6 +136,10 @@ impl MsgAttr {
 
     pub fn handlers(&self) -> &[Ident] {
         &self.reply_handlers
+    }
+
+    pub fn reply_on(&self) -> ReplyOn {
+        self.reply_on
     }
 }
 
@@ -140,7 +163,7 @@ impl Parse for MsgAttr {
             msg_type,
             query_resp_type,
             reply_handlers,
-            _reply_on: reply_on.unwrap_or_default(),
+            reply_on: reply_on.unwrap_or_default(),
         })
     }
 }

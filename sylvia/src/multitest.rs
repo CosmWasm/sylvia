@@ -56,7 +56,7 @@ use std::marker::PhantomData;
 
 use cosmwasm_std::testing::MockApi;
 use cosmwasm_std::{
-    Addr, Api, BlockInfo, Coin, Empty, Querier, QuerierResult, QuerierWrapper, Storage,
+    Addr, Api, BlockInfo, Coin, Empty, Querier, QuerierResult, QuerierWrapper, StdError, Storage,
 };
 #[cfg(feature = "cosmwasm_1_2")]
 use cosmwasm_std::{CodeInfoResponse, StdResult};
@@ -267,7 +267,7 @@ where
 impl<'a, 'app, Error, Msg, MtApp, ExecC> ExecProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
-    Error: Debug + Display + Send + Sync + 'static,
+    Error: From<StdError> + Debug + Display + Send + Sync + 'static,
     ExecC: cosmwasm_std::CustomMsg + 'static,
     MtApp: Executor<ExecC>,
 {
@@ -297,7 +297,15 @@ where
                 &self.msg,
                 self.funds,
             )
-            .map_err(|err| err.downcast().unwrap())
+            .map_err(|err| {
+                if err.is::<Error>() {
+                    err.downcast::<Error>().unwrap()
+                } else if err.is::<StdError>() {
+                    err.downcast::<StdError>().unwrap().into()
+                } else {
+                    StdError::generic_err(err.to_string()).into()
+                }
+            })
     }
 }
 
