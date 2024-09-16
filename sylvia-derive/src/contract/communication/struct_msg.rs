@@ -96,20 +96,24 @@ impl<'a> StructMessage<'a> {
         let bracketed_unused_generics = emit_bracketed_generics(unused_generics);
 
         let ret_type = variant
+            .msg_attr()
             .msg_type()
             .emit_result_type(&custom.msg_or_default(), &error.error);
-        let name = variant.msg_type().emit_msg_name();
+        let name = variant.msg_attr().msg_type().emit_msg_name();
         let function_name = variant.function_name();
-        let mut msg_name = variant.msg_type().emit_msg_name();
+        let mut msg_name = variant.msg_attr().msg_type().emit_msg_name();
         msg_name.set_span(function_name.span());
 
-        let ctx_type = variant.msg_type().emit_ctx_type(&custom.query_or_default());
+        let ctx_type = variant
+            .msg_attr()
+            .msg_type()
+            .emit_ctx_type(&custom.query_or_default());
         let fields_names: Vec<_> = variant.fields().iter().map(MsgField::name).collect();
         let parameters = variant.fields().iter().map(MsgField::emit_method_field);
         let fields = variant.fields().iter().map(MsgField::emit_pub);
 
         let msg_attrs_to_forward = msg_attrs_to_forward.iter().map(|attr| &attr.attrs);
-        let derive_call = variant.msg_type().emit_derive_call();
+        let derive_call = variant.msg_attr().msg_type().emit_derive_call();
 
         quote! {
             #[allow(clippy::derive_partial_eq_without_eq)]
