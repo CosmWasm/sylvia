@@ -21,7 +21,7 @@ impl Contract {
     }
 
     #[allow(dead_code)]
-    #[sv::msg(reply, handlers(handler_one, handler_two))]
+    #[sv::msg(reply, handlers=[handler_one, handler_two])]
     fn custom_handlers(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -39,7 +39,7 @@ impl Contract {
     }
 
     #[allow(dead_code)]
-    #[sv::msg(reply, handlers(handler_one, handler_two), reply_on = failure)]
+    #[sv::msg(reply, handlers=[handler_one, handler_two], reply_on = failure)]
     fn both_parameters(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
         Ok(Response::new())
     }
