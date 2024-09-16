@@ -1,6 +1,6 @@
 use proc_macro_error::emit_error;
 use syn::parse::{Error, Parse, ParseStream, Parser};
-use syn::{parenthesized, Ident, MetaList, Result, Token};
+use syn::{bracketed, Ident, MetaList, Result, Token};
 
 /// Type of message to be generated
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -35,8 +35,9 @@ impl Parse for ArgumentParser {
                     result.resp_type = Some(resp_type);
                 }
                 "handlers" => {
+                    let _: Token![=] = input.parse()?;
                     let handlers_content;
-                    parenthesized!(handlers_content in input);
+                    bracketed!(handlers_content in input);
 
                     while !handlers_content.is_empty() {
                         let handler = handlers_content.parse::<Ident>()?;
