@@ -166,10 +166,6 @@ impl<'a> MsgVariant<'a> {
         &self.fields
     }
 
-    pub fn msg_type(&self) -> MsgType {
-        self.msg_attr.msg_type()
-    }
-
     pub fn msg_attr(&self) -> &MsgAttr {
         &self.msg_attr
     }

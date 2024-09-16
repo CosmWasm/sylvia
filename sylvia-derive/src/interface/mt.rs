@@ -199,10 +199,10 @@ impl EmitMethods for MsgVariant<'_> {
             .map(|field| field.emit_method_field_folded())
             .collect();
         let arguments = self.as_fields_names();
-        let type_name = self.msg_type().as_accessor_name();
+        let type_name = self.msg_attr().msg_type().as_accessor_name();
         let name = name.to_case(Case::Snake);
 
-        match self.msg_type() {
+        match self.msg_attr().msg_type() {
             MsgType::Exec => quote! {
                 #[track_caller]
                 fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api :: #type_name, #mt_app, #custom_msg> {
@@ -261,10 +261,10 @@ impl EmitMethods for MsgVariant<'_> {
             .iter()
             .map(|field| field.emit_method_field_folded())
             .collect();
-        let type_name = self.msg_type().as_accessor_name();
+        let type_name = self.msg_attr().msg_type().as_accessor_name();
         let name = name.to_case(Case::Snake);
 
-        match self.msg_type() {
+        match self.msg_attr().msg_type() {
             MsgType::Exec => quote! {
                 fn #name (&self, #(#params,)* ) -> #sylvia ::multitest::ExecProxy::< #error_type, #api:: #type_name, MtApp, #custom_msg>;
             },
