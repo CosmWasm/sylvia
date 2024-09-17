@@ -2,14 +2,13 @@ use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::fold::Fold;
 use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type};
 
 use crate::crate_module;
-use crate::fold::StripGenerics;
 use crate::parser::attributes::msg::ReplyOn;
 use crate::parser::MsgType;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
+use crate::utils::emit_turbofish;
 
 pub struct Reply<'a> {
     source: &'a ItemImpl,
@@ -35,11 +34,14 @@ impl<'a> Reply<'a> {
     pub fn emit(&self) -> TokenStream {
         let unique_handlers: Vec<_> = self.emit_reply_ids().collect();
         let dispatch = self.emit_dispatch();
+        let sub_msg_trait = self.emit_sub_msg_trait();
 
         quote! {
             #(#unique_handlers)*
 
             #dispatch
+
+            #sub_msg_trait
         }
     }
 
@@ -101,6 +103,69 @@ impl<'a> Reply<'a> {
             }
         })
     }
+
+    /// Generates `SubMsgMethods` trait with method for every reply id.
+    fn emit_sub_msg_trait(&self) -> TokenStream {
+        let Self { reply_data, .. } = self;
+
+        let sylvia = crate_module();
+
+        let methods_declaration = reply_data.iter().map(|data| {
+            let method_name = &data.handler_name;
+
+            quote! {
+                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT>;
+            }
+        });
+
+        let submsg_methods_implementation = reply_data.iter().map(|data| {
+            let method_name = &data.handler_name;
+            let reply_on = data.emit_cw_reply_on();
+            let reply_id = &data.reply_id;
+
+            quote! {
+                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
+                    #sylvia ::cw_std::SubMsg {
+                        reply_on: #reply_on ,
+                        id: #reply_id ,
+                        ..self
+                    }
+                }
+            }
+        });
+
+        let wasmmsg_methods_implementation = reply_data.iter().map(|data| {
+            let method_name = &data.handler_name;
+            let reply_on = data.emit_cw_reply_on();
+            let reply_id = &data.reply_id;
+
+            quote! {
+                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
+                    #sylvia ::cw_std::SubMsg {
+                        reply_on: #reply_on ,
+                        id: #reply_id ,
+                        msg: self.into(),
+                        payload: Default::default(),
+                        gas_limit: None,
+                    }
+                }
+            }
+        });
+
+        quote! {
+           pub trait SubMsgMethods<CustomMsgT> {
+               #(#methods_declaration)*
+           }
+
+           impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::SubMsg<CustomMsgT> {
+               #(#submsg_methods_implementation)*
+           }
+
+           impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::WasmMsg {
+               #(#wasmmsg_methods_implementation)*
+           }
+        }
+    }
 }
 
 trait ReplyVariants<'a> {
@@ -115,7 +180,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
 
         self.variants()
             .flat_map(ReplyVariant::as_reply_data)
-            .for_each(|(reply_id, function_name, reply_on)| {
+            .for_each(|(reply_id,  handler_name,function_name, reply_on)| {
                 match reply_data
                     .iter_mut()
                     .find(|existing_data| existing_data.reply_id == reply_id)
@@ -135,7 +200,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                         )
                     }
                     Some(existing_data) => existing_data.handlers.push((function_name, reply_on)),
-                    None => reply_data.push(ReplyData::new(reply_id, function_name, reply_on)),
+                    None => reply_data.push(ReplyData::new(reply_id, function_name, reply_on, handler_name)),
                 }
             });
 
@@ -146,28 +211,31 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
 /// Maps single reply id with its handlers.
 struct ReplyData<'a> {
     pub reply_id: Ident,
+    pub handler_name: &'a Ident,
     pub handlers: Vec<(&'a Ident, ReplyOn)>,
 }
 
 impl<'a> ReplyData<'a> {
-    pub fn new(reply_id: Ident, function_name: &'a Ident, reply_on: ReplyOn) -> Self {
+    pub fn new(
+        reply_id: Ident,
+        function_name: &'a Ident,
+        reply_on: ReplyOn,
+        handler_name: &'a Ident,
+    ) -> Self {
         Self {
             reply_id,
+            handler_name,
             handlers: vec![(function_name, reply_on)],
         }
     }
 
     /// Emits success and failure match arms for a single `ReplyId`.
     fn emit_match_arms(&self, contract: &Type, generics: &[&GenericParam]) -> TokenStream {
-        let Self { reply_id, handlers } = self;
+        let Self {
+            reply_id, handlers, ..
+        } = self;
 
-        let contract_turbofish: Type = if !generics.is_empty() {
-            let contract_name = StripGenerics.fold_type((contract.clone()).clone());
-            parse_quote! { #contract_name :: < #(#generics),* > }
-        } else {
-            parse_quote! { #contract }
-        };
-
+        let contract_turbofish = emit_turbofish(contract, generics);
         let success_match_arm = emit_success_match_arm(handlers, &contract_turbofish);
         let failure_match_arm = emit_failure_match_arm(handlers, &contract_turbofish);
 
@@ -178,6 +246,33 @@ impl<'a> ReplyData<'a> {
                     #failure_match_arm
                 }
             }
+        }
+    }
+
+    fn emit_cw_reply_on(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let is_always = self
+            .handlers
+            .iter()
+            .any(|(_, reply_on)| reply_on == &ReplyOn::Always);
+        let is_success = self
+            .handlers
+            .iter()
+            .any(|(_, reply_on)| reply_on == &ReplyOn::Success);
+        let is_failure = self
+            .handlers
+            .iter()
+            .any(|(_, reply_on)| reply_on == &ReplyOn::Failure);
+
+        if is_always || (is_success && is_failure) {
+            quote! { #sylvia ::cw_std::ReplyOn::Always }
+        } else if is_success {
+            quote! { #sylvia ::cw_std::ReplyOn::Success }
+        } else if is_failure {
+            quote! { #sylvia ::cw_std::ReplyOn::Error }
+        } else {
+            // This should never happen
+            quote! { #sylvia ::cw_std::ReplyOn::Never }
         }
     }
 }
@@ -255,7 +350,7 @@ fn emit_failure_match_arm(
 
 trait ReplyVariant<'a> {
     fn as_handlers(&'a self) -> Vec<&'a Ident>;
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, ReplyOn)>;
+    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &Ident, ReplyOn)>;
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
@@ -266,12 +361,13 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
         self.msg_attr().handlers().iter().collect()
     }
 
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, ReplyOn)> {
+    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &Ident, ReplyOn)> {
         self.as_handlers()
             .iter()
-            .map(|handler| {
+            .map(|&handler| {
                 (
                     handler.as_reply_id(),
+                    handler,
                     self.function_name(),
                     self.msg_attr().reply_on(),
                 )
