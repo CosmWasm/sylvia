@@ -3,6 +3,7 @@
 //!
 //! Most of implementation lies in `sylvia-derive` crate which is reexported here
 
+pub mod builder;
 pub mod into_response;
 #[cfg_attr(docsrs, doc(cfg(feature = "mt")))]
 #[cfg(feature = "mt")]

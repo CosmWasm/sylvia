@@ -10,17 +10,7 @@ use crate::parser::{
     Custom, FilteredOverrideEntryPoints, OverrideEntryPoint, ParsedSylviaAttributes,
 };
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
-use crate::utils::{emit_bracketed_generics, SvCasing};
-
-fn get_ident_from_type(contract_name: &Type) -> &Ident {
-    let Type::Path(type_path) = contract_name else {
-        unreachable!()
-    };
-    let segments = &type_path.path.segments;
-    assert!(!segments.is_empty());
-    let segment = &segments.last().unwrap();
-    &segment.ident
-}
+use crate::utils::{emit_bracketed_generics, get_ident_from_type, SvCasing};
 
 /// Emits helpers for testing contract messages using MultiTest.
 ///

@@ -1,6 +1,7 @@
 use communication::api::Api;
 use communication::enum_msg::EnumMessage;
 use communication::executor::Executor;
+use communication::instantiate_builder::InstantiateBuilder;
 use communication::querier::Querier;
 use communication::reply::Reply;
 use communication::struct_msg::StructMessage;
@@ -83,6 +84,7 @@ impl<'a> ContractInput<'a> {
         let querier = self.emit_querier();
         let executor = self.emit_executor();
         let reply = self.emit_reply();
+        let instantiate_builder = self.emit_instantiate_builder_trait();
 
         quote! {
             pub mod sv {
@@ -99,6 +101,8 @@ impl<'a> ContractInput<'a> {
                 #reply
 
                 #contract_api
+
+                #instantiate_builder
             }
         }
     }
@@ -188,6 +192,28 @@ impl<'a> ContractInput<'a> {
             Reply::new(self.item, &self.generics, &variants).emit()
         } else {
             quote! {}
+        }
+    }
+
+    fn emit_instantiate_builder_trait(&self) -> TokenStream {
+        let item = self.item;
+        let variants = MsgVariants::new(
+            item.as_variants(),
+            MsgType::Instantiate,
+            &self.generics,
+            &item.generics.where_clause,
+        );
+        let where_clause = variants.where_clause();
+
+        match variants.get_only_variant() {
+            Some(variant) => InstantiateBuilder::new(
+                *item.self_ty.clone(),
+                variants.used_generics(),
+                &where_clause,
+                variant,
+            )
+            .emit(),
+            None => quote! {},
         }
     }
 }
