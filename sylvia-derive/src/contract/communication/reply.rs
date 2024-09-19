@@ -161,15 +161,15 @@ impl<'a> ReplyData<'a> {
     fn emit_match_arms(&self, contract: &Type, generics: &[&GenericParam]) -> TokenStream {
         let Self { reply_id, handlers } = self;
 
-        let contract_turbo: Type = if !generics.is_empty() {
+        let contract_turbofish: Type = if !generics.is_empty() {
             let contract_name = StripGenerics.fold_type((contract.clone()).clone());
             parse_quote! { #contract_name :: < #(#generics),* > }
         } else {
             parse_quote! { #contract }
         };
 
-        let success_match_arm = emit_success_match_arm(handlers, &contract_turbo);
-        let failure_match_arm = emit_failure_match_arm(handlers, &contract_turbo);
+        let success_match_arm = emit_success_match_arm(handlers, &contract_turbofish);
+        let failure_match_arm = emit_failure_match_arm(handlers, &contract_turbofish);
 
         quote! {
             #reply_id => {
@@ -185,7 +185,10 @@ impl<'a> ReplyData<'a> {
 /// Emits match arm for [ReplyOn::Success].
 /// In case neither [ReplyOn::Success] nor [ReplyOn::Always] is present, `Response::events`
 /// and `Response::data` are forwarded in the `Response`
-fn emit_success_match_arm(handlers: &[(&Ident, ReplyOn)], contract_turbo: &Type) -> TokenStream {
+fn emit_success_match_arm(
+    handlers: &[(&Ident, ReplyOn)],
+    contract_turbofish: &Type,
+) -> TokenStream {
     let sylvia = crate_module();
 
     match handlers
@@ -196,12 +199,12 @@ fn emit_success_match_arm(handlers: &[(&Ident, ReplyOn)], contract_turbo: &Type)
             #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
                 #[allow(deprecated)]
                 let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
-                #contract_turbo ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, payload)
+                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, payload)
             }
         },
         Some((function_name, reply_on)) if reply_on == &ReplyOn::Always => quote! {
             #sylvia ::cw_std::SubMsgResult::Ok(_) => {
-                #contract_turbo ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
             }
         },
         _ => quote! {
@@ -222,7 +225,10 @@ fn emit_success_match_arm(handlers: &[(&Ident, ReplyOn)], contract_turbo: &Type)
 /// Emits match arm for [ReplyOn::Failure].
 /// In case neither [ReplyOn::Failure] nor [ReplyOn::Always] is present,
 /// the error is forwarded.
-fn emit_failure_match_arm(handlers: &[(&Ident, ReplyOn)], contract_turbo: &Type) -> TokenStream {
+fn emit_failure_match_arm(
+    handlers: &[(&Ident, ReplyOn)],
+    contract_turbofish: &Type,
+) -> TokenStream {
     let sylvia = crate_module();
 
     match handlers
@@ -231,12 +237,12 @@ fn emit_failure_match_arm(handlers: &[(&Ident, ReplyOn)], contract_turbo: &Type)
     {
         Some((function_name, reply_on)) if reply_on == &ReplyOn::Failure => quote! {
             #sylvia ::cw_std::SubMsgResult::Err(error) => {
-                #contract_turbo ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, payload)
+                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, payload)
             }
         },
         Some((function_name, reply_on)) if reply_on == &ReplyOn::Always => quote! {
             #sylvia ::cw_std::SubMsgResult::Err(_) => {
-                #contract_turbo ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
             }
         },
         _ => quote! {
