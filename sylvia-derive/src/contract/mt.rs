@@ -533,7 +533,7 @@ impl<'a> MtHelpers<'a> {
                 .as_ref()
                 .map(|_reply| {
                     let contract_ident = get_ident_from_type(contract_name);
-                    let contract_turbo = if !generic_params.is_empty() {
+                    let contract_turbofish = if !generic_params.is_empty() {
                         quote! { #contract_ident ::< #(#generic_params,)* > }
                     } else {
                         quote! { #contract_ident }
@@ -541,7 +541,7 @@ impl<'a> MtHelpers<'a> {
 
                     if cfg!(feature = "sv_replies") {
                         quote! {
-                            let contract = #contract_turbo ::new();
+                            let contract = #contract_turbofish ::new();
                             dispatch_reply(deps, env, msg, contract).map_err(Into::into)
                         }
                     } else {

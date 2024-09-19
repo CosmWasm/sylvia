@@ -177,7 +177,7 @@ impl<'a> EntryPoints<'a> {
         let sylvia = crate_module();
 
         let attr_generics = &attrs.generics;
-        let (contract, contract_turbo) = if attr_generics.is_empty() {
+        let (contract, contract_turbofish) = if attr_generics.is_empty() {
             (quote! { #name }, quote! { #name })
         } else {
             (
@@ -202,14 +202,14 @@ impl<'a> EntryPoints<'a> {
         };
         let dispatch = match msg_ty {
             MsgType::Reply if cfg!(feature = "sv_replies") => quote! {
-                let contract = #contract_turbo ::new();
+                let contract = #contract_turbofish ::new();
                 sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
             },
             MsgType::Reply => quote! {
-                #contract_turbo ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
+                #contract_turbofish ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
             },
             _ => quote! {
-                msg.dispatch(& #contract_turbo ::new() , ( #values )).map_err(Into::into)
+                msg.dispatch(& #contract_turbofish ::new() , ( #values )).map_err(Into::into)
             },
         };
 
