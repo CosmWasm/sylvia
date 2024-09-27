@@ -434,6 +434,19 @@ impl<'a, Contract: ?Sized> Remote<'a, Contract> {
     pub fn executor(&self) -> ExecutorBuilder<(EmptyExecutorBuilderState, Contract)> {
         ExecutorBuilder::<(EmptyExecutorBuilderState, Contract)>::new(&self.addr)
     }
+
+    pub fn update_admin(&self, new_admin: String) -> WasmMsg {
+        WasmMsg::UpdateAdmin {
+            contract_addr: self.addr.to_string(),
+            admin: new_admin,
+        }
+    }
+
+    pub fn clear_admin(&self) -> WasmMsg {
+        WasmMsg::ClearAdmin {
+            contract_addr: self.addr.to_string(),
+        }
+    }
 }
 
 impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
