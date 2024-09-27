@@ -257,12 +257,52 @@ pub mod manager {
 
             Ok(count)
         }
+
+        #[sv::msg(exec)]
+        fn update_admin(
+            &self,
+            ctx: ExecCtx<ExampleQuery>,
+            new_admin: String,
+        ) -> Result<Response<ExampleMsg>, StdError> {
+            let wasm = self
+                .remote_counter
+                .load(ctx.deps.storage)?
+                .interface_remote
+                .update_admin(new_admin);
+            let resp = Response::new().add_message(wasm);
+            Ok(resp)
+        }
+
+        #[sv::msg(exec)]
+        fn clear_admin(
+            &self,
+            ctx: ExecCtx<ExampleQuery>,
+        ) -> Result<Response<ExampleMsg>, StdError> {
+            let wasm = self
+                .remote_counter
+                .load(ctx.deps.storage)?
+                .interface_remote
+                .clear_admin();
+            let resp = Response::new().add_message(wasm);
+            Ok(resp)
+        }
+
+        #[sv::msg(query)]
+        fn counter_contract(&self, ctx: QueryCtx<ExampleQuery>) -> Result<Addr, StdError> {
+            Ok(self
+                .remote_counter
+                .load(ctx.deps.storage)?
+                .interface_remote
+                .as_ref()
+                .clone())
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use cw_multi_test::{BasicApp, IntoBech32};
+    use cosmwasm_std::{CosmosMsg, WasmMsg};
+    use cw_multi_test::{BasicApp, Executor, IntoAddr};
     use sylvia::cw_std::{Addr, StdError};
     use sylvia::multitest::{App, Proxy};
     use sylvia::types::Remote;
@@ -277,7 +317,6 @@ mod tests {
     use crate::{ExampleMsg, ExampleQuery};
 
     type ExampleApp = BasicApp<ExampleMsg, ExampleQuery>;
-    const OWNER: &str = "owner";
 
     #[test]
     fn remote_generation() {
@@ -302,11 +341,12 @@ mod tests {
         assert_eq!(&addr, borrowed_remote.as_ref());
     }
 
-    fn setup(
-        app: &App<ExampleApp>,
+    fn setup<'a>(
+        app: &'a App<ExampleApp>,
+        owner: &'a Addr,
     ) -> (
-        Proxy<ExampleApp, ManagerContract<i32>>,
-        Proxy<ExampleApp, ManagerContract<u32>>,
+        Proxy<'a, ExampleApp, ManagerContract<i32>>,
+        Proxy<'a, ExampleApp, ManagerContract<u32>>,
     ) {
         // Manager operating on signed numbers
         let signed_counter_code_id = SignedCounterCodeId::store_code(app);
@@ -314,7 +354,7 @@ mod tests {
         let signed_counter_contract = signed_counter_code_id
             .instantiate()
             .with_label("Signed counter contract")
-            .call(&OWNER.into_bech32())
+            .call(owner)
             .unwrap();
 
         let manager_code_id = ManagerCodeId::store_code(app);
@@ -322,7 +362,7 @@ mod tests {
         let signed_manager_contract = manager_code_id
             .instantiate(signed_counter_contract.contract_addr.clone())
             .with_label("Manager contract")
-            .call(&OWNER.into_bech32())
+            .call(owner)
             .unwrap();
 
         // Manager operating on unsigned numbers
@@ -331,7 +371,8 @@ mod tests {
         let unsigned_counter_contract = unsigned_counter_code_id
             .instantiate()
             .with_label("Unsigned counter contract")
-            .call(&OWNER.into_bech32())
+            .with_admin(Some(owner.as_str()))
+            .call(owner)
             .unwrap();
 
         let manager_code_id = ManagerCodeId::store_code(app);
@@ -339,7 +380,18 @@ mod tests {
         let unsigned_manager_contract = manager_code_id
             .instantiate(unsigned_counter_contract.contract_addr.clone())
             .with_label("Manager contract")
-            .call(&OWNER.into_bech32())
+            .call(owner)
+            .unwrap();
+
+        // Set manager contract as an admin of the counter contract
+        app.app_mut()
+            .execute(
+                owner.clone(),
+                CosmosMsg::Wasm(WasmMsg::UpdateAdmin {
+                    contract_addr: unsigned_counter_contract.contract_addr.to_string(),
+                    admin: unsigned_manager_contract.contract_addr.to_string(),
+                }),
+            )
             .unwrap();
 
         (signed_manager_contract, unsigned_manager_contract)
@@ -347,23 +399,81 @@ mod tests {
 
     #[test]
     fn call_remote() {
+        let owner = "owner".into_addr();
         let app = App::<cw_multi_test::BasicApp<ExampleMsg, ExampleQuery>>::custom(|_, _, _| {});
-        let (signed_manager_contract, unsigned_manager_contract) = setup(&app);
+        let (signed_manager_contract, unsigned_manager_contract) = setup(&app, &owner);
 
         assert_eq!(signed_manager_contract.count().unwrap(), 0);
 
-        signed_manager_contract
-            .add(5)
-            .call(&OWNER.into_bech32())
-            .unwrap();
+        signed_manager_contract.add(5).call(&owner).unwrap();
         assert_eq!(signed_manager_contract.count().unwrap(), 5);
 
         assert_eq!(unsigned_manager_contract.count().unwrap(), 0);
 
-        unsigned_manager_contract
-            .add(5)
-            .call(&OWNER.into_bech32())
-            .unwrap();
+        unsigned_manager_contract.add(5).call(&owner).unwrap();
         assert_eq!(unsigned_manager_contract.count().unwrap(), 5);
+    }
+
+    #[test]
+    fn update_admin() {
+        let owner = "owner".into_addr();
+        let app = App::<cw_multi_test::BasicApp<ExampleMsg, ExampleQuery>>::custom(|_, _, _| {});
+        let (_, unsigned_manager_contract) = setup(&app, &owner);
+        let new_admin = "new_admin".into_addr();
+
+        let unsigned_counter_contract_addr = unsigned_manager_contract.counter_contract().unwrap();
+
+        // Initial admin should be the manager_contract
+        let contract_info = app
+            .querier()
+            .query_wasm_contract_info(unsigned_counter_contract_addr.clone())
+            .unwrap();
+        assert_eq!(
+            contract_info.admin,
+            Some(unsigned_manager_contract.contract_addr.clone())
+        );
+
+        // Add new admin
+        unsigned_manager_contract
+            .update_admin(new_admin.to_string())
+            .call(&owner)
+            .unwrap();
+
+        let contract_info = app
+            .querier()
+            .query_wasm_contract_info(unsigned_counter_contract_addr)
+            .unwrap();
+        assert_eq!(contract_info.admin, Some(new_admin.clone()));
+    }
+
+    #[test]
+    fn clear_admin() {
+        let owner = "owner".into_addr();
+        let app = App::<cw_multi_test::BasicApp<ExampleMsg, ExampleQuery>>::custom(|_, _, _| {});
+        let (_, unsigned_manager_contract) = setup(&app, &owner);
+
+        let unsigned_counter_contract_addr = unsigned_manager_contract.counter_contract().unwrap();
+
+        // Initial admin should be the manager_contract
+        let contract_info = app
+            .querier()
+            .query_wasm_contract_info(unsigned_counter_contract_addr.clone())
+            .unwrap();
+        assert_eq!(
+            contract_info.admin,
+            Some(unsigned_manager_contract.contract_addr.clone())
+        );
+
+        // Clear admin
+        unsigned_manager_contract
+            .clear_admin()
+            .call(&owner)
+            .unwrap();
+
+        let contract_info = app
+            .querier()
+            .query_wasm_contract_info(unsigned_counter_contract_addr.clone())
+            .unwrap();
+        assert_eq!(contract_info.admin, None);
     }
 }
