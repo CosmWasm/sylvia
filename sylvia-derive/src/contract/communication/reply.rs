@@ -151,19 +151,24 @@ impl<'a> Reply<'a> {
                 }
             }
         });
+        let cosmosmsg_methods_implementation = wasmmsg_methods_implementation.clone();
 
         quote! {
-           pub trait SubMsgMethods<CustomMsgT> {
-               #(#methods_declaration)*
-           }
+            pub trait SubMsgMethods<CustomMsgT> {
+                #(#methods_declaration)*
+            }
 
-           impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::SubMsg<CustomMsgT> {
-               #(#submsg_methods_implementation)*
-           }
+            impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::SubMsg<CustomMsgT> {
+                #(#submsg_methods_implementation)*
+            }
 
-           impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::WasmMsg {
-               #(#wasmmsg_methods_implementation)*
-           }
+            impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::WasmMsg {
+                #(#wasmmsg_methods_implementation)*
+            }
+
+            impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::CosmosMsg<CustomMsgT> {
+                #(#cosmosmsg_methods_implementation)*
+            }
         }
     }
 }

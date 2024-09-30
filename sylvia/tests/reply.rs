@@ -1,6 +1,6 @@
 #![cfg(feature = "sv_replies")]
 
-use cosmwasm_std::{Empty, SubMsgResult};
+use cosmwasm_std::{BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
 use cw_utils::{parse_instantiate_response_data, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
@@ -245,6 +245,17 @@ where
         self.last_reply.save(ctx.deps.storage, &ALWAYS_REPLY_ID)?;
 
         Ok(Response::new())
+    }
+
+    #[sv::msg(exec)]
+    fn send_cosmos_messages(&self, ctx: ExecCtx<Q>) -> Result<Response<M>, ContractError> {
+        let remote_addr = self.remote.load(ctx.deps.storage)?;
+        let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: remote_addr.as_ref().to_string(),
+            amount: vec![],
+        });
+        let submsg = cosmos_msg.always();
+        Ok(Response::new().add_submessage(submsg))
     }
 }
 
