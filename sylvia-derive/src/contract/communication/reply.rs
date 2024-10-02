@@ -118,40 +118,11 @@ impl<'a> Reply<'a> {
             }
         });
 
-        let submsg_methods_implementation = reply_data.iter().map(|data| {
-            let method_name = &data.handler_name;
-            let reply_on = data.emit_cw_reply_on();
-            let reply_id = &data.reply_id;
-
-            quote! {
-                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
-                    #sylvia ::cw_std::SubMsg {
-                        reply_on: #reply_on ,
-                        id: #reply_id ,
-                        ..self
-                    }
-                }
-            }
-        });
-
-        let wasmmsg_methods_implementation = reply_data.iter().map(|data| {
-            let method_name = &data.handler_name;
-            let reply_on = data.emit_cw_reply_on();
-            let reply_id = &data.reply_id;
-
-            quote! {
-                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
-                    #sylvia ::cw_std::SubMsg {
-                        reply_on: #reply_on ,
-                        id: #reply_id ,
-                        msg: self.into(),
-                        payload: Default::default(),
-                        gas_limit: None,
-                    }
-                }
-            }
-        });
-        let cosmosmsg_methods_implementation = wasmmsg_methods_implementation.clone();
+        let submsg_reply_setters = reply_data.iter().map(ReplyData::emit_submsg_setter);
+        let submsg_converters: Vec<_> = reply_data
+            .iter()
+            .map(ReplyData::emit_submsg_converter)
+            .collect();
 
         quote! {
             pub trait SubMsgMethods<CustomMsgT> {
@@ -159,15 +130,15 @@ impl<'a> Reply<'a> {
             }
 
             impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::SubMsg<CustomMsgT> {
-                #(#submsg_methods_implementation)*
+                #(#submsg_reply_setters)*
             }
 
             impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::WasmMsg {
-                #(#wasmmsg_methods_implementation)*
+                #(#submsg_converters)*
             }
 
             impl<CustomMsgT> SubMsgMethods<CustomMsgT> for #sylvia ::cw_std::CosmosMsg<CustomMsgT> {
-                #(#cosmosmsg_methods_implementation)*
+                #(#submsg_converters)*
             }
         }
     }
@@ -215,8 +186,12 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
 
 /// Maps single reply id with its handlers.
 struct ReplyData<'a> {
+    /// Unique identifier for the reply.
     pub reply_id: Ident,
+    /// Unique name of the handler from which the [reply_id](ReplyData::reply_id) was constructed.
     pub handler_name: &'a Ident,
+    /// Function names and their corresponding [ReplyOn] variants on which they should be
+    /// called.
     pub handlers: Vec<(&'a Ident, ReplyOn)>,
 }
 
@@ -280,6 +255,52 @@ impl<'a> ReplyData<'a> {
             // We parse only the `Success`, `Failure` and `Always` values which are covered above.
             // Handling the `Never` value wouldn't make sense as we would create a dead handler.
             quote! { #sylvia ::cw_std::ReplyOn::Never }
+        }
+    }
+
+    fn emit_submsg_setter(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            reply_id,
+            handler_name,
+            ..
+        } = self;
+
+        let method_name = handler_name;
+        let reply_on = self.emit_cw_reply_on();
+
+        quote! {
+            fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
+                #sylvia ::cw_std::SubMsg {
+                    reply_on: #reply_on ,
+                    id: #reply_id ,
+                    ..self
+                }
+            }
+        }
+    }
+
+    fn emit_submsg_converter(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let Self {
+            reply_id,
+            handler_name,
+            ..
+        } = self;
+
+        let method_name = handler_name;
+        let reply_on = self.emit_cw_reply_on();
+
+        quote! {
+            fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
+                #sylvia ::cw_std::SubMsg {
+                    reply_on: #reply_on ,
+                    id: #reply_id ,
+                    msg: self.into(),
+                    payload: Default::default(),
+                    gas_limit: None,
+                }
+            }
         }
     }
 }
