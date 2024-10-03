@@ -268,7 +268,7 @@ pub mod manager {
                 .remote_counter
                 .load(ctx.deps.storage)?
                 .interface_remote
-                .update_admin(new_admin);
+                .update_admin(&new_admin);
             let resp = Response::new().add_message(wasm);
             Ok(resp)
         }
