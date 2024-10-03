@@ -1,4 +1,5 @@
 //! Module providing utilities to build and use sylvia contracts.
+
 use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
 #[cfg(feature = "sv_replies")]
 use cosmwasm_std::{Event, MsgResponse};
@@ -431,17 +432,20 @@ impl<'a, Contract: ?Sized> Remote<'a, Contract> {
         }
     }
 
+    /// Creates a new instance of [ExecutorBuilder] from underlying contract address.
     pub fn executor(&self) -> ExecutorBuilder<(EmptyExecutorBuilderState, Contract)> {
         ExecutorBuilder::<(EmptyExecutorBuilderState, Contract)>::new(&self.addr)
     }
 
-    pub fn update_admin(&self, new_admin: String) -> WasmMsg {
+    /// Creates a new instance of [WasmMsg::UpdateAdmin] from underlying contract address and provided admin address.
+    pub fn update_admin(&self, new_admin: &str) -> WasmMsg {
         WasmMsg::UpdateAdmin {
             contract_addr: self.addr.to_string(),
-            admin: new_admin,
+            admin: new_admin.to_string(),
         }
     }
 
+    /// Creates a new instance of [WasmMsg::ClearAdmin] from underlying contract address.
     pub fn clear_admin(&self) -> WasmMsg {
         WasmMsg::ClearAdmin {
             contract_addr: self.addr.to_string(),
