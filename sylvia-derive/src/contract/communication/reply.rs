@@ -156,7 +156,8 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
 
         self.variants()
             .flat_map(ReplyVariant::as_reply_data)
-            .for_each(|(reply_id,  handler_name,function_name, reply_on)| {
+            .for_each(|(reply_id,  handler_name, handler)| {
+                let reply_on = handler.msg_attr().reply_on();
                 match reply_data
                     .iter_mut()
                     .find(|existing_data| existing_data.reply_id == reply_id)
@@ -165,18 +166,21 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                         if existing_data
                             .handlers
                             .iter()
-                            .any(|(_, prev_reply_on)| prev_reply_on.excludes(&reply_on)) =>
+                            .any(|existing_handler| existing_handler.msg_attr().reply_on().excludes(&reply_on)) =>
                     {
                         existing_data.handlers.iter().for_each(
-                            |(prev_function_name, prev_reply_on)| {
+                            |existing_handler| {
+                                let existing_reply_id = &existing_data.reply_id;
+                                let existing_reply_on = existing_handler.msg_attr().reply_on();
+                                let existing_function_name= existing_handler.function_name();
                                 emit_error!(reply_id.span(), "Duplicated reply handler.";
-                                    note = existing_data.reply_id.span() => format!("Previous definition of handler={} for reply_on={} defined on `fn {}()`", existing_data.reply_id.to_string(), prev_reply_on, prev_function_name);
+                                    note = existing_data.reply_id.span() => format!("Previous definition of handler={} for reply_on={} defined on `fn {}()`", existing_reply_id, existing_reply_on, existing_function_name);
                                 )
                             },
                         )
                     }
-                    Some(existing_data) => existing_data.handlers.push((function_name, reply_on)),
-                    None => reply_data.push(ReplyData::new(reply_id, function_name, reply_on, handler_name)),
+                    Some(existing_data) => existing_data.handlers.push(handler),
+                    None => reply_data.push(ReplyData::new(reply_id, handler,  handler_name)),
                 }
             });
 
@@ -190,22 +194,16 @@ struct ReplyData<'a> {
     pub reply_id: Ident,
     /// Unique name of the handler from which the [reply_id](ReplyData::reply_id) was constructed.
     pub handler_name: &'a Ident,
-    /// Function names and their corresponding [ReplyOn] variants on which they should be
-    /// called.
-    pub handlers: Vec<(&'a Ident, ReplyOn)>,
+    /// Handler methods for the reply id.
+    pub handlers: Vec<&'a MsgVariant<'a>>,
 }
 
 impl<'a> ReplyData<'a> {
-    pub fn new(
-        reply_id: Ident,
-        function_name: &'a Ident,
-        reply_on: ReplyOn,
-        handler_name: &'a Ident,
-    ) -> Self {
+    pub fn new(reply_id: Ident, variant: &'a MsgVariant<'a>, handler_name: &'a Ident) -> Self {
         Self {
             reply_id,
             handler_name,
-            handlers: vec![(function_name, reply_on)],
+            handlers: vec![variant],
         }
     }
 
@@ -234,15 +232,15 @@ impl<'a> ReplyData<'a> {
         let is_always = self
             .handlers
             .iter()
-            .any(|(_, reply_on)| reply_on == &ReplyOn::Always);
+            .any(|handler| handler.msg_attr().reply_on() == ReplyOn::Always);
         let is_success = self
             .handlers
             .iter()
-            .any(|(_, reply_on)| reply_on == &ReplyOn::Success);
+            .any(|handler| handler.msg_attr().reply_on() == ReplyOn::Success);
         let is_failure = self
             .handlers
             .iter()
-            .any(|(_, reply_on)| reply_on == &ReplyOn::Failure);
+            .any(|handler| handler.msg_attr().reply_on() == ReplyOn::Failure);
 
         if is_always || (is_success && is_failure) {
             quote! { #sylvia ::cw_std::ReplyOn::Always }
@@ -308,28 +306,31 @@ impl<'a> ReplyData<'a> {
 /// Emits match arm for [ReplyOn::Success].
 /// In case neither [ReplyOn::Success] nor [ReplyOn::Always] is present, `Response::events`
 /// and `Response::data` are forwarded in the `Response`
-fn emit_success_match_arm(
-    handlers: &[(&Ident, ReplyOn)],
-    contract_turbofish: &Type,
-) -> TokenStream {
+fn emit_success_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -> TokenStream {
     let sylvia = crate_module();
 
-    match handlers
-        .iter()
-        .find(|(_, reply_on)| reply_on == &ReplyOn::Success || reply_on == &ReplyOn::Always)
-    {
-        Some((function_name, reply_on)) if reply_on == &ReplyOn::Success => quote! {
-            #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
-                #[allow(deprecated)]
-                let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
-                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, payload)
+    match handlers.iter().find(|handler| {
+        handler.msg_attr().reply_on() == ReplyOn::Success
+            || handler.msg_attr().reply_on() == ReplyOn::Always
+    }) {
+        Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Success => {
+            let function_name = handler.function_name();
+            quote! {
+                #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
+                    #[allow(deprecated)]
+                    let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, payload)
+                }
             }
-        },
-        Some((function_name, reply_on)) if reply_on == &ReplyOn::Always => quote! {
-            #sylvia ::cw_std::SubMsgResult::Ok(_) => {
-                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+        }
+        Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
+            let function_name = handler.function_name();
+            quote! {
+                #sylvia ::cw_std::SubMsgResult::Ok(_) => {
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                }
             }
-        },
+        }
         _ => quote! {
             #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
                 let mut resp = sylvia::cw_std::Response::new().add_events(sub_msg_resp.events);
@@ -348,26 +349,29 @@ fn emit_success_match_arm(
 /// Emits match arm for [ReplyOn::Failure].
 /// In case neither [ReplyOn::Failure] nor [ReplyOn::Always] is present,
 /// the error is forwarded.
-fn emit_failure_match_arm(
-    handlers: &[(&Ident, ReplyOn)],
-    contract_turbofish: &Type,
-) -> TokenStream {
+fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -> TokenStream {
     let sylvia = crate_module();
 
-    match handlers
-        .iter()
-        .find(|(_, reply_on)| reply_on == &ReplyOn::Failure || reply_on == &ReplyOn::Always)
-    {
-        Some((function_name, reply_on)) if reply_on == &ReplyOn::Failure => quote! {
-            #sylvia ::cw_std::SubMsgResult::Err(error) => {
-                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, payload)
+    match handlers.iter().find(|handler| {
+        handler.msg_attr().reply_on() == ReplyOn::Failure
+            || handler.msg_attr().reply_on() == ReplyOn::Always
+    }) {
+        Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Failure => {
+            let function_name = handler.function_name();
+            quote! {
+                #sylvia ::cw_std::SubMsgResult::Err(error) => {
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, payload)
+                }
             }
-        },
-        Some((function_name, reply_on)) if reply_on == &ReplyOn::Always => quote! {
-            #sylvia ::cw_std::SubMsgResult::Err(_) => {
-                #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+        }
+        Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
+            let function_name = handler.function_name();
+            quote! {
+                #sylvia ::cw_std::SubMsgResult::Err(_) => {
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                }
             }
-        },
+        }
         _ => quote! {
             #sylvia ::cw_std::SubMsgResult::Err(error) => {
                 Err(sylvia::cw_std::StdError::generic_err(error)).map_err(Into::into)
@@ -378,7 +382,7 @@ fn emit_failure_match_arm(
 
 trait ReplyVariant<'a> {
     fn as_handlers(&'a self) -> Vec<&'a Ident>;
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &Ident, ReplyOn)>;
+    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &MsgVariant)>;
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
@@ -389,17 +393,10 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
         self.msg_attr().handlers().iter().collect()
     }
 
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &Ident, ReplyOn)> {
+    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &MsgVariant)> {
         self.as_handlers()
             .iter()
-            .map(|&handler| {
-                (
-                    handler.as_reply_id(),
-                    handler,
-                    self.function_name(),
-                    self.msg_attr().reply_on(),
-                )
-            })
+            .map(|&handler| (handler.as_reply_id(), handler, self))
             .collect()
     }
 }
