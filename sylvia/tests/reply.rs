@@ -1,6 +1,7 @@
 #![cfg(feature = "sv_replies")]
 
-use cosmwasm_std::{BankMsg, CosmosMsg, Empty, SubMsgResult};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{to_json_binary, BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
 use cw_utils::{parse_instantiate_response_data, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
@@ -56,6 +57,11 @@ mod noop_contract {
     }
 }
 
+#[cw_serde]
+pub struct InstantiatePayload {
+    pub sender: Addr,
+}
+
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
@@ -91,13 +97,19 @@ where
     #[sv::msg(instantiate)]
     pub fn instantiate(
         &self,
-        _ctx: InstantiateCtx<Q>,
+        ctx: InstantiateCtx<Q>,
         remote_code_id: u64,
     ) -> Result<Response<M>, ContractError> {
+        // Custom type can be used as a payload.
+        let payload = InstantiatePayload {
+            sender: ctx.info.sender,
+        };
         let sub_msg = InstantiateBuilder::noop_contract(remote_code_id)?
             .with_label("noop")
             .build()
-            .remote_instantiated();
+            .remote_instantiated()
+            .with_payload(to_json_binary(&payload)?);
+
         Ok(Response::new().add_submessage(sub_msg))
     }
 
@@ -158,13 +170,17 @@ where
         ctx: ExecCtx<Q>,
         should_fail: bool,
     ) -> Result<Response<M>, ContractError> {
+        // Tuple can be used as a payload.
+        let payload = to_json_binary(&(42_u32, "Hello, world!".to_string()))?;
+
         let msg = self
             .remote
             .load(ctx.deps.storage)?
             .executor()
             .noop(should_fail)?
             .build()
-            .always();
+            .always()
+            .with_payload(payload);
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -198,7 +214,10 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         data: Option<Binary>,
-        _payload: Binary,
+        // Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216.
+        // Payload is not currently forwarded in the MultiTest.
+        // _instantiate_payload: InstantiatePayload,
+        #[sv::payload] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply
             .save(ctx.deps.storage, &REMOTE_INSTANTIATED_REPLY_ID)?;
@@ -216,7 +235,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _data: Option<Binary>,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &SUCCESS_REPLY_ID)?;
 
@@ -228,7 +247,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _error: String,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &FAILURE_REPLY_ID)?;
 
@@ -240,7 +259,9 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _result: SubMsgResult,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
+        // _first_part_payload: u32,
+        // _second_part_payload: String,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &ALWAYS_REPLY_ID)?;
 
