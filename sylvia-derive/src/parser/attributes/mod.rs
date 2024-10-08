@@ -21,6 +21,7 @@ pub use override_entry_point::{FilteredOverrideEntryPoints, OverrideEntryPoint};
 
 /// This struct represents all possible attributes that
 /// are parsed and utilized by sylvia.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SylviaAttribute {
     Custom,
     Error,
@@ -29,6 +30,7 @@ pub enum SylviaAttribute {
     OverrideEntryPoint,
     VariantAttrs,
     MsgAttrs,
+    Payload,
 }
 
 impl SylviaAttribute {
@@ -50,6 +52,7 @@ impl SylviaAttribute {
             "override_entry_point" => Some(Self::OverrideEntryPoint),
             "attr" => Some(Self::VariantAttrs),
             "msg_attr" => Some(Self::MsgAttrs),
+            "payload" => Some(Self::Payload),
             _ => None,
         }
     }
@@ -157,6 +160,12 @@ impl ParsedSylviaAttributes {
                 if let Ok(message_attrs) = MsgAttrForwarding::new(attr) {
                     self.msg_attrs_forward.push(message_attrs);
                 }
+            }
+            SylviaAttribute::Payload => {
+                emit_error!(
+                    attr, "The attribute `sv::payload` used in wrong context";
+                    note = attr.span() => "The `sv::payload` should be used as a prefix for `Binary` payload.";
+                );
             }
         }
     }
