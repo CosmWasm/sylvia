@@ -25,7 +25,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -36,7 +36,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -47,7 +47,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _data: Option<Binary>,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -58,7 +58,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -69,7 +69,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _error: String,
-        _payload: Binary,
+        #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }

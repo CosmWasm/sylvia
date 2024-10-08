@@ -6,7 +6,8 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::ReplyOn;
-use crate::parser::MsgType;
+use crate::parser::{MsgType, SylviaAttribute};
+use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::emit_turbofish;
 
@@ -173,6 +174,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                                 let existing_reply_id = &existing_data.reply_id;
                                 let existing_reply_on = existing_handler.msg_attr().reply_on();
                                 let existing_function_name= existing_handler.function_name();
+
                                 emit_error!(reply_id.span(), "Duplicated reply handler.";
                                     note = existing_data.reply_id.span() => format!("Previous definition of handler={} for reply_on={} defined on `fn {}()`", existing_reply_id, existing_reply_on, existing_function_name);
                                 )
@@ -315,19 +317,29 @@ fn emit_success_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
     }) {
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Success => {
             let function_name = handler.function_name();
+            let payload = handler.emit_payload_parameters();
+            let payload_deserialization = handler.emit_payload_deserialization();
+
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
                     #[allow(deprecated)]
                     let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, payload)
+                    #payload_deserialization
+
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, #payload )
                 }
             }
         }
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
             let function_name = handler.function_name();
+            let payload = handler.emit_payload_parameters();
+            let payload_deserialization = handler.emit_payload_deserialization();
+
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Ok(_) => {
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                    #payload_deserialization
+
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload )
                 }
             }
         }
@@ -358,17 +370,27 @@ fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
     }) {
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Failure => {
             let function_name = handler.function_name();
+            let payload = handler.emit_payload_parameters();
+            let payload_deserialization = handler.emit_payload_deserialization();
+
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Err(error) => {
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, payload)
+                    #payload_deserialization
+
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, #payload )
                 }
             }
         }
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
             let function_name = handler.function_name();
+            let payload = handler.emit_payload_parameters();
+            let payload_deserialization = handler.emit_payload_deserialization();
+
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Err(_) => {
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, payload)
+                    #payload_deserialization
+
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload )
                 }
             }
         }
@@ -383,6 +405,8 @@ fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
 trait ReplyVariant<'a> {
     fn as_handlers(&'a self) -> Vec<&'a Ident>;
     fn as_reply_data(&self) -> Vec<(Ident, &Ident, &MsgVariant)>;
+    fn emit_payload_parameters(&self) -> TokenStream;
+    fn emit_payload_deserialization(&self) -> TokenStream;
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
@@ -398,6 +422,36 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
             .iter()
             .map(|&handler| (handler.as_reply_id(), handler, self))
             .collect()
+    }
+
+    fn emit_payload_parameters(&self) -> TokenStream {
+        if self
+            .fields()
+            .iter()
+            .any(|field| field.contains_attribute(SylviaAttribute::Payload))
+        {
+            quote! { payload }
+        } else {
+            let deserialized_payload = self.fields().iter().skip(1).map(MsgField::name);
+            quote! { #(#deserialized_payload),* }
+        }
+    }
+
+    fn emit_payload_deserialization(&self) -> TokenStream {
+        let sylvia = crate_module();
+
+        if self
+            .fields()
+            .iter()
+            .any(|field| field.contains_attribute(SylviaAttribute::Payload))
+        {
+            return quote! {};
+        }
+
+        let deserialized_names = self.fields().iter().skip(1).map(MsgField::name);
+        quote! {
+            let ( #(#deserialized_names),* ) = #sylvia ::cw_std::from_json(&payload)?;
+        }
     }
 }
 
