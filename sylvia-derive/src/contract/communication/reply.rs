@@ -112,7 +112,7 @@ impl<'a> Reply<'a> {
         let sylvia = crate_module();
 
         let methods_declaration = reply_data.iter().map(|data| {
-            let method_name = &data.handler_name;
+            let method_name = &data.handler_id;
 
             quote! {
                 fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT>;
@@ -156,9 +156,10 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
         let mut reply_data: Vec<ReplyData> = vec![];
 
         self.variants()
-            .flat_map(ReplyVariant::as_reply_data)
-            .for_each(|(reply_id,  handler_name, handler)| {
+            .flat_map(ReplyVariant::as_variant_handlers_pair)
+            .for_each(|(handler,  handler_id)| {
                 let reply_on = handler.msg_attr().reply_on();
+                let reply_id = handler_id.as_reply_id();
                 match reply_data
                     .iter_mut()
                     .find(|existing_data| existing_data.reply_id == reply_id)
@@ -182,7 +183,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                         )
                     }
                     Some(existing_data) => existing_data.handlers.push(handler),
-                    None => reply_data.push(ReplyData::new(reply_id, handler,  handler_name)),
+                    None => reply_data.push(ReplyData::new(reply_id, handler,  handler_id)),
                 }
             });
 
@@ -195,16 +196,16 @@ struct ReplyData<'a> {
     /// Unique identifier for the reply.
     pub reply_id: Ident,
     /// Unique name of the handler from which the [reply_id](ReplyData::reply_id) was constructed.
-    pub handler_name: &'a Ident,
+    pub handler_id: &'a Ident,
     /// Handler methods for the reply id.
     pub handlers: Vec<&'a MsgVariant<'a>>,
 }
 
 impl<'a> ReplyData<'a> {
-    pub fn new(reply_id: Ident, variant: &'a MsgVariant<'a>, handler_name: &'a Ident) -> Self {
+    pub fn new(reply_id: Ident, variant: &'a MsgVariant<'a>, handler_id: &'a Ident) -> Self {
         Self {
             reply_id,
-            handler_name,
+            handler_id,
             handlers: vec![variant],
         }
     }
@@ -262,11 +263,11 @@ impl<'a> ReplyData<'a> {
         let sylvia = crate_module();
         let Self {
             reply_id,
-            handler_name,
+            handler_id,
             ..
         } = self;
 
-        let method_name = handler_name;
+        let method_name = handler_id;
         let reply_on = self.emit_cw_reply_on();
 
         quote! {
@@ -284,11 +285,11 @@ impl<'a> ReplyData<'a> {
         let sylvia = crate_module();
         let Self {
             reply_id,
-            handler_name,
+            handler_id,
             ..
         } = self;
 
-        let method_name = handler_name;
+        let method_name = handler_id;
         let reply_on = self.emit_cw_reply_on();
 
         quote! {
@@ -403,25 +404,25 @@ fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
 }
 
 trait ReplyVariant<'a> {
-    fn as_handlers(&'a self) -> Vec<&'a Ident>;
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &MsgVariant)>;
+    fn as_variant_handlers_pair(&'a self) -> Vec<(&'a MsgVariant<'a>, &'a Ident)>;
     fn emit_payload_parameters(&self) -> TokenStream;
     fn emit_payload_deserialization(&self) -> TokenStream;
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
-    fn as_handlers(&'a self) -> Vec<&'a Ident> {
-        if self.msg_attr().handlers().is_empty() {
-            return vec![self.function_name()];
-        }
-        self.msg_attr().handlers().iter().collect()
-    }
-
-    fn as_reply_data(&self) -> Vec<(Ident, &Ident, &MsgVariant)> {
-        self.as_handlers()
+    fn as_variant_handlers_pair(&'a self) -> Vec<(&'a MsgVariant<'a>, &'a Ident)> {
+        let variant_handler_id_pair: Vec<_> = self
+            .msg_attr()
+            .handlers()
             .iter()
-            .map(|&handler| (handler.as_reply_id(), handler, self))
-            .collect()
+            .map(|handler| (self, handler))
+            .collect();
+
+        if variant_handler_id_pair.is_empty() {
+            return vec![(self, self.function_name())];
+        }
+
+        variant_handler_id_pair
     }
 
     fn emit_payload_parameters(&self) -> TokenStream {
