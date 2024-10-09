@@ -156,7 +156,9 @@ pub mod unsigned_contract {
     }
 }
 
-// Making sure `Remote` can be stored in `#[cw_serde]` types
+// Making sure `Remote` can be stored in `#[cw_serde]` types.
+// This is intentionally a dead code.
+// https://github.com/CosmWasm/sylvia/issues/181
 #[cw_serde]
 #[allow(dead_code)]
 pub struct ContractStorage<Contract> {
