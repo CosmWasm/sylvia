@@ -276,7 +276,9 @@ impl<'a> ReplyData<'a> {
         } else if is_failure {
             quote! { #sylvia ::cw_std::ReplyOn::Error }
         } else {
-            // This should never happen
+            // This should never happen.
+            // We parse only the `Success`, `Failure` and `Always` values which are covered above.
+            // Handling the `Never` value wouldn't make sense as we would create a dead handler.
             quote! { #sylvia ::cw_std::ReplyOn::Never }
         }
     }
