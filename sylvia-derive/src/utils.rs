@@ -2,13 +2,15 @@ use convert_case::Casing;
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
+use syn::fold::Fold;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 use syn::{
-    parse_quote, GenericArgument, Ident, Path, PathArguments, ReturnType, Type, WhereClause,
-    WherePredicate,
+    parse_quote, GenericArgument, GenericParam, Ident, Path, PathArguments, ReturnType, Type,
+    WhereClause, WherePredicate,
 };
 
+use crate::fold::StripGenerics;
 use crate::parser::check_generics::{CheckGenerics, GetPath};
 
 /// Filters where predicates leaving only ones found in `used_generics`
@@ -84,6 +86,25 @@ pub fn emit_bracketed_generics<GenericT: ToTokens>(unbonded_generics: &[GenericT
     match unbonded_generics.is_empty() {
         true => quote! {},
         false => quote! { < #(#unbonded_generics,)* > },
+    }
+}
+
+pub fn get_ident_from_type(contract_name: &Type) -> &Ident {
+    let Type::Path(type_path) = contract_name else {
+        unreachable!()
+    };
+    let segments = &type_path.path.segments;
+    assert!(!segments.is_empty());
+    let segment = &segments.last().unwrap();
+    &segment.ident
+}
+
+pub fn emit_turbofish(ty: &Type, generics: &[&GenericParam]) -> Type {
+    if !generics.is_empty() {
+        let stripped_ty = StripGenerics.fold_type(ty.clone());
+        parse_quote! { #stripped_ty :: < #(#generics),* > }
+    } else {
+        parse_quote! { #ty }
     }
 }
 
