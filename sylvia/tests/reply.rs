@@ -328,6 +328,11 @@ mod tests {
         let last_reply = contract.last_reply().unwrap();
         assert_eq!(last_reply, FAILURE_REPLY_ID);
 
+        // Should send the cosmos message
+        contract.send_cosmos_messages().call(&owner).unwrap();
+        let last_reply = contract.last_reply().unwrap();
+        assert_eq!(last_reply, ALWAYS_REPLY_ID);
+
         // Should return error if unknown reply ID received
         let unknown_reply_id = 42u64;
         let err = contract
