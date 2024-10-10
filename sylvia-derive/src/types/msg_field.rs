@@ -10,7 +10,7 @@ use syn::visit::Visit;
 use syn::{Attribute, Ident, Pat, PatType, Type};
 
 /// Representation of single message variant field
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct MsgField<'a> {
     name: &'a Ident,
     ty: &'a Type,

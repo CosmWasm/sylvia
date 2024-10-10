@@ -113,9 +113,10 @@ impl<'a> Reply<'a> {
 
         let methods_declaration = reply_data.iter().map(|data| {
             let method_name = &data.handler_id;
+            let payload_parameters = data.as_payload_parameters();
 
             quote! {
-                fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT>;
+                fn #method_name (self, #(#payload_parameters),* ) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::SubMsg<CustomMsgT>>;
             }
         });
 
@@ -182,7 +183,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                             },
                         )
                     }
-                    Some(existing_data) => existing_data.handlers.push(handler),
+                    Some(existing_data) => existing_data.add_second_handler(handler),
                     None => reply_data.push(ReplyData::new(reply_id, handler,  handler_id)),
                 }
             });
@@ -208,6 +209,41 @@ impl<'a> ReplyData<'a> {
             handler_id,
             handlers: vec![variant],
         }
+    }
+
+    /// Adds second handler to the reply data.
+    ///
+    /// # Error
+    /// This method emits an error if there is already more then one handler.
+    pub fn add_second_handler(&mut self, new_handler: &'a MsgVariant<'a>) {
+        let current_handler= match self.handlers.first() {
+            Some(handler) if self.handlers.len() == 1 => handler,
+            _ => return,
+        };
+
+        if current_handler.fields().len() != new_handler.fields().len() {
+            emit_error!(current_handler.function_name().span(), "Mismatched lenght of method parameters.";
+                note = self.handler_id.span() => format!("Both {} handlers should have the same number of parameters.", self.handler_id)
+                // note = existing_handler.handler_id.span() => format!("Previous definition of {} handler", existing_handler.handler_id)
+            );
+        }
+
+        current_handler
+            .fields()
+            .iter()
+            .skip(1)
+            .zip(new_handler.fields().iter().skip(1))
+            .for_each(|(current_field, new_field)| 
+        {
+            if current_field!= new_field {
+                emit_error!(current_field.name().span(), "Mismatched parameter in reply handlers.";
+                    note = current_field.name().span() => format!("Parameters for the {} handler have to be the same.", self.handler_id);
+                    note = new_field.name().span() => format!("Previous parameter defined for the {} handler.", self.handler_id)
+                )
+            }
+        });
+
+        self.handlers.push(new_handler);
     }
 
     /// Emits success and failure match arms for a single `ReplyId`.
@@ -269,14 +305,19 @@ impl<'a> ReplyData<'a> {
 
         let method_name = handler_id;
         let reply_on = self.emit_cw_reply_on();
+        let payload_parameters = self.as_payload_parameters();
+        let payload_values= self.as_payload_values();
 
         quote! {
-            fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
-                #sylvia ::cw_std::SubMsg {
+            fn #method_name (self, #(#payload_parameters),* ) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::SubMsg<CustomMsgT>> {
+                let payload = #sylvia ::cw_std::to_json_binary(&( #(#payload_values),* ))?;
+
+                Ok( #sylvia ::cw_std::SubMsg {
                     reply_on: #reply_on ,
                     id: #reply_id ,
+                    payload,
                     ..self
-                }
+                })
             }
         }
     }
@@ -291,18 +332,29 @@ impl<'a> ReplyData<'a> {
 
         let method_name = handler_id;
         let reply_on = self.emit_cw_reply_on();
+        let payload_parameters = self.as_payload_parameters();
+        let payload_values= self.as_payload_values();
 
         quote! {
-            fn #method_name (self) -> #sylvia ::cw_std::SubMsg<CustomMsgT> {
-                #sylvia ::cw_std::SubMsg {
+            fn #method_name (self, #(#payload_parameters),* ) -> #sylvia ::cw_std::StdResult< #sylvia ::cw_std::SubMsg<CustomMsgT>> {
+                let payload = #sylvia ::cw_std::to_json_binary(&( #(#payload_values),* ))?;
+                Ok( #sylvia ::cw_std::SubMsg {
                     reply_on: #reply_on ,
                     id: #reply_id ,
                     msg: self.into(),
-                    payload: Default::default(),
+                    payload,
                     gas_limit: None,
-                }
+                })
             }
         }
+    }
+
+    fn as_payload_parameters(&self) -> impl Iterator<Item = TokenStream> + 'a {
+        self.handlers.first().unwrap().fields().iter().skip(1).map(MsgField::emit_method_field)
+    }
+
+    fn as_payload_values(&self) -> impl Iterator<Item = &Ident> {
+        self.handlers.first().unwrap().fields().iter().skip(1).map(MsgField::name)
     }
 }
 
@@ -318,7 +370,7 @@ fn emit_success_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
     }) {
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Success => {
             let function_name = handler.function_name();
-            let payload = handler.emit_payload_parameters();
+            let payload_names = handler.emit_payload_names();
             let payload_deserialization = handler.emit_payload_deserialization();
 
             quote! {
@@ -327,20 +379,20 @@ fn emit_success_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
                     let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
                     #payload_deserialization
 
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, #payload )
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, events, msg_responses).into(), data, #payload_names )
                 }
             }
         }
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
             let function_name = handler.function_name();
-            let payload = handler.emit_payload_parameters();
+            let payload_names = handler.emit_payload_names();
             let payload_deserialization = handler.emit_payload_deserialization();
 
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Ok(_) => {
                     #payload_deserialization
 
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload )
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload_names )
                 }
             }
         }
@@ -371,27 +423,27 @@ fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
     }) {
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Failure => {
             let function_name = handler.function_name();
-            let payload = handler.emit_payload_parameters();
+            let payload_names = handler.emit_payload_names();
             let payload_deserialization = handler.emit_payload_deserialization();
 
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Err(error) => {
                     #payload_deserialization
 
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, #payload )
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), error, #payload_names )
                 }
             }
         }
         Some(handler) if handler.msg_attr().reply_on() == ReplyOn::Always => {
             let function_name = handler.function_name();
-            let payload = handler.emit_payload_parameters();
+            let payload_names = handler.emit_payload_names();
             let payload_deserialization = handler.emit_payload_deserialization();
 
             quote! {
                 #sylvia ::cw_std::SubMsgResult::Err(_) => {
                     #payload_deserialization
 
-                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload )
+                    #contract_turbofish ::new(). #function_name ((deps, env, gas_used, vec![], vec![]).into(), result, #payload_names )
                 }
             }
         }
@@ -405,8 +457,9 @@ fn emit_failure_match_arm(handlers: &[&MsgVariant], contract_turbofish: &Type) -
 
 trait ReplyVariant<'a> {
     fn as_variant_handlers_pair(&'a self) -> Vec<(&'a MsgVariant<'a>, &'a Ident)>;
-    fn emit_payload_parameters(&self) -> TokenStream;
-    fn emit_payload_deserialization(&self) -> TokenStream;
+    fn emit_payload_names(&'a self) -> TokenStream;
+    fn emit_payload_deserialization(&'a self) -> TokenStream;
+    fn emit_payload_fields(&'a self) -> impl Iterator<Item = TokenStream>;
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
@@ -425,7 +478,7 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
         variant_handler_id_pair
     }
 
-    fn emit_payload_parameters(&self) -> TokenStream {
+    fn emit_payload_names(&self) -> TokenStream {
         if self
             .fields()
             .iter()
@@ -433,8 +486,8 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
         {
             quote! { payload }
         } else {
-            let deserialized_payload = self.fields().iter().skip(1).map(MsgField::name);
-            quote! { #(#deserialized_payload),* }
+            let deserialized_payload_names = self.fields().iter().skip(1).map(MsgField::name);
+            quote! { #(#deserialized_payload_names),* }
         }
     }
 
@@ -454,6 +507,13 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
             let ( #(#deserialized_names),* ) = #sylvia ::cw_std::from_json(&payload)?;
         }
     }
+
+    fn emit_payload_fields(&'a self) -> impl Iterator<Item = TokenStream> {
+        self.fields()
+            .iter()
+            .skip(1)
+            .map(MsgField::emit_method_field)
+    }
 }
 
 /// Maps self to an [Ident] reply id.
@@ -467,3 +527,4 @@ impl AsReplyId for Ident {
         Ident::new(&reply_id, self.span())
     }
 }
+
