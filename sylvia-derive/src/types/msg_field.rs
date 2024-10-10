@@ -117,6 +117,10 @@ impl<'a> MsgField<'a> {
         self.name
     }
 
+    pub fn ty(&self) -> &'a Type {
+        self.ty
+    }
+
     pub fn contains_attribute(&self, sv_attr: SylviaAttribute) -> bool {
         self.attrs
             .iter()
