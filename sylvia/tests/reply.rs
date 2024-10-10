@@ -107,8 +107,10 @@ where
         let sub_msg = InstantiateBuilder::noop_contract(remote_code_id)?
             .with_label("noop")
             .build()
-            .remote_instantiated()
-            .with_payload(to_json_binary(&payload)?);
+            .remote_instantiated(to_json_binary(&payload)?)?;
+        // Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216.
+        // Payload is not currently forwarded in the MultiTest.
+        // .remote_instantiated(payload)?;
 
         Ok(Response::new().add_submessage(sub_msg))
     }
@@ -125,7 +127,7 @@ where
             .executor()
             .noop(should_fail)?
             .build()
-            .success();
+            .success(Binary::default())?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -142,7 +144,7 @@ where
             .executor()
             .noop(should_fail)?
             .build()
-            .failure();
+            .failure(Binary::default())?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -159,7 +161,7 @@ where
             .executor()
             .noop(should_fail)?
             .build()
-            .both();
+            .both(Binary::default())?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -179,8 +181,7 @@ where
             .executor()
             .noop(should_fail)?
             .build()
-            .always()
-            .with_payload(payload);
+            .always(payload)?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -275,7 +276,7 @@ where
             to_address: remote_addr.as_ref().to_string(),
             amount: vec![],
         });
-        let submsg = cosmos_msg.always();
+        let submsg = cosmos_msg.always(Binary::default())?;
         Ok(Response::new().add_submessage(submsg))
     }
 }

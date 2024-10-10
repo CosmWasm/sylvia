@@ -1,6 +1,6 @@
 error: Duplicated reply handler.
 
-         = note: Previous definition of handler=HANDLER_1_REPLY_ID for reply_on=always defined on `fn reply_always()`
+         = note: Previous definition of handler=`HANDLER_1_REPLY_ID` for reply_on=`always` defined on `fn reply_always()`
 
   --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:26:32
    |
@@ -9,7 +9,7 @@ error: Duplicated reply handler.
 
 error: Duplicated reply handler.
 
-         = note: Previous definition of handler=HANDLER_2_REPLY_ID for reply_on=failure defined on `fn some_reply()`
+         = note: Previous definition of handler=`HANDLER_2_REPLY_ID` for reply_on=`failure` defined on `fn some_reply()`
 
   --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:41:8
    |
