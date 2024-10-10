@@ -1,0 +1,19 @@
+error: Mismatched parameter in reply handlers.
+
+         = note: Parameters for the `on_instantiated` handler have to be the same.
+         = note: Previous parameter defined for the `on_instantiated` handler.
+
+  --> tests/ui/method_signature/reply.rs:26:13
+   |
+26 |             param: String,
+   |             ^^^^^
+
+error: Mismatched lenght of method parameters.
+
+         = note: Both `on_instantiated` handlers should have the same number of parameters.
+         = note: Previous definition of on_instantiated handler.
+
+  --> tests/ui/method_signature/reply.rs:60:12
+   |
+60 |         fn first_reply(
+   |            ^^^^^^^^^^^
