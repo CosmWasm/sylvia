@@ -8,7 +8,7 @@ error: Mismatched parameter in reply handlers.
 26 |             param: String,
    |             ^^^^^
 
-error: Mismatched lenght of method parameters.
+error: Mismatched quantity of method parameters.
 
          = note: Both `on_instantiated` handlers should have the same number of parameters.
          = note: Previous definition of on_instantiated handler.
