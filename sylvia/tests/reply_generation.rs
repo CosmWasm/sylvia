@@ -1,6 +1,5 @@
-#![cfg(feature = "sv_replies")]
-
-use cosmwasm_std::{Binary, SubMsgResult};
+use cosmwasm_std::testing::{mock_dependencies, mock_env};
+use cosmwasm_std::{from_json, to_json_binary, Binary, Reply, SubMsgResponse, SubMsgResult};
 use itertools::Itertools;
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::{InstantiateCtx, ReplyCtx};
@@ -27,7 +26,8 @@ impl Contract {
         _result: SubMsgResult,
         #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
-        Ok(Response::new())
+        let resp = Response::new().set_data(to_json_binary("clean")?);
+        Ok(resp)
     }
 
     #[allow(dead_code)]
@@ -73,6 +73,28 @@ impl Contract {
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
+}
+
+#[test]
+fn entry_point_generation() {
+    let msg = Reply {
+        id: sv::CLEAN_REPLY_ID,
+        payload: Default::default(),
+        gas_used: 0,
+        #[allow(deprecated)]
+        result: SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: None,
+            msg_responses: vec![],
+        }),
+    };
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+
+    let resp = entry_points::reply(deps.as_mut(), env, msg).unwrap();
+    let data: String = from_json(resp.data.unwrap()).unwrap();
+
+    assert_eq!(data, "clean");
 }
 
 #[test]

@@ -186,13 +186,9 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_reply(&self) -> TokenStream {
-        if cfg!(feature = "sv_replies") {
-            let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
+        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
 
-            Reply::new(self.item, &self.generics, &variants).emit()
-        } else {
-            quote! {}
-        }
+        Reply::new(self.item, &self.generics, &variants).emit()
     }
 
     fn emit_instantiate_builder_trait(&self) -> TokenStream {

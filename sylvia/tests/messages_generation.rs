@@ -1,4 +1,3 @@
-#![cfg(not(feature = "sv_replies"))]
 use std::fmt::Debug;
 use std::str::FromStr;
 
@@ -68,7 +67,7 @@ pub mod interface {
 mod contract {
     use cosmwasm_std::{Binary, SubMsgResult};
     use sylvia::contract;
-    use sylvia::cw_std::{Addr, Reply, Response, StdResult};
+    use sylvia::cw_std::{Addr, Response, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
     use sylvia_derive::entry_points;
     use thiserror::Error;
@@ -149,7 +148,12 @@ mod contract {
         }
 
         #[sv::msg(reply)]
-        fn my_reply(&self, _ctx: ReplyCtx<MyQuery>, _reply: Reply) -> StdResult<Response> {
+        fn my_reply(
+            &self,
+            _ctx: ReplyCtx<MyQuery>,
+            _result: SubMsgResult,
+            #[sv::payload] _payload: Binary,
+        ) -> StdResult<Response> {
             Ok(Response::new())
         }
 

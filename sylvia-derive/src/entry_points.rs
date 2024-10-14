@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use proc_macro_error::emit_error;
 use quote::quote;
 use syn::fold::Fold;
-use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type, WhereClause};
+use syn::{parse_quote, GenericParam, ItemImpl, Type, WhereClause};
 
 use crate::crate_module;
 use crate::fold::StripGenerics;
@@ -63,7 +63,7 @@ pub struct EntryPoints<'a> {
     source: &'a ItemImpl,
     name: Type,
     error: Type,
-    reply: Option<Ident>,
+    is_reply: bool,
     override_entry_points: Vec<OverrideEntryPoint>,
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
@@ -81,17 +81,18 @@ impl<'a> EntryPoints<'a> {
         let generics: Vec<_> = source.generics.params.iter().collect();
         let where_clause = &source.generics.where_clause;
 
-        let reply =
+        let is_reply =
             MsgVariants::<GenericParam>::new(source.as_variants(), MsgType::Reply, &[], &None)
                 .variants()
                 .map(|variant| variant.function_name().clone())
-                .next();
+                .next()
+                .is_some();
 
         Self {
             source,
             name,
             error,
-            reply,
+            is_reply,
             override_entry_points,
             generics,
             where_clause,
@@ -102,7 +103,7 @@ impl<'a> EntryPoints<'a> {
     pub fn emit(&self) -> TokenStream {
         let Self {
             source,
-            reply,
+            is_reply,
             override_entry_points,
             generics,
             where_clause,
@@ -146,7 +147,7 @@ impl<'a> EntryPoints<'a> {
             .get_entry_point(MsgType::Reply)
             .map(|_| quote! {})
             .unwrap_or_else(|| {
-                if reply.is_some() {
+                if *is_reply {
                     self.emit_default_entry_point(MsgType::Reply)
                 } else {
                     quote! {}
@@ -168,11 +169,7 @@ impl<'a> EntryPoints<'a> {
 
     fn emit_default_entry_point(&self, msg_ty: MsgType) -> TokenStream {
         let Self {
-            name,
-            error,
-            attrs,
-            reply,
-            ..
+            name, error, attrs, ..
         } = self;
         let sylvia = crate_module();
 
@@ -201,12 +198,9 @@ impl<'a> EntryPoints<'a> {
             _ => quote! { msg: < #contract as #sylvia ::types::ContractApi> :: #associated_name },
         };
         let dispatch = match msg_ty {
-            MsgType::Reply if cfg!(feature = "sv_replies") => quote! {
+            MsgType::Reply => quote! {
                 let contract = #contract_turbofish ::new();
                 sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
-            },
-            MsgType::Reply => quote! {
-                #contract_turbofish ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
             },
             _ => quote! {
                 msg.dispatch(& #contract_turbofish ::new() , ( #values )).map_err(Into::into)

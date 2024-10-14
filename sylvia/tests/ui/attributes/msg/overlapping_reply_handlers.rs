@@ -1,5 +1,4 @@
 #![allow(unused_imports)]
-#![cfg(feature = "sv_replies")]
 
 use sylvia::contract;
 use sylvia::cw_std::{Reply, Response, StdResult};

@@ -529,16 +529,9 @@ impl<'a> MtHelpers<'a> {
                         quote! { #contract_ident }
                     };
 
-                    if cfg!(feature = "sv_replies") {
-                        quote! {
-                            let contract = #contract_turbofish ::new();
-                            dispatch_reply(deps, env, msg, contract).map_err(Into::into)
-                        }
-                    } else {
-                        let reply_name = _reply.name().to_case(Case::Snake);
-                        quote! {
-                            self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
-                        }
+                    quote! {
+                        let contract = #contract_turbofish ::new();
+                        dispatch_reply(deps, env, msg, contract).map_err(Into::into)
                     }
                 })
                 .unwrap_or_else(|| {
