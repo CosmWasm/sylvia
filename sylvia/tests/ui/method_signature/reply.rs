@@ -29,7 +29,7 @@ pub mod mismatched_params {
         }
 
         #[sv::msg(reply, handlers=[on_instantiated], reply_on=failure)]
-        fn first_reply(
+        fn second_reply(
             &self,
             _ctx: ReplyCtx,
             _data: Option<Binary>,
@@ -40,7 +40,7 @@ pub mod mismatched_params {
     }
 }
 
-pub mod mismatched_param_lenght {
+pub mod mismatched_param_arity {
     use super::*;
 
     pub struct Contract {}
@@ -67,7 +67,7 @@ pub mod mismatched_param_lenght {
         }
 
         #[sv::msg(reply, handlers=[on_instantiated], reply_on=failure)]
-        fn first_reply(
+        fn second_reply(
             &self,
             _ctx: ReplyCtx,
             _data: Option<Binary>,

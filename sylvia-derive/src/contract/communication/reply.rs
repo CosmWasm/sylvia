@@ -217,7 +217,7 @@ impl<'a> ReplyData<'a> {
         };
 
         if self.payload.len() != new_handler.fields().len() - 1 {
-            emit_error!(current_method_name.span(), "Mismatched lenght of method parameters.";
+            emit_error!(current_method_name.span(), "Mismatched quantity of method parameters.";
                 note = self.handler_id.span() => format!("Both `{}` handlers should have the same number of parameters.", self.handler_id);
                 note = new_handler.function_name().span() => format!("Previous definition of {} handler.", self.handler_id)
             );

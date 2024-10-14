@@ -108,7 +108,8 @@ where
             .with_label("noop")
             .build()
             .remote_instantiated(to_json_binary(&payload)?)?;
-        // Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216.
+        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
+        // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
         // .remote_instantiated(payload)?;
 
@@ -215,7 +216,8 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         data: Option<Binary>,
-        // Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216.
+        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
+        // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
         // _instantiate_payload: InstantiatePayload,
         #[sv::payload] _payload: Binary,
