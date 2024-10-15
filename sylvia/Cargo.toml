@@ -38,8 +38,6 @@ cosmwasm_2_0 = [
     "cw-multi-test/cosmwasm_2_0",
     "cosmwasm_1_4",
 ]
-# Enables better replies
-sv_replies = ["sylvia-derive/sv_replies"]
 
 [dependencies]
 sylvia-derive = { workspace = true }

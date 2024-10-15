@@ -1,0 +1,6 @@
+error: Invalid feature.
+       = note: Expected `#[sv::features(replies)];`.
+ --> tests/ui/attributes/features/invalid_params.rs:9:16
+  |
+9 | #[sv::features(unknown_parameter)]
+  |                ^^^^^^^^^^^^^^^^^

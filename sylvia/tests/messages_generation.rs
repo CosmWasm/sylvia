@@ -1,4 +1,3 @@
-#![cfg(not(feature = "sv_replies"))]
 use std::fmt::Debug;
 use std::str::FromStr;
 
@@ -66,7 +65,6 @@ pub mod interface {
 }
 
 mod contract {
-    use cosmwasm_std::{Binary, SubMsgResult};
     use sylvia::contract;
     use sylvia::cw_std::{Addr, Reply, Response, StdResult};
     use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};

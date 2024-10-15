@@ -1,5 +1,3 @@
-#![cfg(feature = "sv_replies")]
-
 use cosmwasm_std::{Binary, SubMsgResult};
 use itertools::Itertools;
 use sylvia::cw_std::{Response, StdResult};
@@ -10,6 +8,7 @@ pub struct Contract;
 
 #[entry_points]
 #[contract]
+#[sv::features(replies)]
 impl Contract {
     pub fn new() -> Self {
         Self
