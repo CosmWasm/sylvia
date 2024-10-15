@@ -6,6 +6,7 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type, WhereClause};
 
 use crate::crate_module;
 use crate::fold::StripGenerics;
+use crate::parser::attributes::features::SylviaFeatures;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::parser::{
@@ -68,6 +69,7 @@ pub struct EntryPoints<'a> {
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
     attrs: &'a EntryPointArgs,
+    sv_features: SylviaFeatures,
 }
 
 impl<'a> EntryPoints<'a> {
@@ -75,6 +77,7 @@ impl<'a> EntryPoints<'a> {
         let name = StripGenerics.fold_type(*source.self_ty.clone());
         let parsed_attrs = ParsedSylviaAttributes::new(source.attrs.iter());
         let override_entry_points = parsed_attrs.override_entry_point_attrs;
+        let sv_features = parsed_attrs.sv_features;
 
         let error = parsed_attrs.error_attrs.unwrap_or_default().error;
 
@@ -96,6 +99,7 @@ impl<'a> EntryPoints<'a> {
             generics,
             where_clause,
             attrs,
+            sv_features,
         }
     }
 
@@ -172,6 +176,7 @@ impl<'a> EntryPoints<'a> {
             error,
             attrs,
             reply,
+            sv_features,
             ..
         } = self;
         let sylvia = crate_module();
@@ -201,12 +206,12 @@ impl<'a> EntryPoints<'a> {
             _ => quote! { msg: < #contract as #sylvia ::types::ContractApi> :: #associated_name },
         };
         let dispatch = match msg_ty {
-            MsgType::Reply if cfg!(feature = "sv_replies") => quote! {
+            MsgType::Reply if sv_features.replies => quote! {
                 let contract = #contract_turbofish ::new();
                 sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
             },
             MsgType::Reply => quote! {
-                #contract_turbofish ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
+                #contract_turbofish ::new(). #reply((deps, env, 0, vec![], vec![]).into(), msg).map_err(Into::into)
             },
             _ => quote! {
                 msg.dispatch(& #contract_turbofish ::new() , ( #values )).map_err(Into::into)

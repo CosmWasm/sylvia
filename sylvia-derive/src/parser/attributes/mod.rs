@@ -1,6 +1,7 @@
 //! Module defining parsing of Sylvia attributes.
 //! Every Sylvia attribute should be prefixed with `sv::`
 
+use features::SylviaFeatures;
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::{Attribute, MetaList, PathSegment};
@@ -8,6 +9,7 @@ use syn::{Attribute, MetaList, PathSegment};
 pub mod attr;
 pub mod custom;
 pub mod error;
+pub mod features;
 pub mod messages;
 pub mod msg;
 pub mod override_entry_point;
@@ -31,6 +33,7 @@ pub enum SylviaAttribute {
     VariantAttrs,
     MsgAttrs,
     Payload,
+    Features,
 }
 
 impl SylviaAttribute {
@@ -53,6 +56,7 @@ impl SylviaAttribute {
             "attr" => Some(Self::VariantAttrs),
             "msg_attr" => Some(Self::MsgAttrs),
             "payload" => Some(Self::Payload),
+            "features" => Some(Self::Features),
             _ => None,
         }
     }
@@ -69,6 +73,7 @@ pub struct ParsedSylviaAttributes {
     pub override_entry_point_attrs: Vec<OverrideEntryPoint>,
     pub variant_attrs_forward: Vec<VariantAttrForwarding>,
     pub msg_attrs_forward: Vec<MsgAttrForwarding>,
+    pub sv_features: SylviaFeatures,
 }
 
 impl ParsedSylviaAttributes {
@@ -166,6 +171,11 @@ impl ParsedSylviaAttributes {
                     attr, "The attribute `sv::payload` used in wrong context";
                     note = attr.span() => "The `sv::payload` should be used as a prefix for `Binary` payload.";
                 );
+            }
+            SylviaAttribute::Features => {
+                if let Ok(features) = SylviaFeatures::new(attr) {
+                    self.sv_features = features;
+                }
             }
         }
     }

@@ -1,5 +1,3 @@
-#![cfg(not(feature = "sv_replies"))]
-
 #[cfg(all(test, feature = "mt"))]
 use cw_multi_test::IntoBech32;
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
@@ -34,7 +32,7 @@ mod noop_contract {
 }
 
 mod reply_contract {
-    use cosmwasm_std::{Binary, Reply, SubMsgResult};
+    use cosmwasm_std::Reply;
     use sylvia::types::{ExecCtx, InstantiateCtx, ReplyCtx};
     use sylvia::{contract, entry_points};
 

@@ -1,5 +1,3 @@
-#![cfg(feature = "sv_replies")]
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_json_binary, BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
@@ -81,6 +79,7 @@ pub struct Contract<M, Q> {
 #[contract]
 #[sv::error(ContractError)]
 #[sv::custom(msg=M, query=Q)]
+#[sv::features(replies)]
 impl<M, Q> Contract<M, Q>
 where
     M: CustomMsg + 'static,
