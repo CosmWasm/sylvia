@@ -4,6 +4,7 @@ use quote::quote;
 use syn::{parse_quote, GenericParam, ItemImpl, Type};
 
 use crate::crate_module;
+use crate::parser::attributes::features::SylviaFeatures;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::parser::{
@@ -23,6 +24,7 @@ pub struct MtHelpers<'a> {
     where_clause: &'a Option<syn::WhereClause>,
     custom: &'a Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
+    sv_features: SylviaFeatures,
     instantiate_variant: MsgVariants<'a, GenericParam>,
     exec_variants: MsgVariants<'a, GenericParam>,
     query_variants: MsgVariants<'a, GenericParam>,
@@ -76,11 +78,10 @@ impl<'a> MtHelpers<'a> {
             where_clause,
         );
 
-        let error_type = ParsedSylviaAttributes::new(source.attrs.iter())
-            .error_attrs
-            .unwrap_or_default()
-            .error;
+        let parsed_attrs = ParsedSylviaAttributes::new(source.attrs.iter());
+        let error_type = parsed_attrs.error_attrs.unwrap_or_default().error;
         let error_type = parse_quote! { #error_type };
+        let sv_features = parsed_attrs.sv_features;
 
         let contract_name = &source.self_ty;
 
@@ -92,6 +93,7 @@ impl<'a> MtHelpers<'a> {
             contract_name,
             custom,
             override_entry_points,
+            sv_features,
             instantiate_variant,
             exec_variants,
             query_variants,
@@ -478,6 +480,7 @@ impl<'a> MtHelpers<'a> {
             contract_name,
             custom,
             override_entry_points,
+            sv_features,
             generic_params,
             migrate_variants,
             reply_variants,
@@ -529,7 +532,7 @@ impl<'a> MtHelpers<'a> {
                         quote! { #contract_ident }
                     };
 
-                    if cfg!(feature = "sv_replies") {
+                    if sv_features.replies {
                         quote! {
                             let contract = #contract_turbofish ::new();
                             dispatch_reply(deps, env, msg, contract).map_err(Into::into)
@@ -537,7 +540,7 @@ impl<'a> MtHelpers<'a> {
                     } else {
                         let reply_name = _reply.name().to_case(Case::Snake);
                         quote! {
-                            self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
+                            self. #reply_name ((deps, env, 0, vec![], vec![]).into(), msg).map_err(Into::into)
                         }
                     }
                 })

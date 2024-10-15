@@ -1,5 +1,4 @@
 #![allow(unused_imports)]
-#![cfg(feature = "sv_replies")]
 
 use sylvia::contract;
 use sylvia::cw_std::{Reply, Response, StdResult};
@@ -8,6 +7,7 @@ use sylvia::types::{InstantiateCtx, ReplyCtx};
 pub struct Contract;
 
 #[contract]
+#[sv::features(replies)]
 impl Contract {
     pub fn new() -> Self {
         Self

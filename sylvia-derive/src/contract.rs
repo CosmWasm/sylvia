@@ -11,6 +11,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{GenericParam, ItemImpl};
 
+use crate::parser::attributes::features::SylviaFeatures;
 use crate::parser::attributes::msg::MsgType;
 use crate::parser::variant_descs::AsVariantDescs;
 use crate::parser::{
@@ -46,6 +47,7 @@ pub struct ContractInput<'a> {
     custom: Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
     interfaces: Interfaces,
+    sv_features: SylviaFeatures,
 }
 
 impl<'a> ContractInput<'a> {
@@ -56,6 +58,7 @@ impl<'a> ContractInput<'a> {
         let parsed_attrs = ParsedSylviaAttributes::new(item.attrs.iter());
         let error = parsed_attrs.error_attrs.unwrap_or_default();
         let custom = parsed_attrs.custom_attr.unwrap_or_default();
+        let sv_features = parsed_attrs.sv_features;
         let override_entry_points = parsed_attrs.override_entry_point_attrs;
         let interfaces = Interfaces::new(item);
 
@@ -66,6 +69,7 @@ impl<'a> ContractInput<'a> {
             custom,
             override_entry_points,
             interfaces,
+            sv_features,
         }
     }
 
@@ -186,7 +190,7 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_reply(&self) -> TokenStream {
-        if cfg!(feature = "sv_replies") {
+        if self.sv_features.replies {
             let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
 
             Reply::new(self.item, &self.generics, &variants).emit()

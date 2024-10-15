@@ -58,6 +58,7 @@ pub struct GenericsForwardedContract<
 #[sv::messages(cw1 as Cw1: custom(msg, query))]
 #[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=CustomMsgT, query=CustomQueryT)]
+#[sv::features(replies)]
 impl<
         InstantiateT,
         Exec1T,
