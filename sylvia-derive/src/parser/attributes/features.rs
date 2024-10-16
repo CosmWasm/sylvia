@@ -31,7 +31,7 @@ impl Parse for SylviaFeatures {
                 _ => {
                     return Err(Error::new(
                         feature.span(),
-                        "Invalid feature.\n= note: Expected `#[sv::features(replies)];`.\n",
+                        "Invalid feature.\n= note: Supported features for contract macro: [`replies`].\n",
                     ))
                 }
             }
