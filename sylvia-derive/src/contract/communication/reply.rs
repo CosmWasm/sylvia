@@ -6,7 +6,7 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::ReplyOn;
-use crate::parser::{MsgType, SylviaAttribute};
+use crate::parser::{MsgType, ParsedSylviaAttributes, SylviaAttribute};
 use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::emit_turbofish;
@@ -190,12 +190,15 @@ struct ReplyData<'a> {
     pub handler_id: &'a Ident,
     /// Methods handling the reply id for the associated reply on.
     pub handlers: Vec<(&'a Ident, ReplyOn)>,
+    /// Data parameter associated with the handlers.
+    pub data: Option<&'a MsgField<'a>>,
     /// Payload parameters associated with the handlers.
     pub payload: Vec<&'a MsgField<'a>>,
 }
 
 impl<'a> ReplyData<'a> {
     pub fn new(reply_id: Ident, variant: &'a MsgVariant<'a>, handler_id: &'a Ident) -> Self {
+        let data = variant.fields().first();
         // Skip the first field reserved for the `data`.
         let payload = variant.fields().iter().skip(1).collect::<Vec<_>>();
         let method_name = variant.function_name();
@@ -205,6 +208,7 @@ impl<'a> ReplyData<'a> {
             reply_id,
             handler_id,
             handlers: vec![(method_name, reply_on)],
+            data,
             payload,
         }
     }
@@ -372,12 +376,14 @@ impl<'a> ReplyData<'a> {
             Some((method_name, reply_on)) if reply_on == &ReplyOn::Success => {
                 let payload_values = self.payload.iter().map(|field| field.name());
                 let payload_deserialization = self.payload.emit_payload_deserialization();
+                let data_deserialization = self.data.map(DataField::emit_data_deserialization);
 
                 quote! {
                     #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
                         #[allow(deprecated)]
                         let #sylvia ::cw_std::SubMsgResponse { events, data, msg_responses} = sub_msg_resp;
                         #payload_deserialization
+                        #data_deserialization
 
                         #contract_turbofish ::new(). #method_name ((deps, env, gas_used, events, msg_responses).into(), data, #(#payload_values),* )
                     }
@@ -472,6 +478,73 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
         }
 
         variant_handler_id_pair
+    }
+}
+
+pub trait DataField {
+    fn emit_data_deserialization(&self) -> TokenStream;
+}
+
+impl DataField for MsgField<'_> {
+    fn emit_data_deserialization(&self) -> TokenStream {
+        let sylvia = crate_module();
+        let data = ParsedSylviaAttributes::new(self.attrs().iter()).data;
+        let is_data_attr = self
+            .attrs()
+            .iter()
+            .any(|attr| SylviaAttribute::new(attr) == Some(SylviaAttribute::Data));
+        let missing_data_err = "Missing reply data field.";
+        let invalid_reply_data_err = quote! {
+            format! {"Invalid reply data: {}\nSerde error while deserializing {}", data, err}
+        };
+        let data_deserialization = quote! {
+            let deserialized_data =
+                #sylvia ::cw_utils::parse_execute_response_data(data.as_slice())
+                    .map_err(|err| #sylvia ::cw_std::StdError::generic_err(
+                        format!("Failed deserializing protobuf data: {}", err)
+                    ))?;
+            let deserialized_data = match deserialized_data.data {
+                Some(data) => #sylvia ::cw_std::from_json(&data).map_err(|err| #sylvia ::cw_std::StdError::generic_err( #invalid_reply_data_err ))?,
+                None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
+            };
+        };
+
+        match data {
+            Some(data) if data.raw && data.opt => quote! {},
+            Some(data) if data.raw => quote! {
+                let data = match data {
+                    Some(data) => data,
+                    None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
+                };
+            },
+            Some(data) if data.opt => quote! {
+                let data = match data {
+                    Some(data) => {
+                        #data_deserialization
+
+                        Some(deserialized_data)
+                    },
+                    None => None,
+                };
+            },
+            None if is_data_attr => quote! {
+                let data = match data {
+                    Some(data) => {
+                        #data_deserialization
+
+                        deserialized_data
+                    },
+                    None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
+                };
+            },
+            _ => {
+                emit_error!(self.name().span(), "Invalid data usage.";
+                    note = "Reply data should be marked with #[sv::data] attribute.";
+                    note = "Remove this parameter or mark it with #[sv::data] attribute."
+                );
+                quote! {}
+            }
+        }
     }
 }
 

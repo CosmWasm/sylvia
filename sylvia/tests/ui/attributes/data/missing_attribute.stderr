@@ -1,0 +1,9 @@
+error: Invalid data usage.
+
+         = note: Reply data should be marked with #[sv::data] attribute.
+         = note: Remove this parameter or mark it with #[sv::data] attribute.
+
+  --> tests/ui/attributes/data/missing_attribute.rs:26:9
+   |
+26 |         _data: Option<Binary>,
+   |         ^^^^^
