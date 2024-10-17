@@ -23,7 +23,7 @@ pub mod mismatched_params {
         fn first_reply(
             &self,
             _ctx: ReplyCtx,
-            _data: Option<Binary>,
+            #[sv::data(opt, raw)] _data: Option<Binary>,
             param: String,
         ) -> StdResult<Response> {
             Ok(Response::new())
@@ -33,7 +33,7 @@ pub mod mismatched_params {
         fn second_reply(
             &self,
             _ctx: ReplyCtx,
-            _data: Option<Binary>,
+            #[sv::data(opt, raw)] _data: Option<Binary>,
             param: u32,
         ) -> StdResult<Response> {
             Ok(Response::new())
@@ -62,7 +62,7 @@ pub mod mismatched_param_arity {
         fn first_reply(
             &self,
             _ctx: ReplyCtx,
-            _data: Option<Binary>,
+            #[sv::data(opt, raw)] _data: Option<Binary>,
             param: String,
         ) -> StdResult<Response> {
             Ok(Response::new())
@@ -72,7 +72,7 @@ pub mod mismatched_param_arity {
         fn second_reply(
             &self,
             _ctx: ReplyCtx,
-            _data: Option<Binary>,
+            #[sv::data(opt, raw)] _data: Option<Binary>,
             param: String,
             param: u32,
         ) -> StdResult<Response> {
