@@ -1,6 +1,7 @@
 //! Module defining parsing of Sylvia attributes.
 //! Every Sylvia attribute should be prefixed with `sv::`
 
+use data::DataFieldParams;
 use features::SylviaFeatures;
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
@@ -8,6 +9,7 @@ use syn::{Attribute, MetaList, PathSegment};
 
 pub mod attr;
 pub mod custom;
+pub mod data;
 pub mod error;
 pub mod features;
 pub mod messages;
@@ -33,6 +35,7 @@ pub enum SylviaAttribute {
     VariantAttrs,
     MsgAttrs,
     Payload,
+    Data,
     Features,
 }
 
@@ -56,6 +59,7 @@ impl SylviaAttribute {
             "attr" => Some(Self::VariantAttrs),
             "msg_attr" => Some(Self::MsgAttrs),
             "payload" => Some(Self::Payload),
+            "data" => Some(Self::Data),
             "features" => Some(Self::Features),
             _ => None,
         }
@@ -74,6 +78,7 @@ pub struct ParsedSylviaAttributes {
     pub variant_attrs_forward: Vec<VariantAttrForwarding>,
     pub msg_attrs_forward: Vec<MsgAttrForwarding>,
     pub sv_features: SylviaFeatures,
+    pub data: Option<DataFieldParams>,
 }
 
 impl ParsedSylviaAttributes {
@@ -171,6 +176,11 @@ impl ParsedSylviaAttributes {
                     attr, "The attribute `sv::payload` used in wrong context";
                     note = attr.span() => "The `sv::payload` should be used as a prefix for `Binary` payload.";
                 );
+            }
+            SylviaAttribute::Data => {
+                if let Ok(data) = DataFieldParams::new(attr) {
+                    self.data = Some(data);
+                }
             }
             SylviaAttribute::Features => {
                 if let Ok(features) = SylviaFeatures::new(attr) {
