@@ -214,7 +214,7 @@ where
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx<Q>,
-        data: Option<Binary>,
+        #[sv::data(raw, opt)] data: Option<Binary>,
         // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
         // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
@@ -236,7 +236,7 @@ where
     fn success(
         &self,
         ctx: ReplyCtx<Q>,
-        _data: Option<Binary>,
+        #[sv::data(raw, opt)] _data: Option<Binary>,
         #[sv::payload] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &SUCCESS_REPLY_ID)?;

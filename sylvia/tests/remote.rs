@@ -190,6 +190,7 @@ where
 }
 
 pub mod manager {
+    use cosmwasm_std::Binary;
     use cw_storage_plus::Item;
     use schemars::JsonSchema;
     use serde::de::DeserializeOwned;
