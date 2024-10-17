@@ -121,6 +121,10 @@ impl<'a> MsgField<'a> {
         self.ty
     }
 
+    pub fn attrs(&self) -> &'a Vec<Attribute> {
+        self.attrs
+    }
+
     pub fn contains_attribute(&self, sv_attr: SylviaAttribute) -> bool {
         self.attrs
             .iter()
