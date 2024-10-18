@@ -45,7 +45,7 @@ impl Contract {
     fn reply_on(
         &self,
         _ctx: ReplyCtx,
-        _data: Option<Binary>,
+        #[sv::data(raw, opt)] _data: Option<Binary>,
         #[sv::payload] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
