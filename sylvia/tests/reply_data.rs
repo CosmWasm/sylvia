@@ -1,7 +1,7 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
-use cw_utils::{parse_instantiate_response_data, ParseReplyError};
+use cw_utils::{MsgInstantiateContractResponse, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
 use sv::SubMsgMethods;
 use sylvia::builder::instantiate::InstantiateBuilder;
@@ -117,19 +117,28 @@ impl Contract {
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx,
-        #[sv::data(raw, opt)] data: Option<Binary>,
+        #[sv::data(instantiate)] data: MsgInstantiateContractResponse,
         // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
         // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
         // _instantiate_payload: InstantiatePayload,
         #[sv::payload] _payload: Binary,
     ) -> Result<Response, ContractError> {
-        let init_data = parse_instantiate_response_data(&data.unwrap())?;
-        let remote_addr = Addr::unchecked(init_data.contract_address);
+        let remote_addr = Addr::unchecked(data.contract_address);
 
         self.remote
             .save(ctx.deps.storage, &Remote::new(remote_addr))?;
 
+        Ok(Response::new())
+    }
+
+    #[sv::msg(reply, reply_on=success)]
+    fn _optional_remote_instantiated(
+        &self,
+        _ctx: ReplyCtx,
+        #[sv::data(instantiate, opt)] _data: Option<MsgInstantiateContractResponse>,
+        #[sv::payload] _payload: Binary,
+    ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
 
