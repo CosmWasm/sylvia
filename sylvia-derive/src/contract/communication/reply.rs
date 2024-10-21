@@ -497,7 +497,7 @@ impl DataField for MsgField<'_> {
         let invalid_reply_data_err = quote! {
             format! {"Invalid reply data: {}\nSerde error while deserializing {}", data, err}
         };
-        let data_deserialization = quote! {
+        let execute_data_deserialization = quote! {
             let deserialized_data =
                 #sylvia ::cw_utils::parse_execute_response_data(data.as_slice())
                     .map_err(|err| #sylvia ::cw_std::StdError::generic_err(
@@ -509,6 +509,14 @@ impl DataField for MsgField<'_> {
             };
         };
 
+        let instantiate_data_deserialization = quote! {
+            let deserialized_data =
+                #sylvia ::cw_utils::parse_instantiate_response_data(data.as_slice())
+                    .map_err(|err| #sylvia ::cw_std::StdError::generic_err(
+                        format!("Failed deserializing protobuf data: {}", err)
+                    ))?;
+        };
+
         match data {
             Some(data) if data.raw && data.opt => quote! {},
             Some(data) if data.raw => quote! {
@@ -517,10 +525,30 @@ impl DataField for MsgField<'_> {
                     None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
                 };
             },
+            Some(data) if data.instantiate && data.opt => quote! {
+                let data = match data {
+                    Some(data) => {
+                        #instantiate_data_deserialization
+
+                        Some(deserialized_data)
+                    },
+                    None => None,
+                };
+            },
+            Some(data) if data.instantiate => quote! {
+                let data = match data {
+                    Some(data) => {
+                        #instantiate_data_deserialization
+
+                        deserialized_data
+                    },
+                    None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
+                };
+            },
             Some(data) if data.opt => quote! {
                 let data = match data {
                     Some(data) => {
-                        #data_deserialization
+                        #execute_data_deserialization
 
                         Some(deserialized_data)
                     },
@@ -530,7 +558,7 @@ impl DataField for MsgField<'_> {
             None if is_data_attr => quote! {
                 let data = match data {
                     Some(data) => {
-                        #data_deserialization
+                        #execute_data_deserialization
 
                         deserialized_data
                     },
