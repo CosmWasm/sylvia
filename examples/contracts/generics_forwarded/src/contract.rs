@@ -4,9 +4,11 @@ use crate::error::ContractError;
 use cw_storage_plus::Item;
 use sylvia::contract;
 use sylvia::cw_std::{Binary, Response, SubMsgResult};
+#[allow(deprecated)]
+use sylvia::replies::ReplyCtx;
 use sylvia::serde::Deserialize;
 use sylvia::types::{
-    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx,
+    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx,
 };
 
 #[sylvia::cw_schema::cw_serde(crate = "sylvia::cw_schema")]
@@ -192,7 +194,7 @@ where
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, deprecated)]
     #[sv::msg(reply)]
     fn reply(
         &self,

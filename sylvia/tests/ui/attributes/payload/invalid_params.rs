@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, deprecated)]
 
 use sylvia::contract;
 use sylvia::cw_std::{Binary, Reply, Response, StdResult};

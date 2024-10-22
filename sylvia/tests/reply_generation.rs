@@ -1,7 +1,9 @@
 use cosmwasm_std::{Binary, SubMsgResult};
 use itertools::Itertools;
 use sylvia::cw_std::{Response, StdResult};
-use sylvia::types::{InstantiateCtx, ReplyCtx};
+#[allow(deprecated)]
+use sylvia::replies::ReplyCtx;
+use sylvia::types::InstantiateCtx;
 use sylvia::{contract, entry_points};
 
 pub struct Contract;
@@ -20,6 +22,7 @@ impl Contract {
     }
 
     #[sv::msg(reply)]
+    #[allow(deprecated)]
     fn clean(
         &self,
         _ctx: ReplyCtx,
@@ -29,7 +32,7 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, deprecated)]
     #[sv::msg(reply, handlers=[handler_one, handler_two])]
     fn custom_handlers(
         &self,
@@ -40,7 +43,7 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, deprecated)]
     #[sv::msg(reply, reply_on = success)]
     fn two_handlers(
         &self,
@@ -51,7 +54,7 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, deprecated)]
     #[sv::msg(reply, reply_on = always)]
     fn reply_on_always(
         &self,
@@ -62,7 +65,7 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, deprecated)]
     #[sv::msg(reply, handlers=[two_handlers], reply_on = error)]
     fn both_parameters(
         &self,
