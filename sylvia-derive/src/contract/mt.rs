@@ -540,7 +540,7 @@ impl<'a> MtHelpers<'a> {
                     } else {
                         let reply_name = _reply.name().to_case(Case::Snake);
                         quote! {
-                            self. #reply_name ((deps, env, 0, vec![], vec![]).into(), msg).map_err(Into::into)
+                            self. #reply_name ((deps, env).into(), msg).map_err(Into::into)
                         }
                     }
                 })
