@@ -63,7 +63,7 @@ impl Contract {
     }
 
     #[allow(dead_code)]
-    #[sv::msg(reply, handlers=[two_handlers], reply_on = failure)]
+    #[sv::msg(reply, handlers=[two_handlers], reply_on = error)]
     fn both_parameters(
         &self,
         _ctx: ReplyCtx,
