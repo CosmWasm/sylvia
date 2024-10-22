@@ -214,7 +214,7 @@ impl<'a> GlueMessage<'a> {
                     let msgs: [&[&str]; #variants_cnt] = [#(#messages_call),*];
                     let mut err_msg = msgs.into_iter().flatten().fold(
                         // It might be better to forward the error or serialization, but we just
-                        // deserialized it from JSON, not reason to expect failure here.
+                        // deserialized it from JSON, not reason to expect error here.
                         format!(
                             "Unsupported message received: {}. Messages supported by this contract: ",
                             #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())

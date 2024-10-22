@@ -254,25 +254,25 @@ impl<'a> ReplyData<'a> {
         self.handlers.push((new_function_name, new_reply_on));
     }
 
-    /// Emits success and failure match arms for a single `ReplyId`.
+    /// Emits success and error match arms for a single `ReplyId`.
     fn emit_match_arms(&self, contract: &Type, generics: &[&GenericParam]) -> TokenStream {
         let reply_id = &self.reply_id;
         let contract_turbofish = emit_turbofish(contract, generics);
         let success_match_arm = self.emit_success_match_arm(&contract_turbofish);
-        let failure_match_arm = self.emit_failure_match_arm(&contract_turbofish);
+        let error_match_arm = self.emit_error_match_arm(&contract_turbofish);
 
         quote! {
             #reply_id => {
                 match result {
                     #success_match_arm
-                    #failure_match_arm
+                    #error_match_arm
                 }
             }
         }
     }
 
     /// Emits [cosmwasm_std::ReplyOn] value to be put in the `cosmwasm_std::SubMsg`.
-    /// If both `Success` and `Failure` is defined for given `reply_id`, `cosmwasm_std::ReplyOn::Always` is returned.
+    /// If both `Success` and `Error` is defined for given `reply_id`, `cosmwasm_std::ReplyOn::Always` is returned.
     fn emit_cw_reply_on(&self) -> TokenStream {
         let sylvia = crate_module();
         let is_always = self
@@ -283,20 +283,20 @@ impl<'a> ReplyData<'a> {
             .handlers
             .iter()
             .any(|(_, reply_on)| reply_on == &ReplyOn::Success);
-        let is_failure = self
+        let is_error = self
             .handlers
             .iter()
-            .any(|(_, reply_on)| reply_on == &ReplyOn::Failure);
+            .any(|(_, reply_on)| reply_on == &ReplyOn::Error);
 
-        if is_always || (is_success && is_failure) {
+        if is_always || (is_success && is_error) {
             quote! { #sylvia ::cw_std::ReplyOn::Always }
         } else if is_success {
             quote! { #sylvia ::cw_std::ReplyOn::Success }
-        } else if is_failure {
+        } else if is_error {
             quote! { #sylvia ::cw_std::ReplyOn::Error }
         } else {
             // This should never happen.
-            // We parse only the `Success`, `Failure` and `Always` values which are covered above.
+            // We parse only the `Success`, `Error` and `Always` values which are covered above.
             // Handling the `Never` value wouldn't make sense as we would create a dead handler.
             quote! { #sylvia ::cw_std::ReplyOn::Never }
         }
@@ -426,18 +426,18 @@ impl<'a> ReplyData<'a> {
         }
     }
 
-    /// Emits match arm for [ReplyOn::Failure].
-    /// In case neither [ReplyOn::Failure] nor [ReplyOn::Always] is present,
+    /// Emits match arm for [ReplyOn::Error].
+    /// In case neither [ReplyOn::Error] nor [ReplyOn::Always] is present,
     /// the error is forwarded.
-    fn emit_failure_match_arm(&self, contract_turbofish: &Type) -> TokenStream {
+    fn emit_error_match_arm(&self, contract_turbofish: &Type) -> TokenStream {
         let sylvia = crate_module();
 
         match self
             .handlers
             .iter()
-            .find(|(_, reply_on)| reply_on == &ReplyOn::Failure || reply_on == &ReplyOn::Always)
+            .find(|(_, reply_on)| reply_on == &ReplyOn::Error || reply_on == &ReplyOn::Always)
         {
-            Some((method_name, reply_on)) if reply_on == &ReplyOn::Failure => {
+            Some((method_name, reply_on)) if reply_on == &ReplyOn::Error => {
                 let payload_values = self.payload.iter().map(|field| field.name());
                 let payload_deserialization = self.payload.emit_payload_deserialization();
 

@@ -4,8 +4,7 @@ use cw_storage_plus::Item;
 use cw_utils::{parse_instantiate_response_data, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
 use sv::{
-    SubMsgMethods, ALWAYS_REPLY_ID, FAILURE_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID,
-    SUCCESS_REPLY_ID,
+    SubMsgMethods, ALWAYS_REPLY_ID, ERROR_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID, SUCCESS_REPLY_ID,
 };
 use sylvia::builder::instantiate::InstantiateBuilder;
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
@@ -133,7 +132,7 @@ where
     }
 
     #[sv::msg(exec)]
-    pub fn call_remote_failure(
+    pub fn call_remote_error(
         &self,
         ctx: ExecCtx<Q>,
         should_fail: bool,
@@ -144,7 +143,7 @@ where
             .executor()
             .noop(should_fail)?
             .build()
-            .failure(Binary::default())?;
+            .error(Binary::default())?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -244,14 +243,14 @@ where
         Ok(Response::new())
     }
 
-    #[sv::msg(reply, handlers=[failure, both], reply_on=failure)]
-    fn failure(
+    #[sv::msg(reply, handlers=[error, both], reply_on=error)]
+    fn error(
         &self,
         ctx: ReplyCtx<Q>,
         _error: String,
         #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
-        self.last_reply.save(ctx.deps.storage, &FAILURE_REPLY_ID)?;
+        self.last_reply.save(ctx.deps.storage, &ERROR_REPLY_ID)?;
 
         Ok(Response::new())
     }
@@ -286,7 +285,7 @@ mod tests {
     use crate::noop_contract::sv::mt::CodeId as NoopCodeId;
     use crate::sv::mt::{CodeId, ContractProxy};
     use crate::sv::{
-        ALWAYS_REPLY_ID, FAILURE_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID, SUCCESS_REPLY_ID,
+        ALWAYS_REPLY_ID, ERROR_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID, SUCCESS_REPLY_ID,
     };
 
     use sylvia::cw_multi_test::IntoBech32;
@@ -321,15 +320,15 @@ mod tests {
         let last_reply = contract.last_reply().unwrap();
         assert_eq!(last_reply, SUCCESS_REPLY_ID);
 
-        // Should not dispatch if expected failure and execution succeeded
-        contract.call_remote_failure(false).call(&owner).unwrap();
+        // Should not dispatch if expected error and execution succeeded
+        contract.call_remote_error(false).call(&owner).unwrap();
         let last_reply = contract.last_reply().unwrap();
         assert_eq!(last_reply, SUCCESS_REPLY_ID);
 
-        // Should dispatch if expected failure and execution failed
-        contract.call_remote_failure(true).call(&owner).unwrap();
+        // Should dispatch if expected error and execution failed
+        contract.call_remote_error(true).call(&owner).unwrap();
         let last_reply = contract.last_reply().unwrap();
-        assert_eq!(last_reply, FAILURE_REPLY_ID);
+        assert_eq!(last_reply, ERROR_REPLY_ID);
 
         // Should dispatch if expected any result and execution succeeded
         contract.call_remote_always(false).call(&owner).unwrap();
@@ -349,7 +348,7 @@ mod tests {
         // Should dispatch if expected both results and execution failed
         contract.call_remote_both(true).call(&owner).unwrap();
         let last_reply = contract.last_reply().unwrap();
-        assert_eq!(last_reply, FAILURE_REPLY_ID);
+        assert_eq!(last_reply, ERROR_REPLY_ID);
 
         // Should send the cosmos message
         contract.send_cosmos_messages().call(&owner).unwrap();
