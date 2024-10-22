@@ -71,7 +71,7 @@ impl Parse for ArgumentParser {
 #[derive(Copy, Debug, Default, Clone, PartialEq)]
 pub enum ReplyOn {
     Success,
-    Failure,
+    Error,
     #[default]
     Always,
 }
@@ -80,7 +80,7 @@ impl std::fmt::Display for ReplyOn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ReplyOn::Success => f.write_str("success"),
-            ReplyOn::Failure => f.write_str("failure"),
+            ReplyOn::Error => f.write_str("error"),
             ReplyOn::Always => f.write_str("always"),
         }
     }
@@ -90,11 +90,11 @@ impl ReplyOn {
     pub fn new(reply_on: Ident) -> Result<Self> {
         match reply_on.to_string().as_str() {
             "success" => Ok(Self::Success),
-            "failure" => Ok(Self::Failure),
+            "error" => Ok(Self::Error),
             "always" => Ok(Self::Always),
             _ => Err(Error::new(
                 reply_on.span(),
-                "Invalid argument type, expected one of `success`, `failure` or `always`.",
+                "Invalid argument type, expected one of `success`, `error` or `always`.",
             )),
         }
     }

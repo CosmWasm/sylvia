@@ -29,7 +29,7 @@ pub mod mismatched_params {
             Ok(Response::new())
         }
 
-        #[sv::msg(reply, handlers=[on_instantiated], reply_on=failure)]
+        #[sv::msg(reply, handlers=[on_instantiated], reply_on=error)]
         fn second_reply(
             &self,
             _ctx: ReplyCtx,
@@ -68,7 +68,7 @@ pub mod mismatched_param_arity {
             Ok(Response::new())
         }
 
-        #[sv::msg(reply, handlers=[on_instantiated], reply_on=failure)]
+        #[sv::msg(reply, handlers=[on_instantiated], reply_on=error)]
         fn second_reply(
             &self,
             _ctx: ReplyCtx,

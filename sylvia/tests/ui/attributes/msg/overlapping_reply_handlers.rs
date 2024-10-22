@@ -32,12 +32,12 @@ impl Contract {
         Ok(Response::new())
     }
 
-    #[sv::msg(reply, handlers=[handler2], reply_on=failure)]
+    #[sv::msg(reply, handlers=[handler2], reply_on=error)]
     fn some_reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
         Ok(Response::new())
     }
 
-    #[sv::msg(reply, reply_on=failure)]
+    #[sv::msg(reply, reply_on=error)]
     fn handler2(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
         Ok(Response::new())
     }
