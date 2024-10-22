@@ -211,7 +211,7 @@ impl<'a> EntryPoints<'a> {
                 sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
             },
             MsgType::Reply => quote! {
-                #contract_turbofish ::new(). #reply((deps, env, 0, vec![], vec![]).into(), msg).map_err(Into::into)
+                #contract_turbofish ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
             },
             _ => quote! {
                 msg.dispatch(& #contract_turbofish ::new() , ( #values )).map_err(Into::into)
