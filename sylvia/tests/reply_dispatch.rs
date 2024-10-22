@@ -8,7 +8,9 @@ use sv::{
 };
 use sylvia::builder::instantiate::InstantiateBuilder;
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, Remote, ReplyCtx};
+#[allow(deprecated)]
+use sylvia::replies::ReplyCtx;
+use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, Remote};
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
@@ -210,6 +212,7 @@ where
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx<Q>,
@@ -232,6 +235,7 @@ where
     }
 
     #[sv::msg(reply, handlers=[success, both], reply_on=success)]
+    #[allow(deprecated)]
     fn success(
         &self,
         ctx: ReplyCtx<Q>,
@@ -244,6 +248,7 @@ where
     }
 
     #[sv::msg(reply, handlers=[error, both], reply_on=error)]
+    #[allow(deprecated)]
     fn error(
         &self,
         ctx: ReplyCtx<Q>,
@@ -256,6 +261,7 @@ where
     }
 
     #[sv::msg(reply, reply_on=always)]
+    #[allow(deprecated)]
     fn always(
         &self,
         ctx: ReplyCtx<Q>,
@@ -270,6 +276,7 @@ where
     }
 
     #[sv::msg(exec)]
+    #[allow(deprecated)]
     fn send_cosmos_messages(&self, ctx: ExecCtx<Q>) -> Result<Response<M>, ContractError> {
         let remote_addr = self.remote.load(ctx.deps.storage)?;
         let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {

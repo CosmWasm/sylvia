@@ -1,8 +1,6 @@
 //! Module providing utilities to build and use sylvia contracts.
 
-use cosmwasm_std::{
-    Binary, Coin, Deps, DepsMut, Empty, Env, Event, MessageInfo, MsgResponse, WasmMsg,
-};
+use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
 use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
@@ -462,12 +460,13 @@ impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
 
 /// Represantation of `reply` context received in entry point.
 #[non_exhaustive]
+#[deprecated(
+    since = "1.3.0",
+    note = "This type will be replaced with `sylvia::replies::ReplyCtx` in 2.0.0."
+)]
 pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub deps: DepsMut<'a, C>,
     pub env: Env,
-    pub gas_used: u64,
-    pub events: Vec<Event>,
-    pub msg_responses: Vec<MsgResponse>,
 }
 
 /// Represantation of `migrate` context received in entry point.
@@ -542,25 +541,10 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for MigrateCt
     }
 }
 
-impl<'a, C: cosmwasm_std::CustomQuery>
-    From<(DepsMut<'a, C>, Env, u64, Vec<Event>, Vec<MsgResponse>)> for ReplyCtx<'a, C>
-{
-    fn from(
-        (deps, env, gas_used, events, msg_responses): (
-            DepsMut<'a, C>,
-            Env,
-            u64,
-            Vec<Event>,
-            Vec<MsgResponse>,
-        ),
-    ) -> Self {
-        Self {
-            deps,
-            env,
-            gas_used,
-            events,
-            msg_responses,
-        }
+#[allow(deprecated)]
+impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for ReplyCtx<'a, C> {
+    fn from((deps, env): (DepsMut<'a, C>, Env)) -> Self {
+        Self { deps, env }
     }
 }
 

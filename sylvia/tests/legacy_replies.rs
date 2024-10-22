@@ -33,7 +33,9 @@ mod noop_contract {
 
 mod reply_contract {
     use cosmwasm_std::Reply;
-    use sylvia::types::{ExecCtx, InstantiateCtx, ReplyCtx};
+    #[allow(deprecated)]
+    use sylvia::types::ReplyCtx;
+    use sylvia::types::{ExecCtx, InstantiateCtx};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::{to_json_binary, Response, StdResult, SubMsg, WasmMsg};
@@ -70,6 +72,7 @@ mod reply_contract {
         }
 
         #[sv::msg(reply)]
+        #[allow(deprecated)]
         fn reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
             let resp = Response::new().set_data(to_json_binary("data")?);
             Ok(resp)
