@@ -6,7 +6,9 @@ use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
 use sv::SubMsgMethods;
 use sylvia::builder::instantiate::InstantiateBuilder;
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-use sylvia::types::{ExecCtx, InstantiateCtx, Remote, ReplyCtx};
+#[allow(deprecated)]
+use sylvia::replies::ReplyCtx;
+use sylvia::types::{ExecCtx, InstantiateCtx, Remote};
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
@@ -114,6 +116,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx,
@@ -133,6 +136,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn _optional_remote_instantiated(
         &self,
         _ctx: ReplyCtx,
@@ -143,6 +147,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn data_raw_opt(
         &self,
         _ctx: ReplyCtx,
@@ -153,6 +158,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn data_raw(
         &self,
         _ctx: ReplyCtx,
@@ -163,6 +169,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn data_opt(
         &self,
         _ctx: ReplyCtx,
@@ -173,6 +180,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn data(
         &self,
         _ctx: ReplyCtx,
@@ -183,6 +191,7 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
+    #[allow(deprecated)]
     fn no_data(
         &self,
         _ctx: ReplyCtx,
