@@ -122,7 +122,7 @@ impl Contract {
         // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
         // _instantiate_payload: InstantiatePayload,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         let remote_addr = Addr::unchecked(data.contract_address);
 
@@ -137,7 +137,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data(instantiate, opt)] _data: Option<MsgInstantiateContractResponse>,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
@@ -147,7 +147,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data(raw, opt)] _data: Option<Binary>,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
@@ -157,7 +157,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data(raw)] _data: Binary,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
@@ -167,7 +167,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data(opt)] _data: Option<String>,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
@@ -177,13 +177,23 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data] _data: String,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
+    ) -> Result<Response, ContractError> {
+        Ok(Response::new())
+    }
+
+    #[sv::msg(reply, reply_on=success)]
+    fn no_data(
+        &self,
+        _ctx: ReplyCtx,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
     }
 }
 
-mod tests {
+#[test]
+fn dispatch_replies() {
     use crate::noop_contract::sv::mt::CodeId as NoopCodeId;
     use crate::sv::mt::{CodeId, ContractProxy};
     use crate::sv::{DATA_OPT_REPLY_ID, DATA_RAW_OPT_REPLY_ID, DATA_RAW_REPLY_ID, DATA_REPLY_ID};
@@ -192,88 +202,85 @@ mod tests {
     use sylvia::cw_multi_test::IntoBech32;
     use sylvia::multitest::App;
 
-    #[test]
-    fn dispatch_replies() {
-        let app = App::default();
-        let code_id = CodeId::store_code(&app);
-        let noop_code_id = NoopCodeId::store_code(&app);
+    let app = App::default();
+    let code_id = CodeId::store_code(&app);
+    let noop_code_id = NoopCodeId::store_code(&app);
 
-        let owner = "owner".into_bech32();
-        let data = Some(to_json_binary(&String::from("some_data")).unwrap());
-        let invalid_data = Some(Binary::from("InvalidData".as_bytes()));
+    let owner = "owner".into_bech32();
+    let data = Some(to_json_binary(&String::from("some_data")).unwrap());
+    let invalid_data = Some(Binary::from("InvalidData".as_bytes()));
 
-        // Trigger remote instantiation reply
-        let contract = code_id
-            .instantiate(noop_code_id.code_id())
-            .with_label("Contract")
-            .call(&owner)
-            .unwrap();
+    // Trigger remote instantiation reply
+    let contract = code_id
+        .instantiate(noop_code_id.code_id())
+        .with_label("Contract")
+        .call(&owner)
+        .unwrap();
 
-        // Should forward `data` in every case
-        contract
-            .send_message_expecting_data(None, DATA_RAW_OPT_REPLY_ID)
-            .call(&owner)
-            .unwrap();
+    // Should forward `data` in every case
+    contract
+        .send_message_expecting_data(None, DATA_RAW_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 
-        contract
-            .send_message_expecting_data(data.clone(), DATA_RAW_OPT_REPLY_ID)
-            .call(&owner)
-            .unwrap();
+    contract
+        .send_message_expecting_data(data.clone(), DATA_RAW_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 
-        // Should forward `data` if `Some` and return error if `None`
-        let err = contract
-            .send_message_expecting_data(None, DATA_RAW_REPLY_ID)
-            .call(&owner)
-            .unwrap_err();
-        assert_eq!(
-            err,
-            StdError::generic_err("Missing reply data field.").into()
-        );
+    // Should forward `data` if `Some` and return error if `None`
+    let err = contract
+        .send_message_expecting_data(None, DATA_RAW_REPLY_ID)
+        .call(&owner)
+        .unwrap_err();
+    assert_eq!(
+        err,
+        StdError::generic_err("Missing reply data field.").into()
+    );
 
-        contract
-            .send_message_expecting_data(data.clone(), DATA_RAW_REPLY_ID)
-            .call(&owner)
-            .unwrap();
+    contract
+        .send_message_expecting_data(data.clone(), DATA_RAW_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 
-        // Should forward deserialized `data` if `Some` or None and return error if deserialization fails
-        contract
-            .send_message_expecting_data(None, DATA_OPT_REPLY_ID)
-            .call(&owner)
-            .unwrap();
+    // Should forward deserialized `data` if `Some` or None and return error if deserialization fails
+    contract
+        .send_message_expecting_data(None, DATA_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 
-        let err = contract
-            .send_message_expecting_data(invalid_data.clone(), DATA_OPT_REPLY_ID)
-            .call(&owner)
-            .unwrap_err();
-        assert_eq!(
+    let err = contract
+        .send_message_expecting_data(invalid_data.clone(), DATA_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap_err();
+    assert_eq!(
             err,
             StdError::generic_err("Invalid reply data: SW52YWxpZERhdGE=\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type").into()
         );
 
-        contract
-            .send_message_expecting_data(data.clone(), DATA_OPT_REPLY_ID)
-            .call(&owner)
-            .unwrap();
+    contract
+        .send_message_expecting_data(data.clone(), DATA_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 
-        // Should forward deserialized `data` if `Some` and return error if `None` or if deserialization fails
-        let err = contract
-            .send_message_expecting_data(None, DATA_REPLY_ID)
-            .call(&owner)
-            .unwrap_err();
-        assert_eq!(
-            err,
-            StdError::generic_err("Missing reply data field.").into()
-        );
+    // Should forward deserialized `data` if `Some` and return error if `None` or if deserialization fails
+    let err = contract
+        .send_message_expecting_data(None, DATA_REPLY_ID)
+        .call(&owner)
+        .unwrap_err();
+    assert_eq!(
+        err,
+        StdError::generic_err("Missing reply data field.").into()
+    );
 
-        let err = contract
-            .send_message_expecting_data(invalid_data, DATA_REPLY_ID)
-            .call(&owner)
-            .unwrap_err();
-        assert_eq!(err, StdError::generic_err("Invalid reply data: SW52YWxpZERhdGE=\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type").into());
+    let err = contract
+        .send_message_expecting_data(invalid_data, DATA_REPLY_ID)
+        .call(&owner)
+        .unwrap_err();
+    assert_eq!(err, StdError::generic_err("Invalid reply data: SW52YWxpZERhdGE=\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type").into());
 
-        contract
-            .send_message_expecting_data(data, DATA_REPLY_ID)
-            .call(&owner)
-            .unwrap();
-    }
+    contract
+        .send_message_expecting_data(data, DATA_REPLY_ID)
+        .call(&owner)
+        .unwrap();
 }

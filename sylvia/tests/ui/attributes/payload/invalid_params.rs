@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use sylvia::contract;
-use sylvia::cw_std::{Reply, Response, StdResult};
+use sylvia::cw_std::{Binary, Reply, Response, StdResult};
 use sylvia::types::{InstantiateCtx, ReplyCtx};
 
 pub struct Contract;
@@ -22,9 +22,8 @@ impl Contract {
     fn reply(
         &self,
         _ctx: ReplyCtx,
-        // If the `data` attribute is missing, the data field should be omitted.
-        _data: Option<Binary>,
-        param: String,
+        #[sv::data(raw, opt)] _data: Option<Binary>,
+        #[sv::payload(invalid)] _param: Option<Binary>,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
