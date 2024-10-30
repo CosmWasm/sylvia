@@ -219,7 +219,7 @@ where
         // MultiTest version is released.
         // Payload is not currently forwarded in the MultiTest.
         // _instantiate_payload: InstantiatePayload,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply
             .save(ctx.deps.storage, &REMOTE_INSTANTIATED_REPLY_ID)?;
@@ -237,7 +237,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         #[sv::data(raw, opt)] _data: Option<Binary>,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &SUCCESS_REPLY_ID)?;
 
@@ -249,7 +249,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _error: String,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &FAILURE_REPLY_ID)?;
 
@@ -261,7 +261,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _result: SubMsgResult,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
         // _first_part_payload: u32,
         // _second_part_payload: String,
     ) -> Result<Response<M>, ContractError> {
