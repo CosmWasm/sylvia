@@ -3,6 +3,7 @@
 
 use data::DataFieldParams;
 use features::SylviaFeatures;
+use payload::PayloadFieldParam;
 use proc_macro_error::emit_error;
 use syn::spanned::Spanned;
 use syn::{Attribute, MetaList, PathSegment};
@@ -15,6 +16,7 @@ pub mod features;
 pub mod messages;
 pub mod msg;
 pub mod override_entry_point;
+pub mod payload;
 
 pub use attr::{MsgAttrForwarding, VariantAttrForwarding};
 pub use custom::Custom;
@@ -79,6 +81,7 @@ pub struct ParsedSylviaAttributes {
     pub msg_attrs_forward: Vec<MsgAttrForwarding>,
     pub sv_features: SylviaFeatures,
     pub data: Option<DataFieldParams>,
+    pub payload: Option<PayloadFieldParam>,
 }
 
 impl ParsedSylviaAttributes {
@@ -90,6 +93,14 @@ impl ParsedSylviaAttributes {
 
             if let (Some(sylvia_attr), Ok(attr)) = (sylvia_attr, &attr_content) {
                 result.match_attribute(&sylvia_attr, attr);
+            } else if sylvia_attr == Some(SylviaAttribute::Data) {
+                // The `sv::data` attribute can be used without parameters.
+                result.data = Some(DataFieldParams::default());
+            } else if sylvia_attr == Some(SylviaAttribute::Payload) {
+                emit_error!(
+                    attr.span(), "Missing parameters for `sv::payload`";
+                    note = "Expected `#[sv::payload(raw)]`"
+                );
             }
         }
 
@@ -172,10 +183,9 @@ impl ParsedSylviaAttributes {
                 }
             }
             SylviaAttribute::Payload => {
-                emit_error!(
-                    attr, "The attribute `sv::payload` used in wrong context";
-                    note = attr.span() => "The `sv::payload` should be used as a prefix for `Binary` payload.";
-                );
+                if let Ok(payload) = PayloadFieldParam::new(attr) {
+                    self.payload = Some(payload);
+                }
             }
             SylviaAttribute::Data => {
                 if let Ok(data) = DataFieldParams::new(attr) {

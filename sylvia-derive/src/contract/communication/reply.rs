@@ -6,10 +6,12 @@ use syn::{parse_quote, GenericParam, Ident, ItemImpl, Type};
 
 use crate::crate_module;
 use crate::parser::attributes::msg::ReplyOn;
-use crate::parser::{MsgType, ParsedSylviaAttributes, SylviaAttribute};
+use crate::parser::{MsgType, ParsedSylviaAttributes};
 use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::emit_turbofish;
+
+const NUMBER_OF_DATA_FIELDS: usize = 1;
 
 pub struct Reply<'a> {
     source: &'a ItemImpl,
@@ -173,7 +175,7 @@ impl<'a> ReplyVariants<'a> for MsgVariants<'a, GenericParam> {
                             },
                         )
                     }
-                    Some(existing_data) => existing_data.add_second_handler(handler),
+                    Some(existing_data) => existing_data.merge(handler),
                     None => reply_data.push(ReplyData::new(reply_id, handler,  handler_id)),
                 }
             });
@@ -198,9 +200,14 @@ struct ReplyData<'a> {
 
 impl<'a> ReplyData<'a> {
     pub fn new(reply_id: Ident, variant: &'a MsgVariant<'a>, handler_id: &'a Ident) -> Self {
-        let data = variant.fields().first();
-        // Skip the first field reserved for the `data`.
-        let payload = variant.fields().iter().skip(1).collect::<Vec<_>>();
+        let data = variant.as_data_field();
+        variant.validate_fields_attributes();
+        let payload = variant.fields().iter();
+        let payload = if data.is_some() || variant.msg_attr().reply_on() != ReplyOn::Success {
+            payload.skip(NUMBER_OF_DATA_FIELDS).collect::<Vec<_>>()
+        } else {
+            payload.collect::<Vec<_>>()
+        };
         let method_name = variant.function_name();
         let reply_on = variant.msg_attr().reply_on();
 
@@ -214,13 +221,15 @@ impl<'a> ReplyData<'a> {
     }
 
     /// Adds second handler to the reply data provdided their payload signature match.
-    pub fn add_second_handler(&mut self, new_handler: &'a MsgVariant<'a>) {
+    pub fn merge(&mut self, new_handler: &'a MsgVariant<'a>) {
         let (current_method_name, _) = match self.handlers.first() {
             Some(handler) => handler,
             _ => return,
         };
 
-        if self.payload.len() != new_handler.fields().len() - 1 {
+        let new_reply_data = ReplyData::new(self.reply_id.clone(), new_handler, self.handler_id);
+
+        if self.payload.len() != new_reply_data.payload.len() {
             emit_error!(current_method_name.span(), "Mismatched quantity of method parameters.";
                 note = self.handler_id.span() => format!("Both `{}` handlers should have the same number of parameters.", self.handler_id);
                 note = new_handler.function_name().span() => format!("Previous definition of {} handler.", self.handler_id)
@@ -229,7 +238,7 @@ impl<'a> ReplyData<'a> {
 
         self.payload
             .iter()
-            .zip(new_handler.fields().iter().skip(1))
+            .zip(new_reply_data.payload.iter())
             .for_each(|(current_field, new_field)|
         {
             if current_field.ty() != new_field.ty() {
@@ -377,6 +386,7 @@ impl<'a> ReplyData<'a> {
                 let payload_values = self.payload.iter().map(|field| field.name());
                 let payload_deserialization = self.payload.emit_payload_deserialization();
                 let data_deserialization = self.data.map(DataField::emit_data_deserialization);
+                let data = self.data.map(|_| quote! { data, });
 
                 quote! {
                     #sylvia ::cw_std::SubMsgResult::Ok(sub_msg_resp) => {
@@ -385,7 +395,7 @@ impl<'a> ReplyData<'a> {
                         #payload_deserialization
                         #data_deserialization
 
-                        #contract_turbofish ::new(). #method_name ((deps, env, gas_used, events, msg_responses).into(), data, #(#payload_values),* )
+                        #contract_turbofish ::new(). #method_name ((deps, env, gas_used, events, msg_responses).into(), #data #(#payload_values),* )
                     }
                 }
             }
@@ -462,6 +472,8 @@ impl<'a> ReplyData<'a> {
 
 trait ReplyVariant<'a> {
     fn as_variant_handlers_pair(&'a self) -> Vec<(&'a MsgVariant<'a>, &'a Ident)>;
+    fn as_data_field(&'a self) -> Option<&'a MsgField<'a>>;
+    fn validate_fields_attributes(&'a self);
 }
 
 impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
@@ -479,6 +491,28 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
 
         variant_handler_id_pair
     }
+
+    /// Validates attributes and returns `Some(MsgField)` if a field marked with `sv::data` attribute
+    /// is present and the `reply_on` attribute is set to `ReplyOn::Success`.
+    fn as_data_field(&'a self) -> Option<&'a MsgField<'a>> {
+        let data_attrs = self.fields().first().map(|field| {
+            ParsedSylviaAttributes::new(field.attrs().iter())
+                .data
+                .is_some()
+        });
+        match data_attrs {
+            Some(attrs) if attrs && self.msg_attr().reply_on() == ReplyOn::Success => {
+                self.fields().first()
+            }
+            _ => None,
+        }
+    }
+
+    /// Validates if the fields attributes are correct.
+    fn validate_fields_attributes(&'a self) {
+        let field_attrs = self.fields().iter().flat_map(|field| field.attrs());
+        ParsedSylviaAttributes::new(field_attrs);
+    }
 }
 
 pub trait DataField {
@@ -489,10 +523,6 @@ impl DataField for MsgField<'_> {
     fn emit_data_deserialization(&self) -> TokenStream {
         let sylvia = crate_module();
         let data = ParsedSylviaAttributes::new(self.attrs().iter()).data;
-        let is_data_attr = self
-            .attrs()
-            .iter()
-            .any(|attr| SylviaAttribute::new(attr) == Some(SylviaAttribute::Data));
         let missing_data_err = "Missing reply data field.";
         let invalid_reply_data_err = quote! {
             format! {"Invalid reply data: {}\nSerde error while deserializing {}", data, err}
@@ -555,7 +585,7 @@ impl DataField for MsgField<'_> {
                     None => None,
                 };
             },
-            None if is_data_attr => quote! {
+            _ => quote! {
                 let data = match data {
                     Some(data) => {
                         #execute_data_deserialization
@@ -565,13 +595,6 @@ impl DataField for MsgField<'_> {
                     None => return Err(Into::into( #sylvia ::cw_std::StdError::generic_err( #missing_data_err ))),
                 };
             },
-            _ => {
-                emit_error!(self.name().span(), "Invalid data usage.";
-                    note = "Reply data should be marked with #[sv::data] attribute.";
-                    note = "Remove this parameter or mark it with #[sv::data] attribute."
-                );
-                quote! {}
-            }
         }
     }
 }
@@ -616,8 +639,11 @@ impl PayloadFields for Vec<&MsgField<'_>> {
     }
 
     fn is_payload_marked(&self) -> bool {
-        self.iter()
-            .any(|field| field.contains_attribute(SylviaAttribute::Payload))
+        self.iter().any(|field| {
+            ParsedSylviaAttributes::new(field.attrs().iter())
+                .payload
+                .is_some()
+        })
     }
 }
 

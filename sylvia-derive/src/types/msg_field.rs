@@ -1,6 +1,5 @@
 use crate::fold::StripSelfPath;
 use crate::parser::check_generics::{CheckGenerics, GetPath};
-use crate::parser::SylviaAttribute;
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
@@ -123,11 +122,5 @@ impl<'a> MsgField<'a> {
 
     pub fn attrs(&self) -> &'a Vec<Attribute> {
         self.attrs
-    }
-
-    pub fn contains_attribute(&self, sv_attr: SylviaAttribute) -> bool {
-        self.attrs
-            .iter()
-            .any(|attr| SylviaAttribute::new(attr) == Some(sv_attr))
     }
 }

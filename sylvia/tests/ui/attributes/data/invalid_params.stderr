@@ -1,0 +1,7 @@
+error: Invalid data parameter.
+
+         = note: Expected one of [`raw`, `opt`, `instantiate`] comma separated.
+  --> tests/ui/attributes/data/invalid_params.rs:25:20
+   |
+25 |         #[sv::data(invalid)] _data: Option<Binary>,
+   |                    ^^^^^^^

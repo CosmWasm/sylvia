@@ -24,7 +24,7 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -35,18 +35,18 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[allow(dead_code)]
     #[sv::msg(reply, reply_on = success)]
-    fn reply_on(
+    fn two_handlers(
         &self,
         _ctx: ReplyCtx,
         #[sv::data(raw, opt)] _data: Option<Binary>,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -57,18 +57,18 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         _result: SubMsgResult,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[allow(dead_code)]
-    #[sv::msg(reply, handlers=[reply_on], reply_on = failure)]
+    #[sv::msg(reply, handlers=[two_handlers], reply_on = failure)]
     fn both_parameters(
         &self,
         _ctx: ReplyCtx,
         _error: String,
-        #[sv::payload] _payload: Binary,
+        #[sv::payload(raw)] _payload: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
@@ -81,7 +81,7 @@ fn reply_id_generation() {
         sv::CLEAN_REPLY_ID,
         sv::HANDLER_ONE_REPLY_ID,
         sv::HANDLER_TWO_REPLY_ID,
-        sv::REPLY_ON_REPLY_ID,
+        sv::TWO_HANDLERS_REPLY_ID,
         sv::REPLY_ON_ALWAYS_REPLY_ID,
     ]
     .iter()
@@ -93,6 +93,6 @@ fn reply_id_generation() {
     assert_eq!(sv::CLEAN_REPLY_ID, 0);
     assert_eq!(sv::HANDLER_ONE_REPLY_ID, 1);
     assert_eq!(sv::HANDLER_TWO_REPLY_ID, 2);
-    assert_eq!(sv::REPLY_ON_REPLY_ID, 3);
+    assert_eq!(sv::TWO_HANDLERS_REPLY_ID, 3);
     assert_eq!(sv::REPLY_ON_ALWAYS_REPLY_ID, 4);
 }
