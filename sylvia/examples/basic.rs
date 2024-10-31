@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use anyhow::Error;
 use cosmwasm_std::{Addr, Response};
 use cw_storage_plus::{Item, Map};

@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 #[cfg(all(test, feature = "mt"))]
 use cw_multi_test::IntoBech32;
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};

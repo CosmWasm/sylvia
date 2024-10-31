@@ -1,12 +1,11 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, deprecated)]
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;
 
 pub struct Contract;
 
-
 mod interface {
-    use sylvia::cw_std::{Response, StdResult, StdError};
+    use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::types::{InstantiateCtx, MigrateCtx};
 
     #[sylvia::interface]

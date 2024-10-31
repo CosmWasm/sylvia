@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
     AllowanceResponse, SpenderAllowanceInfo,

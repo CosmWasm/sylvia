@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cw_multi_test::IntoAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

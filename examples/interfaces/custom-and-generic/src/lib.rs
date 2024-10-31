@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_std::{CosmosMsg, Response, StdError};
 
 use sylvia::interface;

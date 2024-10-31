@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cw1_whitelist::contract::Cw1WhitelistContract;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};

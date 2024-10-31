@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_json_binary, BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
@@ -7,9 +9,8 @@ use sv::{
     SubMsgMethods, ALWAYS_REPLY_ID, ERROR_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID, SUCCESS_REPLY_ID,
 };
 use sylvia::builder::instantiate::InstantiateBuilder;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-#[allow(deprecated)]
-use sylvia::replies::ReplyCtx;
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, Remote};
 use sylvia::{contract, entry_points};
 use thiserror::Error;

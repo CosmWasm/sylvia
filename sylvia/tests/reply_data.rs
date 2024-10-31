@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
@@ -5,9 +7,8 @@ use cw_utils::{MsgInstantiateContractResponse, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
 use sv::SubMsgMethods;
 use sylvia::builder::instantiate::InstantiateBuilder;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-#[allow(deprecated)]
-use sylvia::replies::ReplyCtx;
 use sylvia::types::{ExecCtx, InstantiateCtx, Remote};
 use sylvia::{contract, entry_points};
 use thiserror::Error;

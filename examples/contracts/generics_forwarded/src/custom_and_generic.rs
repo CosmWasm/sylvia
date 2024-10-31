@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use custom_and_generic::CustomAndGeneric;
 use sylvia::cw_std::{CosmosMsg, Response};
 use sylvia::serde::Deserialize;
