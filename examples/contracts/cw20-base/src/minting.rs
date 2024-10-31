@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::contract::{Cw20Base, MinterData};
 use crate::error::ContractError;
 use cw20_minting::responses::MinterResponse;

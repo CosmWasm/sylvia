@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, deprecated)]
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;
 

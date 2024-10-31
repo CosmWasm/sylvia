@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 #![cfg(feature = "mt")]
 
 use cw_multi_test::IntoBech32;

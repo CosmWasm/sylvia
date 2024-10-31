@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::error::ContractError;
 use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};

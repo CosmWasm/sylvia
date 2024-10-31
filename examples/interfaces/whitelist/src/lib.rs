@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use responses::AdminListResponse;
 use sylvia::cw_std::{Response, StdError, StdResult};
 use sylvia::interface;

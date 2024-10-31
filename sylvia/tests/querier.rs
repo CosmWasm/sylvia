@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 #![cfg(feature = "mt")]
 
 use cw_storage_plus::Item;

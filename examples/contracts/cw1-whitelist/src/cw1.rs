@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cw1::{CanExecuteResp, Cw1};
 use sylvia::cw_std::{Addr, CosmosMsg, Response, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};

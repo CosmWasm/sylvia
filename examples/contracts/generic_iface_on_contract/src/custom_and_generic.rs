@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::contract::{SvCustomMsg, SvCustomQuery};
 use custom_and_generic::CustomAndGeneric;
 use sylvia::cw_std::{CosmosMsg, Response, StdError, StdResult};

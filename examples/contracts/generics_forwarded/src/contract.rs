@@ -1,11 +1,10 @@
-#![allow(clippy::type_complexity)]
+#![allow(clippy::type_complexity, deprecated)]
 
 use crate::error::ContractError;
 use cw_storage_plus::Item;
 use sylvia::contract;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Binary, Response, SubMsgResult};
-#[allow(deprecated)]
-use sylvia::replies::ReplyCtx;
 use sylvia::serde::Deserialize;
 use sylvia::types::{
     CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx,

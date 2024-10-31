@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::marker::PhantomData;
 use sylvia::cw_std::{Response, StdResult};
 

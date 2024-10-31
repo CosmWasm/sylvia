@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::error::ContractError;
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};

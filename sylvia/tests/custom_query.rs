@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cosmwasm_schema::cw_serde;
 use sylvia::cw_std::{CustomQuery, Response, StdResult};
 use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};

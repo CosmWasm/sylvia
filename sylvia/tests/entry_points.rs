@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use contract::sv::ContractExecMsg;
 use cosmwasm_schema::cw_serde;
 

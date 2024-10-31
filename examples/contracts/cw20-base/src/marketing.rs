@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;

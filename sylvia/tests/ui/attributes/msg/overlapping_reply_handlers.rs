@@ -1,8 +1,8 @@
 #![allow(unused_imports, deprecated)]
 
 use sylvia::contract;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Reply, Response, StdResult};
-use sylvia::replies::ReplyCtx;
 use sylvia::types::InstantiateCtx;
 
 pub struct Contract;

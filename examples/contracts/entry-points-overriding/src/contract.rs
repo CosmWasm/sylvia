@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use cw_storage_plus::Item;
 use sylvia::contract;
 use sylvia::cw_std::{Response, StdError, StdResult};

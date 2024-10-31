@@ -1,8 +1,9 @@
+#![allow(deprecated)]
+
 use cw_storage_plus::Item;
 use sylvia::contract;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Binary, Response, StdResult, SubMsgResult};
-#[allow(deprecated)]
-use sylvia::replies::ReplyCtx;
 use sylvia::serde::Deserialize;
 use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 

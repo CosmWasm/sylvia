@@ -1,8 +1,9 @@
+#![allow(deprecated)]
+
 use cosmwasm_std::{Binary, SubMsgResult};
 use itertools::Itertools;
+use sylvia::ctx::ReplyCtx;
 use sylvia::cw_std::{Response, StdResult};
-#[allow(deprecated)]
-use sylvia::replies::ReplyCtx;
 use sylvia::types::InstantiateCtx;
 use sylvia::{contract, entry_points};
 
