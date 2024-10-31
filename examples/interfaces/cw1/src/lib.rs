@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_std::{CosmosMsg, Response, StdError, StdResult};
 use sylvia::serde::{Deserialize, Serialize};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};

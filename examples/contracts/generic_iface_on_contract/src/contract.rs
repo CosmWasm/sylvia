@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::contract;
 use sylvia::cw_std::{Response, StdResult};
 use sylvia::types::InstantiateCtx;

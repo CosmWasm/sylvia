@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_std::{Empty, Response, StdError, StdResult};
 use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, entry_points};

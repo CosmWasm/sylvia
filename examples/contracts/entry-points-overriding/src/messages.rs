@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 use sylvia::types::ExecCtx;

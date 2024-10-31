@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::contract::GenericContract;
 use cw1::{CanExecuteResp, Cw1};
 use sylvia::cw_std::{CosmosMsg, Empty, Response, StdError, StdResult};

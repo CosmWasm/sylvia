@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_std::{Binary, Response, StdError, Uint128};
 use sylvia::interface;
 use sylvia::types::ExecCtx;

@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::cw_std::{CustomMsg, Response, StdResult};

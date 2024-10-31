@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use sylvia::cw_std::{Response, StdError, StdResult};
 
 use schemars::JsonSchema;
