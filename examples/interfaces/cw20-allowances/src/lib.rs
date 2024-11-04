@@ -1,14 +1,13 @@
-#![allow(deprecated)]
-
 pub mod responses;
 
 use cw_utils::Expiration;
 use responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceResponse,
 };
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Binary, Response, StdError, StdResult, Uint128};
 use sylvia::interface;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[interface]
 pub trait Cw20Allowances {

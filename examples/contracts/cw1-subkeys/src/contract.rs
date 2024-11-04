@@ -1,15 +1,14 @@
-#![allow(deprecated)]
-
 use cw1_whitelist::contract::Cw1WhitelistContract;
 use cw2::set_contract_version;
 use cw_storage_plus::{Bound, Map};
 use cw_utils::Expiration;
 use sylvia::contract;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx};
 use sylvia::cw_std::{
     ensure, ensure_ne, Addr, BankMsg, Coin, CosmosMsg, Deps, DistributionMsg, Env, Order, Response,
     StakingMsg, StdResult,
 };
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[cfg(not(feature = "library"))]
 use sylvia::cw_std::Empty;

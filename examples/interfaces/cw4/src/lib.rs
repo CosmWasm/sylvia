@@ -1,13 +1,12 @@
-#![allow(deprecated)]
-
 pub mod responses;
 
 use responses::{
     AdminResponse, HooksResponse, MemberListResponse, MemberResponse, TotalWeightResponse,
 };
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Response, StdError};
 use sylvia::interface;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[interface]
 pub trait Cw4 {

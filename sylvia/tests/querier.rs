@@ -1,11 +1,10 @@
-#![allow(deprecated)]
 #![cfg(feature = "mt")]
 
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::ctx::InstantiateCtx;
 use sylvia::cw_std::{Addr, Response, StdResult};
-use sylvia::types::InstantiateCtx;
 use sylvia::{contract, entry_points};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, Default)]
@@ -14,9 +13,9 @@ pub struct CountResponse {
 }
 
 pub mod counter {
+    use sylvia::ctx::{ExecCtx, QueryCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
 
     use crate::CountResponse;
 
@@ -43,8 +42,8 @@ pub mod impl_counter {
     use crate::counter::sv::Querier;
     use crate::counter::Counter;
     use crate::CountResponse;
+    use sylvia::ctx::{ExecCtx, QueryCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx};
 
     impl Counter for super::CounterContract {
         type Error = StdError;

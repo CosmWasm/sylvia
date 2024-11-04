@@ -1,12 +1,11 @@
-#![allow(deprecated)]
-
 pub mod responses;
 
 use responses::{DownloadLogoResponse, MarketingInfoResponse};
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{Binary, Response, StdError, StdResult};
 use sylvia::interface;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 /// This is used for uploading logo data, or setting it in InstantiateData
 #[cw_serde(crate = "sylvia::cw_schema")]

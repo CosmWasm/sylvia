@@ -1,11 +1,10 @@
-#![allow(deprecated)]
-
 use crate::contract::{Cw20Base, MinterData};
 use crate::error::ContractError;
 use cw20_minting::responses::MinterResponse;
 use cw20_minting::Cw20Minting;
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Response, StdResult, Uint128};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 impl<E, Q> Cw20Minting for Cw20Base<E, Q>
 where

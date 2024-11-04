@@ -49,7 +49,7 @@ pub(crate) fn crate_module() -> Path {
 /// ```rust
 /// # use sylvia::cw_schema::cw_serde;
 /// # use sylvia::cw_std::{Response, StdError};
-/// # use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 /// #
 /// # #[cw_serde]
 /// # pub struct AdminQueryResponse;
@@ -75,7 +75,7 @@ pub(crate) fn crate_module() -> Path {
 /// ```rust
 /// # use sylvia::cw_schema::cw_serde;
 /// # use sylvia::cw_std::{Response, StdError, DepsMut, Env, MessageInfo};
-/// # use sylvia::types::ExecCtx;
+/// # use sylvia::ctx::ExecCtx;
 /// #
 /// # pub trait SvInterface {
 /// #    type Error: From<StdError>;
@@ -124,7 +124,7 @@ pub(crate) fn crate_module() -> Path {
 /// ```rust
 /// # use sylvia::cw_schema::cw_serde;
 /// # use sylvia::cw_std::{CustomMsg, CustomQuery, Response, StdError};
-/// # use sylvia::types::ExecCtx;
+/// # use sylvia::ctx::ExecCtx;
 /// #
 /// ##[sylvia::interface]
 /// pub trait SvInterface {
@@ -164,7 +164,7 @@ pub(crate) fn crate_module() -> Path {
 /// ```rust
 /// # use sylvia::cw_schema::cw_serde;
 /// # use sylvia::cw_std::{Response, StdError};
-/// # use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 /// #
 /// # #[cw_serde]
 /// # pub struct AdminQueryResponse;
@@ -196,7 +196,7 @@ pub(crate) fn crate_module() -> Path {
 /// ```rust
 /// # use sylvia::cw_schema::cw_serde;
 /// # use sylvia::cw_std::{CustomMsg, CustomQuery, Response, StdError};
-/// # use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 /// #
 /// ##[cw_serde]
 /// pub enum SvCustomMsg {}
@@ -263,7 +263,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ## Example usage
 /// ```rust
-/// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 /// # use sylvia::ctx::ReplyCtx;
 /// # use sylvia::cw_std::{Binary, Response, StdError, SubMsgResult};
 /// # use cw_storage_plus::Item;
@@ -327,7 +327,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// This would generate output like:
 ///
 /// ```rust
-/// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 /// # use sylvia::ctx::ReplyCtx;
 /// # use sylvia::cw_std::{Binary, Response, StdError, SubMsgResult};
 /// # use cw_storage_plus::Item;
@@ -438,7 +438,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// implement `QueryResponses`.
 ///
 /// ```rust
-/// # use sylvia::types::{InstantiateCtx, QueryCtx};
+/// # use sylvia::ctx::{InstantiateCtx, QueryCtx};
 /// # use sylvia::cw_std::{Response, StdError};
 /// # use sylvia::cw_schema::cw_serde;
 /// # use cw_storage_plus::Item;
@@ -498,7 +498,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// Specified entry point will be used in generated `multitest` helpers
 ///
 /// ```rust
-/// # use sylvia::types::InstantiateCtx;
+/// # use sylvia::ctx::InstantiateCtx;
 /// # use sylvia::cw_std::{Response, StdResult, MessageInfo, DepsMut, Env, entry_point};
 /// # use sylvia::cw_schema::cw_serde;
 /// #
@@ -538,7 +538,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// Required for the contract to be able to handle an interface message.
 ///
 /// ```rust
-/// # use sylvia::types::InstantiateCtx;
+/// # use sylvia::ctx::InstantiateCtx;
 /// # use sylvia::cw_std::{Response, StdError, StdResult};
 /// # use cw_storage_plus::Item;
 /// #
@@ -576,7 +576,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// you have to pass the name of an interface as below:
 ///
 /// ```rust
-/// # use sylvia::types::InstantiateCtx;
+/// # use sylvia::ctx::InstantiateCtx;
 /// # use sylvia::cw_std::{Response, StdError, StdResult};
 /// # use cw_storage_plus::Item;
 /// #
@@ -672,7 +672,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ## Example usage
 /// ```rust
-/// # use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+/// # use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 /// # use sylvia::ctx::ReplyCtx;
 /// # use sylvia::cw_std::{Binary, Reply, Response, StdResult, SubMsgResult};
 /// #
@@ -726,7 +726,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// used in their place in the `entry_points` macro attribute `generics`.
 ///
 /// ```rust
-/// # use sylvia::types::InstantiateCtx;
+/// # use sylvia::ctx::InstantiateCtx;
 /// # use sylvia::cw_std::{Response, StdResult};
 /// # use sylvia::cw_schema::cw_serde;
 /// # use cw_storage_plus::Item;

@@ -1,11 +1,10 @@
-#![allow(deprecated)]
-
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_schema::schemars::JsonSchema;
 use sylvia::cw_std::{CosmosMsg, CustomMsg, Empty, Response, StdResult};
 use sylvia::serde::de::DeserializeOwned;
 use sylvia::serde::Deserialize;
-use sylvia::types::{CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::CustomQuery;
 
 use crate::contract::GenericsForwardedContract;
 use crate::error::ContractError;

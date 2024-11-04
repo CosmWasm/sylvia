@@ -1,9 +1,7 @@
-#![allow(deprecated)]
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 use sylvia::cw_std::{CustomMsg, Response, StdResult};
-use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, entry_points};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug, JsonSchema)]
@@ -22,9 +20,9 @@ pub struct MyContract;
 pub struct SomeResponse;
 
 mod some_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyMsg, SomeResponse};
 
@@ -45,8 +43,8 @@ mod some_interface {
 }
 
 mod impl_some_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::some_interface::SomeInterface;
     use crate::{MyMsg, SomeResponse};
@@ -71,9 +69,9 @@ mod impl_some_interface {
 // Use `#[sv::custom(..)]` if both it and associated type defined
 mod interface {
     use crate::MyMsg;
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{CustomMsg, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
     #[sv::custom(msg=MyMsg, query=sylvia::cw_std::Empty)]
@@ -94,8 +92,8 @@ mod interface {
 mod impl_interface {
     use crate::interface::Interface;
     use crate::{MyMsg, OtherMsg};
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl Interface for crate::MyContract {
         type Error = StdError;
@@ -116,9 +114,9 @@ mod impl_interface {
 }
 
 mod other_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
     #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
@@ -137,8 +135,8 @@ mod other_interface {
 }
 mod impl_other_interface {
     use crate::other_interface::OtherInterface;
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl OtherInterface for crate::MyContract {
         type Error = StdError;
@@ -159,9 +157,9 @@ mod impl_other_interface {
 
 mod associated_interface {
     use crate::SomeResponse;
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{CustomMsg, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     #[interface]
     #[sv::custom(query=sylvia::cw_std::Empty)]
@@ -182,8 +180,8 @@ mod associated_interface {
 mod impl_associated_interface {
     use crate::associated_interface::AssociatedInterface;
     use crate::{MyMsg, SomeResponse};
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl AssociatedInterface for crate::MyContract {
         type Error = StdError;

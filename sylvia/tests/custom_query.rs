@@ -1,8 +1,6 @@
-#![allow(deprecated)]
-
 use cosmwasm_schema::cw_serde;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 use sylvia::cw_std::{CustomQuery, Response, StdResult};
-use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
 use sylvia::{contract, entry_points};
 
 #[cw_serde]
@@ -21,9 +19,9 @@ pub struct MyContract;
 pub struct SomeResponse;
 
 mod interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -45,8 +43,8 @@ mod interface {
 }
 
 mod impl_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, OtherQuery, SomeResponse};
 
@@ -69,9 +67,9 @@ mod impl_interface {
 }
 
 mod some_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -92,8 +90,8 @@ mod some_interface {
 }
 
 mod impl_some_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{MyQuery, SomeResponse};
 
@@ -115,9 +113,9 @@ mod impl_some_interface {
 }
 
 mod associated_type_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{CustomQuery, Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
@@ -141,8 +139,8 @@ mod associated_type_interface {
 mod impl_associated_type_interface {
     use crate::associated_type_interface::AssociatedTypeInterface;
     use crate::{MyQuery, SomeResponse};
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl AssociatedTypeInterface for crate::MyContract {
         type Error = StdError;
@@ -163,9 +161,9 @@ mod impl_associated_type_interface {
 }
 
 mod default_query_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::SomeResponse;
 
@@ -188,8 +186,8 @@ mod default_query_interface {
 mod impl_default_query_interface {
     use crate::default_query_interface::DefaultQueryInterface;
     use crate::SomeResponse;
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     impl DefaultQueryInterface for crate::MyContract {
         type Error = StdError;

@@ -1,11 +1,9 @@
-#![allow(deprecated)]
-
 use cw_storage_plus::Item;
 use sylvia::contract;
-use sylvia::ctx::ReplyCtx;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
 use sylvia::cw_std::{Binary, Response, StdResult, SubMsgResult};
 use sylvia::serde::Deserialize;
-use sylvia::types::{CustomMsg, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+use sylvia::types::CustomMsg;
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
@@ -184,7 +182,7 @@ where
         Ok(Response::new())
     }
 
-    #[allow(dead_code, deprecated)]
+    #[allow(dead_code)]
     #[sv::msg(reply)]
     fn reply(
         &self,

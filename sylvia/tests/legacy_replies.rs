@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 #[cfg(all(test, feature = "mt"))]
 use cw_multi_test::IntoBech32;
 use sylvia::cw_std::testing::{mock_dependencies, mock_env};
@@ -7,7 +5,7 @@ use sylvia::cw_std::{from_json, Reply, SubMsgResponse, SubMsgResult};
 
 #[allow(dead_code)]
 mod noop_contract {
-    use sylvia::types::{ExecCtx, InstantiateCtx};
+    use sylvia::ctx::{ExecCtx, InstantiateCtx};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::{Response, StdResult};
@@ -35,9 +33,9 @@ mod noop_contract {
 
 mod reply_contract {
     use cosmwasm_std::Reply;
+    use sylvia::ctx::{ExecCtx, InstantiateCtx};
     #[allow(deprecated)]
     use sylvia::types::ReplyCtx;
-    use sylvia::types::{ExecCtx, InstantiateCtx};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::{to_json_binary, Response, StdResult, SubMsg, WasmMsg};

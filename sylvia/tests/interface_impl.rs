@@ -1,13 +1,13 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
 use sylvia::cw_std::{Empty, Response, StdError, StdResult};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, SudoCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 use sylvia::{contract, entry_points};
 
 mod interface1 {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
+    use sylvia::types::{CustomMsg, CustomQuery};
 
     #[interface]
     pub trait SylviaInterface1 {
@@ -36,9 +36,10 @@ mod interface1 {
 }
 
 mod interface2 {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
     use sylvia::interface;
-    use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
+    use sylvia::types::{CustomMsg, CustomQuery};
 
     #[interface]
     pub trait SylviaInterface2 {

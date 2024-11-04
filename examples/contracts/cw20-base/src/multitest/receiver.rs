@@ -1,8 +1,6 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::ExecCtx;
 use sylvia::cw_std::{Binary, Response, StdError, Uint128};
 use sylvia::interface;
-use sylvia::types::ExecCtx;
 
 #[interface]
 #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]
@@ -21,8 +19,8 @@ pub trait Receiver {
 
 pub mod impl_receiver {
     use crate::multitest::receiver_contract::ReceiverContract;
+    use sylvia::ctx::ExecCtx;
     use sylvia::cw_std::{Response, StdError};
-    use sylvia::types::ExecCtx;
 
     impl super::Receiver for ReceiverContract {
         type Error = StdError;

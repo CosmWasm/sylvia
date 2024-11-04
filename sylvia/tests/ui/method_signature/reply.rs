@@ -1,7 +1,6 @@
-#![allow(unused_imports, deprecated)]
-use sylvia::ctx::ReplyCtx;
+#![allow(unused_imports)]
+use sylvia::ctx::{InstantiateCtx, ReplyCtx};
 use sylvia::cw_std::{Binary, Response, StdResult};
-use sylvia::types::InstantiateCtx;
 
 pub mod mismatched_params {
     use super::*;

@@ -1,8 +1,7 @@
-#![allow(deprecated)]
-
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{ensure, Addr, CosmosMsg, Response, StdResult};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 use crate::contract::Cw1SubkeysContract;
 use crate::error::ContractError;

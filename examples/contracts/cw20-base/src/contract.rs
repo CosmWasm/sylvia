@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use crate::error::ContractError;
 use crate::responses::{BalanceResponse, Cw20Coin, Cw20ReceiveMsg, TokenInfoResponse};
 use crate::validation::{validate_accounts, validate_msg, verify_logo};
@@ -10,12 +8,13 @@ use cw20_marketing::Logo;
 use cw20_minting::responses::MinterResponse;
 use cw_storage_plus::{Item, Map};
 use sylvia::contract;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
 use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{
     ensure, Addr, Binary, BlockInfo, DepsMut, Order, Response, StdError, StdResult, Storage,
     Uint128,
 };
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[cfg(not(feature = "library"))]
 use sylvia::cw_std::Empty;
