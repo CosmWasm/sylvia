@@ -1,6 +1,6 @@
-#![allow(unused_imports, deprecated)]
+#![allow(unused_imports)]
+use sylvia::ctx::{ExecCtx, InstantiateCtx};
 use sylvia::cw_std::{Response, StdResult};
-use sylvia::types::{ExecCtx, InstantiateCtx};
 
 pub struct Contract;
 

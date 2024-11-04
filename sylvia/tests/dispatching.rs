@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use cw_multi_test::IntoAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,9 +18,9 @@ pub struct QueryResponse {
 }
 
 mod interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
@@ -59,8 +57,8 @@ mod interface {
 }
 
 mod impl_interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Addr, Decimal, Response, StdError};
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
 
     use crate::{EmptyQueryResponse, QueryResponse};
 
@@ -129,8 +127,8 @@ mod contract {
     use std::cell::RefCell;
 
     use cw_storage_plus::{Item, Map};
+    use sylvia::ctx::{InstantiateCtx, SudoCtx};
     use sylvia::cw_std::{Addr, Response, StdError, StdResult};
-    use sylvia::types::{InstantiateCtx, SudoCtx};
     use sylvia_derive::{contract, entry_points};
 
     use crate::QueryResponse;

@@ -1,6 +1,6 @@
-#![allow(unused_imports, deprecated)]
+#![allow(unused_imports)]
+use sylvia::ctx::InstantiateCtx;
 use sylvia::cw_std::{Response, StdResult};
-use sylvia::types::InstantiateCtx;
 
 mod interface {
     use sylvia::cw_std::StdError;

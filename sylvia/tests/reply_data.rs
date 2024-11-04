@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
@@ -7,16 +5,16 @@ use cw_utils::{MsgInstantiateContractResponse, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
 use sv::SubMsgMethods;
 use sylvia::builder::instantiate::InstantiateBuilder;
-use sylvia::ctx::ReplyCtx;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, ReplyCtx};
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-use sylvia::types::{ExecCtx, InstantiateCtx, Remote};
+use sylvia::types::Remote;
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
 #[allow(dead_code)]
 mod noop_contract {
     use cosmwasm_std::{Binary, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx};
+    use sylvia::ctx::{ExecCtx, InstantiateCtx};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::Response;
@@ -117,7 +115,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx,
@@ -137,7 +134,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn _optional_remote_instantiated(
         &self,
         _ctx: ReplyCtx,
@@ -148,7 +144,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn data_raw_opt(
         &self,
         _ctx: ReplyCtx,
@@ -159,7 +154,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn data_raw(
         &self,
         _ctx: ReplyCtx,
@@ -170,7 +164,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn data_opt(
         &self,
         _ctx: ReplyCtx,
@@ -181,7 +174,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn data(
         &self,
         _ctx: ReplyCtx,
@@ -192,7 +184,6 @@ impl Contract {
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn no_data(
         &self,
         _ctx: ReplyCtx,

@@ -1,5 +1,4 @@
 //! Module providing utilities to build and use sylvia contracts.
-#![allow(deprecated)]
 
 use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
 use derivative::Derivative;
@@ -18,7 +17,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```rust
 /// mod admin_contract {
-/// #   use sylvia::types::{InstantiateCtx, QueryCtx};
+/// #   use sylvia::ctx::{InstantiateCtx, QueryCtx};
 /// #   use sylvia::cw_std::{Addr, Response, StdResult};
 /// #
 ///     pub struct AdminContract;
@@ -64,7 +63,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```rust
 /// mod admin_contract {
-/// #   use sylvia::types::{InstantiateCtx, QueryCtx};
+/// #   use sylvia::ctx::{InstantiateCtx, QueryCtx};
 /// #   use sylvia::cw_std::{Addr, Response, StdResult};
 /// #
 ///     pub struct AdminContract;
@@ -85,7 +84,7 @@ use serde::{Deserialize, Serialize};
 /// }
 ///
 /// mod admin_interface {
-/// #   use sylvia::types::QueryCtx;
+/// #   use sylvia::ctx::QueryCtx;
 /// #   use sylvia::cw_std::{Addr, StdError, StdResult};
 /// #   use crate::admin_contract::AdminContract;
 /// #
@@ -179,7 +178,7 @@ pub struct ReadyExecutorBuilderState;
 /// pub mod another_contract {
 ///     # use cosmwasm_std::{Response, StdResult};
 ///     # use sylvia::contract;
-///     # use sylvia::types::{ExecCtx, InstantiateCtx};
+///     # use sylvia::ctx::{ExecCtx, InstantiateCtx};
 ///     pub struct AnotherContract {}
 ///     
 ///     #[contract]
@@ -200,7 +199,8 @@ pub struct ReadyExecutorBuilderState;
 /// # use cosmwasm_std::{coin, Addr, Response, StdResult};
 /// # use cw_storage_plus::Item;
 /// # use sylvia::contract;
-/// # use sylvia::types::{ExecCtx, InstantiateCtx, Remote};
+/// # use sylvia::ctx::{ExecCtx, InstantiateCtx};
+/// # use sylvia::types::Remote;
 /// # use another_contract::AnotherContract;
 /// # use another_contract::sv::Executor;
 ///
@@ -242,7 +242,7 @@ pub struct ReadyExecutorBuilderState;
 /// pub mod interface {
 ///     # use cosmwasm_std::{Response, StdResult, StdError};
 ///     # use sylvia::interface;
-///     # use sylvia::types::ExecCtx;
+///     # use sylvia::ctx::ExecCtx;
 ///     #[interface]
 ///     pub trait Interface {
 ///         type Error: From<StdError>;
@@ -326,7 +326,7 @@ impl ExecutorBuilder<ReadyExecutorBuilderState> {
 ///
 /// ```rust
 /// mod admin_contract {
-/// #   use sylvia::types::{InstantiateCtx, QueryCtx};
+/// #   use sylvia::ctx::{InstantiateCtx, QueryCtx};
 /// #   use sylvia::cw_std::{Addr, Response, StdResult};
 /// #
 ///     pub struct AdminContract;
@@ -460,7 +460,6 @@ impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
 }
 
 /// Represantation of `reply` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::ReplyCtx` in 2.0.0.\n
@@ -472,7 +471,6 @@ pub struct ReplyCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
 }
 
 /// Represantation of `migrate` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::MigrateCtx` in 2.0.0."
@@ -483,7 +481,6 @@ pub struct MigrateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
 }
 
 /// Represantation of `execute` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::ExecCtx` in 2.0.0."
@@ -495,7 +492,6 @@ pub struct ExecCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
 }
 
 /// Represantation of `instantiate` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::InstantiateCtx` in 2.0.0."
@@ -507,7 +503,6 @@ pub struct InstantiateCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
 }
 
 /// Represantation of `query` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::QueryCtx` in 2.0.0."
@@ -518,7 +513,6 @@ pub struct QueryCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
 }
 
 /// Represantation of `sudo` context received in entry point.
-#[non_exhaustive]
 #[deprecated(
     since = "1.3.0",
     note = "This type will be replaced with `sylvia::ctx::SudoCtx` in 2.0.0."
@@ -528,6 +522,7 @@ pub struct SudoCtx<'a, C: cosmwasm_std::CustomQuery = Empty> {
     pub env: Env,
 }
 
+#[allow(deprecated)]
 impl<C: cosmwasm_std::CustomQuery> ExecCtx<'_, C> {
     pub fn branch(&'_ mut self) -> ExecCtx<'_, C> {
         ExecCtx {
@@ -538,6 +533,7 @@ impl<C: cosmwasm_std::CustomQuery> ExecCtx<'_, C> {
     }
 }
 
+#[allow(deprecated)]
 impl<C: cosmwasm_std::CustomQuery> InstantiateCtx<'_, C> {
     pub fn branch(&'_ mut self) -> InstantiateCtx<'_, C> {
         InstantiateCtx {
@@ -548,6 +544,7 @@ impl<C: cosmwasm_std::CustomQuery> InstantiateCtx<'_, C> {
     }
 }
 
+#[allow(deprecated)]
 impl<C: cosmwasm_std::CustomQuery> SudoCtx<'_, C> {
     pub fn branch(&'_ mut self) -> SudoCtx<'_, C> {
         SudoCtx {
@@ -557,6 +554,7 @@ impl<C: cosmwasm_std::CustomQuery> SudoCtx<'_, C> {
     }
 }
 
+#[allow(deprecated)]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for MigrateCtx<'a, C> {
     fn from((deps, env): (DepsMut<'a, C>, Env)) -> Self {
         Self { deps, env }
@@ -570,12 +568,14 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for ReplyCtx<
     }
 }
 
+#[allow(deprecated)]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env, MessageInfo)> for ExecCtx<'a, C> {
     fn from((deps, env, info): (DepsMut<'a, C>, Env, MessageInfo)) -> Self {
         Self { deps, env, info }
     }
 }
 
+#[allow(deprecated)]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env, MessageInfo)>
     for InstantiateCtx<'a, C>
 {
@@ -584,12 +584,14 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env, MessageInfo)>
     }
 }
 
+#[allow(deprecated)]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(Deps<'a, C>, Env)> for QueryCtx<'a, C> {
     fn from((deps, env): (Deps<'a, C>, Env)) -> Self {
         Self { deps, env }
     }
 }
 
+#[allow(deprecated)]
 impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for SudoCtx<'a, C> {
     fn from((deps, env): (DepsMut<'a, C>, Env)) -> Self {
         Self { deps, env }

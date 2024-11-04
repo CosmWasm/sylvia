@@ -1,12 +1,11 @@
-#![allow(deprecated)]
-
 use crate::contract::Cw20Base;
 use crate::error::ContractError;
 use crate::validation::verify_logo;
 use cw20_marketing::responses::{DownloadLogoResponse, LogoInfo, MarketingInfoResponse};
 use cw20_marketing::{Cw20Marketing, EmbeddedLogo, Logo};
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Response, StdError, StdResult};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 impl<E, Q> Cw20Marketing for Cw20Base<E, Q>
 where

@@ -1,10 +1,8 @@
-#![allow(deprecated)]
-
 use anyhow::Error;
 use cosmwasm_std::{Addr, Response};
 use cw_storage_plus::{Item, Map};
 use sylvia::contract;
-use sylvia::types::InstantiateCtx;
+use sylvia::ctx::InstantiateCtx;
 
 #[derive(
     sylvia::serde::Serialize,
@@ -35,8 +33,8 @@ pub struct MemberResp {
 
 mod group {
     use cosmwasm_std::{Response, StdError};
+    use sylvia::ctx::{ExecCtx, QueryCtx};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx};
 
     use crate::{Member, MemberResp};
 
@@ -68,7 +66,7 @@ mod group {
 mod impl_group {
     use anyhow::Error;
     use cosmwasm_std::Response;
-    use sylvia::types::{ExecCtx, QueryCtx};
+    use sylvia::ctx::{ExecCtx, QueryCtx};
 
     use crate::{GroupContract, MemberResp};
 

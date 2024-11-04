@@ -1,9 +1,8 @@
-#![allow(deprecated)]
-
 use custom_and_generic::CustomAndGeneric;
+use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 use sylvia::cw_std::{CosmosMsg, Response};
 use sylvia::serde::Deserialize;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 use crate::contract::{GenericsForwardedContract, SvCustomMsg};
 use crate::error::ContractError;

@@ -1,9 +1,8 @@
-#![allow(deprecated)]
-
 use responses::AdminListResponse;
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Response, StdError, StdResult};
 use sylvia::interface;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 pub mod responses;
 

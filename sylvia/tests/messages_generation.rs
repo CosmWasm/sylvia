@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use std::fmt::Debug;
 use std::str::FromStr;
 
@@ -19,9 +17,9 @@ pub struct MyQuery;
 impl CustomQuery for MyQuery {}
 
 pub mod interface {
+    use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Addr, Decimal, Response, StdError};
     use sylvia::interface;
-    use sylvia::types::{ExecCtx, QueryCtx, SudoCtx};
     use thiserror::Error;
 
     use crate::QueryResult;
@@ -67,9 +65,10 @@ pub mod interface {
 }
 
 mod contract {
+    use cosmwasm_std::{Binary, SubMsgResult};
     use sylvia::contract;
-    use sylvia::cw_std::{Addr, Reply, Response, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
+    use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, ReplyCtx, SudoCtx};
+    use sylvia::cw_std::{Addr, Response, StdResult};
     use sylvia_derive::entry_points;
     use thiserror::Error;
 
@@ -88,6 +87,7 @@ mod contract {
     #[sv::msg_attr(instantiate, error("Instantiate"))]
     #[sv::msg_attr(migrate, derive(PartialOrd, Error))]
     #[sv::msg_attr(migrate, error("Migrate"))]
+    #[sv::features(replies)]
     impl Contract {
         #[allow(clippy::new_without_default)]
         #[allow(dead_code)]
@@ -149,7 +149,12 @@ mod contract {
         }
 
         #[sv::msg(reply)]
-        fn my_reply(&self, _ctx: ReplyCtx<MyQuery>, _reply: Reply) -> StdResult<Response> {
+        fn my_reply(
+            &self,
+            _ctx: ReplyCtx<MyQuery>,
+            _result: SubMsgResult,
+            #[sv::payload(raw)] _payload: Binary,
+        ) -> StdResult<Response> {
             Ok(Response::new())
         }
 

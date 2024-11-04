@@ -1,9 +1,8 @@
-#![allow(deprecated)]
-
 use sylvia::cw_std::{CosmosMsg, Response, StdError};
 
+use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 use sylvia::interface;
-use sylvia::types::{CustomMsg, ExecCtx, QueryCtx, SudoCtx};
+use sylvia::types::CustomMsg;
 
 #[interface]
 #[sv::custom(msg=sylvia::cw_std::Empty, query=sylvia::cw_std::Empty)]

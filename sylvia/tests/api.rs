@@ -1,11 +1,8 @@
-#![allow(deprecated)]
-
 use std::marker::PhantomData;
 use sylvia::cw_std::{Response, StdResult};
 
-use sylvia::types::{
-    CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx,
-};
+use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 use sylvia_derive::contract;
 
 pub struct SomeContract<Instantiate, Query, Exec, Migrate, Sudo, Ret, CMsg, CQuery> {
