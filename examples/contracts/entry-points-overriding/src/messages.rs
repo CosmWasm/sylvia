@@ -1,8 +1,6 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::ExecCtx;
 use sylvia::cw_schema::cw_serde;
 use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
-use sylvia::types::ExecCtx;
 
 use crate::contract::sv::ContractExecMsg;
 use crate::contract::CounterContract;

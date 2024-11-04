@@ -3,7 +3,7 @@
 //! ## Example usage:
 //! ```rust
 //! # use sylvia::cw_std::{Response, StdResult};
-//! # use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
+//! # use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx};
 //! pub struct SvContract;
 //!
 //! ##[sylvia::contract]

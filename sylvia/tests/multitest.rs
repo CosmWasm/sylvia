@@ -1,12 +1,11 @@
-#![allow(deprecated)]
 #![cfg(feature = "mt")]
 
 use cw_multi_test::IntoBech32;
 use std::marker::PhantomData;
+use sylvia::ctx::InstantiateCtx;
 use sylvia::cw_std::{CodeInfoResponse, Empty, Response, StdResult};
 use sylvia::entry_points;
 use sylvia::multitest::App;
-use sylvia::types::InstantiateCtx;
 use sylvia_derive::contract;
 
 pub struct SomeContract<ParamT> {

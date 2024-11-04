@@ -1,8 +1,7 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{CosmosMsg, Response, StdError, StdResult};
 use sylvia::serde::{Deserialize, Serialize};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 use sylvia::{interface, schemars};
 
 #[derive(

@@ -1,4 +1,4 @@
-#![allow(unused_imports, deprecated)]
+#![allow(unused_imports)]
 pub struct Contract {}
 
 #[sylvia::contract]

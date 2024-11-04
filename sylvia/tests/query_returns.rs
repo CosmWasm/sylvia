@@ -1,10 +1,8 @@
-#![allow(deprecated)]
-
 use sylvia::cw_std::{Response, StdError, StdResult};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use sylvia::types::{InstantiateCtx, QueryCtx};
+use sylvia::ctx::{InstantiateCtx, QueryCtx};
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
@@ -20,9 +18,9 @@ pub struct QueryResponse;
 type QueryResult<E> = Result<QueryResponse, E>;
 
 pub mod msg {
+    use sylvia::ctx::QueryCtx;
     use sylvia::cw_std::StdError;
     use sylvia::interface;
-    use sylvia::types::QueryCtx;
 
     use crate::{QueryResponse, QueryResult};
 

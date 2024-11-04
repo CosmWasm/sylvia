@@ -1,9 +1,7 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::{ExecCtx, QueryCtx, SudoCtx};
 use sylvia::cw_std::{CosmosMsg, Response, StdError};
-
 use sylvia::interface;
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx, SudoCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[interface]
 pub trait CustomAndGeneric {

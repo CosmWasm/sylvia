@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use cosmwasm_schema::cw_serde;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -17,9 +15,10 @@ impl sylvia::cw_std::CustomQuery for ExampleQuery {}
 pub mod counter {
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use sylvia::ctx::{ExecCtx, QueryCtx};
     use sylvia::cw_std::{Response, StdError};
     use sylvia::interface;
-    use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+    use sylvia::types::{CustomMsg, CustomQuery};
 
     #[interface]
     pub trait Counter {
@@ -43,8 +42,8 @@ pub mod counter {
 pub mod signed_contract {
     use cw_storage_plus::Item;
     use sylvia::contract;
+    use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 
     use crate::counter::Counter;
     use crate::{ExampleMsg, ExampleQuery};
@@ -102,8 +101,8 @@ pub mod signed_contract {
 pub mod unsigned_contract {
     use cw_storage_plus::Item;
     use sylvia::contract;
+    use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
 
     use crate::counter::Counter;
     use crate::{ExampleMsg, ExampleQuery};
@@ -196,8 +195,8 @@ pub mod manager {
     use schemars::JsonSchema;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx};
     use sylvia::cw_std::{Addr, Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx, QueryCtx};
     use sylvia::{contract, entry_points};
 
     use crate::counter::sv::{Executor, Querier};

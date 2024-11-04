@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use contract::sv::ContractExecMsg;
 use cosmwasm_schema::cw_serde;
 
@@ -10,8 +8,8 @@ pub struct CountResponse {
 
 pub mod sudo {
     use cosmwasm_schema::cw_serde;
+    use sylvia::ctx::SudoCtx;
     use sylvia::cw_std::{Coin, DepsMut, Env, Response, StdError, StdResult};
-    use sylvia::types::SudoCtx;
 
     #[cw_serde]
     pub enum SudoMsg {
@@ -63,8 +61,8 @@ pub mod migrate {
 
 pub mod exec {
     use cosmwasm_schema::cw_serde;
+    use sylvia::ctx::ExecCtx;
     use sylvia::cw_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
-    use sylvia::types::ExecCtx;
 
     use crate::contract::Contract;
 
@@ -136,8 +134,8 @@ pub mod entry_points {
 
 mod contract {
     use cw_storage_plus::Item;
+    use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
     use sylvia::cw_std::{Response, StdError, StdResult};
-    use sylvia::types::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};
     use sylvia::{contract, entry_points};
 
     use crate::CountResponse;

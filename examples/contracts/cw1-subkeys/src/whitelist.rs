@@ -1,7 +1,6 @@
-#![allow(deprecated)]
-
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Response, StdResult};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 use whitelist::responses::AdminListResponse;
 use whitelist::Whitelist;
 

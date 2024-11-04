@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_json_binary, BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
@@ -9,16 +7,17 @@ use sv::{
     SubMsgMethods, ALWAYS_REPLY_ID, ERROR_REPLY_ID, REMOTE_INSTANTIATED_REPLY_ID, SUCCESS_REPLY_ID,
 };
 use sylvia::builder::instantiate::InstantiateBuilder;
-use sylvia::ctx::ReplyCtx;
+use sylvia::ctx::{ExecCtx, InstantiateCtx, QueryCtx, ReplyCtx};
 use sylvia::cw_std::{Addr, Binary, Response, StdError, SubMsg};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx, QueryCtx, Remote};
+use sylvia::types::{CustomMsg, CustomQuery, Remote};
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
 #[allow(dead_code)]
 mod noop_contract {
     use cosmwasm_std::{Empty, StdError, StdResult};
-    use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, InstantiateCtx};
+    use sylvia::ctx::{ExecCtx, InstantiateCtx};
+    use sylvia::types::{CustomMsg, CustomQuery};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::Response;
@@ -213,7 +212,6 @@ where
     }
 
     #[sv::msg(reply, reply_on=success)]
-    #[allow(deprecated)]
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx<Q>,
@@ -236,7 +234,6 @@ where
     }
 
     #[sv::msg(reply, handlers=[success, both], reply_on=success)]
-    #[allow(deprecated)]
     fn success(
         &self,
         ctx: ReplyCtx<Q>,
@@ -249,7 +246,6 @@ where
     }
 
     #[sv::msg(reply, handlers=[error, both], reply_on=error)]
-    #[allow(deprecated)]
     fn error(
         &self,
         ctx: ReplyCtx<Q>,
@@ -262,7 +258,6 @@ where
     }
 
     #[sv::msg(reply, reply_on=always)]
-    #[allow(deprecated)]
     fn always(
         &self,
         ctx: ReplyCtx<Q>,
@@ -277,7 +272,6 @@ where
     }
 
     #[sv::msg(exec)]
-    #[allow(deprecated)]
     fn send_cosmos_messages(&self, ctx: ExecCtx<Q>) -> Result<Response<M>, ContractError> {
         let remote_addr = self.remote.load(ctx.deps.storage)?;
         let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {

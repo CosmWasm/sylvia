@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use cw20_allowances::responses::{
     AllAccountsResponse, AllAllowancesResponse, AllSpenderAllowancesResponse, AllowanceInfo,
     AllowanceResponse, SpenderAllowanceInfo,
@@ -7,8 +5,9 @@ use cw20_allowances::responses::{
 use cw20_allowances::Cw20Allowances;
 use cw_storage_plus::{Bound, Bounder};
 use cw_utils::Expiration;
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{Addr, Binary, Order, Response, StdError, StdResult, Uint128};
-use sylvia::types::{CustomMsg, CustomQuery, ExecCtx, QueryCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 use crate::contract::Cw20Base;
 use crate::error::ContractError;

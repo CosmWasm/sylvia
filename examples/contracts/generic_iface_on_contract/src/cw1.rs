@@ -1,8 +1,6 @@
-#![allow(deprecated)]
-
 use cw1::{CanExecuteResp, Cw1};
+use sylvia::ctx::{ExecCtx, QueryCtx};
 use sylvia::cw_std::{CosmosMsg, Empty, Response, StdError, StdResult};
-use sylvia::types::{ExecCtx, QueryCtx};
 
 impl Cw1 for crate::contract::NonGenericContract {
     type Error = StdError;

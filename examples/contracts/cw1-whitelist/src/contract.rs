@@ -1,11 +1,10 @@
-#![allow(deprecated)]
-
 use crate::error::ContractError;
 use cw2::set_contract_version;
 use cw_storage_plus::{Item, Map};
 use sylvia::contract;
+use sylvia::ctx::InstantiateCtx;
 use sylvia::cw_std::{Addr, Deps, Empty, Response};
-use sylvia::types::{CustomMsg, CustomQuery, InstantiateCtx};
+use sylvia::types::{CustomMsg, CustomQuery};
 
 #[cfg(not(feature = "library"))]
 use sylvia::entry_points;
