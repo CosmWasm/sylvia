@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_json_binary, BankMsg, CosmosMsg, Empty, SubMsgResult};
+use cosmwasm_std::{BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
 use cw_utils::{parse_instantiate_response_data, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
@@ -107,11 +107,7 @@ where
         let sub_msg = InstantiateBuilder::noop_contract(remote_code_id)?
             .with_label("noop")
             .build()
-            .remote_instantiated(to_json_binary(&payload)?)?;
-        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
-        // MultiTest version is released.
-        // Payload is not currently forwarded in the MultiTest.
-        // .remote_instantiated(payload)?;
+            .remote_instantiated(payload)?;
 
         Ok(Response::new().add_submessage(sub_msg))
     }
@@ -174,15 +170,13 @@ where
         should_fail: bool,
     ) -> Result<Response<M>, ContractError> {
         // Tuple can be used as a payload.
-        let payload = to_json_binary(&(42_u32, "Hello, world!".to_string()))?;
-
         let msg = self
             .remote
             .load(ctx.deps.storage)?
             .executor()
             .noop(should_fail)?
             .build()
-            .always(payload)?;
+            .always(42_u32, "Hello, world!".to_string())?;
 
         Ok(Response::new().add_submessage(msg))
     }
@@ -216,11 +210,7 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         #[sv::data(raw, opt)] data: Option<Binary>,
-        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
-        // MultiTest version is released.
-        // Payload is not currently forwarded in the MultiTest.
-        // _instantiate_payload: InstantiatePayload,
-        #[sv::payload(raw)] _payload: Binary,
+        _instantiate_payload: InstantiatePayload,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply
             .save(ctx.deps.storage, &REMOTE_INSTANTIATED_REPLY_ID)?;
@@ -262,9 +252,8 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _result: SubMsgResult,
-        #[sv::payload(raw)] _payload: Binary,
-        // _first_part_payload: u32,
-        // _second_part_payload: String,
+        _first_part_payload: u32,
+        _second_part_payload: String,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &ALWAYS_REPLY_ID)?;
 
@@ -278,7 +267,7 @@ where
             to_address: remote_addr.as_ref().to_string(),
             amount: vec![],
         });
-        let submsg = cosmos_msg.always(Binary::default())?;
+        let submsg = cosmos_msg.always(0, "payload".to_string())?;
         Ok(Response::new().add_submessage(submsg))
     }
 }
