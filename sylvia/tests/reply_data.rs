@@ -1,5 +1,4 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
 use cw_utils::{MsgInstantiateContractResponse, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
@@ -11,13 +10,21 @@ use sylvia::types::Remote;
 use sylvia::{contract, entry_points};
 use thiserror::Error;
 
+#[cw_serde]
+pub struct ComplexData {
+    pub message: String,
+    pub number: u64,
+}
+
 #[allow(dead_code)]
 mod noop_contract {
-    use cosmwasm_std::{Binary, StdResult};
+    use cosmwasm_std::{to_json_binary, Binary, StdResult};
     use sylvia::ctx::{ExecCtx, InstantiateCtx};
     use sylvia::{contract, entry_points};
 
     use sylvia::cw_std::Response;
+
+    use crate::ComplexData;
 
     pub struct NoopContract;
 
@@ -41,6 +48,15 @@ mod noop_contract {
             };
 
             Ok(resp)
+        }
+
+        #[sv::msg(exec)]
+        fn noop_complex_data(&self, _ctx: ExecCtx) -> StdResult<Response> {
+            let data = ComplexData {
+                message: "Hello".to_string(),
+                number: 42,
+            };
+            Ok(Response::new().set_data(to_json_binary(&data)?))
         }
     }
 }
@@ -87,11 +103,7 @@ impl Contract {
         let sub_msg = InstantiateBuilder::noop_contract(remote_code_id)?
             .with_label("noop")
             .build()
-            .remote_instantiated(to_json_binary(&payload)?)?;
-        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
-        // MultiTest version is released.
-        // Payload is not currently forwarded in the MultiTest.
-        // .remote_instantiated(payload)?;
+            .remote_instantiated(payload)?;
 
         Ok(Response::new().add_submessage(sub_msg))
     }
@@ -114,16 +126,25 @@ impl Contract {
         Ok(Response::new().add_submessage(submsg))
     }
 
+    #[sv::msg(exec)]
+    fn send_message_expecting_complex_data(&self, ctx: ExecCtx) -> Result<Response, ContractError> {
+        let submsg = self
+            .remote
+            .load(ctx.deps.storage)?
+            .executor()
+            .noop_complex_data()?
+            .build()
+            .complex_data(Binary::default())?;
+
+        Ok(Response::new().add_submessage(submsg))
+    }
+
     #[sv::msg(reply, reply_on=success)]
     fn remote_instantiated(
         &self,
         ctx: ReplyCtx,
         #[sv::data(instantiate)] data: MsgInstantiateContractResponse,
-        // TODO: Blocked by https://github.com/CosmWasm/cw-multi-test/pull/216. Uncomment when new
-        // MultiTest version is released.
-        // Payload is not currently forwarded in the MultiTest.
-        // _instantiate_payload: InstantiatePayload,
-        #[sv::payload(raw)] _payload: Binary,
+        _instantiate_payload: InstantiatePayload,
     ) -> Result<Response, ContractError> {
         let remote_addr = Addr::unchecked(data.contract_address);
 
@@ -178,6 +199,16 @@ impl Contract {
         &self,
         _ctx: ReplyCtx,
         #[sv::data] _data: String,
+        #[sv::payload(raw)] _payload: Binary,
+    ) -> Result<Response, ContractError> {
+        Ok(Response::new())
+    }
+
+    #[sv::msg(reply, reply_on=success)]
+    fn complex_data(
+        &self,
+        _ctx: ReplyCtx,
+        #[sv::data] _data: ComplexData,
         #[sv::payload(raw)] _payload: Binary,
     ) -> Result<Response, ContractError> {
         Ok(Response::new())
@@ -282,6 +313,12 @@ fn dispatch_replies() {
 
     contract
         .send_message_expecting_data(data, DATA_REPLY_ID)
+        .call(&owner)
+        .unwrap();
+
+    // Should deserialize custom data types
+    contract
+        .send_message_expecting_complex_data()
         .call(&owner)
         .unwrap();
 }
