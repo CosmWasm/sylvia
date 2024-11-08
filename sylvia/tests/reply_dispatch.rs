@@ -210,12 +210,16 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         #[sv::data(raw, opt)] data: Option<Binary>,
-        _instantiate_payload: InstantiatePayload,
+        instantiate_payload: InstantiatePayload,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply
             .save(ctx.deps.storage, &REMOTE_INSTANTIATED_REPLY_ID)?;
         let init_data = parse_instantiate_response_data(&data.unwrap())?;
         let remote_addr = Addr::unchecked(init_data.contract_address);
+        assert_eq!(
+            &instantiate_payload.sender.to_string(),
+            "cosmwasm1fsgzj6t7udv8zhf6zj32mkqhcjcpv52yph5qsdcl0qt94jgdckqs2g053y"
+        );
 
         self.remote
             .save(ctx.deps.storage, &Remote::new(remote_addr))?;
@@ -252,10 +256,12 @@ where
         &self,
         ctx: ReplyCtx<Q>,
         _result: SubMsgResult,
-        _first_part_payload: u32,
-        _second_part_payload: String,
+        first_part_payload: u32,
+        second_part_payload: String,
     ) -> Result<Response<M>, ContractError> {
         self.last_reply.save(ctx.deps.storage, &ALWAYS_REPLY_ID)?;
+        assert_eq!(first_part_payload, 42_u32);
+        assert_eq!(second_part_payload, "Hello, world!".to_string());
 
         Ok(Response::new())
     }
@@ -267,7 +273,7 @@ where
             to_address: remote_addr.as_ref().to_string(),
             amount: vec![],
         });
-        let submsg = cosmos_msg.always(0, "payload".to_string())?;
+        let submsg = cosmos_msg.always(42_u32, "Hello, world!".to_string())?;
         Ok(Response::new().add_submessage(submsg))
     }
 }
