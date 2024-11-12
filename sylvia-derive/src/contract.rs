@@ -79,12 +79,11 @@ impl<'a> ContractInput<'a> {
             item,
             generics,
             custom,
-            error,
             ..
         } = self;
         let multitest_helpers = self.emit_multitest_helpers();
         let messages = self.emit_messages();
-        let contract_api = Api::new(item, generics, custom, error).emit();
+        let contract_api = Api::new(item, generics, custom).emit();
         let querier = self.emit_querier();
         let executor = self.emit_executor();
         let reply = self.emit_reply();
