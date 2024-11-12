@@ -634,5 +634,4 @@ pub trait ContractApi {
     type Remote<'remote>;
     type CustomMsg: CustomMsg;
     type CustomQuery: CustomQuery;
-    type Error: From<cosmwasm_std::StdError>;
 }

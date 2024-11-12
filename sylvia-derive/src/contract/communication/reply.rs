@@ -17,6 +17,7 @@ pub struct Reply<'a> {
     source: &'a ItemImpl,
     generics: &'a [&'a GenericParam],
     reply_data: Vec<ReplyData<'a>>,
+    error: Type,
 }
 
 impl<'a> Reply<'a> {
@@ -26,11 +27,14 @@ impl<'a> Reply<'a> {
         variants: &'a MsgVariants<'a, GenericParam>,
     ) -> Self {
         let reply_data = variants.as_reply_data();
+        let parsed_attrs = ParsedSylviaAttributes::new(source.attrs.iter());
+        let error = parsed_attrs.error_attrs.unwrap_or_default().error;
 
         Self {
             source,
             generics,
             reply_data,
+            error,
         }
     }
 
@@ -56,6 +60,7 @@ impl<'a> Reply<'a> {
             source,
             generics,
             reply_data,
+            error,
             ..
         } = self;
 
@@ -65,9 +70,8 @@ impl<'a> Reply<'a> {
 
         let custom_query = parse_quote!( < #contract as #sylvia ::types::ContractApi>::CustomQuery);
         let custom_msg = parse_quote!( < #contract as #sylvia ::types::ContractApi>::CustomMsg);
-        let error = parse_quote!( < #contract as #sylvia ::types::ContractApi>::Error);
         let ctx_params = msg_ty.emit_ctx_params(&custom_query);
-        let ret_type = msg_ty.emit_result_type(&custom_msg, &error);
+        let ret_type = msg_ty.emit_result_type(&custom_msg, error);
 
         let match_arms = reply_data
             .iter()
