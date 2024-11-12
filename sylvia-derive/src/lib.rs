@@ -233,7 +233,6 @@ pub(crate) fn crate_module() -> Path {
 /// generated message type. It can be used along with `sv::msg(...)`
 /// and only for message types variants that resolves in an enum field,
 /// i.e. `exec`, `query` and `sudo`.
-///
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn interface(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -640,6 +639,67 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 ///     User can also specify custom `data` and `payload` types that will be auto
 ///     deserialized from the `cosmwasm_std::Binary` type.
+///
+/// ### `sv::payload(raw)`
+///
+/// Requires contract to be marked with the `sv::features(replies)`.
+///
+/// Used next to the reply method argument. It disables auto deserialization
+/// of the payload argument.
+///
+/// ### `sv::data(...)`
+///
+/// Requires contract to be marked with the `sv::features(replies)`.
+///
+/// Used next to the reply method argument. Based on the passed parameters
+/// it enables different behavior:
+///
+/// * `#[sv::data(raw)]` - Returns error if the data is `None`, extracts and forwards
+///     `Binary` if it's `Some`.
+///
+/// * `#[sv::data(raw, opt)]` - Forwards `data` as `Option<Binary>`.
+///
+/// * `#[sv::data(opt)]` - Expects type of `data` in the method signature to be
+///     `data: Option<T> where T: Deserialize`.
+///     Tries to deserialize `data` to type defined in the method signature
+///     and forwards it wrapped in the `Option`.
+///     Requires `data` to be JSON serialized.
+///
+/// If `data` is:
+/// | `Some(valid)` | `Some(invalid)` | `None` |
+/// |---|---|---|
+/// | forwards `Some(valid)` | early returns an error specifying what went wrong with `serde` error attached | `None` - forwards `None` |
+///
+/// * `#[sv::data]` - Expects data in the method signature to be `data: T where T: Deserialize`.
+///     Tries to deserialize data to type defined in the method signature
+///     and forwards it or returns early an error.
+///     Requires `data` to be JSON serialized.
+///
+/// If `data` is:
+/// | `Some(valid)` | `Some(invalid)` | `None` |
+/// |---|---|---|
+/// | forwards `valid` | early returns error specifying what went wrong with `serde` error attached | early returns error specifying the `data` is missing |
+///
+/// * `#[sv::data(instantiate)]` - special case for reply to `WasmMsg::instantiate` and
+///     `WasmMsg::instantiate2`. Tries to deserialize data using
+///     [`parse_instantiate_response_data`](https://docs.rs/cw-utils/latest/cw_utils/fn.parse_instantiate_response_data.html).
+///
+/// If `data` is:
+/// | `Some(valid)` | `Some(invalid)` | `None` |
+/// |---|---|---|
+/// | extracts and forwards `valid` | early returns error specifying what went wrong with `serde` error attached | early returns error specifying the `data` is missing |
+///
+/// * `#[sv::data(instantiate, opt)]` - special case for reply to `WasmMsg::instantiate` and
+///     `WasmMsg::instantiate2`. tries to deserialize data using
+///     [`parse_instantiate_response_data`](https://docs.rs/cw-utils/latest/cw_utils/fn.parse_instantiate_response_data.html).
+///
+/// if `data` is:
+/// | `Some(valid)` | `Some(invalid)` | `None` |
+/// |---|---|---|
+/// | forwards `Some(valid)` | early returns error specifying what went wrong with `serde` error attached | Forwards `None` |
+///
+/// * Missing `#[sv::data(...)]` - In case `sv::data` is not found Sylvia won't forward the `data` argument
+///     so the `data` should be omited in the method signature.
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn contract(attr: TokenStream, item: TokenStream) -> TokenStream {
