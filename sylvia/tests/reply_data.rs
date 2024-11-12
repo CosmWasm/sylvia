@@ -224,23 +224,37 @@ impl Contract {
     }
 }
 
+use crate::noop_contract::sv::mt::CodeId as NoopCodeId;
+use crate::sv::mt::{CodeId, ContractProxy};
+use crate::sv::{DATA_OPT_REPLY_ID, DATA_RAW_OPT_REPLY_ID, DATA_RAW_REPLY_ID, DATA_REPLY_ID};
+
+use sylvia::cw_multi_test::IntoBech32;
+use sylvia::multitest::App;
+
 #[test]
-fn dispatch_replies() {
-    use crate::noop_contract::sv::mt::CodeId as NoopCodeId;
-    use crate::sv::mt::{CodeId, ContractProxy};
-    use crate::sv::{DATA_OPT_REPLY_ID, DATA_RAW_OPT_REPLY_ID, DATA_RAW_REPLY_ID, DATA_REPLY_ID};
+fn data_instantiate() {
+    let app = App::default();
+    let code_id = CodeId::store_code(&app);
+    let noop_code_id = NoopCodeId::store_code(&app);
 
-    use cosmwasm_std::{to_json_binary, Binary, StdError};
-    use sylvia::cw_multi_test::IntoBech32;
-    use sylvia::multitest::App;
+    let owner = "owner".into_bech32();
 
+    // Trigger remote instantiation reply
+    let _ = code_id
+        .instantiate(noop_code_id.code_id())
+        .with_label("Contract")
+        .call(&owner)
+        .unwrap();
+}
+
+#[test]
+fn data_raw_opt() {
     let app = App::default();
     let code_id = CodeId::store_code(&app);
     let noop_code_id = NoopCodeId::store_code(&app);
 
     let owner = "owner".into_bech32();
     let data = Some(to_json_binary(&String::from("some_data")).unwrap());
-    let invalid_data = Some(Binary::from("InvalidData".as_bytes()));
 
     // Trigger remote instantiation reply
     let contract = code_id
@@ -259,6 +273,23 @@ fn dispatch_replies() {
         .send_message_expecting_data(data.clone(), DATA_RAW_OPT_REPLY_ID)
         .call(&owner)
         .unwrap();
+}
+
+#[test]
+fn data_raw() {
+    let app = App::default();
+    let code_id = CodeId::store_code(&app);
+    let noop_code_id = NoopCodeId::store_code(&app);
+
+    let owner = "owner".into_bech32();
+    let data = Some(to_json_binary(&String::from("some_data")).unwrap());
+
+    // Trigger remote instantiation reply
+    let contract = code_id
+        .instantiate(noop_code_id.code_id())
+        .with_label("Contract")
+        .call(&owner)
+        .unwrap();
 
     // Should forward `data` if `Some` and return error if `None`
     let err = contract
@@ -272,6 +303,24 @@ fn dispatch_replies() {
 
     contract
         .send_message_expecting_data(data.clone(), DATA_RAW_REPLY_ID)
+        .call(&owner)
+        .unwrap();
+}
+
+#[test]
+fn data_opt() {
+    let app = App::default();
+    let code_id = CodeId::store_code(&app);
+    let noop_code_id = NoopCodeId::store_code(&app);
+
+    let owner = "owner".into_bech32();
+    let data = Some(to_json_binary(&String::from("some_data")).unwrap());
+    let invalid_data = Some(Binary::from("InvalidData".as_bytes()));
+
+    // Trigger remote instantiation reply
+    let contract = code_id
+        .instantiate(noop_code_id.code_id())
+        .with_label("Contract")
         .call(&owner)
         .unwrap();
 
@@ -292,6 +341,24 @@ fn dispatch_replies() {
 
     contract
         .send_message_expecting_data(data.clone(), DATA_OPT_REPLY_ID)
+        .call(&owner)
+        .unwrap();
+}
+
+#[test]
+fn data() {
+    let app = App::default();
+    let code_id = CodeId::store_code(&app);
+    let noop_code_id = NoopCodeId::store_code(&app);
+
+    let owner = "owner".into_bech32();
+    let data = Some(to_json_binary(&String::from("some_data")).unwrap());
+    let invalid_data = Some(Binary::from("InvalidData".as_bytes()));
+
+    // Trigger remote instantiation reply
+    let contract = code_id
+        .instantiate(noop_code_id.code_id())
+        .with_label("Contract")
         .call(&owner)
         .unwrap();
 
