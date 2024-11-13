@@ -11,7 +11,36 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::emit_turbofish;
 
-const NUMBER_OF_DATA_FIELDS: usize = 1;
+const NO_ALLOWED_DATA_FIELDS: usize = 1;
+const NO_ALLOWED_RAW_PAYLOAD_FIELDS: usize = 1;
+
+/// Make sure that there are no additional parameters between ones marked
+/// with `sv::data` and `sv::payload` and after the one marked with `sv::payload`.
+fn assert_no_redundant_params(payload: &[&MsgField]) {
+    let payload_param = payload.iter().enumerate().find(|(_, field)| {
+        ParsedSylviaAttributes::new(field.attrs().iter())
+            .payload
+            .is_some()
+    });
+
+    if payload.len() == NO_ALLOWED_RAW_PAYLOAD_FIELDS {
+        return;
+    }
+
+    let Some((index, payload_param)) = payload_param else {
+        return;
+    };
+
+    if index == 0 {
+        emit_error!(payload[1].name().span(), "Redundant payload parameter.";
+            note = payload_param.name().span() => "Expected no parameters after the parameter marked with `#[sv::payload(raw)]`."
+        )
+    } else {
+        emit_error!(payload[0].name().span(), "Redundant payload parameter.";
+            note = payload_param.name().span() => "Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`."
+        )
+    }
+}
 
 pub struct Reply<'a> {
     source: &'a ItemImpl,
@@ -208,10 +237,11 @@ impl<'a> ReplyData<'a> {
         variant.validate_fields_attributes();
         let payload = variant.fields().iter();
         let payload = if data.is_some() || variant.msg_attr().reply_on() != ReplyOn::Success {
-            payload.skip(NUMBER_OF_DATA_FIELDS).collect::<Vec<_>>()
+            payload.skip(NO_ALLOWED_DATA_FIELDS).collect::<Vec<_>>()
         } else {
             payload.collect::<Vec<_>>()
         };
+        assert_no_redundant_params(&payload);
         let method_name = variant.function_name();
         let reply_on = variant.msg_attr().reply_on();
 
