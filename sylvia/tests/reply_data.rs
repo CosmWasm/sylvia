@@ -336,9 +336,11 @@ fn data_opt() {
         .call(&owner)
         .unwrap_err();
     assert_eq!(
-            err,
-            StdError::generic_err("Invalid reply data: SW52YWxpZERhdGE=\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type").into()
-        );
+        err,
+        StdError::generic_err(
+            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type"
+        ).into()
+    );
 
     contract
         .send_message_expecting_data(data.clone(), DATA_OPT_REPLY_ID)
@@ -377,7 +379,12 @@ fn data() {
         .send_message_expecting_data(invalid_data, DATA_REPLY_ID)
         .call(&owner)
         .unwrap_err();
-    assert_eq!(err, StdError::generic_err("Invalid reply data: SW52YWxpZERhdGE=\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type").into());
+    assert_eq!(
+        err,
+        StdError::generic_err(
+            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type"
+        ).into()
+    );
 
     contract
         .send_message_expecting_data(data, DATA_REPLY_ID)

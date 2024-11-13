@@ -553,8 +553,18 @@ impl DataField for MsgField<'_> {
         let sylvia = crate_module();
         let data = ParsedSylviaAttributes::new(self.attrs().iter()).data;
         let missing_data_err = "Missing reply data field.";
+        let transaction_id = quote! {
+            env
+                .transaction
+                .as_ref()
+                .map(|tx| format!("{}", &tx.index))
+                .unwrap_or_else(|| "Missing".to_string())
+        };
         let invalid_reply_data_err = quote! {
-            format! {"Invalid reply data: {}\nSerde error while deserializing {}", data, err}
+            format! {"Invalid reply data at block height: {}, transaction id: {}.\nSerde error while deserializing {}",
+                env.block.height,
+                #transaction_id,
+                err}
         };
         let execute_data_deserialization = quote! {
             let deserialized_data =
