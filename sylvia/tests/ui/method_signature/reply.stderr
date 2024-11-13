@@ -17,3 +17,21 @@ error: Mismatched quantity of method parameters.
    |
 62 |         fn first_reply(
    |            ^^^^^^^^^^^
+
+error: Redundant payload parameter.
+
+         = note: Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`.
+
+   --> tests/ui/method_signature/reply.rs:106:13
+    |
+106 |             redundant_between1: u32,
+    |             ^^^^^^^^^^^^^^^^^^
+
+error: Redundant payload parameter.
+
+         = note: Expected no parameters after the parameter marked with `#[sv::payload(raw)]`.
+
+   --> tests/ui/method_signature/reply.rs:121:13
+    |
+121 |             redundant: Binary,
+    |             ^^^^^^^^^
