@@ -1,4 +1,5 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
 use cw_utils::{MsgInstantiateContractResponse, ParseReplyError};
 use noop_contract::sv::{Executor, NoopContractInstantiateBuilder};
