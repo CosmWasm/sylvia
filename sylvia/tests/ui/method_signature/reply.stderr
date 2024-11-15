@@ -13,25 +13,43 @@ error: Mismatched quantity of method parameters.
          = note: Both `on_instantiated` handlers should have the same number of parameters.
          = note: Previous definition of on_instantiated handler.
 
-  --> tests/ui/method_signature/reply.rs:62:12
+  --> tests/ui/method_signature/reply.rs:57:12
    |
-62 |         fn first_reply(
+57 |         fn first_reply(
    |            ^^^^^^^^^^^
+
+error: Wrong usage of `#[sv::data]` attribute.
+
+         = note: The `#[sv::data]` attribute can only be used on the first parameter after the `ReplyCtx`.
+
+   --> tests/ui/method_signature/reply.rs:102:35
+    |
+102 |             #[sv::data(opt, raw)] _data: Option<Binary>,
+    |                                   ^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`.
 
-   --> tests/ui/method_signature/reply.rs:106:13
+   --> tests/ui/method_signature/reply.rs:100:13
     |
-106 |             redundant_between1: u32,
+100 |             redundant_before1: u32,
+    |             ^^^^^^^^^^^^^^^^^
+
+error: Redundant payload parameter.
+
+         = note: Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`.
+
+   --> tests/ui/method_signature/reply.rs:113:13
+    |
+113 |             redundant_between1: u32,
     |             ^^^^^^^^^^^^^^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters after the parameter marked with `#[sv::payload(raw)]`.
 
-   --> tests/ui/method_signature/reply.rs:121:13
+   --> tests/ui/method_signature/reply.rs:128:13
     |
-121 |             redundant: Binary,
+128 |             redundant: Binary,
     |             ^^^^^^^^^

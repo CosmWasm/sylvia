@@ -30,12 +30,7 @@ pub mod mismatched_params {
         }
 
         #[sv::msg(reply, handlers=[on_instantiated], reply_on=error)]
-        fn second_reply(
-            &self,
-            _ctx: ReplyCtx,
-            #[sv::data(opt, raw)] _data: Option<Binary>,
-            param: u32,
-        ) -> StdResult<Response> {
+        fn second_reply(&self, _ctx: ReplyCtx, error: String, param: u32) -> StdResult<Response> {
             Ok(Response::new())
         }
     }
@@ -72,7 +67,7 @@ pub mod mismatched_param_arity {
         fn second_reply(
             &self,
             _ctx: ReplyCtx,
-            #[sv::data(opt, raw)] _data: Option<Binary>,
+            error: String,
             param: String,
             param: u32,
         ) -> StdResult<Response> {
@@ -102,6 +97,18 @@ pub mod redundant_params {
         fn first_reply(
             &self,
             _ctx: ReplyCtx,
+            redundant_before1: u32,
+            redundant_before2: String,
+            #[sv::data(opt, raw)] _data: Option<Binary>,
+            #[sv::payload(raw)] param: String,
+        ) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[sv::msg(reply, reply_on=success)]
+        fn second_reply(
+            &self,
+            _ctx: ReplyCtx,
             #[sv::data(opt, raw)] _data: Option<Binary>,
             redundant_between1: u32,
             redudnant_between2: String,
@@ -113,7 +120,7 @@ pub mod redundant_params {
         }
 
         #[sv::msg(reply, reply_on=success)]
-        fn second_reply(
+        fn third_reply(
             &self,
             _ctx: ReplyCtx,
             #[sv::data(opt, raw)] _data: Option<Binary>,
