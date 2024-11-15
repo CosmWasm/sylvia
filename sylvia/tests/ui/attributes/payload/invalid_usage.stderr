@@ -1,0 +1,8 @@
+error: Missing payload parameter.
+
+         = note: Expected at least one payload parameter at the end of parameter list.
+
+  --> tests/ui/attributes/payload/invalid_usage.rs:23:12
+   |
+23 |         fn reply(&self, #[sv::payload(raw)] _ctx: ReplyCtx) -> StdResult<Response> {
+   |            ^^^^^

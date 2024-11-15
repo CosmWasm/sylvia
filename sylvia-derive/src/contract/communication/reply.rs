@@ -241,6 +241,13 @@ impl<'a> ReplyData<'a> {
         } else {
             payload.collect::<Vec<_>>()
         };
+
+        if payload.is_empty() {
+            emit_error!(variant.name().span(), "Missing payload parameter.";
+                note =  "Expected at least one payload parameter at the end of parameter list."
+            )
+        }
+
         assert_no_redundant_params(&payload);
         let method_name = variant.function_name();
         let reply_on = variant.msg_attr().reply_on();
@@ -524,14 +531,31 @@ impl<'a> ReplyVariant<'a> for MsgVariant<'a> {
     /// Validates attributes and returns `Some(MsgField)` if a field marked with `sv::data` attribute
     /// is present and the `reply_on` attribute is set to `ReplyOn::Success`.
     fn as_data_field(&'a self) -> Option<&'a MsgField<'a>> {
-        let data_attrs = self.fields().first().map(|field| {
+        let data_param = self.fields().iter().enumerate().find(|(_, field)| {
             ParsedSylviaAttributes::new(field.attrs().iter())
                 .data
                 .is_some()
         });
-        match data_attrs {
-            Some(attrs) if attrs && self.msg_attr().reply_on() == ReplyOn::Success => {
-                self.fields().first()
+        match data_param {
+            Some((index, field))
+                if self.msg_attr().reply_on() == ReplyOn::Success && index == 0 =>
+            {
+                Some(field)
+            }
+            Some((index, field))
+                if self.msg_attr().reply_on() == ReplyOn::Success && index != 0 =>
+            {
+                emit_error!(field.name().span(), "Wrong usage of `#[sv::data]` attribute.";
+                    note = "The `#[sv::data]` attribute can only be used on the first parameter after the `ReplyCtx`."
+                );
+                None
+            }
+            Some((_, field)) if self.msg_attr().reply_on() != ReplyOn::Success => {
+                emit_error!(field.name().span(), "Wrong usage of `#[sv::data]` attribute.";
+                    note = "The `#[sv::data]` attribute can only be used in `success` scenario.";
+                    note = format!("Found usage in `{}` scenario.", self.msg_attr().reply_on())
+                );
+                None
             }
             _ => None,
         }

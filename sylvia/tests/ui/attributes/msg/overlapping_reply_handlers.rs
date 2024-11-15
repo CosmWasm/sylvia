@@ -19,7 +19,12 @@ impl Contract {
     }
 
     #[sv::msg(reply, handlers=[handler1])]
-    fn reply_always(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
+    fn reply_always(
+        &self,
+        _ctx: ReplyCtx,
+        _result: SubMsgResult,
+        #[sv::payload(raw)] payload: Binary,
+    ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
@@ -27,18 +32,28 @@ impl Contract {
     fn duplicated_success_for_reply_always(
         &self,
         _ctx: ReplyCtx,
-        _reply: Reply,
+        #[sv::payload(raw)] reply: Binary,
     ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[sv::msg(reply, handlers=[handler2], reply_on=error)]
-    fn some_reply(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
+    fn some_reply(
+        &self,
+        _ctx: ReplyCtx,
+        error: String,
+        #[sv::payload(raw)] payload: Binary,
+    ) -> StdResult<Response> {
         Ok(Response::new())
     }
 
     #[sv::msg(reply, reply_on=error)]
-    fn handler2(&self, _ctx: ReplyCtx, _reply: Reply) -> StdResult<Response> {
+    fn handler2(
+        &self,
+        _ctx: ReplyCtx,
+        error: String,
+        #[sv::payload(raw)] payload: Binary,
+    ) -> StdResult<Response> {
         Ok(Response::new())
     }
 }
