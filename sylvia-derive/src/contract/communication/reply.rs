@@ -1,3 +1,10 @@
+//! Module responsible for generating `Reply` related code.
+//!
+//! Based on methods marked with the `#[sv::msg(reply)]` attribute, this module generates:
+//!     - reply ids for every unique handler,
+//!     - dispatch method that matches over every generated `ReplyId` and dispatches depending on the `ReplyOn`,
+//!     - `SubMsgMethods` trait with method for every reply id.
+
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use proc_macro_error::emit_error;
@@ -11,8 +18,8 @@ use crate::types::msg_field::MsgField;
 use crate::types::msg_variant::{MsgVariant, MsgVariants};
 use crate::utils::emit_turbofish;
 
-const NO_ALLOWED_DATA_FIELDS: usize = 1;
-const NO_ALLOWED_RAW_PAYLOAD_FIELDS: usize = 1;
+const NUMBER_OF_ALLOWED_DATA_FIELDS: usize = 1;
+const NUMBER_OF_ALLOWED_RAW_PAYLOAD_FIELDS: usize = 1;
 
 /// Make sure that there are no additional parameters between ones marked
 /// with `sv::data` and `sv::payload` and after the one marked with `sv::payload`.
@@ -23,7 +30,7 @@ fn assert_no_redundant_params(payload: &[&MsgField]) {
             .is_some()
     });
 
-    if payload.len() == NO_ALLOWED_RAW_PAYLOAD_FIELDS {
+    if payload.len() == NUMBER_OF_ALLOWED_RAW_PAYLOAD_FIELDS {
         return;
     }
 
@@ -237,7 +244,9 @@ impl<'a> ReplyData<'a> {
         variant.validate_fields_attributes();
         let payload = variant.fields().iter();
         let payload = if data.is_some() || variant.msg_attr().reply_on() != ReplyOn::Success {
-            payload.skip(NO_ALLOWED_DATA_FIELDS).collect::<Vec<_>>()
+            payload
+                .skip(NUMBER_OF_ALLOWED_DATA_FIELDS)
+                .collect::<Vec<_>>()
         } else {
             payload.collect::<Vec<_>>()
         };
