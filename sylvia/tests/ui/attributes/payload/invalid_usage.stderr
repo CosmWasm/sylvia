@@ -1,3 +1,13 @@
+error: Invalid usage of Sylvia attribute.
+
+         = note: First and second arguments of the method should be `self` and `ctx` respectively.
+         = note: Unexpected attribute on `ctx` parameter.
+
+  --> tests/ui/attributes/payload/invalid_usage.rs:23:25
+   |
+23 |         fn reply(&self, #[sv::payload(raw)] _ctx: ReplyCtx) -> StdResult<Response> {
+   |                         ^
+
 error: Missing payload parameter.
 
          = note: Expected at least one payload parameter at the end of parameter list.
@@ -6,3 +16,13 @@ error: Missing payload parameter.
    |
 23 |         fn reply(&self, #[sv::payload(raw)] _ctx: ReplyCtx) -> StdResult<Response> {
    |            ^^^^^
+
+error: Invalid usage of Sylvia attribute.
+
+         = note: First and second arguments of the method should be `self` and `ctx` respectively.
+         = note: Unexpected attribute on `self` parameter.
+
+  --> tests/ui/attributes/payload/invalid_usage.rs:48:13
+   |
+48 |             #[sv::payload(raw)] &self,
+   |             ^

@@ -26,4 +26,32 @@ pub mod used_on_context {
     }
 }
 
+pub mod used_on_self {
+    use super::*;
+
+    pub struct Contract {}
+
+    #[sylvia::contract]
+    #[sv::features(replies)]
+    impl Contract {
+        pub const fn new() -> Self {
+            Self {}
+        }
+
+        #[sv::msg(instantiate)]
+        fn instantiate(&self, _ctx: InstantiateCtx) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+
+        #[sv::msg(reply, reply_on=success)]
+        fn reply(
+            #[sv::payload(raw)] &self,
+            _ctx: ReplyCtx,
+            payload: Binary,
+        ) -> StdResult<Response> {
+            Ok(Response::new())
+        }
+    }
+}
+
 fn main() {}

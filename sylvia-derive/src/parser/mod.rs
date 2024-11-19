@@ -67,6 +67,35 @@ pub fn process_fields<'s, Generic>(
 where
     Generic: GetPath + PartialEq,
 {
+    // Assert no accidental usage of Sylvia attributes on `self` and `ctx` parameters.
+    sig.inputs.iter().take(2).for_each(|arg| match arg {
+        FnArg::Receiver(item) => {
+            item.attrs.iter().for_each(|attr| {
+                if SylviaAttribute::new(attr).is_none() {
+                    return;
+                }
+                emit_error!(attr.span(),
+                    "Invalid usage of Sylvia attribute.";
+                    note = "First and second arguments of the method should be `self` and `ctx` respectively.";
+                    note = "Unexpected attribute on `self` parameter."
+                );
+            });
+        }
+
+        FnArg::Typed(item) => {
+            item.attrs.iter().for_each(|attr| {
+                if SylviaAttribute::new(attr).is_none() {
+                    return;
+                }
+                emit_error!(attr.span(),
+                    "Invalid usage of Sylvia attribute.";
+                    note = "First and second arguments of the method should be `self` and `ctx` respectively.";
+                    note = "Unexpected attribute on `ctx` parameter."
+                );
+            });
+        }
+    });
+
     sig.inputs
         .iter()
         .skip(2)
