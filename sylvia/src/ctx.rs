@@ -1,3 +1,5 @@
+//! Module for context types used in method signatures.
+
 use cosmwasm_std::{Deps, DepsMut, Empty, Env, Event, MessageInfo, MsgResponse};
 
 /// Represantation of `reply` context received in entry point.

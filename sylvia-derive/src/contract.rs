@@ -189,28 +189,27 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_reply(&self) -> TokenStream {
-        if self.sv_features.replies {
-            let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
-
-            Reply::new(self.item, &self.generics, &variants).emit()
-        } else {
-            quote! {}
+        if !self.sv_features.replies {
+            return quote! {};
         }
+
+        let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
+
+        Reply::new(self.item, &self.generics, &variants).emit()
     }
 
     fn emit_instantiate_builder_trait(&self) -> TokenStream {
-        let item = self.item;
         let variants = MsgVariants::new(
-            item.as_variants(),
+            self.item.as_variants(),
             MsgType::Instantiate,
             &self.generics,
-            &item.generics.where_clause,
+            &self.item.generics.where_clause,
         );
         let where_clause = variants.where_clause();
 
         match variants.get_only_variant() {
             Some(variant) => InstantiateBuilder::new(
-                *item.self_ty.clone(),
+                *self.item.self_ty.clone(),
                 variants.used_generics(),
                 &where_clause,
                 variant,

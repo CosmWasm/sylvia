@@ -311,7 +311,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///     }
 ///
 ///     #[sv::msg(reply)]
-///     fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, payload: Binary) -> Result<Response, ContractError> {
+///     fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, #[sv::payload(raw)] payload: Binary) -> Result<Response, ContractError> {
 /// #        Ok(Response::new())
 ///     }
 ///
@@ -767,7 +767,7 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// #    }
 /// #
 /// #    #[sv::msg(reply)]
-/// #    fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, payload: Binary) -> StdResult<Response> {
+/// #    fn reply(&self, ctx: ReplyCtx, result: SubMsgResult, #[sv::payload(raw)] payload: Binary) -> StdResult<Response> {
 /// #        Ok(Response::new())
 /// #    }
 /// #
