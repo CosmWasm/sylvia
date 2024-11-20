@@ -4,6 +4,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.2.1...sylvia-derive-v1.3.0) - 2024-11-20
+
+### Added
+
+- Assert no attributes used on `self` and `ctx`
+- Error on wrong `sv::data` and `sv::payload` usage
+- Return transaction id and block height if deserialization failed
+- Assert no redundant parameters in reply method
+- Update MultiTest to 2.2.0
+- Revert adding Error to ContractApi
+- Create ctx module for context types
+- Add temporary `sylvia::replies::ReplyCtx` with additional fields ([#450](https://github.com/CosmWasm/sylvia/pull/450))
+- Support omitting data parameter
+- Add `instantiate` parameter to the `sv::data` attribute
+- Add auto deserialization of reply data ([#445](https://github.com/CosmWasm/sylvia/pull/445))
+- Add support for `sv::features` attribute. ([#446](https://github.com/CosmWasm/sylvia/pull/446))
+- Pass payload while building SubMsg ([#441](https://github.com/CosmWasm/sylvia/pull/441))
+- Add option to deserialize payload ([#439](https://github.com/CosmWasm/sylvia/pull/439))
+- Impl SubMsg trait on CosmosMsg
+- Add InstantiateBuilder and SubMsg trait
+- Emit new reply dispatch ([#429](https://github.com/CosmWasm/sylvia/pull/429))
+- Generate unique reply_ids ([#427](https://github.com/CosmWasm/sylvia/pull/427))
+- Parse additional parameters for sv::msg(reply) ([#426](https://github.com/CosmWasm/sylvia/pull/426))
+- Make serde dep user side obsolete
+- Make cosmwasm_schema deps obsolete
+- Make user side cosmwasm-std dep obsolete
+
+### Other
+
+- Minor tweaks
+- Add description of the `data` and `payload` attributes.
+- Revert adding `non_exhaustive` on old context types.
+- Rename `ReplyOn::Failure` to match variant from std
+- Better error message for `sv::features` attribute
+- Review fixes
+- Remove redundant logic from reply
+- Store MsgVariant in ReplyData
+- Improve reply generation
+- Review fixes
+- Rename variables to be more intuitive
+- Review fixes
+- Remove `msg_type` method from `MsgVariant`
+- Store `MsgAttr` in `MsgVariant`
+- Make `MsgAttr` a struct
+- Review fix
+
 ## [1.2.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.2.0...sylvia-derive-v1.2.1) - 2024-08-22
 
 ### Fixed
