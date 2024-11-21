@@ -33,22 +33,13 @@ and this project adheres to
 
 ### Other
 
-- Minor tweaks
 - Add description of the `data` and `payload` attributes.
-- Revert adding `non_exhaustive` on old context types.
-- Rename `ReplyOn::Failure` to match variant from std
 - Better error message for `sv::features` attribute
-- Review fixes
-- Remove redundant logic from reply
 - Store MsgVariant in ReplyData
 - Improve reply generation
-- Review fixes
-- Rename variables to be more intuitive
-- Review fixes
 - Remove `msg_type` method from `MsgVariant`
 - Store `MsgAttr` in `MsgVariant`
 - Make `MsgAttr` a struct
-- Review fix
 
 ## [1.2.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.2.0...sylvia-derive-v1.2.1) - 2024-08-22
 
