@@ -20,7 +20,6 @@ cosmwasm_1_2 = [
     "cosmwasm-std/cosmwasm_1_2",
     "cw-multi-test/cosmwasm_1_2",
     "sylvia-derive/cosmwasm_1_2",
-    "dep:cw-utils",
     "cosmwasm_1_1",
 ]
 cosmwasm_1_3 = [
@@ -51,7 +50,7 @@ konst = "0.3.8"
 cw-multi-test = { workspace = true, features = ["staking"], optional = true }
 anyhow = { workspace = true, optional = true }
 derivative = { version = "2.2.0" }
-cw-utils = { workspace = true, optional = true }
+cw-utils = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = { workspace = true, features = ["staking"] }
