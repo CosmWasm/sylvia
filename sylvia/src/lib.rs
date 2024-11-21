@@ -1,7 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-//! Framework for creating CosmWasm Smart Contract with high-level abstraction layer
+//! Framework for creating CosmWasm Smart Contract with high-level abstraction layer.
 //!
-//! Most of implementation lies in `sylvia-derive` crate which is reexported here
+//! Most of implementation lies in `sylvia-derive` crate which is reexported here.
 
 pub mod builder;
 pub mod ctx;
@@ -18,8 +18,6 @@ pub use anyhow;
 #[cfg_attr(docsrs, doc(cfg(feature = "mt")))]
 #[cfg(feature = "mt")]
 pub use cw_multi_test;
-#[cfg_attr(docsrs, doc(cfg(feature = "cosmwasm_1_2")))]
-#[cfg(feature = "cosmwasm_1_2")]
 pub use cw_utils;
 #[cfg_attr(docsrs, doc(cfg(feature = "mt")))]
 #[cfg(feature = "mt")]
