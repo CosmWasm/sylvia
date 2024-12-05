@@ -1,7 +1,6 @@
 //! Module providing utilities to build and use sylvia contracts.
 
 use cosmwasm_std::{Binary, Coin, Deps, DepsMut, Empty, Env, MessageInfo, WasmMsg};
-use derivative::Derivative;
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -368,8 +367,7 @@ impl ExecutorBuilder<ReadyExecutorBuilderState> {
 ///
 /// fn main() {}
 /// ```
-#[derive(Serialize, Deserialize, Derivative)]
-#[derivative(Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Remote<'a, Contract: ?Sized> {
     addr: std::borrow::Cow<'a, cosmwasm_std::Addr>,
     #[serde(skip)]
@@ -452,7 +450,7 @@ impl<'a, Contract: ?Sized> Remote<'a, Contract> {
     }
 }
 
-impl<'a, Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'a, Contract> {
+impl<Contract: ?Sized> AsRef<cosmwasm_std::Addr> for Remote<'_, Contract> {
     /// Returns reference to the underlying contract address.
     fn as_ref(&self) -> &cosmwasm_std::Addr {
         &self.addr

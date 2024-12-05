@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<'ast, 'g, Generic> Visit<'ast> for CheckGenerics<'g, Generic>
+impl<'ast, Generic> Visit<'ast> for CheckGenerics<'_, Generic>
 where
     Generic: GetPath + PartialEq,
 {

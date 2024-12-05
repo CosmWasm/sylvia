@@ -65,19 +65,23 @@ use cw_multi_test::{
     GovFailingModule, Ibc, IbcFailingModule, Module, Router, StakeKeeper, Staking, Stargate,
     StargateFailing, Wasm, WasmKeeper,
 };
-use derivative::Derivative;
 use serde::Serialize;
 
 use crate::types::{CustomMsg, CustomQuery};
 
 /// Proxy to interact with a smart contract initialized on the [App].
-#[derive(Derivative)]
-#[derivative(Debug)]
 pub struct Proxy<'a, MtApp, Contract> {
     pub contract_addr: cosmwasm_std::Addr,
-    #[derivative(Debug = "ignore")]
     pub app: &'a crate::multitest::App<MtApp>,
     pub _phantom: std::marker::PhantomData<(MtApp, Contract)>,
+}
+
+impl<MtApp, Contract> core::fmt::Debug for Proxy<'_, MtApp, Contract> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Proxy")
+            .field("contract_addr", &self.contract_addr)
+            .finish()
+    }
 }
 
 impl<'a, MtApp, Contract> Proxy<'a, MtApp, Contract> {
