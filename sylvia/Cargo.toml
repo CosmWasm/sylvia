@@ -49,7 +49,6 @@ serde-json-wasm = "1.0.1"
 konst = "0.3.8"
 cw-multi-test = { workspace = true, features = ["staking"], optional = true }
 anyhow = { workspace = true, optional = true }
-derivative = { version = "2.2.0" }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
