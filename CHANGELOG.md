@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.1...sylvia-derive-v1.3.2) - 2024-12-09
+
+### Other
+
+- Remove derivative dependency and fix lints
+
 ## [1.3.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.2.1...sylvia-derive-v1.3.0) - 2024-11-20
 
 ### Added
