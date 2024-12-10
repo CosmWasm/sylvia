@@ -4,19 +4,19 @@ exclude = ["examples/*"]
 resolver = "2"
 
 [workspace.package]
-version = "1.3.2"
+version = "1.3.3"
 
 [workspace.dependencies]
-anyhow = "1.0.93"
-cosmwasm-schema = "2.1.4"
-cosmwasm-std = "2.1.4"
+anyhow = "1.0.94"
+cosmwasm-schema = "2.1.5"
+cosmwasm-std = "2.1.5"
 cw-multi-test = "2.2.0"
 cw-storage-plus = "2.0.0"
 cw-utils = "2.0.0"
 schemars = "0.8.21"
-serde = { version = "1.0.214", default-features = false, features = ["derive"] }
-sylvia-derive = { version = "1.3.2", path = "sylvia-derive" }
-thiserror = "2.0.0"
+serde = { version = "1.0.215", default-features = false, features = ["derive"] }
+sylvia-derive = { version = "1.3.3", path = "sylvia-derive" }
+thiserror = "2.0.6"
 
 [workspace.metadata.docs.rs]
 all-features = true
