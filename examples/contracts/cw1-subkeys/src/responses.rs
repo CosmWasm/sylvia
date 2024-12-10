@@ -44,7 +44,7 @@ impl AllowanceInfo {
     ///
     /// ```
     /// # use cw_utils::{Expiration, NativeBalance};
-    /// # use cw1_subkeys::msg::AllowanceInfo;
+    /// # use cw1_subkeys::responses::AllowanceInfo;
     /// # use sylvia::cw_schema::{cw_serde, QueryResponses};
     /// # use sylvia::cw_std::coin;
     ///
@@ -99,14 +99,15 @@ impl PermissionsInfo {
     /// Example:
     ///
     /// ```
-    /// # use cw1_subkeys::msg::PermissionsInfo;
+    /// # use cw1_subkeys::responses::PermissionsInfo;
     /// # use cw1_subkeys::state::Permissions;
+    /// # use sylvia::cw_multi_test::IntoAddr;
     ///
     /// let mut perms = vec![PermissionsInfo {
-    ///   spender: "spender2".to_owned(),
+    ///   spender: "spender2".into_addr(),
     ///   permissions: Permissions::default(),
     /// }, PermissionsInfo {
-    ///   spender: "spender1".to_owned(),
+    ///   spender: "spender1".into_addr(),
     ///   permissions: Permissions::default(),
     /// }];
     ///
@@ -114,7 +115,7 @@ impl PermissionsInfo {
     ///
     /// assert_eq!(
     ///   perms.into_iter().map(|perm| perm.spender).collect::<Vec<_>>(),
-    ///   vec!["spender1".to_owned(), "spender2".to_owned()]
+    ///   vec!["spender2".into_addr(), "spender1".into_addr()]
     /// );
     /// ```
     pub fn cmp_by_spender(left: &Self, right: &Self) -> std::cmp::Ordering {

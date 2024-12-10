@@ -18,7 +18,7 @@ impl AdminListResponse {
     /// Example:
     ///
     /// ```
-    /// # use cw1_whitelist::msg::AdminListResponse;
+    /// # use whitelist::responses::AdminListResponse;
     ///
     /// let resp1 = AdminListResponse {
     ///   admins: vec!["admin1".to_owned(), "admin2".to_owned()],
