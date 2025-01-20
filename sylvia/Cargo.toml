@@ -42,7 +42,11 @@ cosmwasm_2_1 = [
     "cw-multi-test/cosmwasm_2_1",
     "cosmwasm_2_0",
 ]
-cosmwasm_2_2 = ["cosmwasm-std/cosmwasm_2_2", "cosmwasm_2_1"]
+cosmwasm_2_2 = [
+    "cosmwasm-std/cosmwasm_2_2",
+    "cw-multi-test/cosmwasm_2_2",
+    "cosmwasm_2_1",
+]
 
 [dependencies]
 sylvia-derive = { workspace = true }
@@ -52,7 +56,7 @@ schemars = { workspace = true }
 serde = { workspace = true }
 serde-cw-value = "0.7.0"
 serde-json-wasm = "1.0.1"
-konst = "0.3.15"
+konst = "0.3.16"
 cw-multi-test = { workspace = true, features = ["staking"], optional = true }
 anyhow = { workspace = true, optional = true }
 cw-utils = { workspace = true }
@@ -63,8 +67,8 @@ anyhow = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 thiserror = { workspace = true }
-trybuild = "1.0.101"
-itertools = "0.13.0"
+trybuild = "1.0.102"
+itertools = "0.14.0"
 
 [package.metadata.docs.rs]
 all-features = true
