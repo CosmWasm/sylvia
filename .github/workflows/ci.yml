@@ -62,6 +62,8 @@ jobs:
         run: npm install -g @cosmwasm/ts-codegen
       - name: Test project
         run: cargo test --locked
+      - name: Test project no default features
+        run: cargo test --locked --no-default-features
       - name: Clippy project
         run: cargo clippy --all-targets -- -D warnings 
       - name: Fmt check project
@@ -70,6 +72,9 @@ jobs:
       - name: Test examples
         working-directory: examples
         run: cargo test --locked
+      - name: Test examples no default features
+        working-directory: examples
+        run: cargo test --locked --no-default-features
       - name: Clippy examples
         working-directory: examples
         run: cargo clippy --all-targets -- -D warnings 

@@ -12,9 +12,11 @@ categories = ["api-bindings", "wasm"]
 readme = "../README.md"
 
 [features]
+default = ["staking"]
 mt = ["sylvia-derive/mt", "dep:cw-multi-test", "dep:anyhow"]
 stargate = ["cosmwasm-std/stargate", "cw-multi-test/stargate"]
 iterator = ["cosmwasm-std/iterator"]
+staking = ["cosmwasm-std/staking", "cw-multi-test/staking"]
 cosmwasm_1_1 = ["cosmwasm-std/cosmwasm_1_1", "cw-multi-test/cosmwasm_1_1"]
 cosmwasm_1_2 = [
     "cosmwasm-std/cosmwasm_1_2",
@@ -50,19 +52,19 @@ cosmwasm_2_2 = [
 
 [dependencies]
 sylvia-derive = { workspace = true }
-cosmwasm-std = { workspace = true, features = ["staking"] }
+cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde-cw-value = "0.7.0"
 serde-json-wasm = "1.0.1"
 konst = "0.3.16"
-cw-multi-test = { workspace = true, features = ["staking"], optional = true }
+cw-multi-test = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = { workspace = true, features = ["staking"] }
+cw-multi-test = { workspace = true }
 anyhow = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
