@@ -37,9 +37,9 @@ jobs:
         working-directory: ./
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -49,15 +49,13 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.78.0
           target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
           components: rustfmt, clippy
       - name: Install npm
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
       - name: Intall ts-codegen
         run: npm install -g @cosmwasm/ts-codegen
       - name: Test project
@@ -100,11 +98,12 @@ jobs:
         run: ../../ci_contracts.sh "cosmwasm-ts-codegen generate --plugin client --schema ./schema --out ./ts --name ${command} --no-bundle"
 
       - name: Archive schema artifats
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: schema-json
           path: |
             examples/contracts/**/schema/*.json
+          overwrite: true
 
   # Errors differ between Rust versions. We test only the latest output.
   test_ui:
@@ -124,9 +123,9 @@ jobs:
         working-directory: ./
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -136,12 +135,10 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
-          profile: minimal
-          override: true
       - name: Test project
         run: cargo test --locked -- --ignored
 
@@ -153,9 +150,9 @@ jobs:
       options:                  --security-opt seccomp=unconfined
     steps:
       - name:                   Checkout sources
-        uses:                   actions/checkout@v2
+        uses:                   actions/checkout@v4
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -168,7 +165,7 @@ jobs:
         run: |
           cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml --engine llvm
       - name:                   Upload to codecov.io
-        uses:                   codecov/codecov-action@v2
+        uses:                   codecov/codecov-action@v5
         with:
           fail_ci_if_error:     true
         env:
