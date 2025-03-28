@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.4...sylvia-derive-v1.3.5) - 2025-03-28
+
+### Other
+
+- Enabling Sylvia features no longer enables the MultiTest dependency ([#478](https://github.com/CosmWasm/sylvia/issues/478))
+
 ## [1.3.4](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.3...sylvia-derive-v1.3.4) - 2025-03-06
 
 ### Added
@@ -81,7 +87,7 @@ and this project adheres to
 
 ### Other
 
-- *(sylvia-derive)* Document inner types
+- _(sylvia-derive)_ Document inner types
 - [**breaking**] Remove `InterfaceApi` in favor of `InterfaceMessagesApi` ([#413](https://github.com/CosmWasm/sylvia/pull/413))
 - Fix duplicated instantiation error
 - Refactor struct message generation
