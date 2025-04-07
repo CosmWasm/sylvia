@@ -1,3 +1,5 @@
+#![cfg(feature = "mt")]
+
 use cosmwasm_schema::cw_serde;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};

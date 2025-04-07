@@ -1,3 +1,5 @@
+#![cfg(feature = "mt")]
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{BankMsg, CosmosMsg, Empty, SubMsgResult};
 use cw_storage_plus::Item;
