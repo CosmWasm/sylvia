@@ -1,4 +1,4 @@
-#![cfg(feature = "mt")]
+#![cfg(all(feature = "mt", feature = "cosmwasm_1_2"))]
 
 use cw_multi_test::IntoBech32;
 use std::marker::PhantomData;

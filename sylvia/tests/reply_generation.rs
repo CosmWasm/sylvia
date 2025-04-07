@@ -1,3 +1,5 @@
+#![cfg(feature = "mt")]
+
 use cosmwasm_std::{Binary, SubMsgResult};
 use itertools::Itertools;
 use sylvia::ctx::InstantiateCtx;
