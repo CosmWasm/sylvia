@@ -33,7 +33,7 @@ proc-macro-crate = "3.2.0"
 itertools = "0.14.0"
 
 [dev-dependencies]
-sylvia-runtime-macros = "0.6.0"
+runtime-macros-derive = "0.7.0"
 sylvia = { path = "../sylvia", features = [
     "mt",
     "stargate",
