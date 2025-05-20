@@ -217,7 +217,7 @@ impl<'a> GlueMessage<'a> {
                         // deserialized it from JSON, not reason to expect error here.
                         format!(
                             "Unsupported message received: {}. Messages supported by this contract: ",
-                            #sylvia ::serde_json::to_string(&val).unwrap_or_else(|_| String::new())
+                            #sylvia ::cw_std::to_json_string(&val).unwrap_or_else(|_| String::new())
                         ),
                         |mut acc, message| acc + message + ", ",
                     );
