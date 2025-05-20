@@ -62,7 +62,6 @@ cosmwasm-schema = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde-cw-value = "0.7.0"
-serde-json-wasm = "1.0.1"
 konst = "0.3.16"
 cw-multi-test = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }

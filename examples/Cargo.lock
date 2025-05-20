@@ -1398,7 +1398,6 @@ dependencies = [
  "schemars",
  "serde",
  "serde-cw-value",
- "serde-json-wasm",
  "sylvia-derive",
 ]
 
