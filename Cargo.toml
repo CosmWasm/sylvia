@@ -15,7 +15,7 @@ cw-storage-plus = { path = "../cw-storage-plus", version = "3.0.0-ibc2.0"}
 cw-utils = { path = "../cw-minus/packages/cw-utils", version = "3.0.0-ibc2.0"}
 schemars = "0.8.22"
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
-sylvia-derive = { version = "1.3.5", path = "sylvia-derive" }
+sylvia-derive = { version = "3.0.0-ibc2.0", path = "sylvia-derive" }
 thiserror = "2.0.12"
 
 [workspace.metadata.docs.rs]
