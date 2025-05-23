@@ -4,7 +4,7 @@ exclude = ["examples/*"]
 resolver = "2"
 
 [workspace.package]
-version = "1.3.5"
+version = "3.0.0-ibc2.0"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
