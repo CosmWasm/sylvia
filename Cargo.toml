@@ -8,11 +8,11 @@ version = "1.3.5"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
-cosmwasm-schema = "2.2.2"
-cosmwasm-std = "2.2.2"
-cw-multi-test = "2.4.0"
-cw-storage-plus = "2.0.0"
-cw-utils = "2.0.0"
+cosmwasm-schema = "3.0.0-ibc2.0"
+cosmwasm-std = "3.0.0-ibc2.0"
+cw-multi-test = { path = "../cw-multi-test", version = "3.0.0-ibc2.0"}
+cw-storage-plus = { path = "../cw-storage-plus", version = "3.0.0-ibc2.0"}
+cw-utils = { path = "../cw-minus/packages/cw-utils", version = "3.0.0-ibc2.0"}
 schemars = "0.8.22"
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 sylvia-derive = { version = "1.3.5", path = "sylvia-derive" }
