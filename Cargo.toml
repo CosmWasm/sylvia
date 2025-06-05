@@ -10,7 +10,7 @@ version = "3.0.0-rc.0"
 anyhow = "1.0.98"
 cosmwasm-schema = "3.0.0-rc.0"
 cosmwasm-std = "3.0.0-rc.0"
-cw-multi-test = { path = "../cw-multi-test", version = "3.0.0-ibc2.0"}
+cw-multi-test = "3.0.0-rc.0"
 cw-storage-plus = "3.0.0-rc.0"
 cw-utils = "3.0.0-rc.0"
 schemars = "0.8.22"
