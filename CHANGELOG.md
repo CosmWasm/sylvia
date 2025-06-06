@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.6...sylvia-derive-v1.4.0) - 2025-06-06
+
+### Added
+
+- Fix parsing attribute macros without arguments in parentheses ([#489](https://github.com/CosmWasm/sylvia/pull/489))
+
 ## [1.3.6](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.5...sylvia-derive-v1.3.6) - 2025-05-20
 
 ### Other
