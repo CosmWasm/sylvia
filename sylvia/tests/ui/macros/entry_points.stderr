@@ -54,17 +54,17 @@ error[E0599]: no function or associated item named `new` found for struct `wrong
    = help: items from traits can only be used if the trait is implemented and in scope
    = note: the following traits define an item `new`, perhaps you need to implement one of them:
            candidate #1: `ark_ec::hashing::HashToCurve`
-           candidate #2: `ark_ec::hashing::map_to_curve_hasher::MapToCurve`
-           candidate #3: `ark_ff::fields::field_hashers::HashToField`
-           candidate #4: `ark_poly::domain::EvaluationDomain`
-           candidate #5: `ark_poly::polynomial::multivariate::Term`
-           candidate #6: `crypto_common::KeyInit`
-           candidate #7: `crypto_common::KeyIvInit`
-           candidate #8: `curve25519_dalek::traits::VartimePrecomputedMultiscalarMul`
-           candidate #9: `digest::VariableOutput`
-           candidate #10: `digest::core_api::VariableOutputCore`
-           candidate #11: `digest::digest::Digest`
-           candidate #12: `digest::mac::Mac`
+           candidate #2: `ark_ff::fields::field_hashers::HashToField`
+           candidate #3: `ark_poly::domain::EvaluationDomain`
+           candidate #4: `ark_poly::polynomial::multivariate::Term`
+           candidate #5: `crypto_common::KeyInit`
+           candidate #6: `crypto_common::KeyIvInit`
+           candidate #7: `curve25519_dalek::traits::VartimePrecomputedMultiscalarMul`
+           candidate #8: `digest::VariableOutput`
+           candidate #9: `digest::core_api::VariableOutputCore`
+           candidate #10: `digest::digest::Digest`
+           candidate #11: `digest::mac::Mac`
+           candidate #12: `itertools::adaptors::coalesce::CountItem`
            candidate #13: `itertools::adaptors::coalesce::CountItem`
            candidate #14: `rand::distributions::uniform::UniformSampler`
            candidate #15: `typenum::marker_traits::Bit`
