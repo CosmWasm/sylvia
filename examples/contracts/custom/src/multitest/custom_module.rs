@@ -2,7 +2,6 @@ use cw_storage_plus::Item;
 use std::fmt::Debug;
 use sylvia::anyhow::Result as AnyResult;
 use sylvia::cw_multi_test::{AppResponse, CosmosRouter, Module};
-use sylvia::cw_schema::schemars::JsonSchema;
 use sylvia::cw_std::{
     to_json_binary, Addr, Api, Binary, BlockInfo, CustomQuery, Empty, Querier, StdError, StdResult,
     Storage,
@@ -44,7 +43,7 @@ impl Module for CustomModule {
         msg: Self::ExecT,
     ) -> AnyResult<AppResponse>
     where
-        ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+        ExecC: Debug + Clone + PartialEq + DeserializeOwned + 'static,
         QueryC: CustomQuery + DeserializeOwned + 'static,
     {
         match msg {
@@ -65,7 +64,7 @@ impl Module for CustomModule {
         _msg: Self::SudoT,
     ) -> AnyResult<AppResponse>
     where
-        ExecC: Debug + Clone + PartialEq + JsonSchema + DeserializeOwned + 'static,
+        ExecC: Debug + Clone + PartialEq + DeserializeOwned + 'static,
         QueryC: CustomQuery + DeserializeOwned + 'static,
     {
         Ok(AppResponse::default())
