@@ -1276,13 +1276,13 @@ dependencies = [
 
 [[package]]
 name = "sylvia-runtime-macros"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "220853b6e9134826eab438ebadca5e8943a10ea9f45209e29edf50e725ce7267"
+checksum = "e4e4c15b0f4cb3e31149f4d59bb13e095b880f2e2f087308f8577e30f123ecaa"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1292,7 +1292,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
 dependencies = [
  "proc-macro2",
- "quote",
  "unicode-ident",
 ]
 
