@@ -9,7 +9,6 @@ members = [
     "interfaces/cw20-marketing",
     "interfaces/custom-and-generic",
     "interfaces/generic",
-
     # Contracts
     "contracts/cw1-whitelist",
     "contracts/cw1-subkeys",
@@ -28,9 +27,9 @@ edition = "2021"
 
 [workspace.dependencies]
 sylvia = { path = "../sylvia" }
-cw-storage-plus = "2.0.0"
-cw-utils = "2.0.0"
-cw2 = "2.0.0"
+cw-storage-plus = "3.0.0-rc.0"
+cw-utils = "3.0.0-rc.0"
+cw2 = "3.0.0-rc.0"
 semver = "1.0.26"
 thiserror = "2.0.12"
 assert_matches = "1.5.0"

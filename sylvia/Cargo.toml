@@ -49,6 +49,11 @@ cosmwasm_2_2 = [
     "cw-multi-test?/cosmwasm_2_2",
     "cosmwasm_2_1",
 ]
+cosmwasm_3_0 = [
+    "cosmwasm-std/cosmwasm_3_0",
+    "cw-multi-test?/cosmwasm_3_0",
+    "cosmwasm_2_2",
+]
 
 [dependencies]
 sylvia-derive = { workspace = true }

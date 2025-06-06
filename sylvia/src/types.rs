@@ -597,9 +597,9 @@ impl<'a, C: cosmwasm_std::CustomQuery> From<(DepsMut<'a, C>, Env)> for SudoCtx<'
 }
 
 /// Set of trait bounds for custom messages.
-pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned {}
+pub trait CustomMsg: cosmwasm_std::CustomMsg + DeserializeOwned + JsonSchema {}
 
-impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned {}
+impl<T> CustomMsg for T where T: cosmwasm_std::CustomMsg + DeserializeOwned + JsonSchema {}
 
 /// Set of trait bounds for custom queries.
 pub trait CustomQuery: cosmwasm_std::CustomQuery + DeserializeOwned + JsonSchema {}

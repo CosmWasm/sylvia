@@ -338,7 +338,7 @@ fn data_opt() {
     assert_eq!(
         err,
         StdError::generic_err(
-            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type"
+            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: expected value at line 1 column 1"
         ).into()
     );
 
@@ -382,7 +382,7 @@ fn data() {
     assert_eq!(
         err,
         StdError::generic_err(
-            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: Invalid type"
+            "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: expected value at line 1 column 1"
         ).into()
     );
 
