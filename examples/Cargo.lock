@@ -1378,7 +1378,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sylvia"
-version = "2.0.0-rc.0"
+version = "2.0.0-rc.1"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -1394,7 +1394,7 @@ dependencies = [
 
 [[package]]
 name = "sylvia-derive"
-version = "2.0.0-rc.0"
+version = "2.0.0-rc.1"
 dependencies = [
  "convert_case",
  "itertools 0.14.0",

@@ -4,6 +4,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-rc.1](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v2.0.0-rc.0...sylvia-derive-v2.0.0-rc.1) - 2025-06-09
+
+### Added
+
+- [**breaking**] Remove `replies` from `sv::features` pre 2.0.0 release
+
+### Other
+
+- [**breaking**] Remove deprecated InterfaceApi pre 2.0.0 release
+- Replace explicit serde-json-wasm with cw_std::to_json_string
+
 ## [1.3.6](https://github.com/CosmWasm/sylvia/compare/sylvia-derive-v1.3.5...sylvia-derive-v1.3.6) - 2025-05-20
 
 ### Other
