@@ -8,7 +8,6 @@ pub mod mismatched_params {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}
@@ -42,7 +41,6 @@ pub mod mismatched_param_arity {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}
@@ -82,7 +80,6 @@ pub mod redundant_params {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}

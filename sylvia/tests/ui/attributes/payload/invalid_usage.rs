@@ -8,7 +8,6 @@ pub mod used_on_context {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}
@@ -32,7 +31,6 @@ pub mod used_on_self {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}

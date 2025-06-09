@@ -83,7 +83,6 @@ pub struct Contract {
 #[entry_points]
 #[contract]
 #[sv::error(ContractError)]
-#[sv::features(replies)]
 impl Contract {
     pub fn new() -> Self {
         Self {

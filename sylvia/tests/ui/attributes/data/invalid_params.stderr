@@ -1,16 +1,16 @@
 error: Invalid data parameter.
 
          = note: Expected one of [`raw`, `opt`, `instantiate`] comma separated.
-  --> tests/ui/attributes/data/invalid_params.rs:28:24
+  --> tests/ui/attributes/data/invalid_params.rs:27:24
    |
-28 |             #[sv::data(invalid)] _data: Option<Binary>,
+27 |             #[sv::data(invalid)] _data: Option<Binary>,
    |                        ^^^^^^^
 
 error: The `instantiate` cannot be used in pair with `raw` parameter.
 
          = note: Use any combination of [`raw`, `opt`] or [`instantiate`, `opt`] pairs.
 
-  --> tests/ui/attributes/data/invalid_params.rs:57:24
+  --> tests/ui/attributes/data/invalid_params.rs:55:24
    |
-57 |             #[sv::data(instantiate, raw)] _data: Option<Binary>,
+55 |             #[sv::data(instantiate, raw)] _data: Option<Binary>,
    |                        ^^^^^^^^^^^

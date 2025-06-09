@@ -10,7 +10,6 @@ pub mod invalid_data {
     pub struct Contract;
 
     #[contract]
-    #[sv::features(replies)]
     impl Contract {
         pub fn new() -> Self {
             Self
@@ -39,7 +38,6 @@ pub mod instantiate_and_raw {
     pub struct Contract;
 
     #[contract]
-    #[sv::features(replies)]
     impl Contract {
         pub fn new() -> Self {
             Self

@@ -1,13 +1,10 @@
 use proc_macro_error::emit_error;
 use syn::parse::{Parse, ParseStream, Parser};
-use syn::{Error, Ident, MetaList, Result, Token};
+use syn::{Error, Ident, MetaList, Result};
 
 /// Type wrapping data parsed from `sv::features` attribute.
 #[derive(Debug, Default)]
-pub struct SylviaFeatures {
-    /// Enables better dispatching and deserialization for replies.
-    pub replies: bool,
-}
+pub struct SylviaFeatures {}
 
 impl SylviaFeatures {
     pub fn new(attr: &MetaList) -> Result<Self> {
@@ -22,23 +19,14 @@ impl SylviaFeatures {
 
 impl Parse for SylviaFeatures {
     fn parse(input: ParseStream) -> Result<Self> {
-        let mut features = Self::default();
+        let features = Self::default();
 
-        while !input.is_empty() {
+        if !input.is_empty() {
             let feature: Ident = input.parse()?;
-            match feature.to_string().as_str() {
-                "replies" => features.replies = true,
-                _ => {
-                    return Err(Error::new(
-                        feature.span(),
-                        "Invalid feature.\n= note: Supported features for contract macro: [`replies`].\n",
-                    ))
-                }
-            }
-            if !input.peek(Token![,]) {
-                break;
-            }
-            let _: Token![,] = input.parse()?;
+            return Err(Error::new(
+                feature.span(),
+                "Invalid feature.\n= note: No features supported currently.\n",
+            ));
         }
 
         Ok(features)

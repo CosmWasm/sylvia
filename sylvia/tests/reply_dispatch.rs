@@ -80,7 +80,6 @@ pub struct Contract<M, Q> {
 #[contract]
 #[sv::error(ContractError)]
 #[sv::custom(msg=M, query=Q)]
-#[sv::features(replies)]
 impl<M, Q> Contract<M, Q>
 where
     M: CustomMsg + 'static,

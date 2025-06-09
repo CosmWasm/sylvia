@@ -54,7 +54,6 @@ pub struct GenericContract<
 #[sv::messages(generic as Generic: custom(msg, query))]
 #[sv::messages(custom_and_generic as CustomAndGeneric)]
 #[sv::custom(msg=SvCustomMsg, query=SvCustomQuery)]
-#[sv::features(replies)]
 impl<
         InstantiateT,
         Exec1T,

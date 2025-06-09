@@ -8,7 +8,6 @@ pub mod attributes_swapped {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}
@@ -37,7 +36,6 @@ pub mod error_handler {
     pub struct Contract {}
 
     #[sylvia::contract]
-    #[sv::features(replies)]
     impl Contract {
         pub const fn new() -> Self {
             Self {}
