@@ -2,18 +2,18 @@ error: Wrong usage of `#[sv::data]` attribute.
 
          = note: The `#[sv::data]` attribute can only be used on the first parameter after the `ReplyCtx`.
 
-  --> tests/ui/attributes/data/invalid_usage.rs:27:35
+  --> tests/ui/attributes/data/invalid_usage.rs:26:35
    |
-27 |             #[sv::data(opt, raw)] _data: Option<Binary>,
+26 |             #[sv::data(opt, raw)] _data: Option<Binary>,
    |                                   ^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters after the parameter marked with `#[sv::payload(raw)]`.
 
-  --> tests/ui/attributes/data/invalid_usage.rs:27:35
+  --> tests/ui/attributes/data/invalid_usage.rs:26:35
    |
-27 |             #[sv::data(opt, raw)] _data: Option<Binary>,
+26 |             #[sv::data(opt, raw)] _data: Option<Binary>,
    |                                   ^^^^^
 
 error: Wrong usage of `#[sv::data]` attribute.
@@ -21,7 +21,7 @@ error: Wrong usage of `#[sv::data]` attribute.
          = note: The `#[sv::data]` attribute can only be used in `success` scenario.
          = note: Found usage in `error` scenario.
 
-  --> tests/ui/attributes/data/invalid_usage.rs:55:35
+  --> tests/ui/attributes/data/invalid_usage.rs:53:35
    |
-55 |             #[sv::data(opt, raw)] _data: Option<Binary>,
+53 |             #[sv::data(opt, raw)] _data: Option<Binary>,
    |                                   ^^^^^

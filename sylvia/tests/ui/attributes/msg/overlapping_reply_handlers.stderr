@@ -2,16 +2,16 @@ error: Duplicated reply handler.
 
          = note: Previous definition of handler=`HANDLER_1_REPLY_ID` for reply_on=`always` defined on `fn reply_always()`
 
-  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:31:32
+  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:30:32
    |
-31 |     #[sv::msg(reply, handlers=[handler1], reply_on=success)]
+30 |     #[sv::msg(reply, handlers=[handler1], reply_on=success)]
    |                                ^^^^^^^^
 
 error: Duplicated reply handler.
 
          = note: Previous definition of handler=`HANDLER_2_REPLY_ID` for reply_on=`error` defined on `fn some_reply()`
 
-  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:51:8
+  --> tests/ui/attributes/msg/overlapping_reply_handlers.rs:50:8
    |
-51 |     fn handler2(
+50 |     fn handler2(
    |        ^^^^^^^^

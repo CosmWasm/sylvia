@@ -3,9 +3,9 @@ error: Mismatched parameter in reply handlers.
          = note: Parameters for the `on_instantiated` handler have to be the same.
          = note: Previous parameter defined for the `on_instantiated` handler.
 
-  --> tests/ui/method_signature/reply.rs:27:13
+  --> tests/ui/method_signature/reply.rs:26:13
    |
-27 |             param: String,
+26 |             param: String,
    |             ^^^^^
 
 error: Mismatched quantity of method parameters.
@@ -13,43 +13,43 @@ error: Mismatched quantity of method parameters.
          = note: Both `on_instantiated` handlers should have the same number of parameters.
          = note: Previous definition of on_instantiated handler.
 
-  --> tests/ui/method_signature/reply.rs:57:12
+  --> tests/ui/method_signature/reply.rs:55:12
    |
-57 |         fn first_reply(
+55 |         fn first_reply(
    |            ^^^^^^^^^^^
 
 error: Wrong usage of `#[sv::data]` attribute.
 
          = note: The `#[sv::data]` attribute can only be used on the first parameter after the `ReplyCtx`.
 
-   --> tests/ui/method_signature/reply.rs:102:35
-    |
-102 |             #[sv::data(opt, raw)] _data: Option<Binary>,
-    |                                   ^^^^^
+  --> tests/ui/method_signature/reply.rs:99:35
+   |
+99 |             #[sv::data(opt, raw)] _data: Option<Binary>,
+   |                                   ^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`.
 
-   --> tests/ui/method_signature/reply.rs:100:13
-    |
-100 |             redundant_before1: u32,
-    |             ^^^^^^^^^^^^^^^^^
+  --> tests/ui/method_signature/reply.rs:97:13
+   |
+97 |             redundant_before1: u32,
+   |             ^^^^^^^^^^^^^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters between the parameter marked with `#[sv::data]` and `#[sv::payload(raw)]`.
 
-   --> tests/ui/method_signature/reply.rs:113:13
+   --> tests/ui/method_signature/reply.rs:110:13
     |
-113 |             redundant_between1: u32,
+110 |             redundant_between1: u32,
     |             ^^^^^^^^^^^^^^^^^^
 
 error: Redundant payload parameter.
 
          = note: Expected no parameters after the parameter marked with `#[sv::payload(raw)]`.
 
-   --> tests/ui/method_signature/reply.rs:128:13
+   --> tests/ui/method_signature/reply.rs:125:13
     |
-128 |             redundant: Binary,
+125 |             redundant: Binary,
     |             ^^^^^^^^^

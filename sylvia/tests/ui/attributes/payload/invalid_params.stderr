@@ -1,6 +1,6 @@
 error: Invalid payload parameter.
        = note: Expected [`raw`].
-  --> tests/ui/attributes/payload/invalid_params.rs:26:23
+  --> tests/ui/attributes/payload/invalid_params.rs:25:23
    |
-26 |         #[sv::payload(invalid)] _param: Option<Binary>,
+25 |         #[sv::payload(invalid)] _param: Option<Binary>,
    |                       ^^^^^^^

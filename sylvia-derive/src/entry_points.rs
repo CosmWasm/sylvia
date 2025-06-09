@@ -69,7 +69,7 @@ pub struct EntryPoints<'a> {
     generics: Vec<&'a GenericParam>,
     where_clause: &'a Option<WhereClause>,
     attrs: &'a EntryPointArgs,
-    sv_features: SylviaFeatures,
+    _sv_features: SylviaFeatures,
 }
 
 impl<'a> EntryPoints<'a> {
@@ -99,7 +99,7 @@ impl<'a> EntryPoints<'a> {
             generics,
             where_clause,
             attrs,
-            sv_features,
+            _sv_features: sv_features,
         }
     }
 
@@ -172,12 +172,7 @@ impl<'a> EntryPoints<'a> {
 
     fn emit_default_entry_point(&self, msg_ty: MsgType) -> TokenStream {
         let Self {
-            name,
-            error,
-            attrs,
-            reply,
-            sv_features,
-            ..
+            name, error, attrs, ..
         } = self;
         let sylvia = crate_module();
 
@@ -206,12 +201,9 @@ impl<'a> EntryPoints<'a> {
             _ => quote! { msg: < #contract as #sylvia ::types::ContractApi> :: #associated_name },
         };
         let dispatch = match msg_ty {
-            MsgType::Reply if sv_features.replies => quote! {
+            MsgType::Reply => quote! {
                 let contract = #contract_turbofish ::new();
                 sv::dispatch_reply(deps, env, msg, contract).map_err(Into::into)
-            },
-            MsgType::Reply => quote! {
-                #contract_turbofish ::new(). #reply((deps, env).into(), msg).map_err(Into::into)
             },
             _ => quote! {
                 msg.dispatch(& #contract_turbofish ::new() , ( #values )).map_err(Into::into)

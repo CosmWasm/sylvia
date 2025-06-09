@@ -9,7 +9,6 @@ pub struct Contract;
 
 #[entry_points]
 #[contract]
-#[sv::features(replies)]
 impl Contract {
     pub fn new() -> Self {
         Self

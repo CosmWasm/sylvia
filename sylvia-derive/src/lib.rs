@@ -282,7 +282,6 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ##[sylvia::contract]
 /// ##[sv::error(ContractError)]
-/// ##[sv::features(replies)]
 /// impl SvContract {
 ///     pub const fn new() -> Self {
 ///         Self {
@@ -628,28 +627,14 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 /// Enables additional features for the contract. Allows user to use features that
 /// are considered breaking before the major release.
 ///
-/// Currently supported features are:
-/// * `replies` - enables better dispatching of `reply` as well as its auto deserialization.
-///     With this feature enabled, user can use additional parameters in the
-///     `sv::msg` attribute like so:
-///     `#[sv::msg(reply, handlers=[scenario1, scenario2], reply_on=Success)]`.
-///
-///     Based on this parameters reply ids will be generated and associated with
-///     proper scenario specified by the `reply_on` parameter.
-///
-///     User can also specify custom `data` and `payload` types that will be auto
-///     deserialized from the `cosmwasm_std::Binary` type.
+/// No currently supported features.
 ///
 /// ### `sv::payload(raw)`
-///
-/// Requires contract to be marked with the `sv::features(replies)`.
 ///
 /// Used next to the reply method argument. It disables auto deserialization
 /// of the payload argument.
 ///
 /// ### `sv::data(...)`
-///
-/// Requires contract to be marked with the `sv::features(replies)`.
 ///
 /// Used next to the reply method argument. Based on the passed parameters
 /// it enables different behavior:
@@ -740,7 +725,6 @@ fn contract_impl(attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ##[sylvia::entry_points]
 /// ##[sylvia::contract]
-/// ##[sv::features(replies)]
 /// impl SvContract {
 ///     pub const fn new() -> Self {
 ///         Self

@@ -7,7 +7,6 @@ use sylvia::cw_std::{Binary, Reply, Response, StdResult};
 pub struct Contract;
 
 #[contract]
-#[sv::features(replies)]
 impl Contract {
     pub fn new() -> Self {
         Self

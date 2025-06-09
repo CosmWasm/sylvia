@@ -87,7 +87,6 @@ mod contract {
     #[sv::msg_attr(instantiate, error("Instantiate"))]
     #[sv::msg_attr(migrate, derive(PartialOrd, Error))]
     #[sv::msg_attr(migrate, error("Migrate"))]
-    #[sv::features(replies)]
     impl Contract {
         #[allow(clippy::new_without_default)]
         #[allow(dead_code)]

@@ -47,7 +47,7 @@ pub struct ContractInput<'a> {
     custom: Custom,
     override_entry_points: Vec<OverrideEntryPoint>,
     interfaces: Interfaces,
-    sv_features: SylviaFeatures,
+    _sv_features: SylviaFeatures,
 }
 
 impl<'a> ContractInput<'a> {
@@ -69,7 +69,7 @@ impl<'a> ContractInput<'a> {
             custom,
             override_entry_points,
             interfaces,
-            sv_features,
+            _sv_features: sv_features,
         }
     }
 
@@ -189,10 +189,6 @@ impl<'a> ContractInput<'a> {
     }
 
     fn emit_reply(&self) -> TokenStream {
-        if !self.sv_features.replies {
-            return quote! {};
-        }
-
         let variants = MsgVariants::new(self.item.as_variants(), MsgType::Reply, &[], &None);
 
         Reply::new(self.item, &self.generics, &variants).emit()

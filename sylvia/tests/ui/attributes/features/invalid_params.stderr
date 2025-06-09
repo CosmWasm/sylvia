@@ -1,5 +1,5 @@
 error: Invalid feature.
-       = note: Supported features for contract macro: [`replies`].
+       = note: No features supported currently.
  --> tests/ui/attributes/features/invalid_params.rs:9:16
   |
 9 | #[sv::features(unknown_parameter)]
