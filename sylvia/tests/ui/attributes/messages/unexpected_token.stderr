@@ -1,4 +1,4 @@
-error: Unexpected tokens inside `sv::messages` attribtue.
+error: Unexpected tokens inside `sv::messages` attribute.
 
          = note: Maximal supported form of attribute: `#[sv::messages(interface::path as InterfaceName: custom(msg, query))]`.
   --> tests/ui/attributes/messages/unexpected_token.rs:24:25

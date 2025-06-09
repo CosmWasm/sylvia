@@ -487,7 +487,7 @@ fn interface_impl(_attr: TokenStream2, item: TokenStream2) -> TokenStream2 {
 ///
 /// ### `sv::error(error_type)`
 ///
-/// Allows specifing custom error type for the contract. Default is `cosmwasm_std::StdError`.
+/// Allows specifying custom error type for the contract. Default is `cosmwasm_std::StdError`.
 ///
 /// ### `sv::override_entry_point(entry_point_type=<path_to_entry_point(msg_path)>`
 ///
