@@ -46,7 +46,7 @@ In Sylvia, we define our contracts as structures:
 ```rust
 use cw_storage_plus::Item;
 use cosmwasm_schema::cw_serde;
-use sylvia::types::QueryCtx;
+use sylvia::ctx::QueryCtx;
 use sylvia::cw_std::ensure;
 
 
@@ -59,7 +59,7 @@ struct MyContract<'a> {
 
 /// Response type returned by the
 /// query method.
-/// 
+///
 #[cw_serde]
 pub struct CounterResp {
     pub counter: u64,
@@ -165,7 +165,6 @@ result type has to implement `Into<ContractError>`, where `ContractError` is a c
 error type - it will all be commonized in the generated dispatching function (so
 entry points have to return `ContractError` as its error variant).
 
-
 ## Interfaces
 
 One of the fundamental ideas of the Sylvia framework is the interface, allowing the
@@ -175,7 +174,7 @@ grouping of messages into their semantical groups. Let's define a Sylvia interfa
 pub mod group {
     use super::*;
     use sylvia::interface;
-    use sylvia::types::ExecCtx;
+    use sylvia::ctx::{ExecCtx, QueryCtx};
     use sylvia::cw_std::StdError;
 
     #[cw_serde]
@@ -285,23 +284,22 @@ impl MyContract {
 }
 ```
 
- * `sv::error` is used by both `contract` and `entry_point` macros. It is necessary in case a custom
-   error is being used by your contract. If omitted generated code will use `StdError`.
+- `sv::error` is used by both `contract` and `entry_point` macros. It is necessary in case a custom
+  error is being used by your contract. If omitted generated code will use `StdError`.
 
- * `sv::messages` is the attribute for the `contract` macro. Its purpose is to inform Sylvia
-   about interfaces implemented for the contract. If the implemented interface does not use a
-   default `Empty` message response for query and/or exec then the `: custom(query)`,
-   `: custom(msg)` or `: custom(msg, query)` should be indicated.
+- `sv::messages` is the attribute for the `contract` macro. Its purpose is to inform Sylvia
+  about interfaces implemented for the contract. If the implemented interface does not use a
+  default `Empty` message response for query and/or exec then the `: custom(query)`,
+  `: custom(msg)` or `: custom(msg, query)` should be indicated.
 
- * `sv::override_entry_point` - refer to the `Overriding entry points` section.
+- `sv::override_entry_point` - refer to the `Overriding entry points` section.
 
- * `sv::custom` allows to define CustomMsg and CustomQuery for the contract. By default generated code
-    will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
+- `sv::custom` allows to define CustomMsg and CustomQuery for the contract. By default generated code
+  will return `Response<Empty>` and will use `Deps<Empty>` and `DepsMut<Empty>`.
 
- * `sv::msg_attr` forwards any attribute to the message's type.
+- `sv::msg_attr` forwards any attribute to the message's type.
 
- * `sv::attr` forwards any attribute to the enum's variant.
-
+- `sv::attr` forwards any attribute to the enum's variant.
 
 ## Usage in external crates
 
@@ -352,10 +350,9 @@ with `ExecMsg/QueryMsg` - the former is generated only for contract, not for int
 and is not meant to be used to send messages to the contract - their purpose is for proper
 messages dispatching only, and should not be used besides the entry points.
 
-
 ## Query helpers
 
-To make querying more user-friendly `Sylvia` provides users with `sylvia::types::BoundQuerier` and 
+To make querying more user-friendly `Sylvia` provides users with `sylvia::types::BoundQuerier` and
 `sylvia::types::Remote` helpers. The latter is meant to store the address of some remote contract.
 For each query method in the contract, Sylvia will add a method in a generated `sv::Querier` trait.
 The `sv::Querier` is then implemented for `sylvia::types::BoundQuerier` so the user can call the method.
@@ -387,7 +384,6 @@ pub fn evaluate_member(&self, ctx: ExecCtx, ...) -> StdResult<Response> {
         .is_member(addr)?;
 }
 ```
-
 
 ## Executor message builder
 
@@ -496,7 +492,7 @@ It is possible to define a custom `exec` message that will dispatch over one gen
 by your contract and one defined by you. To use this custom entry point with `contract` macro
 you can add the `sv::override_entry_point(...)` attribute.
 
-```rust    
+```rust
 #[contract]
 #[sv::override_entry_point(exec=crate::entry_points::execute(crate::exec::CustomExecMsg))]
 #[sv::override_entry_point(sudo=crate::entry_points::sudo(crate::SudoMsg))]
@@ -613,7 +609,6 @@ All the instantiation and execution functions return the
 `Result<cw_multi_test::AppResponse, ContractError>` type, where `ContractError`
 is an error type of the contract.
 
-
 ## Interface items in multitest
 
 Trait declaring all the interface methods is directly implemented on
@@ -678,8 +673,8 @@ Generics in a contract might be either used as generic field types or as generic
 types in the messages. When Sylvia generates the messages' enums, only generics used in respective methods
 will be part of a given generated message type.
 
-
 Example of usage:
+
 ```rust
 pub struct GenericContract<
     InstantiateParam,
@@ -765,7 +760,6 @@ where
     ...
 }
 ```
-
 
 ## Generating schema
 
