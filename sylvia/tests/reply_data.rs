@@ -1,3 +1,5 @@
+#![cfg(feature = "mt")]
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::to_json_binary;
 use cw_storage_plus::Item;
