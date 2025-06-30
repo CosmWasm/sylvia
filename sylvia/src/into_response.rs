@@ -15,16 +15,14 @@ impl<C> IntoMsg<C> for SubMsg<Empty> {
             CosmosMsg::Staking(staking) => CosmosMsg::Staking(staking),
             #[cfg(feature = "staking")]
             CosmosMsg::Distribution(distribution) => CosmosMsg::Distribution(distribution),
-            CosmosMsg::Custom(_) => Err(StdError::generic_err(
-                "Custom Empty message should not be sent",
-            ))?,
+            CosmosMsg::Custom(_) => Err(StdError::msg("Custom Empty message should not be sent"))?,
             #[cfg(feature = "stargate")]
             CosmosMsg::Ibc(ibc) => CosmosMsg::Ibc(ibc),
             #[cfg(feature = "cosmwasm_2_0")]
             CosmosMsg::Any(any) => CosmosMsg::Any(any),
             #[cfg(feature = "stargate")]
             CosmosMsg::Gov(msg) => CosmosMsg::Gov(msg),
-            _ => return Err(StdError::generic_err(format!(
+            _ => return Err(StdError::msg(format!(
                 "Unknown message variant: {:?}. Please make sure you are using up-to-date Sylvia version, and if so please issue this bug on the Sylvia repository.",
                 self
             ))),
@@ -93,9 +91,6 @@ mod tests {
         resp = resp.add_message(CosmosMsg::Custom(Empty {}));
 
         let err = IntoResponse::<MyMsg>::into_response(resp).unwrap_err();
-        assert_eq!(
-            err,
-            StdError::generic_err("Custom Empty message should not be sent")
-        );
+        assert_eq!("Custom Empty message should not be sent", err.to_string());
     }
 }

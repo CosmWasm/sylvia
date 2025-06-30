@@ -417,7 +417,7 @@ impl<'a> MtHelpers<'a> {
                                 label,
                                 admin,
                             )
-                            .map_err(|err| err.downcast().unwrap())
+                            .map_err(|err| StdError::msg(err.to_string()).into())
                             .map(|addr| #sylvia ::multitest::Proxy {
                                 contract_addr: addr,
                                 app: code_id.app,
@@ -450,7 +450,7 @@ impl<'a> MtHelpers<'a> {
                 let app_response = (*code_id.app)
                     .app_mut()
                     .execute(sender.clone(), msg.into())
-                    .map_err(|err| err.downcast::< #error_type >().unwrap())?;
+                    .map_err(|err| StdError::msg(err.to_string()).into())?;
 
                 #sylvia:: cw_utils::parse_instantiate_response_data(app_response.data.unwrap().as_slice())
                     .map_err(|err| Into::into( #sylvia ::cw_std::StdError::generic_err(err.to_string())))
@@ -685,7 +685,7 @@ impl EmitMethods for MsgVariant<'_> {
                     (*self.app)
                         .app_mut()
                         .wasm_sudo(self.contract_addr.clone(), &msg)
-                        .map_err(|err| err.downcast().unwrap())
+                        .map_err(|err| StdError::msg(err.to_string()).into())
                 }
             },
             MsgType::Migrate => quote! {

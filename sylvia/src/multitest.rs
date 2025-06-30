@@ -301,20 +301,12 @@ where
                 &self.msg,
                 self.funds,
             )
-            .map_err(|err| {
-                if err.is::<Error>() {
-                    err.downcast::<Error>().unwrap()
-                } else if err.is::<StdError>() {
-                    err.downcast::<StdError>().unwrap().into()
-                } else {
-                    StdError::generic_err(err.to_string()).into()
-                }
-            })
+            .map_err(|err| StdError::msg(err.to_string()).into())
     }
 }
 
-/// Intermiediate proxy to set additional information
-/// before sending an migrate message.
+/// Intermediate proxy to set additional information
+/// before sending a migrate message.
 #[must_use]
 pub struct MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
@@ -330,7 +322,7 @@ where
 impl<'a, 'app, Error, Msg, MtApp, ExecC> MigrateProxy<'a, 'app, Error, Msg, MtApp, ExecC>
 where
     Msg: Serialize + Debug,
-    Error: Debug + Display + Send + Sync + 'static,
+    Error: From<StdError> + Debug + Display + Send + Sync + 'static,
     ExecC: cosmwasm_std::CustomMsg + 'static,
     MtApp: Executor<ExecC>,
 {
@@ -358,7 +350,7 @@ where
                 &self.msg,
                 new_code_id,
             )
-            .map_err(|err| err.downcast().unwrap())
+            .map_err(|err| StdError::msg(err.to_string()).into())
     }
 }
 
