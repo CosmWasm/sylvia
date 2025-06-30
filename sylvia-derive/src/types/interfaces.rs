@@ -105,7 +105,7 @@ impl Interfaces {
 
                 let type_name = msg_ty.as_accessor_name();
                 quote! {
-                    <#contract as #module ::sv::InterfaceMessagesApi> :: #type_name :: response_schemas_impl()
+                    <#contract as #module ::sv::InterfaceMessagesApi> :: #type_name :: response_schemas_cw()
                 }
             })
             .collect()

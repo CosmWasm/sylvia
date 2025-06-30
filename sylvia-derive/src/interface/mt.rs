@@ -230,7 +230,7 @@ impl EmitMethods for MsgVariant<'_> {
                     (*self.app)
                         .app_mut()
                         .wasm_sudo(self.contract_addr.clone(), &msg)
-                        .map_err(|err| err.downcast().unwrap())
+                        .map_err(|err| StdError::msg(err.to_string()).into())
                 }
             },
             MsgType::Migrate => quote! {
