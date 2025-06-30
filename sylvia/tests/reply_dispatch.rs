@@ -61,7 +61,7 @@ pub struct InstantiatePayload {
     pub sender: Addr,
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
@@ -307,7 +307,7 @@ mod tests {
 
         // Should not dispatch if expected success and execution failed
         let err = contract.call_remote_success(true).call(&owner).unwrap_err();
-        assert_eq!(err, StdError::generic_err("Failed as requested").into());
+        assert!(err.to_string().contains("Failed as requested"));
         let last_reply = contract.last_reply().unwrap();
         assert_eq!(last_reply, REMOTE_INSTANTIATED_REPLY_ID);
 
@@ -357,9 +357,8 @@ mod tests {
             .call_remote_unknown_id(false, unknown_reply_id)
             .call(&owner)
             .unwrap_err();
-        assert_eq!(
-            err,
-            StdError::generic_err(format!("Unknown reply id: {}.", unknown_reply_id)).into()
-        );
+        assert!(err
+            .to_string()
+            .contains(&format!("Unknown reply id: {}.", unknown_reply_id)));
     }
 }

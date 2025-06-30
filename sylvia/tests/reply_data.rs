@@ -296,10 +296,7 @@ fn data_raw() {
         .send_message_expecting_data(None, DATA_RAW_REPLY_ID)
         .call(&owner)
         .unwrap_err();
-    assert_eq!(
-        err,
-        StdError::generic_err("Missing reply data field.").into()
-    );
+    assert_eq!(err, StdError::msg("Missing reply data field.").into());
 
     contract
         .send_message_expecting_data(data.clone(), DATA_RAW_REPLY_ID)
@@ -336,7 +333,7 @@ fn data_opt() {
         .unwrap_err();
     assert_eq!(
         err,
-        StdError::generic_err(
+        StdError::msg(
             "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: expected value at line 1 column 1"
         ).into()
     );
@@ -369,10 +366,7 @@ fn data() {
         .send_message_expecting_data(None, DATA_REPLY_ID)
         .call(&owner)
         .unwrap_err();
-    assert_eq!(
-        err,
-        StdError::generic_err("Missing reply data field.").into()
-    );
+    assert_eq!(err, StdError::msg("Missing reply data field.").into());
 
     let err = contract
         .send_message_expecting_data(invalid_data, DATA_REPLY_ID)
@@ -380,7 +374,7 @@ fn data() {
         .unwrap_err();
     assert_eq!(
         err,
-        StdError::generic_err(
+        StdError::msg(
             "Invalid reply data at block height: 12345, transaction id: 0.\nSerde error while deserializing Error parsing into type alloc::string::String: expected value at line 1 column 1"
         ).into()
     );

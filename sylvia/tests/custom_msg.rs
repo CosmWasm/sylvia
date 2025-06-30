@@ -1,3 +1,4 @@
+use cosmwasm_schema::cw_schema::Schemaifier;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sylvia::ctx::{ExecCtx, InstantiateCtx, MigrateCtx, QueryCtx, SudoCtx};

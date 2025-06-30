@@ -95,14 +95,14 @@ impl<'a> GlueMessage<'a> {
 
         let mut response_schemas_calls = interfaces.emit_response_schemas_calls(msg_ty, contract);
         response_schemas_calls
-            .push(quote! {<#contract as #sylvia ::types::ContractApi> :: #enum_accessor ::response_schemas_impl()});
+            .push(quote! {<#contract as #sylvia ::types::ContractApi> :: #enum_accessor ::response_schemas_cw()});
 
         let response_schemas = match msg_ty {
             MsgType::Query => {
                 quote! {
                     #[cfg(not(target_arch = "wasm32"))]
                     impl #bracketed_wrapper_generics #sylvia ::cw_schema::QueryResponses for #contract_enum_name #bracketed_wrapper_generics #full_where_clause {
-                        fn response_schemas_impl() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
+                        fn response_schemas_cw() -> std::collections::BTreeMap<String, #sylvia ::schemars::schema::RootSchema> {
                             let responses = [#(#response_schemas_calls),*];
                             responses.into_iter().flatten().collect()
                         }
